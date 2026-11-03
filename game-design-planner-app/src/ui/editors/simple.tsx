@@ -4,6 +4,7 @@ import type { ChecklistData, Entity, FormulaData, MatrixData, SectionDef } from 
 import { makeId } from '../../core/model/project'
 import { resolveSource } from '../../core/references/refs'
 import { tryEvaluate, variablesOf } from '../../core/formula'
+import { ASYMMETRY_TOLERANCE } from '../../core/diplomacy'
 import { useSection, useProject } from '../hooks'
 import { FieldInput } from '../FieldInput'
 
@@ -52,6 +53,24 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
     }, `${r}|${c}`)
 
   const meta = sec.rowMeta
+  const settings = sec.rangeFrom ? project.documents[docId]?.data[sec.rangeFrom.section] : undefined
+  const fromSettings = (key?: string) => (key && typeof settings?.[key] === 'number' ? (settings[key] as number) : undefined)
+  const sectionMin = fromSettings(sec.rangeFrom?.minField) ?? (sec.cell.type === 'number' ? sec.cell.min : 0)
+  const sectionMax = fromSettings(sec.rangeFrom?.maxField) ?? (sec.cell.type === 'number' ? sec.cell.max : 0)
+  const asymmetric = (r: string, c: string) => {
+    if (!sec.symmetric || r === c) return false
+    const x = cells[`${r}|${c}`]
+    const y = cells[`${c}|${r}`]
+    return typeof x === 'number' && typeof y === 'number' && Math.abs(x - y) > ASYMMETRY_TOLERANCE
+  }
+  const mirror = () =>
+    update((d) => {
+      for (const r of rows)
+        for (const c of cols) {
+          const v = d.cells[`${r.id}|${c.id}`]
+          if (r.id !== c.id && v !== undefined && d.cells[`${c.id}|${r.id}`] === undefined) d.cells[`${c.id}|${r.id}`] = v
+        }
+    })
   const rowEntities: Entity[] = !('catalog' in sec.rows) ? project.documents[sec.rows.doc ?? docId]?.data[sec.rows.section] ?? [] : []
   const entityOf = (id: string) => rowEntities.find((e) => e.id === id)
   const num = (e: Entity | undefined, key?: string) => {
@@ -60,7 +79,7 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
   }
   // Each row may bring its own range; without row metadata the section-wide range applies.
   const rangeOf = (id: string) => {
-    if (!meta) return sec.cell.type === 'number' ? { min: sec.cell.min, max: sec.cell.max } : {}
+    if (!meta) return sec.cell.type === 'number' ? { min: sectionMin, max: sectionMax } : {}
     const e = entityOf(id)
     return { min: num(e, meta.min), max: num(e, meta.max) }
   }
@@ -83,6 +102,12 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
 
   return (
     <div className="table-wrap">
+      {sec.symmetric && (
+        <div className="toolbar">
+          <button onClick={mirror} title="Copy each value to its empty reverse cell">Mirror to empty cells</button>
+          <span className="muted">Pairs that differ by more than {ASYMMETRY_TOLERANCE} are marked; asymmetry is allowed if intended.</span>
+        </div>
+      )}
       {meta?.group && groups.length > 1 && (
         <div className="toolbar">
           <select aria-label="Filter by category" value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -122,16 +147,16 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
                     const val = cells[key]
                     const outside = typeof val === 'number' && ((min !== undefined && val < min) || (max !== undefined && val > max))
                     return (
-                      <td key={c.id} style={{ background: disabled ? 'transparent' : heat(r.id, val) }} className={outside ? 'out-of-range' : ''}>
+                      <td key={c.id} style={{ background: disabled ? 'transparent' : heat(r.id, val) }} className={(outside ? 'out-of-range ' : '') + (asymmetric(r.id, c.id) ? 'asymmetric' : '')}>
                         {disabled ? (
                           <span className="muted">–</span>
                         ) : sec.cell.type === 'number' ? (
                           <input
                             type="number"
                             aria-label={`${r.label}, ${c.label}`}
-                            title={outside ? 'Outside the parameter’s range' : undefined}
-                            min={meta ? undefined : min}
-                            max={meta ? undefined : max}
+                            title={outside ? 'Outside the allowed range' : asymmetric(r.id, c.id) ? 'Differs from the reverse direction' : undefined}
+                            min={meta ? undefined : sectionMin}
+                            max={meta ? undefined : sectionMax}
                             step="any"
                             value={val ?? ''}
                             onChange={(ev) => setCell(r.id, c.id, ev.target.value === '' ? undefined : Number(ev.target.value))}

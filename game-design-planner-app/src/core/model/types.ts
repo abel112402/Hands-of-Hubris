@@ -15,11 +15,11 @@ export type FieldDef = FieldBase &
     | { type: 'boolean' }
     | { type: 'enum'; options: string[] }
     | { type: 'ref'; source: Source }
-    | { type: 'multiref'; source: Source }
+    | { type: 'multiref'; source: GraphSource }
     | { type: 'color' }
     | { type: 'date' }
     | { type: 'list' }
-    | { type: 'map'; source: Source; max?: number }
+    | { type: 'map'; source: Source; min?: number; max?: number }
     | { type: 'formula' }
     | { type: 'checklist' }
   )
@@ -32,6 +32,13 @@ export type CollectionView =
   | { kind: 'radar'; mapField: string }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
+  | {
+      kind: 'ranges'
+      minField: string
+      maxField: string
+      /** Form section whose fields give the full scale the ranges should cover. */
+      scale: { section: string; minField: string; maxField: string; fallback: [number, number] }
+    }
   | { kind: 'progression'; scaleField: string; leadsField: string }
   | {
       kind: 'compare'
@@ -74,6 +81,10 @@ export type SectionDef = SectionBase &
         cell: { type: 'number'; min: number; max: number } | { type: 'enum'; options: string[] }
         diagonal?: boolean
         /** Row entity fields that give each row its own range, unit, notes and group. */
+        /** Takes the allowed range from a form section instead of the fixed `cell` range. */
+        rangeFrom?: { section: string; minField: string; maxField: string }
+        /** Offers mirroring and marks pairs whose two directions differ. */
+        symmetric?: boolean
         rowMeta?: { unit?: string; min?: string; max?: string; baseline?: string; notes?: string; group?: string }
       }
     | {

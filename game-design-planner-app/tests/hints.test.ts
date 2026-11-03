@@ -266,3 +266,29 @@ describe('difficulty tuning checks', () => {
     expect(diff([param({ direction: undefined })], {}, [{ id: 'p', name: 'Easy' }])).toEqual(expect.arrayContaining(['difficulty.context', 'difficulty.intent']))
   })
 })
+
+describe('factions advisory checks', () => {
+  const fac = (data: Record<string, any>) => {
+    const p = empty()
+    p.documents['design.factions'] = { moduleVersion: 2, data: { factions: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], thresholds: [], actions: [], relations: { cells: {} }, ...data } }
+    return collectHints(makeContext(p, { docId: 'design.factions' })).map((h) => h.ruleId).filter((r) => r.startsWith('diplomacy.'))
+  }
+
+  it('stays quiet when there are no factions', () => {
+    expect(fac({ factions: [] })).toEqual([])
+  })
+
+  it('flags incomplete profiles, missing levels and empty matrix cells', () => {
+    expect(fac({})).toEqual(expect.arrayContaining(['diplomacy.profile', 'diplomacy.thresholds', 'diplomacy.matrix']))
+  })
+
+  it('flags threshold gaps, asymmetry, graph conflicts and missing spillover', () => {
+    const r = fac({
+      thresholds: [{ id: 't1', name: 'Low', min: -100, max: -20 }, { id: 't2', name: 'High', min: 20 }],
+      relations: { cells: { 'a|b': -80, 'b|a': 30 } },
+      relationGraph: { nodes: [{ id: 'n1', refId: 'a', kind: 'Faction', label: 'A' }, { id: 'n2', refId: 'b', kind: 'Faction', label: 'B' }], edges: [{ id: 'e', source: 'n1', target: 'n2', kind: 'Ally' }] },
+      actions: [{ id: 'x', name: 'Help A', faction: 'a' }],
+    })
+    expect(r).toEqual(expect.arrayContaining(['diplomacy.ranges', 'diplomacy.asymmetry', 'diplomacy.graph', 'diplomacy.spillover']))
+  })
+})

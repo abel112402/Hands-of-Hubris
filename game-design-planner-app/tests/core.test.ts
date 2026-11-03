@@ -5,6 +5,7 @@ import { deserializeProject, documentToFile, parseDocumentFile, serializeProject
 import { MODULES, ensureDocument } from '../src/core/modules/registry'
 import { moduleToMarkdown, exportPath } from '../src/core/export/markdown'
 import { validateProject } from '../src/core/references/refs'
+import { analyzeRanges, asymmetricPairs, graphDisagreements } from '../src/core/diplomacy'
 import { analyze, phaseLoad, weekToDate, withBuffer } from '../src/core/schedule'
 
 describe('formula', () => {
@@ -261,5 +262,79 @@ describe('difficulty module v2', () => {
     expect(md).toContain('| Unit |')
     expect(md).toContain('Watch late game')
     expect(validateProject(p).filter((i) => i.level === 'error')).toEqual([])
+  })
+})
+
+describe('factions module v2', () => {
+  const mod = MODULES.find((m) => m.id === 'design.factions')!
+
+  it('migrates text lists and the single spillover number', () => {
+    const p = createProject('T', false)
+    p.documents['design.factions'] = {
+      moduleVersion: 1,
+      data: {
+        factions: [{ id: 'f', name: 'F', characters: ['Ann', 'Bo'], unlocks: ['Axe'] }],
+        actions: [{ id: 'a', name: 'A', effectOnOthers: -10 }],
+      },
+    }
+    const back = deserializeProject(serializeProject(p)).project.documents['design.factions']
+    expect(back.moduleVersion).toBe(mod.version)
+    expect(back.data.factions[0].characters).toBeUndefined()
+    expect(back.data.factions[0].legacyNotes).toBe('Characters: Ann, Bo\nUnlocks: Axe')
+    expect(back.data.actions[0]).toMatchObject({ spilloverDefault: -10 })
+    expect(back.data.actions[0].effectOnOthers).toBeUndefined()
+  })
+
+  it('resolves unlocks from the skill tree and items, and flags a broken one', () => {
+    const p = createProject('T', false)
+    p.documents['design.player'] = { moduleVersion: 1, data: { skillTree: { nodes: [{ id: 's1', kind: 'Skill', label: 'Parry', x: 0, y: 0 }], edges: [] } } }
+    p.documents['design.factions'] = { moduleVersion: 2, data: { factions: [{ id: 'f', name: 'F', unlocks: ['s1'] }] } }
+    expect(validateProject(p).filter((i) => i.message.includes('broken reference'))).toEqual([])
+    p.documents['design.factions'].data.factions[0].unlocks = ['gone']
+    expect(validateProject(p).some((i) => i.message.includes('broken reference'))).toBe(true)
+  })
+
+  it('exports sections in the order of the source outline', () => {
+    const p = createProject('T', false)
+    p.documents['design.factions'] = { moduleVersion: 2, data: {} }
+    ensureDocument(p, mod, makeId)
+    const heads = moduleToMarkdown(p, mod).split('\n').filter((l) => l.startsWith('## ')).map((l) => l.replace(/^## \d+\. /, ''))
+    expect(heads.slice(0, 3)).toEqual(['System overview', 'Factions', 'Relationship matrix'])
+    expect(heads[heads.length - 1]).toBe('Endings')
+  })
+})
+
+describe('relationship analysis', () => {
+  const lvl = (id: string, min?: number, max?: number) => ({ id, name: id, min, max })
+
+  it('finds gaps and overlaps in ranges, and uses the next minimum for open ends', () => {
+    const ok = analyzeRanges([lvl('a', -100), lvl('b', 0), lvl('c', 50)], [-100, 100])
+    expect(ok.rows.map((r) => [r.from, r.to])).toEqual([[-100, -1], [0, 49], [50, 100]])
+    expect([ok.gapAtBottom, ok.gapAtTop, ...ok.rows.flatMap((r) => [r.overlaps, r.gapBefore])].some(Boolean)).toBe(false)
+    const bad = analyzeRanges([lvl('a', -50, 10), lvl('b', 5, 20), lvl('c', 40), lvl('d')], [-100, 100])
+    expect(bad.rows[1].overlaps).toBe(true)
+    expect(bad.rows[2].gapBefore).toBe(true)
+    expect(bad.gapAtBottom).toBe(true)
+    expect(bad.unset.map((l) => l.id)).toEqual(['d'])
+  })
+
+  it('reports asymmetric pairs and graph/matrix disagreements', () => {
+    const p = createProject('T', false)
+    p.documents['design.factions'] = {
+      moduleVersion: 2,
+      data: {
+        factions: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
+        relations: { cells: { 'a|b': 80, 'b|a': 20 } },
+        relationGraph: { nodes: [{ id: 'n1', refId: 'a', kind: 'Faction', label: 'A' }, { id: 'n2', refId: 'b', kind: 'Faction', label: 'B' }], edges: [{ id: 'e', source: 'n1', target: 'n2', kind: 'Enemy' }] },
+        overview: {},
+      },
+    }
+    expect(asymmetricPairs(p)).toHaveLength(1)
+    expect(graphDisagreements(p).map((d) => d.kind)).toEqual(['Enemy'])
+    p.documents['design.factions'].data.relationGraph.edges[0].kind = 'Ally'
+    expect(graphDisagreements(p)).toHaveLength(1)
+    p.documents['design.factions'].data.relations.cells = { 'a|b': 80, 'b|a': 75 }
+    expect(asymmetricPairs(p)).toHaveLength(0)
+    expect(graphDisagreements(p)).toHaveLength(0)
   })
 })

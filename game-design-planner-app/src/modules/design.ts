@@ -19,6 +19,24 @@ const LOOP_SYSTEMS: GraphSource = {
   ],
 }
 
+const UNLOCKABLE: GraphSource = { any: [section('skillTree', 'design.player'), section('items', 'design.items')] }
+
+/** v1 kept characters and unlocks as free-text lists and one "effect on others" number. */
+function migrateFactions(data: Record<string, any>) {
+  for (const fa of Array.isArray(data.factions) ? data.factions : []) {
+    for (const [key, label] of [['characters', 'Characters'], ['unlocks', 'Unlocks']] as const) {
+      const old = fa[key]
+      if (!Array.isArray(old) || old.length === 0) continue
+      fa.legacyNotes = [fa.legacyNotes, `${label}: ${old.join(', ')}`].filter(Boolean).join('\n')
+      delete fa[key]
+    }
+  }
+  for (const a of Array.isArray(data.actions) ? data.actions : []) {
+    if (a.effectOnOthers !== undefined && a.spilloverDefault === undefined) a.spilloverDefault = a.effectOnOthers
+    delete a.effectOnOthers
+  }
+}
+
 const CATEGORIES = ['Combat', 'Survival', 'Economy', 'NPC', 'Other']
 const UNITS = ['×', '%', 'absolute', 'seconds', 'other']
 
@@ -192,55 +210,87 @@ export const designModules = [
     version: 2,
     migrate: migrateDifficulty,
   },
-  mod('design', 'factions', 'Factions & Diplomacy', 'docs/01_design/factions_diplomacy.md', '🏛️', 'Four factions, relations and consequences.', [
-    s.collection(
-      'factions',
-      'Factions',
-      'faction',
-      [
-        f.color('color', 'Color'),
-        f.long('history', 'History'),
-        f.long('goals', 'Goals and ideology'),
-        f.list('characters', 'Key characters'),
-        f.text('capital', 'Capital'),
-        f.long('capitalDescription', 'Capital: mood, services, trade, quests'),
-        f.long('playstyle', 'Playstyle focus'),
-        f.list('unlocks', 'Unlockable skills / items'),
-      ],
-      [v.cards(), v.table(['name', 'capital', 'goals'])],
-    ),
-    s.matrix('relations', 'Relationship matrix', section('factions'), section('factions'), { type: 'number', min: -100, max: 100 }, {
-      diagonal: false,
-      description: '-100 = hostile, 0 = neutral, 100 = allied.',
-    }),
-    s.graph('relationGraph', 'Relationship graph', ['Faction'], { nodeSource: section('factions'), edgeKinds: ['Ally', 'Enemy', 'Neutral', 'Trade'] }),
-    s.collection(
-      'actions',
-      'Actions → reputation effects',
-      'action',
-      [
-        f.ref('faction', 'Faction', section('factions')),
-        f.num('effectOnFaction', 'Effect on this faction', { min: -100, max: 100 }),
-        f.num('effectOnOthers', 'Effect on other factions', { min: -100, max: 100 }),
-        f.long('description', 'Description'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.collection(
-      'thresholds',
-      'Relationship levels and consequences',
-      'level',
-      [f.num('min', 'Min value', { min: -100, max: 100 }), f.long('consequences', 'Trade, attacks, quests, biome access')],
-      [v.table()],
-    ),
-    s.collection(
-      'endings',
-      'Endings',
-      'ending',
-      [f.multi('factions', 'Involved factions', section('factions')), f.long('conditions', 'Conditions'), f.long('description', 'Description')],
-      [v.cards(), v.table()],
-    ),
-  ]),
+  {
+    ...mod('design', 'factions', 'Factions & Diplomacy', 'docs/01_design/factions_diplomacy.md', '🏛️', 'Factions, relations and consequences.', [
+      s.form('overview', 'System overview', [
+        f.long('model', 'Reputation model', {
+          help: 'How does reputation work? Per faction, per player, shared between factions?',
+          placeholder: 'e.g. Each faction tracks one reputation number for the player; it moves through actions and drifts back to neutral.',
+        }),
+        f.num('scaleMin', 'Scale: lowest value', { help: 'Default -100. Relationship levels and the matrix use this range.' }),
+        f.num('scaleMax', 'Scale: highest value', { help: 'Default 100.' }),
+        f.num('startValue', 'Starting value', { help: 'Reputation a new game starts with.' }),
+        f.text('decay', 'Decay', { placeholder: 'e.g. 1 point per day towards 0' }),
+        f.num('allyAt', 'Counts as allied from', { help: 'Matrix values at or above this are “allied” (default 50). Used to check the relationship graph.' }),
+        f.num('enemyAt', 'Counts as hostile up to', { help: 'Matrix values at or below this are “hostile” (default -50).' }),
+        f.long('changeRules', 'How relationships change', { help: 'Actions, time, events; and how supporting one group affects others.' }),
+      ], 'Settle the scale first. The editor is flexible about how many factions there are: add as many as the design needs.'),
+      s.collection(
+        'factions',
+        'Factions',
+        'faction',
+        [
+          f.color('color', 'Color'),
+          f.long('history', 'History'),
+          f.long('goals', 'Goals and ideology'),
+          f.multi('characters', 'Key characters', section('characters', 'design.story'), { help: 'Pick from the characters in Story & Quests.' }),
+          f.text('capital', 'Capital'),
+          f.long('capitalDescription', 'Capital: mood, services, trade, quests'),
+          f.long('playstyle', 'Playstyle focus', { help: 'Which build or playstyle suits this faction?' }),
+          f.multi('unlocks', 'Unlockable skills / items', UNLOCKABLE, { help: 'Pick from the skill tree and the item list.' }),
+          f.long('unlockConditions', 'Unlock conditions', { placeholder: 'e.g. Reputation 40+ and the “Border Patrol” quest done.' }),
+          f.long('legacyNotes', 'Earlier notes', { help: 'Free text carried over from before characters and unlocks became links.' }),
+        ],
+        [v.cards(), v.table(['name', 'capital', 'goals'])],
+      ),
+      s.matrix('relations', 'Relationship matrix', section('factions'), section('factions'), { type: 'number', min: -100, max: 100 }, {
+        diagonal: false,
+        symmetric: true,
+        rangeFrom: { section: 'overview', minField: 'scaleMin', maxField: 'scaleMax' },
+        description:
+          'Reputation: how the row faction regards the column faction. -100 = hostile, 0 = neutral, 100 = allied (or your own scale). Directional: asymmetric pairs are marked for review, not forbidden. This matrix is the authoritative model; the graph below shows named relationships.',
+      }),
+      s.graph('relationGraph', 'Relationship graph', ['Faction'], {
+        nodeSource: section('factions'),
+        edgeKinds: ['Ally', 'Enemy', 'Neutral', 'Trade'],
+        description: 'Named relationships such as alliances, wars and trade pacts. It is checked against the matrix, but the two are separate data.',
+      }),
+      s.collection(
+        'actions',
+        'Actions → reputation effects',
+        'action',
+        [
+          f.ref('faction', 'Faction', section('factions'), { help: 'The faction that cares about this action.' }),
+          f.num('effectOnFaction', 'Direct change with this faction', { min: -100, max: 100, help: 'Reputation change with the faction above.' }),
+          f.map('spillover', 'Spillover per faction', section('factions'), 100, { min: -100, help: 'Reputation change with each other faction, when it differs from the default.' }),
+          f.num('spilloverDefault', 'Default spillover (all others)', { min: -100, max: 100, help: 'Rough estimate applied to every other faction when no per-faction value is set.' }),
+          f.long('spilloverWhy', 'Why others react', { help: 'e.g. Supporting the guild antagonizes the crown.' }),
+          f.long('description', 'Description'),
+        ],
+        [v.table(), v.cards()],
+      ),
+      s.collection(
+        'thresholds',
+        'Relationship levels and consequences',
+        'level',
+        [
+          f.num('min', 'Min value', { min: -100, max: 100 }),
+          f.num('max', 'Max value', { min: -100, max: 100, help: 'Optional. Without it the level runs up to the next level’s minimum.' }),
+          f.long('consequences', 'Trade, attacks, quests, biome access'),
+        ],
+        [v.table(), v.ranges('min', 'max', { section: 'overview', minField: 'scaleMin', maxField: 'scaleMax', fallback: [-100, 100] })],
+      ),
+      s.collection(
+        'endings',
+        'Endings',
+        'ending',
+        [f.multi('factions', 'Involved factions', section('factions')), f.long('conditions', 'Conditions'), f.long('description', 'Description')],
+        [v.cards(), v.table()],
+      ),
+    ]),
+    version: 2,
+    migrate: migrateFactions,
+  },
   mod('design', 'world', 'World & Biomes', 'docs/01_design/world_biomes.md', '🌍', 'Biomes, progression, outposts, map.', [
     s.collection(
       'biomes',

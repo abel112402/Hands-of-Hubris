@@ -113,7 +113,7 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
           {options.map((o) => (
             <label key={o.id}>
               <span>{o.label}</span>
-              <input type="number" min={0} max={field.max} value={map[o.id] ?? ''} onChange={(e) => set(o.id, e.target.value)} />
+              <input type="number" min={field.min ?? 0} max={field.max} value={map[o.id] ?? ''} onChange={(e) => set(o.id, e.target.value)} />
             </label>
           ))}
         </div>

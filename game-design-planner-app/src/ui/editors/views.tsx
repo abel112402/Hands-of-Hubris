@@ -4,6 +4,7 @@ import type { CollectionView, Entity, Source } from '../../core/model/types'
 import { analyze, isMilestone, weekToDate, withBuffer } from '../../core/schedule'
 import { resolveSource } from '../../core/references/refs'
 import { pressure } from '../../core/difficulty'
+import { analyzeRanges } from '../../core/diplomacy'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
@@ -381,6 +382,38 @@ export function CompareView({ docId, items, valuesSection, columns }: ViewProps 
         </div>
       )}
       {skipped.length > 0 && <p className="muted">Not shown (no range): {skipped.map((p) => p.name).join(', ')}</p>}
+    </div>
+  )
+}
+
+/** Levels laid out on the scale in order, with gaps and overlaps called out. */
+export function RangesView({ docId, items, onSelect, selected, view }: ViewProps & { view: Extract<CollectionView, { kind: 'ranges' }> }) {
+  const project = useProject()
+  const sc = view.scale
+  const settings = project.documents[docId]?.data[sc.section] ?? {}
+  const lo = typeof settings[sc.minField] === 'number' ? settings[sc.minField] : sc.fallback[0]
+  const hi = typeof settings[sc.maxField] === 'number' ? settings[sc.maxField] : sc.fallback[1]
+  const scale: [number, number] = lo < hi ? [lo, hi] : sc.fallback
+  const a = analyzeRanges(items, scale, view.minField, view.maxField)
+  const span = scale[1] - scale[0] || 1
+  const pos = (v: number) => `${Math.max(0, Math.min(100, ((v - scale[0]) / span) * 100))}%`
+  return (
+    <div className="ranges">
+      <div className="muted">Scale {scale[0]} to {scale[1]}</div>
+      {a.rows.map((r) => (
+        <div key={r.id} className={'range-row' + (r.id === selected ? ' selected' : '')} onClick={() => onSelect(r.id)}>
+          <span className="range-name">{r.name || '(unnamed)'}</span>
+          <div className="range-track">
+            <div className={'range-bar' + (r.overlaps ? ' overlap' : '')} style={{ left: pos(r.from), width: `calc(${pos(r.to)} - ${pos(r.from)})` }} />
+          </div>
+          <span className="muted">{r.from} to {r.to}{r.open ? ' (to next level)' : ''}</span>
+          {r.overlaps && <span className="pill warning">overlaps previous</span>}
+          {r.gapBefore && <span className="pill warning">gap before</span>}
+        </div>
+      ))}
+      {a.rows.length > 0 && a.gapAtBottom && <p className="muted">Values below {a.rows[0].from} have no level.</p>}
+      {a.rows.length > 0 && a.gapAtTop && <p className="muted">Values above {a.rows[a.rows.length - 1].to} have no level.</p>}
+      {a.unset.length > 0 && <p className="muted">No minimum yet: {a.unset.map((l) => l.name || '(unnamed)').join(', ')}</p>}
     </div>
   )
 }
