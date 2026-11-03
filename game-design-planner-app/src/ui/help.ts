@@ -59,7 +59,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Link key characters and unlocks to the real entries, with the conditions that unlock them.',
     ],
   },
-  'design.world': { purpose: 'Lays out biomes, progression gating and the map so content can be planned per area.', tips: ['Place zones on the canvas first, details later.', 'Note which biome introduces which resource.'] },
+  'design.world': { purpose: 'Lays out biomes, progression gating and the map so content can be planned per area.', tips: ['Set the entry condition on each biome; the graph is the visual layer and hints flag disagreements.', 'Link map zones to biome entries instead of retyping names; the sketch is the layout, Exploration holds scale, generation and navigation.', 'List enemies, bosses and garrisons per biome so the export carries them.', 'Mark biomes optional if they are intentionally isolated.'] },
   'design.town': { purpose: 'Plans buildings, resource flow and economy so the town is balanced before it is built.', tips: ['Draw resource flow in the graph; look for sources without sinks.', 'Keep building costs as maps so new resources appear automatically.'], links: [L.balance] },
   'design.npc': { purpose: 'Specifies NPC stats, needs, life cycle and events — the heart of the simulation.', tips: ['Add new stats/needs in Definitions; they appear here and on the radar automatically.', 'Use the radar view to compare archetypes.'] },
   'design.player': { purpose: 'Defines the hero: survival, casts, skill trees and XP progression.', tips: ['Skill tree nodes can link to cast catalog entries.', 'Use the formula editor for XP curves and check the plot.'] },

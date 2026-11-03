@@ -145,10 +145,16 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       return matrixMd(project, mod.id, sec, data)
     case 'graph':
       return graphMd(project, mod.id, sec, data)
-    case 'canvas':
-      return data.items.length
-        ? data.items.map((i: any) => `* ${i.kind}: ${i.label} (${Math.round(i.x)}, ${Math.round(i.y)}, ${Math.round(i.w)}×${Math.round(i.h)})`).join('\n') + '\n'
-        : '_Canvas is empty._\n'
+    case 'canvas': {
+      if (!data.items.length) return '_Canvas is empty._\n'
+      const entries = sec.zones ? resolveSource(project, mod.id, sec.zones.source) : []
+      const zone = (i: any) => entries.find((e) => e.id === i.refId)?.label
+      return (
+        '| Kind | Label | Linked | x | y | Width | Height |\n|---|---|---|---|---|---|---|\n' +
+        data.items.map((i: any) => `| ${esc(i.kind)} | ${esc(i.label)} | ${esc(zone(i) ?? '')} | ${Math.round(i.x)} | ${Math.round(i.y)} | ${Math.round(i.w)} | ${Math.round(i.h)} |`).join('\n') +
+        '\n'
+      )
+    }
     case 'checklist': {
       const d = data as ChecklistData
       return d.groups.map((g) => `### ${g.title}\n${g.items.map((i) => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n')}\n`).join('\n') || '_No items._\n'

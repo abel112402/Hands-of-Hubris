@@ -275,6 +275,34 @@
     "diplomacySpillover": {
       "title": "Átgyűrűzés nélküli tettek",
       "body": "{{count}} tett olyan frakciót érint, amelynek ellenségei vannak, de nincs átgyűrűzés rögzítve: {{names}}."
+    },
+    "worldReach": {
+      "title": "Biómok, amiket semmi nem old fel",
+      "body": "{{count}} biom hiányzik a haladási gráfból, vagy nincs bejövő kapcsolata: {{names}}. Jelöld választhatónak, ha ez szándékos."
+    },
+    "worldEntry": {
+      "title": "Belépési feltétel nélküli biómok",
+      "body": "{{count}} biomnak nincs belépési feltétele: {{names}}."
+    },
+    "worldZones": {
+      "title": "A térképről hiányzó biómok",
+      "body": "{{count}} biomnak nincs zónája a térképvázlaton: {{names}}."
+    },
+    "worldZoneLinks": {
+      "title": "Biomhoz nem kötött térképzónák",
+      "body": "{{count}} zóna nincs bekötve, vagy törölt biomra mutat: {{names}}."
+    },
+    "worldOutposts": {
+      "title": "Hiányos előőrsök",
+      "body": "{{count}} előőrsnek nincs védője vagy jutalma: {{names}}."
+    },
+    "worldGraph": {
+      "title": "A belépési feltétel és a gráf eltér",
+      "body": "A belépés típusa eltér a haladási gráf kapcsolataitól itt: {{names}}. A biom belépési feltétele a mérvadó."
+    },
+    "worldEnemies": {
+      "title": "Ellenség nélküli biómok",
+      "body": "{{count}} biomnál nincs ellenség vagy főellenség: {{names}}."
     }
   },
   "ai": {

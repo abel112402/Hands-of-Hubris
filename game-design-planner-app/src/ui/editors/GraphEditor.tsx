@@ -163,6 +163,8 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
     setSel(null)
   }
 
+  const edgeItems = useMemo(() => (sec.edgeSource ? resolveSource(project, docId, sec.edgeSource) : []), [project, docId, sec.edgeSource])
+  const labelOf = (id: string) => g.nodes.find((n) => n.id === id)?.label ?? '?'
   const node = sel?.type === 'node' ? g.nodes.find((n) => n.id === sel.id) : undefined
   const edge = sel?.type === 'edge' ? g.edges.find((e) => e.id === sel.id) : undefined
 
@@ -231,6 +233,11 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
                     </select>
                   </div>
                 )}
+                <p className="muted">
+                  {g.edges.some((e) => e.target === node.id)
+                    ? `Reached from ${g.edges.filter((e) => e.target === node.id).map((e) => `${labelOf(e.source)}${e.kind ? ` (${e.kind})` : ''}`).join(', ')}.`
+                    : 'No incoming connection: nothing unlocks this yet.'}
+                </p>
                 {sec.links && (
                   <div className="field"><label>{sec.links.label}</label>
                     <div className="link-list">
@@ -266,6 +273,15 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
                     <select value={edge.kind ?? ''} onChange={(e) => update((d) => void (d.edges.find((x) => x.id === edge.id)!.kind = e.target.value || undefined))}>
                       <option value="">—</option>
                       {sec.edgeKinds.map((k) => <option key={k}>{k}</option>)}
+                    </select>
+                  </div>
+                )}
+                {sec.edgeSource && (
+                  <div className="field"><label>Condition</label>
+                    <select value={edge.refId ?? ''} onChange={(e) => update((d) => void (d.edges.find((x) => x.id === edge.id)!.refId = e.target.value || undefined))}>
+                      <option value="">—</option>
+                      {edgeItems.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
+                      {edge.refId && !edgeItems.some((i) => i.id === edge.refId) && <option value={edge.refId}>⚠ missing</option>}
                     </select>
                   </div>
                 )}
