@@ -92,10 +92,19 @@ export type SectionDef = SectionBase &
         nodeKinds: string[]
         edgeKinds?: string[]
         nodeSource?: GraphSource
+        /** Lets a connection point at the entry that causes it (e.g. the quest, faction or boss behind an unlock). */
+        edgeSource?: GraphSource
         /** A collection whose multiref field points at this graph's nodes (e.g. loops → nodes). */
         links?: { section: string; field: string; label: string }
       }
-    | { kind: 'canvas'; itemKinds: string[] }
+    | {
+        kind: 'canvas'
+        itemKinds: string[]
+        /** Element kinds that stand for an entry from `source`, taking their label from it. */
+        zones?: { kinds: string[]; source: GraphSource }
+        /** Real-world size of the canvas, read from a form section, so the sketch has a scale. */
+        scale?: { section: string; widthField: string; heightField: string; unitField: string }
+      }
     | { kind: 'checklist' }
     | { kind: 'richtext' }
     | { kind: 'formulas' }
@@ -216,7 +225,7 @@ export type GraphNode = {
   notes?: string
   refId?: string
 }
-export type GraphEdge = { id: string; source: string; target: string; label?: string; kind?: string }
+export type GraphEdge = { id: string; source: string; target: string; label?: string; kind?: string; refId?: string }
 export type GraphData = { nodes: GraphNode[]; edges: GraphEdge[] }
 export type CanvasItem = {
   id: string
@@ -226,6 +235,8 @@ export type CanvasItem = {
   y: number
   w: number
   h: number
+  /** Entry this element stands for (e.g. a biome for a biome zone). */
+  refId?: string
 }
 export type CheckItem = { id: string; text: string; done: boolean }
 export type ChecklistData = { groups: { id: string; title: string; items: CheckItem[] }[] }

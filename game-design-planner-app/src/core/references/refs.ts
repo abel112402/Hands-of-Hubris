@@ -53,6 +53,15 @@ export function findUsages(project: Project, targetId: string): Usage[] {
           if (n.refId === targetId)
             out.push({ docId: m.id, docTitle: m.title, sectionId: sec.id, sectionTitle: sec.title, entityId: n.id, entityLabel: n.label, field: 'graph node' })
         }
+        for (const e of data.edges ?? []) {
+          if (e.refId === targetId)
+            out.push({ docId: m.id, docTitle: m.title, sectionId: sec.id, sectionTitle: sec.title, entityId: e.id, entityLabel: e.kind ?? 'connection', field: 'graph connection' })
+        }
+      } else if (sec.kind === 'canvas' && data?.items) {
+        for (const it of data.items) {
+          if (it.refId === targetId)
+            out.push({ docId: m.id, docTitle: m.title, sectionId: sec.id, sectionTitle: sec.title, entityId: it.id, entityLabel: it.label, field: 'map element' })
+        }
       }
     }
   }
@@ -119,6 +128,15 @@ export function validateProject(project: Project): Issue[] {
           for (const n of data.nodes)
             if (n.refId && !valid.has(n.refId)) issues.push({ level: 'error', ...base, message: `Graph node “${n.label}” references a missing item` })
         }
+        if (sec.edgeSource) {
+          const valid = new Set(resolveSource(project, m.id, sec.edgeSource).map((i) => i.id))
+          for (const e of data.edges ?? [])
+            if (e.refId && !valid.has(e.refId)) issues.push({ level: 'error', ...base, message: 'Graph connection references a missing item' })
+        }
+      } else if (sec.kind === 'canvas' && sec.zones && data?.items) {
+        const valid = new Set(resolveSource(project, m.id, sec.zones.source).map((i) => i.id))
+        for (const it of data.items)
+          if (it.refId && !valid.has(it.refId)) issues.push({ level: 'error', ...base, message: `Map element “${it.label}” references a missing item` })
       }
     }
   }

@@ -338,3 +338,29 @@ describe('relationship analysis', () => {
     expect(graphDisagreements(p)).toHaveLength(0)
   })
 })
+
+describe('world & biomes v2', () => {
+  const world = MODULES.find((m) => m.id === 'design.world')!
+
+  it('migrates v1 exploration text and keeps biome notes', () => {
+    const p = createProject('t')
+    p.documents['design.world'] = { moduleVersion: 1, data: { biomes: [{ id: 'b', name: 'Home', role: 'Starter', entry: 'none' }], exploration: { map: 'fast travel', generation: 'hand' } } }
+    const doc = ensureDocument(p, world, makeId)
+    expect(doc.moduleVersion).toBe(2)
+    expect(doc.data.exploration.navigation).toBe('fast travel')
+    expect(doc.data.biomes[0].entryType).toBe('None')
+    expect(doc.data.biomes[0].entry).toBe('none')
+  })
+
+  it('reports broken zone and condition refs and exports linked zones', () => {
+    const p = createProject('t')
+    const doc = ensureDocument(p, world, makeId)
+    doc.data.biomes = [{ id: 'b', name: 'Home' }]
+    doc.data.map = { items: [{ id: 'z', kind: 'Biome zone', label: 'Home', refId: 'gone', x: 0, y: 0, w: 10, h: 10 }, { id: 'y', kind: 'Biome zone', label: 'Home', refId: 'b', x: 0, y: 0, w: 10, h: 10 }] }
+    doc.data.progression = { nodes: [], edges: [{ id: 'e', source: 'a', target: 'b', refId: 'nope' }] }
+    const msgs = validateProject(p).map((i) => JSON.stringify(i))
+    expect(msgs.some((m) => m.includes('Map element'))).toBe(true)
+    expect(msgs.some((m) => m.includes('Graph connection references a missing item'))).toBe(true)
+    expect(moduleToMarkdown(p, world)).toContain('| Biome zone | Home | Home |')
+  })
+})

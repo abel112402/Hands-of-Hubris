@@ -275,6 +275,34 @@
     "diplomacySpillover": {
       "title": "Actions without spillover",
       "body": "{{count}} action(s) involve a faction with hostile rivals but record no spillover: {{names}}."
+    },
+    "worldReach": {
+      "title": "Biomes nothing unlocks",
+      "body": "{{count}} biome(s) are missing from the progression graph or have no incoming connection: {{names}}. Mark them optional if that is intended."
+    },
+    "worldEntry": {
+      "title": "Biomes without an entry condition",
+      "body": "{{count}} biome(s) have no entry condition: {{names}}."
+    },
+    "worldZones": {
+      "title": "Biomes missing on the map",
+      "body": "{{count}} biome(s) have no zone on the map sketch: {{names}}."
+    },
+    "worldZoneLinks": {
+      "title": "Map zones not linked to a biome",
+      "body": "{{count}} zone(s) are unlinked or point to a deleted biome: {{names}}."
+    },
+    "worldOutposts": {
+      "title": "Outposts are incomplete",
+      "body": "{{count}} outpost(s) lack defenders or rewards: {{names}}."
+    },
+    "worldGraph": {
+      "title": "Entry condition and graph disagree",
+      "body": "The entry type differs from the connections in the progression graph for: {{names}}. The biome's entry condition is authoritative."
+    },
+    "worldEnemies": {
+      "title": "Biomes without enemies",
+      "body": "{{count}} biome(s) list no enemies or bosses: {{names}}."
     }
   },
   "ai": {

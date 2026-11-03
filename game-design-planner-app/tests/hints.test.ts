@@ -292,3 +292,30 @@ describe('factions advisory checks', () => {
     expect(r).toEqual(expect.arrayContaining(['diplomacy.ranges', 'diplomacy.asymmetry', 'diplomacy.graph', 'diplomacy.spillover']))
   })
 })
+
+describe('world advisory checks', () => {
+  const world = (data: Record<string, any>) => {
+    const p = empty()
+    p.documents['design.world'] = { moduleVersion: 2, data: { biomes: [{ id: 'b1', name: 'Home', role: 'Starter' }, { id: 'b2', name: 'Marsh', role: 'Mid' }], progression: { nodes: [], edges: [] }, map: { items: [] }, outposts: [], ...data } }
+    return collectHints(makeContext(p, { docId: 'design.world' })).map((h) => h.ruleId).filter((r) => r.startsWith('world.'))
+  }
+
+  it('stays quiet without biomes', () => {
+    expect(world({ biomes: [] })).toEqual([])
+  })
+
+  it('flags unreachable biomes, missing entry, zones, enemies and outpost gaps', () => {
+    expect(world({ outposts: [{ id: 'o', name: 'Fort' }] })).toEqual(
+      expect.arrayContaining(['world.reach', 'world.entry', 'world.zones', 'world.enemies', 'world.outposts']),
+    )
+  })
+
+  it('accepts optional biomes and flags a graph mismatch', () => {
+    const r = world({
+      biomes: [{ id: 'b1', name: 'Home', role: 'Starter' }, { id: 'b2', name: 'Marsh', role: 'Mid', entryType: 'Boss' }],
+      progression: { nodes: [{ id: 'n1', refId: 'b1', kind: 'Biome', label: 'Home' }, { id: 'n2', refId: 'b2', kind: 'Biome', label: 'Marsh' }], edges: [{ id: 'e', source: 'n1', target: 'n2', kind: 'unlocks via story' }] },
+    })
+    expect(r).toContain('world.graph')
+    expect(r).not.toContain('world.reach')
+  })
+})

@@ -37,6 +37,18 @@ function migrateFactions(data: Record<string, any>) {
   }
 }
 
+/** v1 had a free-text entry requirement (kept as notes) and its exploration "map" text (now navigation). */
+function migrateWorld(data: Record<string, any>) {
+  for (const b of Array.isArray(data.biomes) ? data.biomes : []) {
+    if (b.entryType === undefined && b.role === 'Starter') b.entryType = 'None'
+  }
+  const ex = data.exploration
+  if (ex && typeof ex === 'object' && ex.navigation === undefined && ex.map) {
+    ex.navigation = ex.map
+    delete ex.map
+  }
+}
+
 const CATEGORIES = ['Combat', 'Survival', 'Economy', 'NPC', 'Other']
 const UNITS = ['×', '%', 'absolute', 'seconds', 'other']
 
@@ -291,41 +303,71 @@ export const designModules = [
     version: 2,
     migrate: migrateFactions,
   },
-  mod('design', 'world', 'World & Biomes', 'docs/01_design/world_biomes.md', '🌍', 'Biomes, progression, outposts, map.', [
-    s.collection(
-      'biomes',
-      'Biomes',
-      'biome',
-      [
-        f.enm('role', 'Role', ['Starter', 'Early', 'Mid', 'Late', 'Final']),
-        f.color('color', 'Color'),
-        f.long('atmosphere', 'Atmosphere and visuals'),
-        f.multi('resources', 'Resources', catalog('resources')),
-        f.long('hazards', 'Environmental hazards / corruption'),
-        f.long('entry', 'Entry requirement'),
-        f.list('pois', 'Points of interest'),
-      ],
-      [v.cards(), v.kanban('role'), v.table(['name', 'role', 'resources'])],
-    ),
-    s.graph('progression', 'Progression graph', ['Biome', 'Boss', 'Story event', 'Faction gate'], {
-      nodeSource: BIOMES,
-      edgeKinds: ['unlocks via story', 'unlocks via faction', 'unlocks via boss'],
-    }),
-    s.canvas('map', 'Map sketch', ['Biome zone', 'Capital', 'Outpost', 'Landmark', 'Note']),
-    s.collection(
-      'outposts',
-      'Outposts to capture',
-      'outpost',
-      [
-        f.ref('biome', 'Biome', BIOMES),
-        f.long('defenders', 'Defenders'),
-        f.enm('method', 'Capture method', ['Military', 'Tactical', 'Diplomatic', 'Mixed']),
-        f.long('reward', 'Reward / town founding requirements'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.form('exploration', 'Exploration', [f.long('map', 'Map, fast travel, fog of war'), f.long('generation', 'Generation (hand-made / procedural)')]),
-  ]),
+  {
+    ...mod('design', 'world', 'World & Biomes', 'docs/01_design/world_biomes.md', '🌍', 'Biomes, progression, outposts, map.', [
+      s.form('exploration', 'World structure and exploration', [
+        f.num('mapWidth', 'Map width', { min: 0 }),
+        f.num('mapHeight', 'Map height', { min: 0 }),
+        f.enm('mapUnit', 'Map unit', ['m', 'km', 'tiles', 'screens']),
+        f.num('regions', 'Region count', { min: 0 }),
+        f.long('layout', 'Layout overview'),
+        f.enm('generationMode', 'Generation', ['Hand-made', 'Procedural', 'Mixed']),
+        f.long('generation', 'Generation constraints'),
+        f.long('navigation', 'Navigation: fast travel, fog of war, map UI'),
+        f.long('map', 'Other map notes'),
+      ], 'The sketch below is the spatial layout. Here record scale, generation and navigation.'),
+      s.collection(
+        'biomes',
+        'Biomes',
+        'biome',
+        [
+          f.enm('role', 'Role', ['Starter', 'Early', 'Mid', 'Late', 'Final']),
+          f.color('color', 'Color'),
+          f.long('atmosphere', 'Atmosphere and visuals'),
+          f.multi('resources', 'Resources', catalog('resources')),
+          f.long('hazards', 'Environmental hazards / corruption'),
+          f.enm('entryType', 'Entry condition', ['None', 'Story', 'Faction', 'Boss', 'Item']),
+          f.multi('entryQuests', 'Required quests', section('quests', 'design.story')),
+          f.multi('entryFactions', 'Required factions', FACTIONS),
+          f.multi('entryBosses', 'Required bosses', section('bosses', 'design.combat')),
+          f.long('entry', 'Entry notes'),
+          f.bool('optional', 'Optional / intentionally isolated'),
+          f.multi('enemies', 'Enemies', section('enemies', 'design.combat')),
+          f.multi('bosses', 'Bosses', section('bosses', 'design.combat')),
+          f.multi('garrisons', 'Outposts / garrisons', section('outposts')),
+          f.list('pois', 'Points of interest'),
+        ],
+        [v.cards(), v.kanban('role'), v.table(['name', 'role', 'entryType', 'resources'])],
+      ),
+      s.graph('progression', 'Progression graph', ['Biome', 'Boss', 'Story event', 'Faction gate'], {
+        nodeSource: BIOMES,
+        edgeSource: { any: [section('quests', 'design.story'), FACTIONS, section('bosses', 'design.combat')] },
+        edgeKinds: ['unlocks via story', 'unlocks via faction', 'unlocks via boss'],
+        description: 'Visual layer of the unlock path. The entry condition on each biome is authoritative; hints flag disagreements.',
+      }),
+      s.canvas('map', 'Map sketch', ['Biome zone', 'Capital', 'Outpost', 'Landmark', 'Note'], 'Spatial layout. Link biome zones to biome entries.', {
+        zones: { kinds: ['Biome zone'], source: BIOMES },
+        scale: { section: 'exploration', widthField: 'mapWidth', heightField: 'mapHeight', unitField: 'mapUnit' },
+      }),
+      s.collection(
+        'outposts',
+        'Outposts to capture',
+        'outpost',
+        [
+          f.ref('biome', 'Biome', BIOMES),
+          f.multi('defenderRefs', 'Defenders', { any: [section('archetypes', 'design.npc'), section('enemies', 'design.combat')] }),
+          f.long('defenders', 'Defender notes'),
+          f.enm('method', 'Capture method', ['Military', 'Tactical', 'Diplomatic', 'Mixed']),
+          f.multi('rewardRefs', 'Rewards', { any: [catalog('resources'), section('buildings', 'design.town'), ITEMS] }),
+          f.long('reward', 'Reward notes'),
+          f.long('founding', 'Town founding requirements'),
+        ],
+        [v.table(['name', 'biome', 'method', 'rewardRefs']), v.cards()],
+      ),
+    ]),
+    version: 2,
+    migrate: migrateWorld,
+  },
   mod('design', 'town', 'Town Management & Logistics', 'docs/01_design/town_management.md', '🏘️', 'Buildings, resource flow, economy, morale.', [
     s.collection(
       'buildings',

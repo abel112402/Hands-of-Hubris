@@ -150,3 +150,4 @@ h1,h2,h3{margin:.6em 0 .3em}
 .range-track{position:relative;height:12px;background:var(--panel2);border-radius:6px}
 .range-bar{position:absolute;top:0;bottom:0;background:var(--accent);border-radius:6px;opacity:.8}
 .range-bar.overlap{background:#e5707e}
+.legend{display:flex;gap:8px;flex-wrap:wrap;padding:6px 0;font-size:12px}.cv-legend{border:1px solid var(--line);border-radius:4px;padding:0 6px}
