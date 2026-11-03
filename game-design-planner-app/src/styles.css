@@ -1,4 +1,4 @@
-:root{--bg:#14161a;--panel:#1c1f26;--panel2:#242831;--line:#333844;--text:#e6e8ee;--muted:#8b93a5;--accent:#5b9cff;--danger:#e5586b;--ok:#4cc38a;--warn:#e5b455;color-scheme:dark}
+:root{--bg:#14161a;--panel:#1c1f26;--panel2:#242831;--line:#333844;--text:#e6e8ee;--muted:#8b93a5;--accent:#5b9cff;--danger:#e5586b;--ok:#4cc38a;--warn:#e5b455;--secondary:#8b6cf0;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
@@ -10,9 +10,11 @@ a{color:var(--accent);text-decoration:none}
 h1,h2,h3{margin:.6em 0 .3em}
 .muted{color:var(--muted)}.spacer{flex:1}
 .shell{display:flex;flex-direction:column;height:100vh}
-.topbar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
-.brand{font-weight:700;color:var(--text)}
-.title-input{width:220px}
+.topbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;color:var(--text);text-align:center;font-size:18px}
+.topbar-left,.topbar-right{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.topbar-right{justify-content:flex-end}
+.title-input{width:220px;max-width:100%}
 .status{font-size:12px;color:var(--ok)}.status.dirty{color:var(--warn)}
 .badge{background:var(--danger);color:#fff;border-radius:9px;padding:0 6px;margin-left:4px;font-size:11px}
 .menu{position:relative}.menu summary{cursor:pointer;padding:5px 9px;list-style:none}
@@ -30,7 +32,7 @@ h1,h2,h3{margin:.6em 0 .3em}
 .list li{display:flex;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
 .row{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
 .pill{border-radius:10px;padding:0 8px;font-size:12px;background:var(--panel2)}.pill.error{color:var(--danger)}.pill.warning{color:var(--warn)}
-.editor-page{display:flex;height:100%}
+.editor-page{display:flex;height:100%;min-width:0;overflow:hidden}
 .sidebar{width:220px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:4px;overflow:auto}
 .sidebar button{text-align:left;border:none;background:none}.sidebar button.active{background:var(--panel2);color:var(--accent)}
 .content{flex:1;min-width:0;padding:14px 20px;overflow:auto}
@@ -82,14 +84,26 @@ h1,h2,h3{margin:.6em 0 .3em}
 .md pre{background:var(--panel2);padding:8px;overflow:auto}
 .help-popup{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:560px;max-width:92vw;max-height:80vh;overflow:auto;padding:14px 20px;align-self:flex-start}
 .help-popup h3{color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
-.help-btn{border-color:var(--accent)}
+.help-btn{width:30px;height:30px;padding:0;border-radius:50%;font-weight:800;font-size:16px;line-height:1;background:var(--secondary);border-color:var(--secondary);color:#fff}
+.help-btn:hover:not(:disabled){border-color:#fff}
 /* hints */
-.hint-panel{width:280px;flex-shrink:0;border-left:1px solid var(--line);padding:10px;overflow:auto}
+.hint-panel{container-type:inline-size;position:relative;flex:none;min-width:220px;max-width:50vw;border-left:1px solid var(--line);padding:10px;overflow:auto}
+.hint-resize{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:2}.hint-resize:hover{background:var(--accent)}
 .hint-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .hint-head h3{margin:0;font-size:14px}
 .hint-card{list-style:none;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:8px 10px;margin-bottom:8px}
 .hint-card.important{border-left-color:var(--danger)}.hint-card.suggest{border-left-color:var(--warn)}
-.hint-card p{margin:4px 0;font-size:13px}
+.hint-card p{margin:4px 8px;font-size:13px}
 .hint-actions{display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:12px}
 .hint-form{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .pill.important{color:var(--danger)}.pill.suggest{color:var(--warn)}
+/* editor side panel: title and text on the left, buttons stacked on the right */
+.hint-panel .hint-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'title actions' 'body actions';column-gap:8px;align-items:start;overflow:hidden}
+.hint-panel .hint-card>strong{grid-area:title;display:block;min-width:0;overflow-wrap:anywhere}
+.hint-panel .hint-card>p{grid-area:body;min-width:0;overflow-wrap:anywhere}
+.hint-panel .hint-actions{grid-area:actions;flex-direction:column;flex-wrap:nowrap;align-items:stretch}
+.hint-panel .hint-actions button{padding:2px 7px;font-size:12px;white-space:nowrap}
+@container (max-width:300px){
+  .hint-panel .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:'title' 'body' 'actions'}
+  .hint-panel .hint-actions{flex-direction:row;flex-wrap:wrap}
+}

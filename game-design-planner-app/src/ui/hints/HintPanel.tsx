@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ruleOf } from '../../core/hints/engine'
@@ -8,6 +8,7 @@ import { getModule, getSection } from '../../core/modules/registry'
 import { useStore } from '../../core/store/store'
 import { useHints, useSnooze } from './useHints'
 
+const WIDTH_KEY = 'hohplan:hintWidth'
 const ICON = { info: '💡', suggest: '💡', important: '❗' } as const
 
 export function HintCard({ hint }: { hint: Hint }) {
@@ -65,8 +66,27 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
   const { t } = useTranslation()
   const [open, setOpen] = useState(true)
   const { visible, total } = useHints(docId, sectionId)
+  const [width, setWidth] = useState(() => Number(localStorage.getItem(WIDTH_KEY)) || 280)
+  const startResize = useCallback((e: React.PointerEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = width
+    let last = startW
+    const move = (ev: PointerEvent) => {
+      last = Math.min(Math.max(startW + startX - ev.clientX, 220), Math.round(window.innerWidth * 0.5))
+      setWidth(last)
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      localStorage.setItem(WIDTH_KEY, String(last))
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }, [width])
   return (
-    <aside className="hint-panel" aria-live="polite" aria-label={t('hints.panel')}>
+    <aside className="hint-panel" style={{ width }} aria-live="polite" aria-label={t('hints.panel')}>
+      <div className="hint-resize" role="separator" aria-orientation="vertical" onPointerDown={startResize} />
       <div className="hint-head">
         <h3>💡 {t('hints.panel')}{total > 0 && <span className="badge">{total}</span>}</h3>
         <button onClick={() => setOpen(!open)}>{open ? t('hints.hide') : t('hints.show')}</button>

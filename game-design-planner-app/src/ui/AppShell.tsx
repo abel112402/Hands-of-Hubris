@@ -76,11 +76,13 @@ export function AppShell() {
   return (
     <div className="shell">
       <header className="topbar">
+        <div className="topbar-left">
+          <input className="title-input" value={project.meta.name}
+            onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
+          <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>
+        </div>
         <Link to="/" className="brand">{t('app.title')}</Link>
-        <input className="title-input" value={project.meta.name}
-          onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
-        <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>
-        <span className="spacer" />
+        <div className="topbar-right">
         <button onClick={newProject}>{t('actions.new')}</button>
         <button onClick={() => void openProject()}>{t('actions.open')}</button>
         <button className="primary" onClick={() => void saveProject()}>{t('actions.save')}</button>
@@ -100,6 +102,7 @@ export function AppShell() {
         <Link to="/issues">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</Link>
         <Link to="/hints">{t('nav.hints')}{hintCount > 0 && <span className="badge">{hintCount}</span>}</Link>
         <button onClick={() => setPalette(true)} title={t('actions.search')}>🔍</button>
+        </div>
       </header>
       <div className="shell-body"><Outlet /></div>
       {palette && <Palette onClose={() => setPalette(false)} />}

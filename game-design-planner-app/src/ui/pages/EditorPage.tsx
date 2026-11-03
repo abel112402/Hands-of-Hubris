@@ -44,7 +44,7 @@ export function EditorPage() {
           <button className={!preview ? 'active' : ''} onClick={() => setParam('v', null)}>{t('editor.visual')}</button>
           <button className={preview ? 'active' : ''} onClick={() => setParam('v', 'md')}>{t('editor.markdown')}</button>
           <span className="spacer" />
-          <button className="help-btn" title="Help" onClick={() => setHelp(true)}>? Help</button>
+          <button className="help-btn" title="Help" aria-label="Help" onClick={() => setHelp(true)}>?</button>
           <button onClick={() => exportDocumentMarkdown(docId)}>.md</button>
           <button onClick={() => exportDocumentJson(docId)}>{t('editor.exportDoc')}</button>
           <button onClick={() => void importDocument(docId)}>{t('editor.importDoc')}</button>
