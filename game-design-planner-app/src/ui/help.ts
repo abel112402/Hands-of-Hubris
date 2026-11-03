@@ -23,8 +23,18 @@ const DEFAULT: ModuleHelp = {
 export const MODULE_HELP: Record<string, ModuleHelp> = {
   'overview.vision': { purpose: 'Defines what the game is and is not: pitch, pillars, audience and scope. Every later decision is checked against it.', tips: ['Keep pillars to 3–5 and phrase them so they can reject a feature; the decision test says how.', 'The one-sentence pitch is a draft you refine last, once the rest is clear.', 'Describe the player fantasy and main activity, and say what you take from references and what you do differently.', 'For each USP, state the player benefit and how it differs from a reference.', 'Give scope items a bucket; a rationale or acceptance test is optional. Readiness tips are suggestions, never errors.'] },
   'overview.glossary': { purpose: 'One shared vocabulary so design, code and content use the same terms.', tips: ['Add a term the first time two people disagree on its meaning.', 'Match code identifiers to glossary terms.'] },
-  'overview.roadmap': { purpose: 'Orders the whole production into phases with exit criteria, gates and a scope-cut plan.', tips: ['Give every phase measurable exit criteria.', 'Use the timeline view to spot the critical path; decide scope cuts before you need them.'], links: [L.mermaid] },
-  'design.coreLoop': { purpose: 'Describes what the player repeats at second, minute and session scale. If the loop is not fun, nothing else saves the game.', tips: ['Describe each loop as action → reward → new decision.', 'Link loops to the systems that feed them.'] },
+  'overview.roadmap': { purpose: 'Orders the whole production into phases with exit criteria, gates and a scope-cut plan. All schedule numbers are in weeks from the project start.', tips: ['Give every phase measurable, yes/no exit criteria, e.g. "30 FPS on min-spec for 10 minutes".', 'Set a start date and buffer in Assumptions to see calendar dates and a buffered end on the timelines.', 'Red dependency links start before their predecessor ends; the critical path is the chain with no slack.', 'Use the Milestone type for zero-duration events. Owner, effort and confidence are optional.', 'A gate question should be answerable from the exit criteria; record the decision and review date.', 'Number cuts in the order you would make them (1 first) and link what they affect.'], links: [L.mermaid] },
+  'design.coreLoop': {
+    purpose: 'Describes what the player repeats at second, minute, session and campaign scale. If the loop is not fun, nothing else saves the game.',
+    tips: [
+      'Describe each loop as action → reward → next decision; each part has its own field.',
+      'Pick the time scale by how long one cycle takes: seconds, minutes, hours / days, or the whole campaign.',
+      'Use “Builds toward” to show how short loops feed longer ones; the Progression view lays them out by scale.',
+      'In the diagram: Action = what the player does, System = a game system that reacts, Resource = gathered or spent, Reward = what is gained, Goal = a target. Use “feeds” for repeated actions, “rewards” / “leads to” back to an earlier node for feedback, “unlocks” for gates.',
+      'Link diagram nodes to real systems (buildings, items, enemies, quests, factions, biomes) instead of retyping their names, and tick which loops use each node.',
+      'Export follows the design doc: one heading per time scale, then rewards and progression, then diagrams.',
+    ],
+  },
   'design.difficulty': { purpose: 'Defines which parameters change per difficulty so tuning stays systematic.', tips: ['Prefer multipliers over hard-coded values.', 'Use the radar view to compare presets quickly.'], links: [L.balance] },
   'design.factions': { purpose: 'Models factions, their relations and the consequences of player choices.', tips: ['Keep relations symmetric unless the story needs otherwise.', 'Every relation level should change something visible.'] },
   'design.world': { purpose: 'Lays out biomes, progression gating and the map so content can be planned per area.', tips: ['Place zones on the canvas first, details later.', 'Note which biome introduces which resource.'] },

@@ -53,6 +53,8 @@ export function checkValue(project: Project, docId: string, fd: FieldDef, v: unk
       return typeof v === 'string' && v.length <= MAX_TEXT ? { ok: true, value: v } : bad('expected text')
     case 'color':
       return typeof v === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(v) ? { ok: true, value: v } : bad('expected #hex color')
+    case 'date':
+      return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? { ok: true, value: v } : bad('expected YYYY-MM-DD date')
     case 'number':
       if (typeof v !== 'number' || !Number.isFinite(v)) return bad('expected number')
       if ((fd.min !== undefined && v < fd.min) || (fd.max !== undefined && v > fd.max)) return bad('number out of range')

@@ -169,3 +169,72 @@ describe('vision readiness rules', () => {
     expect(hints.every((h) => h.severity !== 'important')).toBe(true)
   })
 })
+
+describe('roadmap readiness rules', () => {
+  const roadmap = (data: Record<string, any>) => {
+    const p = empty()
+    p.documents['overview.roadmap'] = { moduleVersion: 2, data: { assumptions: {}, phases: [], tasks: [], gates: [], ...data } }
+    return p
+  }
+  const rids = (p: ReturnType<typeof empty>, now?: number) =>
+    collectHints(makeContext(p, { docId: 'overview.roadmap', ...(now ? { now } : {}) })).map((h) => h.ruleId)
+
+  it('stays quiet for an empty roadmap and for other documents', () => {
+    expect(rids(empty()).filter((r) => r.startsWith('roadmap.'))).toEqual([])
+    expect(ids(roadmap({ phases: [{ id: 'a', name: 'A' }] }), 'design.items').filter((r) => r.startsWith('roadmap.'))).toEqual([])
+  })
+
+  it('flags conflicts, cycles, missing values, exit criteria and gates', () => {
+    const p = roadmap({
+      phases: [{ id: 'a', name: 'A', start: 0, duration: 4 }, { id: 'b', name: 'B', start: 2, duration: 4, dependsOn: ['a'] }],
+      tasks: [{ id: 't1', name: 'T1', dependsOn: ['t2'] }, { id: 't2', name: 'T2', dependsOn: ['t1'] }],
+    })
+    expect(rids(p)).toEqual(
+      expect.arrayContaining(['roadmap.conflict', 'roadmap.cycle', 'roadmap.missing', 'roadmap.exit', 'roadmap.gate']),
+    )
+  })
+
+  it('flags overload, low confidence and overdue gate decisions', () => {
+    const p = roadmap({
+      assumptions: { startDate: '2020-01-06' },
+      phases: [{ id: 'a', name: 'A', start: 0, duration: 4, capacity: 2, exit: [{ id: 'e', text: 'x', done: true }] }],
+      tasks: [{ id: 't', name: 'T', phase: 'a', start: 0, duration: 1, effort: 5, confidence: 'Low', status: 'Planned' }],
+      gates: [{ id: 'g', name: 'G0', phase: 'a', decision: 'Pending' }],
+    })
+    expect(rids(p)).toEqual(expect.arrayContaining(['roadmap.overload', 'roadmap.confidence', 'roadmap.decision']))
+    expect(rids(p)).not.toContain('roadmap.gate')
+    expect(collectHints(makeContext(p, { docId: 'overview.roadmap' })).filter((h) => h.ruleId.startsWith('roadmap.')).every((h) => h.severity !== 'important')).toBe(true)
+  })
+})
+
+describe('core loop design checks', () => {
+  const loop = (data: Record<string, any>) => {
+    const p = empty()
+    p.documents['design.coreLoop'] = { moduleVersion: 2, data: { loops: [], loopGraph: { nodes: [], edges: [] }, ...data } }
+    return collectHints(makeContext(p, { docId: 'design.coreLoop' })).map((h) => h.ruleId).filter((r) => r.startsWith('coreLoop.'))
+  }
+  const node = (id: string) => ({ id, kind: 'Action', label: id, x: 0, y: 0 })
+
+  it('stays quiet for an empty loop document', () => {
+    expect(loop({})).toEqual([])
+  })
+
+  it('flags missing scales, rewards, decisions, progression and unlinked loops', () => {
+    const r = loop({
+      loops: [
+        { id: 'a', name: 'A', scale: 'Short (minutes)' },
+        { id: 'b', name: 'B', scale: 'Long (campaign)', reward: 'x', nextDecision: 'y', nodes: [] },
+      ],
+      loopGraph: { nodes: [node('n')], edges: [] },
+    })
+    expect(r).toEqual(expect.arrayContaining(['coreLoop.scales', 'coreLoop.reward', 'coreLoop.decision', 'coreLoop.progression', 'coreLoop.unlinked']))
+  })
+
+  it('flags isolated nodes and a diagram without a feedback path, but not once it loops', () => {
+    const line = { nodes: [node('a'), node('b'), node('c'), node('d')], edges: [{ id: 'e1', source: 'a', target: 'b' }, { id: 'e2', source: 'b', target: 'c' }] }
+    expect(loop({ loopGraph: line })).toEqual(expect.arrayContaining(['coreLoop.isolated', 'coreLoop.feedback']))
+    const cyc = { nodes: line.nodes, edges: [...line.edges, { id: 'e3', source: 'c', target: 'a' }, { id: 'e4', source: 'd', target: 'a' }] }
+    expect(loop({ loopGraph: cyc })).not.toEqual(expect.arrayContaining(['coreLoop.feedback']))
+    expect(loop({ loopGraph: cyc })).not.toEqual(expect.arrayContaining(['coreLoop.isolated']))
+  })
+})
