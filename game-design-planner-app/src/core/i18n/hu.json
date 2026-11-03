@@ -1,0 +1,17 @@
+{
+  "app": { "title": "Játéktervező" },
+  "nav": { "home": "Menü", "definitions": "Definíciók", "issues": "Problémák" },
+  "actions": {
+    "new": "Új", "open": "Megnyitás…", "save": "Mentés", "saveAs": "Mentés másként…", "undo": "Visszavonás", "redo": "Újra",
+    "exportMd": "Markdown export (.zip)", "exportJson": "Projekt JSON letöltése", "search": "Keresés (Ctrl+K)",
+    "snapshot": "Pillanatkép készítése", "restore": "Utolsó munkamenet visszaállítása"
+  },
+  "home": {
+    "title": "Mit szeretnél megtervezni?",
+    "subtitle": "Válassz egy tervezőt. Minden egyetlen projektfájlban tárolódik, amit menthetsz és betölthetsz.",
+    "filter": "Tervezők szűrése…",
+    "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}})."
+  },
+  "editor": { "visual": "Vizuális szerkesztő", "markdown": "Markdown előnézet", "exportDoc": "Dokumentum exportálása", "importDoc": "Dokumentum importálása" },
+  "status": { "unsaved": "Nem mentett változások", "saved": "Minden mentve" }
+}

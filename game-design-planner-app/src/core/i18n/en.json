@@ -1,0 +1,17 @@
+{
+  "app": { "title": "Game Design Planner" },
+  "nav": { "home": "Menu", "definitions": "Definitions", "issues": "Issues" },
+  "actions": {
+    "new": "New", "open": "Open…", "save": "Save", "saveAs": "Save as…", "undo": "Undo", "redo": "Redo",
+    "exportMd": "Export Markdown (.zip)", "exportJson": "Download project JSON", "search": "Search (Ctrl+K)",
+    "snapshot": "Create snapshot", "restore": "Restore last session"
+  },
+  "home": {
+    "title": "What do you want to plan?",
+    "subtitle": "Pick a planner. Everything is stored in one project file you can save and load.",
+    "filter": "Filter planners…",
+    "restoreBanner": "An autosaved session from {{date}} was found."
+  },
+  "editor": { "visual": "Visual editor", "markdown": "Markdown preview", "exportDoc": "Export document", "importDoc": "Import document" },
+  "status": { "unsaved": "Unsaved changes", "saved": "All changes saved" }
+}

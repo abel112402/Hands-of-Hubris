@@ -1,0 +1,1066 @@
+{
+  "format": "hands-of-hubris-planner",
+  "formatVersion": 1,
+  "meta": {
+    "name": "Hands of Hubris (example)",
+    "createdAt": "2026-11-03T13:10:39.457Z",
+    "updatedAt": "2026-11-03T13:10:39.457Z",
+    "appVersion": "0.1.0"
+  },
+  "registry": {
+    "catalogs": {
+      "difficulties": {
+        "label": "Difficulty levels",
+        "items": [
+          {
+            "id": "easy",
+            "label": "Easy"
+          },
+          {
+            "id": "medium",
+            "label": "Medium"
+          },
+          {
+            "id": "hard",
+            "label": "Hard"
+          }
+        ]
+      },
+      "npcStats": {
+        "label": "NPC stats",
+        "items": [
+          {
+            "id": "strength",
+            "label": "Strength"
+          },
+          {
+            "id": "intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "id": "speed",
+            "label": "Speed"
+          },
+          {
+            "id": "kindness",
+            "label": "Kindness"
+          },
+          {
+            "id": "cunning",
+            "label": "Cunning"
+          },
+          {
+            "id": "health",
+            "label": "Health"
+          },
+          {
+            "id": "stability",
+            "label": "Stability"
+          },
+          {
+            "id": "mana",
+            "label": "Mana"
+          },
+          {
+            "id": "talent",
+            "label": "Talent"
+          }
+        ]
+      },
+      "needs": {
+        "label": "NPC needs",
+        "items": [
+          {
+            "id": "food",
+            "label": "Food"
+          },
+          {
+            "id": "drink",
+            "label": "Drink"
+          },
+          {
+            "id": "housing",
+            "label": "Housing"
+          },
+          {
+            "id": "entertainment",
+            "label": "Entertainment"
+          },
+          {
+            "id": "safety",
+            "label": "Safety"
+          }
+        ]
+      },
+      "resources": {
+        "label": "Resources",
+        "items": [
+          {
+            "id": "wood",
+            "label": "Wood"
+          },
+          {
+            "id": "stone",
+            "label": "Stone"
+          },
+          {
+            "id": "ore",
+            "label": "Ore"
+          },
+          {
+            "id": "metal",
+            "label": "Metal"
+          },
+          {
+            "id": "food",
+            "label": "Food"
+          },
+          {
+            "id": "drink",
+            "label": "Drink"
+          },
+          {
+            "id": "gold",
+            "label": "Gold"
+          }
+        ]
+      },
+      "rarities": {
+        "label": "Item rarities",
+        "items": [
+          {
+            "id": "common",
+            "label": "Common"
+          },
+          {
+            "id": "uncommon",
+            "label": "Uncommon"
+          },
+          {
+            "id": "rare",
+            "label": "Rare"
+          },
+          {
+            "id": "epic",
+            "label": "Epic"
+          },
+          {
+            "id": "legendary",
+            "label": "Legendary"
+          }
+        ]
+      },
+      "qualities": {
+        "label": "Item qualities",
+        "items": [
+          {
+            "id": "poor",
+            "label": "Poor"
+          },
+          {
+            "id": "normal",
+            "label": "Normal"
+          },
+          {
+            "id": "good",
+            "label": "Good"
+          },
+          {
+            "id": "excellent",
+            "label": "Excellent"
+          },
+          {
+            "id": "masterwork",
+            "label": "Masterwork"
+          }
+        ]
+      },
+      "itemTypes": {
+        "label": "Item types",
+        "items": [
+          {
+            "id": "building-item",
+            "label": "Building item"
+          },
+          {
+            "id": "resource-item",
+            "label": "Resource item"
+          },
+          {
+            "id": "tool",
+            "label": "Tool"
+          },
+          {
+            "id": "machine",
+            "label": "Machine"
+          },
+          {
+            "id": "weapon",
+            "label": "Weapon"
+          },
+          {
+            "id": "armor",
+            "label": "Armor"
+          },
+          {
+            "id": "consumable",
+            "label": "Consumable"
+          },
+          {
+            "id": "accessory",
+            "label": "Accessory"
+          },
+          {
+            "id": "decoration",
+            "label": "Decoration"
+          },
+          {
+            "id": "beacon",
+            "label": "Beacon"
+          },
+          {
+            "id": "valuable",
+            "label": "Valuable"
+          }
+        ]
+      },
+      "casts": {
+        "label": "Player casts",
+        "items": [
+          {
+            "id": "warrior",
+            "label": "Warrior"
+          },
+          {
+            "id": "assassin",
+            "label": "Assassin"
+          },
+          {
+            "id": "ranger",
+            "label": "Ranger"
+          },
+          {
+            "id": "light-wizard",
+            "label": "Light wizard"
+          },
+          {
+            "id": "dark-wizard",
+            "label": "Dark wizard"
+          },
+          {
+            "id": "nature-wizard",
+            "label": "Nature wizard"
+          },
+          {
+            "id": "builder",
+            "label": "Builder"
+          }
+        ]
+      },
+      "damageTypes": {
+        "label": "Damage types",
+        "items": [
+          {
+            "id": "physical",
+            "label": "Physical"
+          },
+          {
+            "id": "fire",
+            "label": "Fire"
+          },
+          {
+            "id": "light",
+            "label": "Light"
+          },
+          {
+            "id": "dark",
+            "label": "Dark"
+          },
+          {
+            "id": "nature",
+            "label": "Nature"
+          }
+        ]
+      },
+      "professions": {
+        "label": "NPC professions",
+        "items": [
+          {
+            "id": "builder",
+            "label": "Builder"
+          },
+          {
+            "id": "miner",
+            "label": "Miner"
+          },
+          {
+            "id": "lumberjack",
+            "label": "Lumberjack"
+          },
+          {
+            "id": "farmer",
+            "label": "Farmer"
+          },
+          {
+            "id": "innkeeper",
+            "label": "Innkeeper"
+          },
+          {
+            "id": "teacher",
+            "label": "Teacher"
+          },
+          {
+            "id": "merchant",
+            "label": "Merchant"
+          },
+          {
+            "id": "blacksmith",
+            "label": "Blacksmith"
+          }
+        ]
+      },
+      "timeOfDay": {
+        "label": "Times of day",
+        "items": [
+          {
+            "id": "dawn",
+            "label": "Dawn"
+          },
+          {
+            "id": "day",
+            "label": "Day"
+          },
+          {
+            "id": "dusk",
+            "label": "Dusk"
+          },
+          {
+            "id": "night",
+            "label": "Night"
+          }
+        ]
+      },
+      "survivalStats": {
+        "label": "Survival stats",
+        "items": [
+          {
+            "id": "hunger",
+            "label": "Hunger"
+          },
+          {
+            "id": "thirst",
+            "label": "Thirst"
+          },
+          {
+            "id": "health",
+            "label": "Health"
+          },
+          {
+            "id": "sanity",
+            "label": "Sanity"
+          }
+        ]
+      }
+    },
+    "customFields": {},
+    "entityTypes": []
+  },
+  "documents": {
+    "overview.vision": {
+      "moduleVersion": 1,
+      "data": {
+        "concept": {},
+        "pillars": [],
+        "usps": [],
+        "scope": []
+      }
+    },
+    "overview.glossary": {
+      "moduleVersion": 1,
+      "data": {
+        "terms": []
+      }
+    },
+    "overview.roadmap": {
+      "moduleVersion": 1,
+      "data": {
+        "assumptions": {},
+        "phases": [
+          {
+            "id": "phase0",
+            "name": "Pre-production",
+            "start": 0,
+            "duration": 6,
+            "goal": "Finalize design, technical basics, decide open questions"
+          },
+          {
+            "id": "phase1",
+            "name": "Prototype",
+            "start": 6,
+            "duration": 10,
+            "dependsOn": [
+              "phase0"
+            ],
+            "goal": "Prove core loop and economic simulation (grey box)"
+          },
+          {
+            "id": "phase2",
+            "name": "Vertical Slice",
+            "start": 16,
+            "duration": 14,
+            "dependsOn": [
+              "phase1"
+            ],
+            "goal": "One biome, one base, one faction in final quality"
+          },
+          {
+            "id": "phase3",
+            "name": "Alpha (feature complete)",
+            "start": 30,
+            "duration": 20,
+            "dependsOn": [
+              "phase2"
+            ],
+            "goal": "All systems working with partial content"
+          },
+          {
+            "id": "phase4",
+            "name": "Beta (content complete)",
+            "start": 50,
+            "duration": 16,
+            "dependsOn": [
+              "phase3"
+            ],
+            "goal": "All content in, balancing and polish"
+          },
+          {
+            "id": "phase5",
+            "name": "Release candidate & launch",
+            "start": 66,
+            "duration": 8,
+            "dependsOn": [
+              "phase4"
+            ],
+            "goal": "Bug fixing, optimization, launch preparation"
+          }
+        ],
+        "tasks": [],
+        "gates": [],
+        "cuts": [],
+        "dependencies": [],
+        "changelog": []
+      }
+    },
+    "design.coreLoop": {
+      "moduleVersion": 1,
+      "data": {
+        "loops": [],
+        "loopGraph": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "design.difficulty": {
+      "moduleVersion": 1,
+      "data": {
+        "params": [
+          {
+            "id": "mqsTqAVH",
+            "name": "Hunger / thirst decay rate",
+            "unit": "×",
+            "category": "Survival"
+          },
+          {
+            "id": "cYEzBuq-",
+            "name": "Enemy HP multiplier",
+            "unit": "×",
+            "category": "Combat"
+          },
+          {
+            "id": "O5oGJkti",
+            "name": "Enemy damage multiplier",
+            "unit": "×",
+            "category": "Combat"
+          },
+          {
+            "id": "YMu8MQWw",
+            "name": "Corruption growth",
+            "unit": "×",
+            "category": "Survival"
+          },
+          {
+            "id": "7EMBz1bN",
+            "name": "NPC need multiplier",
+            "unit": "×",
+            "category": "Economy"
+          },
+          {
+            "id": "LcKHGSUU",
+            "name": "Morale loss threshold",
+            "unit": "%",
+            "category": "Economy"
+          },
+          {
+            "id": "i0KFdlvr",
+            "name": "Economy price multiplier",
+            "unit": "×",
+            "category": "Economy"
+          }
+        ],
+        "values": {
+          "cells": {}
+        },
+        "rules": {}
+      }
+    },
+    "design.factions": {
+      "moduleVersion": 1,
+      "data": {
+        "factions": [],
+        "relations": {
+          "cells": {}
+        },
+        "relationGraph": {
+          "nodes": [],
+          "edges": []
+        },
+        "actions": [],
+        "thresholds": [],
+        "endings": []
+      }
+    },
+    "design.world": {
+      "moduleVersion": 1,
+      "data": {
+        "biomes": [],
+        "progression": {
+          "nodes": [],
+          "edges": []
+        },
+        "map": {
+          "items": []
+        },
+        "outposts": [],
+        "exploration": {}
+      }
+    },
+    "design.town": {
+      "moduleVersion": 1,
+      "data": {
+        "buildings": [
+          {
+            "id": "q-g4Dsqc",
+            "name": "House",
+            "function": "Housing for NPCs",
+            "capacity": 4
+          },
+          {
+            "id": "OtuD-_Qm",
+            "name": "Miner",
+            "function": "Collects and smelts ore"
+          },
+          {
+            "id": "q2Ft1Rh4",
+            "name": "Lumberjack",
+            "function": "Produces wood"
+          },
+          {
+            "id": "eOSTKQDt",
+            "name": "Farmer",
+            "function": "Produces food"
+          },
+          {
+            "id": "T6Lcs_m7",
+            "name": "Tavern",
+            "function": "Entertainment, random quests"
+          },
+          {
+            "id": "i9TeLLMq",
+            "name": "School",
+            "function": "Trains young NPCs (needs a teacher)"
+          }
+        ],
+        "flow": {
+          "nodes": [],
+          "edges": []
+        },
+        "economy": {},
+        "commands": [],
+        "routes": [],
+        "morale": [],
+        "extensibility": {}
+      }
+    },
+    "design.npc": {
+      "moduleVersion": 1,
+      "data": {
+        "archetypes": [],
+        "statRules": [],
+        "needRules": [],
+        "lifecycle": {
+          "nodes": [],
+          "edges": []
+        },
+        "lifeStages": [],
+        "events": [],
+        "misc": {}
+      }
+    },
+    "design.player": {
+      "moduleVersion": 1,
+      "data": {
+        "hero": {},
+        "survival": [],
+        "casts": [],
+        "skillTree": {
+          "nodes": [],
+          "edges": []
+        },
+        "abilities": [],
+        "xp": {
+          "items": []
+        },
+        "controls": {}
+      }
+    },
+    "design.items": {
+      "moduleVersion": 1,
+      "data": {
+        "items": [],
+        "multipliers": {
+          "cells": {}
+        },
+        "recipes": [],
+        "recipeGraph": {
+          "nodes": [],
+          "edges": []
+        },
+        "loot": [],
+        "inventory": {}
+      }
+    },
+    "design.combat": {
+      "moduleVersion": 1,
+      "data": {
+        "system": {},
+        "damage": {
+          "items": []
+        },
+        "enemies": [],
+        "bosses": [],
+        "bossPhases": {
+          "nodes": [],
+          "edges": []
+        },
+        "siege": {}
+      }
+    },
+    "design.timeWeather": {
+      "moduleVersion": 1,
+      "data": {
+        "time": {},
+        "dayPhases": [],
+        "weather": [],
+        "events": [
+          {
+            "id": "jPpTC2K3",
+            "name": "Full moon"
+          },
+          {
+            "id": "ULzfEOJ7",
+            "name": "Blood moon"
+          },
+          {
+            "id": "zBC_4KU6",
+            "name": "Holiday"
+          }
+        ]
+      }
+    },
+    "design.trade": {
+      "moduleVersion": 1,
+      "data": {
+        "currency": {},
+        "pricing": {
+          "items": []
+        },
+        "merchants": [],
+        "priceRules": [],
+        "balance": {}
+      }
+    },
+    "design.story": {
+      "moduleVersion": 1,
+      "data": {
+        "overview": {},
+        "acts": [],
+        "characters": [],
+        "quests": [],
+        "questGraph": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "design.ui": {
+      "moduleVersion": 1,
+      "data": {
+        "principles": {},
+        "screens": [
+          {
+            "id": "6npZiLTX",
+            "name": "HUD"
+          },
+          {
+            "id": "AUEbDJ2s",
+            "name": "Inventory"
+          },
+          {
+            "id": "fK1cKL6Y",
+            "name": "Crafting"
+          },
+          {
+            "id": "bb9U618g",
+            "name": "Character / skill tree"
+          },
+          {
+            "id": "rkuC81HE",
+            "name": "Map"
+          },
+          {
+            "id": "R7svYQ5U",
+            "name": "Town overview"
+          },
+          {
+            "id": "IC60x7QQ",
+            "name": "NPC sheet"
+          },
+          {
+            "id": "UkImXpQK",
+            "name": "Trade"
+          },
+          {
+            "id": "V9Zl5Mw2",
+            "name": "Diplomacy"
+          },
+          {
+            "id": "3Lva6e_R",
+            "name": "Quest log"
+          },
+          {
+            "id": "GJaoonXJ",
+            "name": "Settings"
+          }
+        ],
+        "flow": {
+          "nodes": [],
+          "edges": []
+        },
+        "wireframe": {
+          "items": []
+        }
+      }
+    },
+    "design.openQuestions": {
+      "moduleVersion": 1,
+      "data": {
+        "questions": [
+          {
+            "id": "V0Vm0t7D",
+            "name": "Where do NPCs get money to buy their needs?",
+            "area": "Economy",
+            "status": "Open"
+          },
+          {
+            "id": "y_8POjCr",
+            "name": "Who manages the treasury / tax and what can it be spent on?",
+            "area": "Economy",
+            "status": "Open"
+          },
+          {
+            "id": "UvWmj0_P",
+            "name": "Do NPCs age and die? How is the population replenished?",
+            "area": "NPC",
+            "status": "Open"
+          },
+          {
+            "id": "h-KTNRxw",
+            "name": "What exactly is the penalty when needs are unmet?",
+            "area": "NPC",
+            "status": "Open"
+          },
+          {
+            "id": "BUlwvZTS",
+            "name": "Storage capacity limits to keep the economy bounded?",
+            "area": "Logistics",
+            "status": "Open"
+          }
+        ]
+      }
+    },
+    "technical.architecture": {
+      "moduleVersion": 1,
+      "data": {
+        "principles": {},
+        "modules": [],
+        "dependencies": {
+          "nodes": [],
+          "edges": []
+        },
+        "extensionPoints": []
+      }
+    },
+    "technical.coding": {
+      "moduleVersion": 1,
+      "data": {
+        "standards": {},
+        "review": {
+          "groups": []
+        }
+      }
+    },
+    "technical.dataDriven": {
+      "moduleVersion": 1,
+      "data": {
+        "principle": {},
+        "schemas": [
+          {
+            "id": "OXPt2_UR",
+            "name": "Item"
+          },
+          {
+            "id": "ON-2EFMQ",
+            "name": "Building"
+          },
+          {
+            "id": "_u249utP",
+            "name": "NPC need"
+          },
+          {
+            "id": "4u_7AfYD",
+            "name": "Recipe"
+          },
+          {
+            "id": "cE8mMKzQ",
+            "name": "Enemy"
+          },
+          {
+            "id": "-2JiYIwc",
+            "name": "Quest"
+          }
+        ]
+      }
+    },
+    "technical.save": {
+      "moduleVersion": 1,
+      "data": {
+        "save": {}
+      }
+    },
+    "technical.ai": {
+      "moduleVersion": 1,
+      "data": {
+        "approach": {},
+        "behavior": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "technical.performance": {
+      "moduleVersion": 1,
+      "data": {
+        "budgets": [],
+        "techniques": {},
+        "bottlenecks": []
+      }
+    },
+    "technical.tools": {
+      "moduleVersion": 1,
+      "data": {
+        "env": {},
+        "setup": {
+          "groups": []
+        }
+      }
+    },
+    "technical.adr": {
+      "moduleVersion": 1,
+      "data": {
+        "adrs": []
+      }
+    },
+    "artAudio.art": {
+      "moduleVersion": 1,
+      "data": {
+        "style": {},
+        "palettes": []
+      }
+    },
+    "artAudio.audio": {
+      "moduleVersion": 1,
+      "data": {
+        "mood": {},
+        "music": [],
+        "sfx": []
+      }
+    },
+    "artAudio.assets": {
+      "moduleVersion": 1,
+      "data": {
+        "workflow": {},
+        "specs": [],
+        "assets": []
+      }
+    },
+    "production.milestones": {
+      "moduleVersion": 1,
+      "data": {
+        "milestones": []
+      }
+    },
+    "production.backlog": {
+      "moduleVersion": 1,
+      "data": {
+        "rules": {},
+        "features": []
+      }
+    },
+    "production.risks": {
+      "moduleVersion": 1,
+      "data": {
+        "risks": [
+          {
+            "id": "38q1rX9f",
+            "name": "Scope creep in the town simulation",
+            "category": "Scope",
+            "probability": 4,
+            "impact": 4,
+            "status": "Open"
+          }
+        ]
+      }
+    },
+    "production.team": {
+      "moduleVersion": 1,
+      "data": {
+        "members": [],
+        "method": {},
+        "dod": {
+          "groups": []
+        },
+        "process": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "production.release": {
+      "moduleVersion": 1,
+      "data": {
+        "checklist": {
+          "groups": [
+            {
+              "id": "AGBr-PTX",
+              "title": "Build",
+              "items": [
+                {
+                  "id": "Xik74cJf",
+                  "text": "Version number and changelog",
+                  "done": false
+                },
+                {
+                  "id": "7HkCRmI9",
+                  "text": "Builds for all target platforms",
+                  "done": false
+                }
+              ]
+            },
+            {
+              "id": "rOJdEtNN",
+              "title": "Quality",
+              "items": [
+                {
+                  "id": "SChqTnbL",
+                  "text": "No blocking bugs",
+                  "done": false
+                },
+                {
+                  "id": "veV3LiNT",
+                  "text": "Performance targets met",
+                  "done": false
+                }
+              ]
+            },
+            {
+              "id": "N2GdoY_p",
+              "title": "Content and legal",
+              "items": [
+                {
+                  "id": "B9DVPIbt",
+                  "text": "Licenses, credits, EULA / privacy",
+                  "done": false
+                }
+              ]
+            },
+            {
+              "id": "5RUMXRV8",
+              "title": "Launch and marketing",
+              "items": [
+                {
+                  "id": "PZCwf6yP",
+                  "text": "Store page, trailer, screenshots",
+                  "done": false
+                }
+              ]
+            },
+            {
+              "id": "hA0UVjPQ",
+              "title": "Post-launch",
+              "items": [
+                {
+                  "id": "vtzN0iDS",
+                  "text": "Monitoring and hotfix process",
+                  "done": false
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "qa.testPlan": {
+      "moduleVersion": 1,
+      "data": {
+        "strategy": {},
+        "cases": []
+      }
+    },
+    "qa.balance": {
+      "moduleVersion": 1,
+      "data": {
+        "goals": {},
+        "metrics": [],
+        "changes": []
+      }
+    },
+    "qa.bugs": {
+      "moduleVersion": 1,
+      "data": {
+        "bugs": []
+      }
+    },
+    "templates.featureSpec": {
+      "moduleVersion": 1,
+      "data": {
+        "specs": []
+      }
+    },
+    "custom.entities": {
+      "moduleVersion": 1,
+      "data": {}
+    }
+  },
+  "links": []
+}
