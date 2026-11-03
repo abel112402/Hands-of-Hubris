@@ -1,10 +1,25 @@
 {
-  "app": { "title": "Játéktervező" },
-  "nav": { "home": "Menü", "definitions": "Definíciók", "issues": "Problémák" },
+  "app": {
+    "title": "Játéktervező"
+  },
+  "nav": {
+    "home": "Menü",
+    "definitions": "Definíciók",
+    "issues": "Problémák",
+    "hints": "Tippek"
+  },
   "actions": {
-    "new": "Új", "open": "Megnyitás…", "save": "Mentés", "saveAs": "Mentés másként…", "undo": "Visszavonás", "redo": "Újra",
-    "exportMd": "Markdown export (.zip)", "exportJson": "Projekt JSON letöltése", "search": "Keresés (Ctrl+K)",
-    "snapshot": "Pillanatkép készítése", "restore": "Utolsó munkamenet visszaállítása"
+    "new": "Új",
+    "open": "Megnyitás…",
+    "save": "Mentés",
+    "saveAs": "Mentés másként…",
+    "undo": "Visszavonás",
+    "redo": "Újra",
+    "exportMd": "Markdown export (.zip)",
+    "exportJson": "Projekt JSON letöltése",
+    "search": "Keresés (Ctrl+K)",
+    "snapshot": "Pillanatkép készítése",
+    "restore": "Utolsó munkamenet visszaállítása"
   },
   "home": {
     "title": "Mit szeretnél megtervezni?",
@@ -12,6 +27,114 @@
     "filter": "Tervezők szűrése…",
     "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}})."
   },
-  "editor": { "visual": "Vizuális szerkesztő", "markdown": "Markdown előnézet", "exportDoc": "Dokumentum exportálása", "importDoc": "Dokumentum importálása" },
-  "status": { "unsaved": "Nem mentett változások", "saved": "Minden mentve" }
+  "editor": {
+    "visual": "Vizuális szerkesztő",
+    "markdown": "Markdown előnézet",
+    "exportDoc": "Dokumentum exportálása",
+    "importDoc": "Dokumentum importálása"
+  },
+  "status": {
+    "unsaved": "Nem mentett változások",
+    "saved": "Minden mentve"
+  },
+  "hints": {
+    "nav": "Tippek",
+    "panel": "Tippek",
+    "none": "Jelenleg nincs tipp.",
+    "more": "{{count}} további rejtve",
+    "dismiss": "Elvet",
+    "snooze": "Később",
+    "mute": "Szabály némítása",
+    "go": "Ugrás",
+    "create": "Létrehozás",
+    "confirm": "Létrehozzam most?",
+    "yes": "Igen, létrehozom",
+    "no": "Mégse",
+    "show": "Tippek mutatása",
+    "hide": "Elrejtés",
+    "nextSteps": "Következő lépések",
+    "settings": {
+      "title": "Tipp-beállítások",
+      "enabled": "Tippek megjelenítése",
+      "minSeverity": "Minimális fontosság",
+      "outlierIqr": "Kiugró érték érzékenység (IQR szorzó)",
+      "kanbanWip": "Kanban oszlop limit",
+      "sparseRatio": "Hiányos elem küszöb (kitöltött mezők aránya)",
+      "minSamples": "Minimum elemszám a statisztikához",
+      "muted": "Némított szabályok",
+      "noMuted": "Nincs némított szabály.",
+      "unmute": "Némítás feloldása",
+      "resetDismissed": "Elvetett tippek visszaállítása ({{count}})",
+      "custom": "Egyedi szabályok",
+      "addRule": "Szabály hozzáadása",
+      "doc": "Dokumentum",
+      "section": "Szekció",
+      "condition": "Feltétel",
+      "severity": "Fontosság",
+      "ruleTitle": "Cím",
+      "ruleBody": "Szöveg ({count}, {names} használható)",
+      "remove": "Törlés",
+      "thresholds": "Küszöbök (a projektfájlban tárolva)",
+      "value": "Érték",
+      "field": "Mező kulcsa"
+    },
+    "onboarding": {
+      "next": {
+        "title": "Következő: {{doc}}",
+        "body": "A(z) „{{doc}}” még üres. Az ajánlott sorrend szerint ezt érdemes tervezni."
+      }
+    },
+    "visionFirst": {
+      "title": "Először a víziót írd meg",
+      "body": "A tervdokumentumok készülnek, de a Vízió üres. Ez horgonyozza le a későbbi döntéseket."
+    },
+    "emptySection": {
+      "title": "A(z) „{{section}}” üres",
+      "body": "Vedd fel az első elemet a szekció elindításához."
+    },
+    "sparse": {
+      "title": "Hiányos elemek: {{section}}",
+      "body": "{{count}} elem legtöbb mezője üres: {{names}}."
+    },
+    "orphan": {
+      "title": "Nem használt elemek: {{section}}",
+      "body": "{{count}} elemre nincs hivatkozás sehol: {{names}}."
+    },
+    "graphIsolated": {
+      "title": "Összekötetlen gráfcsomópontok",
+      "body": "{{count}} csomópontnak nincs kapcsolata: {{names}}."
+    },
+    "kanban": {
+      "title": "Túl sok elem egy oszlopban",
+      "body": "„{{column}}”: {{count}} elem (limit: {{limit}}). Érdemes lezárni vagy szétbontani néhányat."
+    },
+    "timeline": {
+      "title": "Átfedő idővonal-elemek",
+      "body": "{{count}} elem fedi egymást ugyanazon a sávon: {{pairs}}."
+    },
+    "outlier": {
+      "title": "Szokatlan „{{field}}” értékek",
+      "body": "{{count}} érték messze a tipikus tartományon kívül van: {{names}}. Ellenőrizd az egyensúlyt."
+    },
+    "unusedCategory": {
+      "title": "Néhány „{{field}}” értékhez nincs elem",
+      "body": "{{section}} szekcióban nincs ilyen: {{values}}."
+    },
+    "formulaVars": {
+      "title": "A(z) „{{name}}” képletben nincs definiált változó",
+      "body": "Adj értéket ezeknek: {{vars}}."
+    },
+    "formulaFail": {
+      "title": "A(z) „{{name}}” képlet nem értékelhető ki",
+      "body": "Az eredmény nem véges szám (pl. nullával osztás)."
+    },
+    "milestonePast": {
+      "title": "A(z) „{{name}}” mérföldkő késik",
+      "body": "A határideje ({{due}}) lejárt, és nincs Kész állapotban."
+    },
+    "backlog": {
+      "title": "Backlog elemeknél hiányzik a becslés vagy mérföldkő",
+      "body": "{{count}} nyitott feature tervezésre vár: {{names}}."
+    }
+  }
 }

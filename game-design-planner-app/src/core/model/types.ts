@@ -93,7 +93,50 @@ export interface Registry {
   catalogs: Record<string, Catalog>
   customFields: Record<string, FieldDef[]>
   entityTypes: CustomType[]
+  hintRules?: DeclarativeHintRule[]
 }
+
+export type HintSeverity = 'info' | 'suggest' | 'important'
+export type HintCondition =
+  | { kind: 'isEmpty' }
+  | { kind: 'count'; op: '<' | '<=' | '>' | '>=' | '=='; value: number }
+  | { kind: 'fieldEmpty'; field: string }
+  | { kind: 'fieldCompare'; field: string; op: '<' | '<=' | '>' | '>=' | '==' | '!='; value: number | string }
+
+/** User-defined hint rule stored in the project file; evaluated without eval. */
+export interface DeclarativeHintRule {
+  id: string
+  doc: string
+  section: string
+  when: HintCondition
+  severity: HintSeverity
+  title: string
+  body: string
+}
+
+export interface HintThresholds {
+  outlierIqr: number
+  kanbanWip: number
+  sparseRatio: number
+  minSamples: number
+}
+export const DEFAULT_THRESHOLDS: HintThresholds = { outlierIqr: 3, kanbanWip: 8, sparseRatio: 0.4, minSamples: 6 }
+
+/** Hint preferences shared with the team through the project file. */
+export interface HintPrefs {
+  enabled: boolean
+  minSeverity: HintSeverity
+  dismissed: Record<string, true>
+  mutedRules: string[]
+  thresholds: HintThresholds
+}
+export const defaultHintPrefs = (): HintPrefs => ({
+  enabled: true,
+  minSeverity: 'info',
+  dismissed: {},
+  mutedRules: [],
+  thresholds: { ...DEFAULT_THRESHOLDS },
+})
 
 export type DocData = Record<string, any>
 export interface DocumentEnvelope {
@@ -110,7 +153,7 @@ export interface Link {
 export interface Project {
   format: typeof FORMAT
   formatVersion: number
-  meta: { name: string; createdAt: string; updatedAt: string; appVersion: string }
+  meta: { name: string; createdAt: string; updatedAt: string; appVersion: string; hints?: HintPrefs }
   registry: Registry
   documents: Record<string, DocumentEnvelope>
   links: Link[]

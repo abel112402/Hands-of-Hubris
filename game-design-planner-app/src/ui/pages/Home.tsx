@@ -6,6 +6,8 @@ import { useStore } from '../../core/store/store'
 import { deleteSnapshot, listSnapshots, readAutosave, type Snapshot } from '../../core/persistence/autosave'
 import { deserializeProject } from '../../core/persistence/serialize'
 import { restoreAutosave } from '../actions'
+import { HintCard } from '../hints/HintPanel'
+import { useHints } from '../hints/useHints'
 
 function progress(doc: { data: Record<string, any> } | undefined, total: number) {
   if (!doc) return 0
@@ -26,6 +28,7 @@ export function Home() {
     void readAutosave().then((a) => setAuto(a ? new Date(a.savedAt).toLocaleString() : null))
     refresh()
   }, [])
+  const { visible: nextSteps } = useHints()
   const match = (s: string) => s.toLowerCase().includes(q.toLowerCase())
 
   return (
@@ -36,6 +39,12 @@ export function Home() {
         <div className="banner">
           {t('home.restoreBanner', { date: auto })} <button onClick={() => void restoreAutosave()}>{t('actions.restore')}</button>
         </div>
+      )}
+      {nextSteps.length > 0 && (
+        <section>
+          <h2>💡 {t('hints.nextSteps')}</h2>
+          <ul className="list">{nextSteps.map((h) => <HintCard key={h.id} hint={h} />)}</ul>
+        </section>
       )}
       <input className="search" placeholder={t('home.filter')} value={q} onChange={(e) => setQ(e.target.value)} />
       {GROUPS.map((g) => {

@@ -1,10 +1,25 @@
 {
-  "app": { "title": "Game Design Planner" },
-  "nav": { "home": "Menu", "definitions": "Definitions", "issues": "Issues" },
+  "app": {
+    "title": "Game Design Planner"
+  },
+  "nav": {
+    "home": "Menu",
+    "definitions": "Definitions",
+    "issues": "Issues",
+    "hints": "Hints"
+  },
   "actions": {
-    "new": "New", "open": "Open…", "save": "Save", "saveAs": "Save as…", "undo": "Undo", "redo": "Redo",
-    "exportMd": "Export Markdown (.zip)", "exportJson": "Download project JSON", "search": "Search (Ctrl+K)",
-    "snapshot": "Create snapshot", "restore": "Restore last session"
+    "new": "New",
+    "open": "Open…",
+    "save": "Save",
+    "saveAs": "Save as…",
+    "undo": "Undo",
+    "redo": "Redo",
+    "exportMd": "Export Markdown (.zip)",
+    "exportJson": "Download project JSON",
+    "search": "Search (Ctrl+K)",
+    "snapshot": "Create snapshot",
+    "restore": "Restore last session"
   },
   "home": {
     "title": "What do you want to plan?",
@@ -12,6 +27,114 @@
     "filter": "Filter planners…",
     "restoreBanner": "An autosaved session from {{date}} was found."
   },
-  "editor": { "visual": "Visual editor", "markdown": "Markdown preview", "exportDoc": "Export document", "importDoc": "Import document" },
-  "status": { "unsaved": "Unsaved changes", "saved": "All changes saved" }
+  "editor": {
+    "visual": "Visual editor",
+    "markdown": "Markdown preview",
+    "exportDoc": "Export document",
+    "importDoc": "Import document"
+  },
+  "status": {
+    "unsaved": "Unsaved changes",
+    "saved": "All changes saved"
+  },
+  "hints": {
+    "nav": "Hints",
+    "panel": "Hints",
+    "none": "No hints right now.",
+    "more": "{{count}} more hidden",
+    "dismiss": "Dismiss",
+    "snooze": "Later",
+    "mute": "Mute rule",
+    "go": "Go",
+    "create": "Create",
+    "confirm": "Create it now?",
+    "yes": "Yes, create",
+    "no": "Cancel",
+    "show": "Show hints",
+    "hide": "Hide",
+    "nextSteps": "Next steps",
+    "settings": {
+      "title": "Hint settings",
+      "enabled": "Show hints",
+      "minSeverity": "Minimum importance",
+      "outlierIqr": "Outlier sensitivity (IQR multiplier)",
+      "kanbanWip": "Kanban column limit",
+      "sparseRatio": "Sparse entity threshold (filled field ratio)",
+      "minSamples": "Minimum items for statistics",
+      "muted": "Muted rules",
+      "noMuted": "No muted rules.",
+      "unmute": "Unmute",
+      "resetDismissed": "Restore dismissed hints ({{count}})",
+      "custom": "Custom rules",
+      "addRule": "Add rule",
+      "doc": "Document",
+      "section": "Section",
+      "condition": "Condition",
+      "severity": "Importance",
+      "ruleTitle": "Title",
+      "ruleBody": "Text (use {count}, {names})",
+      "remove": "Remove",
+      "thresholds": "Thresholds (saved in the project file)",
+      "value": "Value",
+      "field": "Field key"
+    },
+    "onboarding": {
+      "next": {
+        "title": "Next: {{doc}}",
+        "body": "“{{doc}}” is still empty. Planning it next follows the recommended order."
+      }
+    },
+    "visionFirst": {
+      "title": "Write the vision first",
+      "body": "Design documents are being filled in, but the Vision is empty. It anchors every later decision."
+    },
+    "emptySection": {
+      "title": "“{{section}}” is empty",
+      "body": "Add the first entry to start this section."
+    },
+    "sparse": {
+      "title": "Incomplete entries in {{section}}",
+      "body": "{{count}} entries have most fields empty: {{names}}."
+    },
+    "orphan": {
+      "title": "Unused in {{section}}",
+      "body": "{{count}} entries are not referenced anywhere: {{names}}."
+    },
+    "graphIsolated": {
+      "title": "Unconnected graph nodes",
+      "body": "{{count}} nodes have no connections: {{names}}."
+    },
+    "kanban": {
+      "title": "Too many items in one column",
+      "body": "“{{column}}” has {{count}} items (limit {{limit}}). Consider finishing or splitting some."
+    },
+    "timeline": {
+      "title": "Overlapping timeline items",
+      "body": "{{count}} items overlap in the same lane: {{pairs}}."
+    },
+    "outlier": {
+      "title": "Unusual “{{field}}” values",
+      "body": "{{count}} values are far outside the typical range: {{names}}. Check balance."
+    },
+    "unusedCategory": {
+      "title": "No entries for some “{{field}}” values",
+      "body": "{{section}} has nothing with: {{values}}."
+    },
+    "formulaVars": {
+      "title": "Formula “{{name}}” has undefined variables",
+      "body": "Define values for: {{vars}}."
+    },
+    "formulaFail": {
+      "title": "Formula “{{name}}” cannot be evaluated",
+      "body": "The result is not a finite number (e.g. division by zero)."
+    },
+    "milestonePast": {
+      "title": "Milestone “{{name}}” is overdue",
+      "body": "Its due date ({{due}}) has passed and it is not marked Done."
+    },
+    "backlog": {
+      "title": "Backlog items lack estimate or milestone",
+      "body": "{{count}} open features need planning: {{names}}."
+    }
+  }
 }

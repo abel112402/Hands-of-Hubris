@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { getModule, getSections } from '../../core/modules/registry'
 import { moduleToMarkdown } from '../../core/export/markdown'
 import { useStore } from '../../core/store/store'
+import { HintPanel } from '../hints/HintPanel'
 import { HelpPopup } from '../HelpPopup'
 import { SectionRenderer } from '../editors/SectionRenderer'
 import { MarkdownPreview } from '../editors/simple'
@@ -58,6 +59,7 @@ export function EditorPage() {
           </div>
         ) : null}
       </main>
+      <HintPanel docId={docId} sectionId={sec?.id} />
       {help && <HelpPopup docId={docId} title={sec ? `${mod.title} › ${sec.title}` : mod.title} sec={sec} onClose={() => setHelp(false)} />}
     </div>
   )

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { enablePatches, produceWithPatches, applyPatches, type Patch } from 'immer'
 import { createProject, makeId } from '../model/project'
-import type { Project } from '../model/types'
+import { defaultHintPrefs, type HintPrefs, type Project } from '../model/types'
 import { getModule, ensureDocument } from '../modules/registry'
 
 enablePatches()
@@ -20,6 +20,7 @@ interface State {
   past: HistoryEntry[]
   future: HistoryEntry[]
   mutate: (fn: (p: Project) => void, key?: string) => void
+  updateHintPrefs: (fn: (h: HintPrefs) => void) => void
   undo: () => void
   redo: () => void
   loadProject: (p: Project, fileName?: string) => void
@@ -51,6 +52,15 @@ export const useStore = create<State>((set, get) => ({
       past.push({ patches, inverse, key, at: now })
     }
     set({ project: next, dirty: true, past: past.slice(-MAX_HISTORY), future: [] })
+  },
+
+  // Hint preferences are saved with the project but are not undoable.
+  updateHintPrefs: (fn) => {
+    const [next] = produceWithPatches(get().project, (d) => {
+      d.meta.hints ??= defaultHintPrefs()
+      fn(d.meta.hints)
+    })
+    if (next !== get().project) set({ project: next, dirty: true })
   },
 
   undo: () => {

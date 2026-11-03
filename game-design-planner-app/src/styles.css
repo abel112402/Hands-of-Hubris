@@ -83,3 +83,13 @@ h1,h2,h3{margin:.6em 0 .3em}
 .help-popup{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:560px;max-width:92vw;max-height:80vh;overflow:auto;padding:14px 20px;align-self:flex-start}
 .help-popup h3{color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
 .help-btn{border-color:var(--accent)}
+/* hints */
+.hint-panel{width:280px;flex-shrink:0;border-left:1px solid var(--line);padding:10px;overflow:auto}
+.hint-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.hint-head h3{margin:0;font-size:14px}
+.hint-card{list-style:none;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.hint-card.important{border-left-color:var(--danger)}.hint-card.suggest{border-left-color:var(--warn)}
+.hint-card p{margin:4px 0;font-size:13px}
+.hint-actions{display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:12px}
+.hint-form{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.pill.important{color:var(--danger)}.pill.suggest{color:var(--warn)}

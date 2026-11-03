@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../core/store/store'
 import { validateProject } from '../core/references/refs'
+import { evaluateHints, makeContext } from '../core/hints/engine'
 import { MODULES } from '../core/modules/registry'
 import { setLanguage } from '../core/i18n'
 import { writeAutosave } from '../core/persistence/autosave'
@@ -15,6 +16,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     ...MODULES.map((m) => ({ label: `${m.icon} ${m.title}`, to: `/doc/${m.id}` })),
     { label: 'Definitions', to: '/definitions' },
     { label: 'Issues', to: '/issues' },
+    { label: 'Hints', to: '/hints' },
     { label: 'Menu', to: '/' },
   ].filter((i) => i.label.toLowerCase().includes(q.toLowerCase()))
   return (
@@ -40,6 +42,7 @@ export function AppShell() {
   const canRedo = useStore((s) => s.future.length > 0)
   const [palette, setPalette] = useState(false)
   const issues = validateProject(project).length
+  const hintCount = useMemo(() => evaluateHints(makeContext(project)).total, [project])
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
@@ -95,6 +98,7 @@ export function AppShell() {
         </details>
         <Link to="/definitions">{t('nav.definitions')}</Link>
         <Link to="/issues">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</Link>
+        <Link to="/hints">{t('nav.hints')}{hintCount > 0 && <span className="badge">{hintCount}</span>}</Link>
         <button onClick={() => setPalette(true)} title={t('actions.search')}>🔍</button>
       </header>
       <div className="shell-body"><Outlet /></div>

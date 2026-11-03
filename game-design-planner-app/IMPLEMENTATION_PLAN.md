@@ -310,3 +310,112 @@ Minden fázis végén működő, tesztelt, használható állapot.
 5. `PlannerModule` interfész és modul-regiszter; egy placeholder modul.
 6. AppShell + Home oldal a regiszterből; „New / Open / Save" működik.
 7. CI (lint, typecheck, test, build).
+
+## 11. Szabályalapú tippmotor (Hints, nem AI)
+
+**Cél:** a projekt állapotát és az aktuálisan megnyitott szerkesztőt figyelve automatikusan, determinisztikus szabályokkal tippeket adni (pl. „nincs még core loop”, „az itemeknek nincs ritkaságuk”, „a quest hivatkozik nem létező NPC-re”). Nincs hálózat, nincs modell: tiszta függvények a `Project` + `EditorContext` felett.
+
+### 11.1 Elvek
+* A meglévő `validateProject` (`core/references/refs.ts`) **hibákat** jelez („ez rossz”); a tippmotor **javaslatokat** ad („ez hiányzik / ezt érdemes”). Közös `Issue`-szerű alakot használnak, de külön szabályhalmaz és külön UI.
+* Szabály = tiszta függvény, nincs mellékhatás, könnyen tesztelhető.
+* Bővíthető: új szabály fájl hozzáadása elég (mint a modulregiszter), a modulok maguk is hozhatnak szabályokat (`PlannerModule.hints?`).
+* Nem tolakodó: elvethető, némítható, nem blokkol.
+
+### 11.2 Típusok (`core/hints/types.ts`)
+```ts
+type HintContext = {
+  project: Project
+  docId?: string; sectionId?: string      // aktuális szerkesztő (route + ?s=)
+  selectedEntityId?: string               // kijelölt elem, ha van
+  idleMs?: number; lastEditAt?: number    // aktivitás
+}
+type Hint = {
+  id: string                    // stabil: ruleId + célpont (dismisshez)
+  ruleId: string
+  severity: 'info' | 'suggest' | 'important'
+  scope: 'project' | 'document' | 'section' | 'entity'
+  target: { docId: string; sectionId?: string; entityId?: string }
+  titleKey: string; bodyKey: string; params?: Record<string, string|number>  // i18n (en/hu)
+  action?: { kind: 'goto' | 'addEntity' | 'setField' | 'openHelp'; payload: unknown }
+}
+type HintRule = {
+  id: string
+  scope: Hint['scope']
+  appliesTo?: (ctx: HintContext) => boolean   // gyors előszűrés (pl. csak ha docId==='items')
+  evaluate: (ctx: HintContext) => Hint[]
+}
+```
+
+### 11.3 Szabálykategóriák (kezdő készlet)
+| Kategória | Példa szabályok |
+|-----------|-----------------|
+| Teljesség | üres dokumentum/szekció, kitöltetlen kulcsmezők, 0 elem egy kötelező gyűjteményben, Vision nélkül nincs Core Loop javaslat |
+| Függőségi sorrend | Roadmap: ha nincs vision → először azt; Items előtt legyenek resource/skill katalógusok; QA tesztterv ha vannak már feature-ök |
+| Konzisztencia | elem sehol sem használt (árva NPC/item/frakció), gráf elszigetelt csomópont, quest nem hivatkozik jutalomra, frakciópár hiányzik a mátrixból |
+| Egyensúly | statisztikai heurisztikák: ritkaságonként 0 item, ár/érték kiugró (> 3σ vagy IQR), nehézség-radar szélsőérték, gazdasági forrás van, nyelő nincs |
+| Képlet | formula változó nincs definiálva, osztás nullával lehetséges, tartományon kívüli előnézet |
+| Folyamat | milestone dátum a múltban, backlog elem tulajdonos/becslés nélkül, release checklist üres kritikus pont |
+| Szerkesztő-specifikus | gráf: nincs start/end csomópont, ciklus; kanban: egy oszlopban >N elem (WIP); timeline: átfedő lane |
+| Onboarding | első megnyitás, üres projekt: javasolt következő 3 lépés a `docs/` sorrendje alapján (vision → core loop → player → ...) |
+
+A szabályok a **séma meta-adatából** általánosan is generálhatók (pl. `required`, `ref` mezők), így az egyedi (felhasználói) mezők/típusok is kapnak alap tippeket kódmódosítás nélkül.
+
+### 11.4 Motor (`core/hints/engine.ts`)
+1. `collectRules()` – beépített (`core/hints/rules/*.ts`) + modulok `hints` + opcionális felhasználói szabályok (lásd 11.7).
+2. `evaluateHints(ctx)`:
+   * `appliesTo` szűrés → `evaluate` → egyesítés.
+   * **Rangsor:** kontextus-relevancia (azonos doc/szekció/entitás előre) → severity → ritkaság; max. ~5 aktív tipp egyszerre.
+   * **Szűrés:** elvetett (dismissed), némított szabály, snooze-olt tipp kiszűrve.
+3. **Teljesítmény:** a projekt-szintű szabályok futnak debounce-olva (300–500 ms a store változás után), memoizálva a `documents[docId]` referencia-azonossága alapján (Immer miatt változatlan doc = ugyanaz a referencia). A szerkesztő-szintű szabályok csak az aktív doc-ra futnak. Nagy projektnél Web Workerbe emelhető (a szabályok tiszta függvények, szerializálható bemenet).
+
+### 11.5 Állapot és perzisztencia
+* `core/hints/hintStore.ts` (külön Zustand store): `dismissed: Record<hintId, true>`, `snoozedUntil: Record<hintId, number>`, `mutedRules: string[]`, `settings` (be/ki, gyakoriság, minimális severity).
+* A felhasználói preferenciák a **projektfájlba** kerülnek (`project.meta.hints`, formátumverzió + migráció), hogy csapattal megosztva is konzisztensek legyenek; a „csak nálam” beállítások (be/ki) localStorage/IndexedDB.
+* A dismissed állapot a stabil `hint.id` miatt túléli az újratöltést; ha a feltétel megszűnik, a bejegyzés automatikusan törlődik (GC).
+
+### 11.6 UI
+* **Hint panel** a `EditorPage` jobb oldalán (összecsukható) – az aktuális szekció tippjei, kártyán: cím, indoklás, akciógomb („Ugrás”, „Elem hozzáadása”), „Később”, „Elvet”, „Ne mutasd ezt a szabályt”.
+* **Inline jelzők:** mezők/elemek mellett kis 💡 ikon (a `FieldInput`/`CollectionEditor` a `target` alapján).
+* **AppShell badge** (mint az Issues-nál) a projekt-szintű tippek számával; **Home** oldalon „Következő lépések” blokk.
+* **Hint-beállítások** oldal: ki/be, kategóriák, némított szabályok listája (visszaállítás), „összes elvetett visszaállítása”.
+* Kontextus-követés: `useHintContext()` hook a router paramjaiból (`docId`, `?s=`), kijelölésből és az aktivitás-időzítőből; tippváltás ne villogjon (stabil rendezés, animáció nélküli csere gépelés közben).
+* Hozzáférhetőség: `aria-live="polite"`, billentyűzettel kezelhető.
+* A „tipp szövege” i18n kulcsokból (`hints.<ruleId>.title/body`), en + hu.
+
+### 11.7 Bővíthetőség
+* Szabály hozzáadása = új fájl `core/hints/rules/<téma>.ts` + export a tömbbe; a modulok `hints: HintRule[]` mezője opcionális.
+* **Deklaratív szabályok** JSON-ban (kódmódosítás nélkül, a 4. fejezet szellemében): `{ when: { doc, section, condition }, hint }` – feltételek: `count`, `isEmpty`, `field op value`, `refMissing`, `unused`. Felhasználói definíciók a `registry`-ben (`registry.hintRules`).
+* Egyszerű DSL a feltételekhez (nem `eval`!): a meglévő `core/formula.ts` biztonságos kiértékelőjét újrahasznosítva.
+
+### 11.8 Fázisok
+| Fázis | Tartalom | Kész, ha |
+|-------|----------|----------|
+| H0 | Típusok, motor, hintStore, `HintContext` hook, 3 minta szabály (üres doc, árva entitás, hiányzó vision) | Egységteszt zöld, panel megjelenik |
+| H1 | Hint panel + badge + elvetés/halasztás/némítás, en/hu szövegek | UI teszt (`editing.test.tsx` mintájára) |
+| H2 | Teljes kezdő szabálykészlet (11.3), séma-alapú általános szabályok | Szabályonként ≥1 pozitív és negatív teszt |
+| H3 | Szerkesztő-specifikus (gráf, kanban, timeline, mátrix) és egyensúly-heurisztikák | Küszöbök konfigurálhatók |
+| H4 | Deklaratív felhasználói szabályok, beállítás-oldal, perzisztencia-migráció | Régi projektfájl betölthető |
+| H5 | Finomhangolás: relevancia-rangsor, teljesítmény mérés, Worker ha kell | 1000+ elemes projekten <50 ms/frissítés |
+
+### 11.9 Tesztelés
+* **Szabály-egységtesztek** (`tests/hints.test.ts`): minimális `Project` fixture → elvárt `Hint[]`; a `examples/seeded.hohplan.json` golden-snapshot.
+* Motor: rangsor, limit, dismissed/snooze/mute, GC, determinizmus (azonos bemenet → azonos sorrend).
+* UI: panel a route-nak megfelelő tippeket mutatja, akciógomb navigál/ad hozzá elemet.
+* Teljesítmény: benchmark nagy generált projekttel.
+
+### 11.10 Kockázatok
+| Kockázat | Megoldás |
+|----------|----------|
+| Tipp-zaj, idegesítő | Max. 5 aktív, severity-küszöb, dismiss/mute, gépelés közben nem frissül (debounce + idle) |
+| Hamis pozitívok | Szabályonként tesztek, „Ne mutasd” gomb, konzervatív küszöbök |
+| Lassúság | Memoizálás doc-referencia szerint, aktív doc-ra szűkítés, Worker |
+| Szabálysprawl | Kategóriák, egységes sablon és tesztelési minta |
+
+### 11.11 Döntések és megvalósítási állapot
+1. A dismissed/némított szabályok és a beállítások a projektfájlban (`meta.hints`) tárolódnak; a halasztás (snooze) csak munkamenetre szól.
+2. Automatikus akciók (`addEntity`) csak megerősítés után futnak.
+3. Az egyensúly-küszöbök projektenként állíthatók (Hints oldal).
+4. Forrás-jelölés/`docs/` hivatkozás nem kell.
+
+**Megvalósítva (H0–H4):** `src/core/hints/` (típusok, motor, szabályok, deklaratív szabályok), `src/ui/hints/` (panel, beállítások, hook), `/hints` útvonal, AppShell badge, Home „Next steps”, tesztek: `tests/hints.test.ts`, `tests/editing.test.tsx`.
+**Hátra / későbbi:** az elavult dismissed bejegyzések automatikus törlése (GC), Web Worker (H5 mérés után).
