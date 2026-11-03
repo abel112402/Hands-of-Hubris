@@ -1,0 +1,293 @@
+{
+  "app": {
+    "title": "Játéktervező"
+  },
+  "nav": {
+    "home": "Menü",
+    "definitions": "Definíciók",
+    "issues": "Problémák",
+    "hints": "Tippek"
+  },
+  "actions": {
+    "new": "Új",
+    "open": "Megnyitás…",
+    "save": "Mentés",
+    "saveAs": "Mentés másként…",
+    "undo": "Visszavonás",
+    "redo": "Újra",
+    "exportMd": "Markdown export (.zip)",
+    "exportJson": "Projekt JSON letöltése",
+    "search": "Keresés (Ctrl+K)",
+    "snapshot": "Pillanatkép készítése",
+    "restore": "Utolsó munkamenet visszaállítása"
+  },
+  "home": {
+    "title": "Mit szeretnél megtervezni?",
+    "subtitle": "Válassz egy tervezőt. Minden egyetlen projektfájlban tárolódik, amit menthetsz és betölthetsz.",
+    "filter": "Tervezők szűrése…",
+    "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}})."
+  },
+  "editor": {
+    "visual": "Vizuális szerkesztő",
+    "markdown": "Markdown előnézet",
+    "exportDoc": "Dokumentum exportálása",
+    "importDoc": "Dokumentum importálása"
+  },
+  "status": {
+    "unsaved": "Nem mentett változások",
+    "saved": "Minden mentve"
+  },
+  "hints": {
+    "nav": "Tippek",
+    "panel": "Tippek",
+    "none": "Jelenleg nincs tipp.",
+    "more": "{{count}} további rejtve",
+    "dismiss": "Elvet",
+    "snooze": "Később",
+    "mute": "Szabály némítása",
+    "go": "Ugrás",
+    "create": "Létrehozás",
+    "confirm": "Létrehozzam most?",
+    "yes": "Igen, létrehozom",
+    "no": "Mégse",
+    "show": "Tippek mutatása",
+    "hide": "Elrejtés",
+    "nextSteps": "Következő lépések",
+    "settings": {
+      "title": "Tipp-beállítások",
+      "enabled": "Tippek megjelenítése",
+      "minSeverity": "Minimális fontosság",
+      "outlierIqr": "Kiugró érték érzékenység (IQR szorzó)",
+      "kanbanWip": "Kanban oszlop limit",
+      "sparseRatio": "Hiányos elem küszöb (kitöltött mezők aránya)",
+      "minSamples": "Minimum elemszám a statisztikához",
+      "muted": "Némított szabályok",
+      "noMuted": "Nincs némított szabály.",
+      "unmute": "Némítás feloldása",
+      "resetDismissed": "Elvetett tippek visszaállítása ({{count}})",
+      "custom": "Egyedi szabályok",
+      "addRule": "Szabály hozzáadása",
+      "doc": "Dokumentum",
+      "section": "Szekció",
+      "condition": "Feltétel",
+      "severity": "Fontosság",
+      "ruleTitle": "Cím",
+      "ruleBody": "Szöveg ({count}, {names} használható)",
+      "remove": "Törlés",
+      "thresholds": "Küszöbök (a projektfájlban tárolva)",
+      "value": "Érték",
+      "field": "Mező kulcsa"
+    },
+    "onboarding": {
+      "next": {
+        "title": "Következő: {{doc}}",
+        "body": "A(z) „{{doc}}” még üres. Az ajánlott sorrend szerint ezt érdemes tervezni."
+      }
+    },
+    "visionFirst": {
+      "title": "Először a víziót írd meg",
+      "body": "A tervdokumentumok készülnek, de a Vízió üres. Ez horgonyozza le a későbbi döntéseket."
+    },
+    "emptySection": {
+      "title": "A(z) „{{section}}” üres",
+      "body": "Vedd fel az első elemet a szekció elindításához."
+    },
+    "sparse": {
+      "title": "Hiányos elemek: {{section}}",
+      "body": "{{count}} elem legtöbb mezője üres: {{names}}."
+    },
+    "orphan": {
+      "title": "Nem használt elemek: {{section}}",
+      "body": "{{count}} elemre nincs hivatkozás sehol: {{names}}."
+    },
+    "graphIsolated": {
+      "title": "Összekötetlen gráfcsomópontok",
+      "body": "{{count}} csomópontnak nincs kapcsolata: {{names}}."
+    },
+    "kanban": {
+      "title": "Túl sok elem egy oszlopban",
+      "body": "„{{column}}”: {{count}} elem (limit: {{limit}}). Érdemes lezárni vagy szétbontani néhányat."
+    },
+    "timeline": {
+      "title": "Átfedő idővonal-elemek",
+      "body": "{{count}} elem fedi egymást ugyanazon a sávon: {{pairs}}."
+    },
+    "outlier": {
+      "title": "Szokatlan „{{field}}” értékek",
+      "body": "{{count}} érték messze a tipikus tartományon kívül van: {{names}}. Ellenőrizd az egyensúlyt."
+    },
+    "unusedCategory": {
+      "title": "Néhány „{{field}}” értékhez nincs elem",
+      "body": "{{section}} szekcióban nincs ilyen: {{values}}."
+    },
+    "formulaVars": {
+      "title": "A(z) „{{name}}” képletben nincs definiált változó",
+      "body": "Adj értéket ezeknek: {{vars}}."
+    },
+    "formulaFail": {
+      "title": "A(z) „{{name}}” képlet nem értékelhető ki",
+      "body": "Az eredmény nem véges szám (pl. nullával osztás)."
+    },
+    "milestonePast": {
+      "title": "A(z) „{{name}}” mérföldkő késik",
+      "body": "A határideje ({{due}}) lejárt, és nincs Kész állapotban."
+    },
+    "backlog": {
+      "title": "Backlog elemeknél hiányzik a becslés vagy mérföldkő",
+      "body": "{{count}} nyitott feature tervezésre vár: {{names}}."
+    },
+    "visionPitch": {
+      "title": "A pitch még üres",
+      "body": "Írj egy vázlatos egymondatos pitchet; később, a vízió tisztulásával finomíthatod."
+    },
+    "visionNoPillars": {
+      "title": "Add meg a tervezési pilléreket",
+      "body": "Még nincs pillér. 3–5 pillér támpontot ad a funkciók elfogadásához vagy elvetéséhez."
+    },
+    "visionPillarCount": {
+      "title": "{{count}} tervezési pillér",
+      "body": "Az ajánlott tartomány {{min}}–{{max}} pillér. Túl kevés homályos, túl sok már nem vezérli a döntéseket."
+    },
+    "visionPillarTest": {
+      "title": "Döntési teszt nélküli pillérek",
+      "body": "{{count}} pillérnél hiányzik, hogyan segít a döntésben: {{names}}."
+    },
+    "visionUspBenefit": {
+      "title": "Játékoselőny nélküli USP-k",
+      "body": "{{count}} USP nem mondja meg, mit nyer a játékos: {{names}}."
+    },
+    "visionScopeBucket": {
+      "title": "Döntés nélküli hatókör-elemek",
+      "body": "{{count}} elemnek nincs kategóriája (MVP / Később / Nincs benne): {{names}}."
+    },
+    "visionScopeMvp": {
+      "title": "Még semmi sincs az MVP-ben",
+      "body": "Vannak hatókör-elemek, de egyik sincs „In MVP” kategóriában."
+    }
+  },
+  "ai": {
+    "badgeTitle": "AI hozta létre vagy módosította ({{model}}) {{date}}",
+    "explain": "Magyarázd el",
+    "settings": "Beállítások",
+    "openSettings": "AI beállítások megnyitása",
+    "noKey": "Az AI opcionális. Az engedélyezéséhez add meg az API kulcsot a beállításokban (a kulcs csak a memóriában marad).",
+    "task": "Feladat",
+    "context": "Mit láthat az AI",
+    "includeRef": "Hivatkozott dokumentumokkal együtt",
+    "docSources": "Dokumentáció források",
+    "srcEmbedded": "Beépített docs/ másolat",
+    "srcProject": "Aktuális projekt (Markdown export)",
+    "srcFolder": "Megnyitott mappa ({{count}} fájl)",
+    "count": "Hány elem",
+    "allEntries": "A szekció összes eleme",
+    "preview": "Előnézet",
+    "send": "Küldés",
+    "cancel": "Megszakítás",
+    "clearChat": "Chat törlése",
+    "estimate": "Becsült bemenet: ~{{input}} token, max. kimenet: {{output}} token",
+    "noPrice": "költségbecsléshez add meg az árakat a beállításokban",
+    "budgetExceeded": "Ez a kérés túllépné a beállított limitet.",
+    "override": "Küldés mégis",
+    "showPayload": "Pontos elküldendő szöveg",
+    "hidePayload": "Elrejtés",
+    "you": "Te",
+    "insert": "Beszúrás előkészítése",
+    "proposal": "AI javaslat",
+    "apply": "Kijelöltek alkalmazása ({{n}})",
+    "discard": "Elvetés",
+    "applied": "{{n}} módosítás alkalmazva, {{skipped}} kihagyva. A Ctrl+Z egyszerre visszavonja.",
+    "stale": "Néhány elem megváltozott a javaslat óta; ezeket kihagytuk.",
+    "noFindings": "Nincs találat.",
+    "invalidAnswer": "Az AI válasza nem használható:",
+    "noDocsHits": "Nem található a kérdéshez illő dokumentáció.",
+    "needCollection": "Előbb nyiss meg egy lista típusú szekciót (pl. Items) a szerkesztőben.",
+    "needFormulaSection": "Előbb nyiss meg egy képlet szekciót a szerkesztőben.",
+    "templates": "Sablonok",
+    "templateName": "Sablon neve",
+    "saveTemplate": "Sablon mentése",
+    "noTemplates": "Még nincs sablon.",
+    "tasks": {
+      "chat": "Chat",
+      "generate": "Elemek generálása",
+      "rewrite": "Kibővítés / átírás / fordítás",
+      "review": "Konzisztencia- és egyensúly-elemzés",
+      "formula": "Képlet és gazdaság",
+      "summary": "Összefoglaló / Markdown",
+      "docs": "Kérdés a dokumentációról",
+      "hint": "Tipp magyarázata"
+    },
+    "scope": {
+      "none": "Semmi",
+      "section": "Aktuális szekció",
+      "document": "Aktuális dokumentum",
+      "documents": "Dokumentumok kiválasztása…",
+      "project": "Teljes projekt"
+    },
+    "mode": {
+      "expand": "Kibővítés",
+      "rewrite": "Átírás",
+      "translate": "Fordítás"
+    },
+    "kind": {
+      "add": "Új",
+      "update": "Módosítás",
+      "formula": "Képlet",
+      "append": "Hozzáfűzés"
+    },
+    "placeholder": {
+      "chat": "Kérdezz bármit a tervedről…",
+      "generate": "Irány, pl. „sivatagi banditák szokatlan fegyverekkel”",
+      "rewrite": "Opcionális stílusutasítás",
+      "review": "Opcionális fókusz, pl. „gazdaság”",
+      "formula": "Mit ellenőrizzen vagy javítson?",
+      "summary": "Opcionális fókusz",
+      "docs": "Kérdésed a dokumentációról",
+      "hint": "Opcionális kiegészítő kérdés"
+    },
+    "errors": {
+      "auth": "Az API kulcsot elutasították.",
+      "rateLimit": "Elérted a korlátot vagy kvótát.",
+      "network": "Hálózati probléma.",
+      "blocked": "Biztonsági okból blokkolva.",
+      "invalid": "Érvénytelen kérés vagy válasz.",
+      "aborted": "Megszakítva.",
+      "budget": "Elérted a költséglimitet.",
+      "server": "Szolgáltatói hiba.",
+      "config": "Konfigurációs probléma."
+    },
+    "settingsTitle": "AI beállítások",
+    "securityNote": "Az AI opcionális. Az API kulcsod csak a böngésző memóriájában él: újratöltéskor elvész, és soha nem kerül a projektbe, az autosave-be, exportba vagy tárolóba. A kérések közvetlenül a böngésződből mennek a választott szolgáltatóhoz. Használj költséglimites kulcsot. Az AI csak javasolhat; jóváhagyásod nélkül semmi nem módosul.",
+    "provider": "Szolgáltató és API kulcs",
+    "keyPlaceholder": "API kulcs beillesztése",
+    "saveKey": "Kulcs használata",
+    "clearKey": "Kulcs törlése",
+    "clearAllKeys": "Összes kulcs törlése",
+    "keySaved": "A kulcs beállítva erre a munkamenetre.",
+    "model": "Modell",
+    "modelName": "Modell neve",
+    "refreshModels": "Modellek betöltése az API-ból",
+    "modelsLoaded": "{{n}} modell betöltve.",
+    "params": "Paraméterek",
+    "maxOutput": "Max. kimeneti token",
+    "timeout": "Időtúllépés (mp)",
+    "maxContext": "Max. kontextus méret (karakter)",
+    "promptLang": "AI válasz nyelve",
+    "prices": "Ár 1M tokenre (USD)",
+    "priceIn": "Bemenet",
+    "priceOut": "Kimenet",
+    "limits": "Limitek (0 = nincs)",
+    "limitsHelp": "A limitek és a használat helyben, ebben a böngészőben tárolódnak (a kulcs soha).",
+    "limit": {
+      "dayTokens": "Napi token",
+      "monthTokens": "Havi token",
+      "dayCost": "Napi költség (USD)",
+      "monthCost": "Havi költség (USD)"
+    },
+    "usage": "Ma felhasznált: {{dt}} token (${{dc}}); e hónapban: {{mt}} token (${{mc}})",
+    "resetUsage": "Használat nullázása",
+    "docsFolder": "Dokumentáció mappa",
+    "docsFolderHelp": "Opcionális: válassz egy Markdown fájlokat tartalmazó docs/ mappát a dokumentáció-kérdezéshez. A fájlok helyben olvasódnak, memóriában maradnak.",
+    "docsLoaded": "{{count}} fájl betöltve",
+    "clearDocs": "Törlés"
+  }
+}
