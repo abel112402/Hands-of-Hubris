@@ -1,13 +1,16 @@
-import type { CatalogItem, CollectionSection, Entity, FieldDef, Project, Source } from '../model/types'
+import type { CatalogItem, CollectionSection, Entity, FieldDef, GraphSource, Project, Source } from '../model/types'
 import { MODULES, getSections } from '../modules/registry'
 
 export const entityLabel = (e: Entity | undefined) =>
   e ? String(e.name ?? e.title ?? e.id) || e.id : ''
 
-export function resolveSource(project: Project, currentDoc: string, source: Source): CatalogItem[] {
+export function resolveSource(project: Project, currentDoc: string, source: GraphSource): CatalogItem[] {
+  if ('any' in source) return source.any.flatMap((s) => resolveSource(project, currentDoc, s))
   if ('catalog' in source) return project.registry.catalogs[source.catalog]?.items ?? []
   const docId = source.doc ?? currentDoc
   const list = project.documents[docId]?.data[source.section]
+  // A graph section can be a source too: its nodes are the items.
+  if (list && Array.isArray(list.nodes)) return list.nodes.map((n: { id: string; label: string }) => ({ id: n.id, label: n.label }))
   if (!Array.isArray(list)) return []
   return list.map((e: Entity) => ({ id: e.id, label: entityLabel(e) }))
 }

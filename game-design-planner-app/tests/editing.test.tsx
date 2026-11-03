@@ -33,6 +33,22 @@ describe('vision form accessibility', () => {
   })
 })
 
+describe('roadmap timeline', () => {
+  it('offers calendar dates only once a start date exists and shows the buffered end', async () => {
+    useStore.getState().loadProject(createProject('T', true), 'x')
+    window.location.hash = '#/doc/overview.roadmap?s=phases'
+    render(<App />)
+    const toggle = (await screen.findAllByLabelText(/Calendar dates/))[0] as HTMLInputElement
+    expect(toggle.disabled).toBe(true)
+    cleanup()
+    useStore.getState().mutate((p) => void (p.documents['overview.roadmap'].data.assumptions = { startDate: '2026-01-05', buffer: 10 }))
+    render(<App />)
+    const on = (await screen.findAllByLabelText(/Calendar dates/))[0] as HTMLInputElement
+    expect(on.disabled).toBe(false)
+    expect((await screen.findAllByText(/with 10% buffer: week 88/))[0]).toBeTruthy()
+  })
+})
+
 describe('hints UI', () => {
   it('shows the hint panel and asks for confirmation before creating an entity', async () => {
     useStore.getState().loadProject(createProject('T', false))

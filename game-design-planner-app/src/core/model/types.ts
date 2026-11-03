@@ -3,6 +3,8 @@ export const FORMAT_VERSION = 1
 export const APP_VERSION = '0.1.0'
 
 export type Source = { catalog: string } | { doc?: string; section: string }
+/** A graph's node source may merge several sections (e.g. all the systems a loop can refer to). */
+export type GraphSource = Source | { any: Source[] }
 
 export type FieldBase = { key: string; label: string; help?: string; placeholder?: string; required?: boolean }
 export type FieldDef = FieldBase &
@@ -15,6 +17,7 @@ export type FieldDef = FieldBase &
     | { type: 'ref'; source: Source }
     | { type: 'multiref'; source: Source }
     | { type: 'color' }
+    | { type: 'date' }
     | { type: 'list' }
     | { type: 'map'; source: Source; max?: number }
     | { type: 'formula' }
@@ -28,6 +31,8 @@ export type CollectionView =
   | { kind: 'kanban'; groupBy: string }
   | { kind: 'radar'; mapField: string }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
+  | { kind: 'ladder'; orderField: string; linkFields?: string[] }
+  | { kind: 'progression'; scaleField: string; leadsField: string }
   | {
       kind: 'timeline'
       startField: string
@@ -35,6 +40,12 @@ export type CollectionView =
       laneField?: string
       depsField?: string
       unit: string
+      /** Marks items with this field set to 'Milestone' as zero-duration events. */
+      kindField?: string
+      /** Reads the project start date and buffer (%) from a form section, so bars can be shown as calendar dates. */
+      calendar?: { section: string; startField: string; bufferField: string }
+      /** Draws another collection's items as phase bands behind the bars. */
+      bands?: { section: string; startField: string; durationField: string }
     }
 
 export type SectionBase = { id: string; title: string; description?: string }
@@ -47,6 +58,8 @@ export type SectionDef = SectionBase &
         fields: FieldDef[]
         views: CollectionView[]
         seed?: Record<string, unknown>[]
+        /** Exports one heading per option of this enum field instead of a single list. */
+        exportSplit?: { field: string; headings: string[] }
       }
     | {
         kind: 'matrix'
@@ -55,7 +68,14 @@ export type SectionDef = SectionBase &
         cell: { type: 'number'; min: number; max: number } | { type: 'enum'; options: string[] }
         diagonal?: boolean
       }
-    | { kind: 'graph'; nodeKinds: string[]; edgeKinds?: string[]; nodeSource?: Source }
+    | {
+        kind: 'graph'
+        nodeKinds: string[]
+        edgeKinds?: string[]
+        nodeSource?: GraphSource
+        /** A collection whose multiref field points at this graph's nodes (e.g. loops → nodes). */
+        links?: { section: string; field: string; label: string }
+      }
     | { kind: 'canvas'; itemKinds: string[] }
     | { kind: 'checklist' }
     | { kind: 'richtext' }

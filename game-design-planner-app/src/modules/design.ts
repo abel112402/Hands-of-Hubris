@@ -1,27 +1,81 @@
+import type { GraphSource } from '../core/model/types'
 import { catalog, f, mod, s, section, v } from './helpers'
 
 const FACTIONS = section('factions', 'design.factions')
 const BIOMES = section('biomes', 'design.world')
 const ITEMS = section('items', 'design.items')
 
+const SCALES = ['Moment-to-moment', 'Short (minutes)', 'Medium (hours / days)', 'Long (campaign)']
+
+const LOOP_SYSTEMS: GraphSource = {
+  any: [
+    section('buildings', 'design.town'),
+    section('items', 'design.items'),
+    section('enemies', 'design.combat'),
+    section('quests', 'design.story'),
+    section('factions', 'design.factions'),
+    section('biomes', 'design.world'),
+  ],
+}
+
+/** v1 stored one free-text "rewards" field per loop. */
+function migrateCoreLoop(data: Record<string, any>) {
+  if (!Array.isArray(data.loops)) return
+  for (const l of data.loops) {
+    if (l.rewards !== undefined && l.reward === undefined) l.reward = l.rewards
+    delete l.rewards
+  }
+}
+
 export const designModules = [
-  mod('design', 'coreLoop', 'Core Loop', 'docs/01_design/core_loop.md', '🔁', 'Gameplay loops across time scales.', [
-    s.collection(
-      'loops',
-      'Loops by time scale',
-      'loop',
-      [
-        f.enm('scale', 'Time scale', ['Moment-to-moment', 'Short (minutes)', 'Medium (hours / days)', 'Long (campaign)']),
-        f.long('description', 'Description'),
-        f.long('rewards', 'Rewards and motivation'),
-      ],
-      [v.cards(), v.kanban('scale'), v.table()],
-    ),
-    s.graph('loopGraph', 'Loop diagram', ['Action', 'System', 'Resource', 'Reward', 'Goal'], {
-      edgeKinds: ['leads to', 'feeds', 'rewards', 'unlocks'],
-      description: 'Draw the actions and systems and how they feed each other.',
-    }),
-  ]),
+  {
+    ...mod('design', 'coreLoop', 'Core Loop', 'docs/01_design/core_loop.md', '🔁', 'Gameplay loops across time scales.', [
+      s.collection(
+        'loops',
+        'Loops by time scale',
+        'loop',
+        [
+          f.enm('scale', 'Time scale', SCALES, {
+            help: 'Moment-to-moment: seconds (aim, dodge, gather). Short: minutes (gather → craft → survive). Medium: hours / days (base upgrades, expeditions). Long: the whole campaign (factions, bosses, endings).',
+          }),
+          f.long('action', 'Player action', { help: 'What does the player actively do in this loop?', placeholder: 'e.g. Gather wood and stone from the surrounding area.' }),
+          f.long('reward', 'Reward', { help: 'What does the player get, and why does it matter to them?', placeholder: 'e.g. Materials to craft a better axe.' }),
+          f.long('nextDecision', 'Next decision or action', {
+            help: 'What new choice does the reward open up? This is what makes the loop repeat.',
+            placeholder: 'e.g. Craft the axe now, or save materials for a wall.',
+          }),
+          f.long('choiceShift', 'How choices change over time', { help: 'As this loop repeats, what changes about the options or trade-offs the player faces?' }),
+          f.multi('leadsTo', 'Builds toward (longer loops)', section('loops'), {
+            help: 'Which longer loops does repeating this one progress? Only link to a longer time scale.',
+          }),
+          f.multi('nodes', 'Diagram nodes', section('loopGraph'), { help: 'The actions, systems and rewards in the loop diagram that make up this loop.' }),
+          f.long('description', 'Notes'),
+        ],
+        [v.cards(), v.progression('scale', 'leadsTo'), v.kanban('scale'), v.table()],
+        {
+          exportSplit: {
+            field: 'scale',
+            headings: ['Moment-to-moment', 'Short-term loop (minutes)', 'Medium-term loop (hours / days)', 'Long-term loop (campaign)'],
+          },
+        },
+      ),
+      s.form('rewardsProgression', 'Rewards and progression systems', [
+        f.long('rewardsProgression', 'Rewards and progression systems', {
+          help: 'What motivates the player, and how do the loops feed each other?',
+          placeholder: 'e.g. Gathering feeds crafting; crafting unlocks expeditions; expeditions unlock factions.',
+        }),
+      ]),
+      s.graph('loopGraph', 'Gameplay diagrams', ['Action', 'System', 'Resource', 'Reward', 'Goal'], {
+        edgeKinds: ['leads to', 'feeds', 'rewards', 'unlocks'],
+        description:
+          'Action: something the player does. System: a game system that reacts (link it to a real system below). Resource: something gathered or spent. Reward: what the player gains. Goal: a target worth working toward. Use “feeds” for repeated actions, “rewards” or “leads to” back to an earlier node for a feedback loop, and “unlocks” for gates.',
+        nodeSource: LOOP_SYSTEMS,
+        links: { section: 'loops', field: 'nodes', label: 'Loops using this node' },
+      }),
+    ]),
+    version: 2,
+    migrate: migrateCoreLoop,
+  },
   mod('design', 'difficulty', 'Difficulty Levels', 'docs/01_design/difficulty.md', '⚖️', 'Parameters scaled by difficulty.', [
     s.collection(
       'params',

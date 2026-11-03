@@ -163,6 +163,66 @@
     "visionScopeMvp": {
       "title": "Nothing is in the MVP yet",
       "body": "Scope items exist, but none are marked “In MVP”."
+    },
+    "roadmapConflict": {
+      "title": "Dependencies start too early in {{section}}",
+      "body": "{{count}} item(s) start before a predecessor ends: {{names}}. Move them or adjust the dependency."
+    },
+    "roadmapCycle": {
+      "title": "Circular dependencies in {{section}}",
+      "body": "These items depend on each other in a loop: {{names}}."
+    },
+    "roadmapMissing": {
+      "title": "Schedule gaps in {{section}}",
+      "body": "{{count}} item(s) have no start or duration, so they are left out of the totals."
+    },
+    "roadmapExit": {
+      "title": "Phases without exit criteria",
+      "body": "{{count}} phase(s) have no measurable exit criteria: {{names}}."
+    },
+    "roadmapGate": {
+      "title": "Phases without a gate review",
+      "body": "{{count}} phase(s) have no gate review: {{names}}."
+    },
+    "roadmapOverload": {
+      "title": "Phases over capacity",
+      "body": "Task effort exceeds the capacity of: {{names}}."
+    },
+    "roadmapConfidence": {
+      "title": "Low-confidence estimates",
+      "body": "{{count}} unfinished task(s) have a low-confidence estimate: {{names}}."
+    },
+    "roadmapDecision": {
+      "title": "Gate decisions are due",
+      "body": "{{count}} gate(s) belong to phases that should have ended but have no decision: {{names}}."
+    },
+    "coreLoopScales": {
+      "title": "Time scales not covered yet",
+      "body": "Consider describing a loop for: {{names}}. Not every game needs all four."
+    },
+    "coreLoopReward": {
+      "title": "Loops without a reward",
+      "body": "{{count}} loop(s) have no reward: {{names}}. What does the player get for completing them?"
+    },
+    "coreLoopDecision": {
+      "title": "Loops without a next decision",
+      "body": "{{count}} loop(s) don’t say what the player decides next: {{names}}. A meaningful choice is what makes a loop repeat."
+    },
+    "coreLoopProgression": {
+      "title": "Loops that don’t build toward a longer loop",
+      "body": "{{count}} loop(s) don’t link to a longer loop: {{names}}."
+    },
+    "coreLoopUnlinked": {
+      "title": "Loops not linked to the diagram",
+      "body": "{{count}} loop(s) have no nodes in the loop diagram: {{names}}."
+    },
+    "coreLoopIsolated": {
+      "title": "Isolated nodes in the loop diagram",
+      "body": "These nodes have no connections: {{names}}."
+    },
+    "coreLoopFeedback": {
+      "title": "The loop diagram has no feedback path",
+      "body": "No connection leads back to an earlier node, so the diagram reads as a line, not a loop. Add an edge from a reward or outcome back to an action."
     }
   },
   "ai": {

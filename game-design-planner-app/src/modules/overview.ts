@@ -1,5 +1,6 @@
 import { f, mod, s, section, v } from './helpers'
 
+const ASSUMPTIONS = { section: 'assumptions', startField: 'startDate', bufferField: 'buffer' }
 const SCOPE = ['In MVP', 'Later', 'Out of scope']
 
 /** v1 kept pitch, references, audience, tone, platform and monetization in one 'concept' form. */
@@ -20,6 +21,15 @@ function migrateVision(data: Record<string, any>) {
     data[sectionId] = { ...(data[sectionId] ?? {}), [field]: old[key] }
   }
   delete data.concept
+}
+
+/** v1 stored what a critical dependency blocks as free text. */
+function migrateRoadmap(data: Record<string, any>) {
+  if (!Array.isArray(data.dependencies)) return
+  for (const d of data.dependencies) {
+    if (d.blocks !== undefined && d.blocksNote === undefined) d.blocksNote = d.blocks
+    delete d.blocks
+  }
 }
 
 export const overviewModules = [
@@ -95,12 +105,18 @@ export const overviewModules = [
       [v.table(['name', 'codeName', 'definition', 'related']), v.cards()],
     ),
   ]),
-  mod('overview', 'roadmap', 'Roadmap', 'docs/00_overview/roadmap.md', '🗺️', 'Phases, tasks, dependencies, gates and scope-cut plan.', [
-    s.form('assumptions', 'Assumptions', [
-      f.long('notes', 'Planning assumptions (team size, estimate unit, start date, buffer)'),
-      f.text('startDate', 'Project start date'),
-      f.num('buffer', 'Schedule buffer (%)', { min: 0, max: 100 }),
-    ]),
+  {
+    ...mod('overview', 'roadmap', 'Roadmap', 'docs/00_overview/roadmap.md', '🗺️', 'Phases, tasks, dependencies, gates and scope-cut plan.', [
+    s.form(
+      'assumptions',
+      'Assumptions',
+      [
+        f.long('notes', 'Planning assumptions', { help: 'Team size, working pattern, what the estimates assume. All schedule numbers in this document are in weeks.' }),
+        f.date('startDate', 'Project start date', { help: 'Optional. Lets the timelines show calendar dates next to week numbers.' }),
+        f.num('buffer', 'Schedule buffer (%)', { min: 0, max: 100, help: 'Added on top of the planned end to show a buffered end date on the timelines.' }),
+      ],
+      'All start and duration values are in weeks from the project start.',
+    ),
     s.collection(
       'phases',
       'Phases',
@@ -109,14 +125,20 @@ export const overviewModules = [
         f.num('start', 'Start (week)', { min: 0 }),
         f.num('duration', 'Duration (weeks)', { min: 0 }),
         f.color('color', 'Color'),
-        f.long('goal', 'Goal'),
-        f.long('entry', 'Entry condition'),
-        f.check('exit', 'Exit criteria'),
+        f.long('goal', 'Goal', { help: 'One outcome the team can verify, e.g. "Prove the core loop is fun with grey-box art".' }),
+        f.long('entry', 'Entry condition', { help: 'What must be true before this phase starts.' }),
+        f.check('exit', 'Exit criteria', { help: 'Measurable and yes/no, e.g. "30 FPS on min-spec for 10 minutes".' }),
         f.long('outputs', 'Outputs'),
         f.long('risks', 'Main risks'),
+        f.text('owner', 'Owner', { help: 'Optional.' }),
+        f.num('capacity', 'Capacity (person-weeks)', { min: 0, help: 'Optional. Compared with the effort of the phase\'s tasks.' }),
         f.multi('dependsOn', 'Depends on phases', section('phases')),
       ],
-      [v.timeline('start', 'duration', 'wk', { depsField: 'dependsOn' }), v.cards(), v.table(['name', 'start', 'duration', 'goal'])],
+      [
+        v.timeline('start', 'duration', 'wk', { depsField: 'dependsOn', calendar: ASSUMPTIONS }),
+        v.cards(),
+        v.table(['name', 'start', 'duration', 'goal']),
+      ],
       {
         seed: [
           { id: 'phase0', name: 'Pre-production', start: 0, duration: 6, goal: 'Finalize design, technical basics, decide open questions' },
@@ -125,24 +147,57 @@ export const overviewModules = [
           { id: 'phase3', name: 'Alpha (feature complete)', start: 30, duration: 20, dependsOn: ['phase2'], goal: 'All systems working with partial content' },
           { id: 'phase4', name: 'Beta (content complete)', start: 50, duration: 16, dependsOn: ['phase3'], goal: 'All content in, balancing and polish' },
           { id: 'phase5', name: 'Release candidate & launch', start: 66, duration: 8, dependsOn: ['phase4'], goal: 'Bug fixing, optimization, launch preparation' },
+          {
+            id: 'phase6',
+            name: 'Post-release support',
+            start: 74,
+            duration: 6,
+            dependsOn: ['phase5'],
+            goal: 'Hotfixes within the SLA and the first major patch 4–6 weeks after launch; support then continues beyond this window',
+          },
         ],
       },
     ),
     s.collection(
       'tasks',
-      'Tasks / milestones',
+      'Tasks & milestones',
       'task',
       [
+        f.enm('kind', 'Type', ['Task', 'Milestone'], { help: 'A milestone is a zero-duration event; its duration is ignored.' }),
         f.ref('phase', 'Phase', section('phases')),
         f.num('start', 'Start (week)', { min: 0 }),
         f.num('duration', 'Duration (weeks)', { min: 0 }),
         f.multi('dependsOn', 'Depends on', section('tasks')),
         f.text('doc', 'Related design doc'),
         f.enm('status', 'Status', ['Planned', 'In progress', 'Done', 'Blocked']),
-        f.long('acceptance', 'Acceptance criterion'),
+        f.long('acceptance', 'Acceptance criterion', { help: 'How we know it is done, e.g. "Save/load round-trips a full town".' }),
+        f.text('owner', 'Owner', { help: 'Optional.' }),
+        f.num('effort', 'Effort (person-weeks)', { min: 0, help: 'Optional. Summed per phase and compared with its capacity.' }),
+        f.enm('confidence', 'Estimate confidence', ['High', 'Medium', 'Low'], { help: 'Optional. Low-confidence items are flagged as risky.' }),
       ],
-      [v.timeline('start', 'duration', 'wk', { depsField: 'dependsOn' }), v.kanban('status'), v.table()],
-      { description: 'Dependencies are drawn on the timeline and the critical path is highlighted.' },
+      [
+        v.timeline('start', 'duration', 'wk', {
+          depsField: 'dependsOn',
+          kindField: 'kind',
+          calendar: ASSUMPTIONS,
+          bands: { section: 'phases', startField: 'start', durationField: 'duration' },
+        }),
+        v.kanban('status'),
+        v.table(),
+      ],
+      { description: 'Dependencies are drawn on the timeline. Red links start before their predecessor ends; the critical path is the chain with no slack.' },
+    ),
+    s.collection(
+      'dependencies',
+      'Critical dependencies',
+      'dependency',
+      [
+        f.multi('blocksPhases', 'Blocks phases', section('phases')),
+        f.multi('blocksTasks', 'Blocks tasks', section('tasks')),
+        f.text('blocksNote', 'Blocks (other)', { help: 'Anything that is not a phase or task.' }),
+        f.long('why', 'Why it blocks'),
+      ],
+      [v.table(), v.cards()],
     ),
     s.collection(
       'gates',
@@ -151,8 +206,11 @@ export const overviewModules = [
       [
         f.ref('phase', 'End of phase', section('phases')),
         f.text('decisionMakers', 'Decision makers'),
-        f.long('question', 'Question'),
-        f.text('outcomes', 'Possible outcomes'),
+        f.long('question', 'Question', { help: 'A yes/no question the exit criteria can answer, e.g. "Is the design stable enough to prototype?"' }),
+        f.text('outcomes', 'Possible outcomes', { help: 'e.g. Go / Descope / Pivot' }),
+        f.enm('decision', 'Decision', ['Pending', 'Go', 'No-go', 'Conditional']),
+        f.date('reviewDate', 'Review date'),
+        f.long('decisionNote', 'Decision note', { help: 'Why this outcome, and any conditions.' }),
       ],
       [v.table(), v.cards()],
     ),
@@ -160,15 +218,13 @@ export const overviewModules = [
       'cuts',
       'Scope reduction order',
       'cut',
-      [f.num('order', 'Order', { min: 1 }), f.long('description', 'What is cut / simplified')],
-      [v.table(['order', 'name', 'description']), v.cards()],
-    ),
-    s.collection(
-      'dependencies',
-      'Critical dependencies',
-      'dependency',
-      [f.text('blocks', 'Blocks'), f.long('why', 'Why it blocks')],
-      [v.table(), v.cards()],
+      [
+        f.num('order', 'Order', { min: 1, help: '1 is cut first.' }),
+        f.long('description', 'What is cut / simplified', { help: 'Say what is dropped and what stays, e.g. "Factions 4 → 3; keep the diplomacy loop".' }),
+        f.multi('affectsPhases', 'Affects phases', section('phases')),
+        f.multi('affectsTasks', 'Affects tasks', section('tasks')),
+      ],
+      [v.ladder('order', ['affectsPhases', 'affectsTasks']), v.table(['order', 'name', 'description']), v.cards()],
     ),
     s.collection(
       'changelog',
@@ -177,5 +233,8 @@ export const overviewModules = [
       [f.text('date', 'Date'), f.long('reason', 'Reason')],
       [v.table()],
     ),
-  ]),
+    ]),
+    version: 2,
+    migrate: migrateRoadmap,
+  },
 ]

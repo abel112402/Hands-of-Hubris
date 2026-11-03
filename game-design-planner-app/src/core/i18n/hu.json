@@ -163,6 +163,66 @@
     "visionScopeMvp": {
       "title": "Még semmi sincs az MVP-ben",
       "body": "Vannak hatókör-elemek, de egyik sincs „In MVP” kategóriában."
+    },
+    "roadmapConflict": {
+      "title": "Túl korán induló függőségek: {{section}}",
+      "body": "{{count}} elem hamarabb indul, mint egy előzménye véget érne: {{names}}. Told el, vagy módosítsd a függőséget."
+    },
+    "roadmapCycle": {
+      "title": "Körkörös függőségek: {{section}}",
+      "body": "Ezek az elemek körbe függnek egymástól: {{names}}."
+    },
+    "roadmapMissing": {
+      "title": "Hiányos ütemezés: {{section}}",
+      "body": "{{count}} elemnél nincs kezdés vagy időtartam, ezért kimaradnak az összegekből."
+    },
+    "roadmapExit": {
+      "title": "Kilépési feltétel nélküli fázisok",
+      "body": "{{count}} fázisnak nincs mérhető kilépési feltétele: {{names}}."
+    },
+    "roadmapGate": {
+      "title": "Kapu nélküli fázisok",
+      "body": "{{count}} fázishoz nincs döntési kapu: {{names}}."
+    },
+    "roadmapOverload": {
+      "title": "Kapacitást meghaladó fázisok",
+      "body": "A feladatok munkaigénye meghaladja a kapacitást: {{names}}."
+    },
+    "roadmapConfidence": {
+      "title": "Alacsony biztonságú becslések",
+      "body": "{{count}} befejezetlen feladat becslése alacsony biztonságú: {{names}}."
+    },
+    "roadmapDecision": {
+      "title": "Esedékes kapudöntések",
+      "body": "{{count}} kapu fázisa már véget érhetett, de nincs döntés: {{names}}."
+    },
+    "coreLoopScales": {
+      "title": "Még le nem fedett időskálák",
+      "body": "Érdemes lehet ciklust leírni ezekhez: {{names}}. Nem minden játéknak kell mind a négy."
+    },
+    "coreLoopReward": {
+      "title": "Jutalom nélküli ciklusok",
+      "body": "{{count}} ciklusnak nincs jutalma: {{names}}. Mit kap a játékos a teljesítésért?"
+    },
+    "coreLoopDecision": {
+      "title": "Következő döntés nélküli ciklusok",
+      "body": "{{count}} ciklusnál nem derül ki, mit dönt a játékos ezután: {{names}}. Az értelmes döntés teszi ismétlődővé a ciklust."
+    },
+    "coreLoopProgression": {
+      "title": "Hosszabb ciklushoz nem kapcsolódó ciklusok",
+      "body": "{{count}} ciklus nem épít hosszabb ciklusra: {{names}}."
+    },
+    "coreLoopUnlinked": {
+      "title": "Az ábrához nem kapcsolt ciklusok",
+      "body": "{{count}} ciklusnak nincs csomópontja az ábrán: {{names}}."
+    },
+    "coreLoopIsolated": {
+      "title": "Elszigetelt csomópontok az ábrán",
+      "body": "Ezeknek a csomópontoknak nincs kapcsolata: {{names}}."
+    },
+    "coreLoopFeedback": {
+      "title": "Az ábrán nincs visszacsatolás",
+      "body": "Egyetlen kapcsolat sem vezet vissza egy korábbi csomóponthoz, így az ábra vonal, nem ciklus. Kösd vissza a jutalmat vagy az eredményt egy cselekvéshez."
     }
   },
   "ai": {

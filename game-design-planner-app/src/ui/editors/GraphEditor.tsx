@@ -15,9 +15,10 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type { GraphData, SectionDef } from '../../core/model/types'
+import type { Entity, GraphData, SectionDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { resolveSource } from '../../core/references/refs'
+import { useStore } from '../../core/store/store'
 import { useProject, useSection } from '../hooks'
 
 type GSec = Extract<SectionDef, { kind: 'graph' }>
@@ -29,9 +30,9 @@ const hue = (s: string) => {
 }
 
 function CardNode({ data, selected }: NodeProps) {
-  const d = data as { label: string; kind: string; tag?: string }
+  const d = data as { label: string; kind: string; tag?: string; dim?: boolean }
   return (
-    <div className={'gnode' + (selected ? ' selected' : '')} style={{ borderColor: `hsl(${hue(d.kind)},60%,55%)` }}>
+    <div className={'gnode' + (selected ? ' selected' : '') + (d.dim ? ' dim' : '')} style={{ borderColor: `hsl(${hue(d.kind)},60%,55%)` }}>
       <Handle type="target" position={Position.Left} />
       <div className="gnode-kind" style={{ color: `hsl(${hue(d.kind)},70%,70%)` }}>{d.kind}{d.tag ? ` · ${d.tag}` : ''}</div>
       <div className="gnode-label">{d.label}</div>
@@ -75,6 +76,11 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
   const [sel, setSel] = useState<{ type: 'node' | 'edge'; id: string } | null>(null)
   const [newKind, setNewKind] = useState(sec.nodeKinds[0])
   const [newRef, setNewRef] = useState('')
+  const [highlight, setHighlight] = useState('')
+  const mutate = useStore((s) => s.mutate)
+  const linkItems: Entity[] = sec.links ? project.documents[docId]?.data[sec.links.section] ?? [] : []
+  const lit = new Set<string>(highlight && sec.links ? linkItems.find((e) => e.id === highlight)?.[sec.links.field] ?? [] : [])
+  const dimmed = (id: string) => !!highlight && !lit.has(id)
   const sourceItems = useMemo(() => (sec.nodeSource ? resolveSource(project, docId, sec.nodeSource) : []), [project, docId, sec.nodeSource])
   const refIsLabel = !!sec.nodeSource && !('catalog' in sec.nodeSource)
 
@@ -85,7 +91,7 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
       type: 'card',
       position: { x: n.x, y: n.y },
       selected: sel?.type === 'node' && sel.id === n.id,
-      data: { label: refIsLabel && ref ? ref.label : n.label, kind: n.kind, tag: !refIsLabel && ref ? ref.label : undefined },
+      data: { label: refIsLabel && ref ? ref.label : n.label, kind: n.kind, tag: !refIsLabel && ref ? ref.label : undefined, dim: dimmed(n.id) },
     }
   })
   const edges: Edge[] = g.edges.map((e) => ({
@@ -94,6 +100,7 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
     target: e.target,
     label: e.label || e.kind,
     selected: sel?.type === 'edge' && sel.id === e.id,
+    style: dimmed(e.source) || dimmed(e.target) ? { opacity: 0.2 } : undefined,
     markerEnd: { type: MarkerType.ArrowClosed },
   }))
 
@@ -143,6 +150,12 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
       d.nodes = d.nodes.filter((n) => n.id !== id)
       d.edges = d.edges.filter((e) => e.source !== id && e.target !== id)
     })
+    const links = sec.links
+    if (links)
+      mutate((p) => {
+        for (const e of (p.documents[docId]?.data[links.section] ?? []) as Entity[])
+          if (Array.isArray(e[links.field])) e[links.field] = e[links.field].filter((x: string) => x !== id)
+      })
     setSel(null)
   }
   const removeEdge = (id: string) => {
@@ -167,6 +180,12 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
         )}
         <button className="primary" onClick={addNode}>+ Add node</button>
         <button onClick={layout}>Auto layout</button>
+        {sec.links && (
+          <select aria-label="Highlight" value={highlight} onChange={(e) => setHighlight(e.target.value)} title="Dim everything outside one entry">
+            <option value="">Highlight: all</option>
+            {linkItems.map((e) => <option key={e.id} value={e.id}>{e.name || '(unnamed)'}</option>)}
+          </select>
+        )}
         <span className="muted">Drag from a node’s right handle to another node to connect. Select + Delete to remove.</span>
       </div>
       <div className="graph-body">
@@ -210,6 +229,30 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
                       {sourceItems.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
                       {node.refId && !sourceItems.some((i) => i.id === node.refId) && <option value={node.refId}>⚠ missing</option>}
                     </select>
+                  </div>
+                )}
+                {sec.links && (
+                  <div className="field"><label>{sec.links.label}</label>
+                    <div className="link-list">
+                      {linkItems.length === 0 && <span className="muted">None yet.</span>}
+                      {linkItems.map((e) => (
+                        <label key={e.id}>
+                          <input
+                            type="checkbox"
+                            checked={(e[sec.links!.field] ?? []).includes(node.id)}
+                            onChange={(ev) =>
+                              mutate((p) => {
+                                const target = (p.documents[docId]?.data[sec.links!.section] ?? []).find((x: Entity) => x.id === e.id)
+                                if (!target) return
+                                const cur: string[] = target[sec.links!.field] ?? []
+                                target[sec.links!.field] = ev.target.checked ? [...cur, node.id] : cur.filter((x) => x !== node.id)
+                              })
+                            }
+                          />{' '}
+                          {e.name || '(unnamed)'}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div className="field"><label>Notes</label><textarea rows={5} value={node.notes ?? ''} onChange={(e) => update((d) => void (d.nodes.find((n) => n.id === node.id)!.notes = e.target.value), `nn-${node.id}`)} /></div>

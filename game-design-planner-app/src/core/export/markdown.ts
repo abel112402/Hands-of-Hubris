@@ -13,6 +13,7 @@ import type {
 import { getSections, MODULES } from '../modules/registry'
 import { entityLabel, resolveSource } from '../references/refs'
 import { tryEvaluate } from '../formula'
+import { analyze, weekToDate, withBuffer } from '../schedule'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
 
@@ -95,6 +96,23 @@ function graphMd(project: Project, docId: string, sec: Extract<SectionDef, { kin
   return out
 }
 
+/** Planned and buffered end of a scheduled collection, with calendar dates when a project start date is set. */
+function scheduleSummaryMd(project: Project, docId: string, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const tl = sec.views.find((v) => v.kind === 'timeline')
+  if (!tl || tl.kind !== 'timeline' || !data.length) return ''
+  const a = analyze(data, { start: tl.startField, duration: tl.durationField, deps: tl.depsField ?? '', kind: tl.kindField })
+  const settings = tl.calendar ? project.documents[docId]?.data[tl.calendar.section] : undefined
+  const buffer = settings?.[tl.calendar?.bufferField ?? '']
+  const startDate = settings?.[tl.calendar?.startField ?? '']
+  const buffered = Math.ceil(withBuffer(a.end, buffer))
+  const at = (w: number) => (weekToDate(startDate, w) ? ` (${weekToDate(startDate, w)})` : '')
+  let out = `\n_Planned end: week ${a.end}${at(a.end)}`
+  if (buffer) out += `; with ${buffer}% buffer: week ${buffered}${at(buffered)}`
+  out += '._\n'
+  if (a.conflicts.length) out += `\n_${a.conflicts.length} dependency conflict(s): an item starts before its predecessor ends._\n`
+  return out
+}
+
 export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef): string {
   const data = project.documents[mod.id]?.data[sec.id]
   if (data === undefined) return '_No data._\n'
@@ -109,7 +127,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       return lines.length ? lines.join('\n') + '\n' : '_No data._\n'
     }
     case 'collection':
-      return collectionMd(project, mod.id, sec, data)
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data)
     case 'matrix':
       return matrixMd(project, mod.id, sec, data)
     case 'graph':
@@ -139,9 +157,21 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
 
 export function moduleToMarkdown(project: Project, mod: PlannerModule): string {
   let out = `# ${mod.title}\n\n**Status:** Draft | **Last modified:** ${project.meta.updatedAt.slice(0, 10)}\n\n> ${mod.summary}\n\n`
-  getSections(mod, project.registry).forEach((sec, i) => {
-    out += `## ${i + 1}. ${sec.title}\n\n${sec.description ? `_${sec.description}_\n\n` : ''}${sectionMd(project, mod, sec)}\n`
-  })
+  let n = 0
+  for (const sec of getSections(mod, project.registry)) {
+    const split = sec.kind === 'collection' ? sec.exportSplit : undefined
+    if (sec.kind === 'collection' && split) {
+      const data = (project.documents[mod.id]?.data[sec.id] ?? []) as Entity[]
+      const scale = sec.fields.find((f) => f.key === split.field)
+      const options = scale?.type === 'enum' ? scale.options : []
+      const rest = data.filter((e) => !options.includes(e[split.field]))
+      const groups = [...options.map((o, i) => ({ title: split.headings[i] ?? o, items: data.filter((e) => e[split.field] === o) })), ...(rest.length ? [{ title: 'Unclassified loops', items: rest }] : [])]
+      const bare = { ...sec, fields: sec.fields.filter((f) => f.key !== split.field) }
+      for (const g of groups) out += `## ${++n}. ${g.title}\n\n${collectionMd(project, mod.id, bare, g.items)}\n`
+      continue
+    }
+    out += `## ${++n}. ${sec.title}\n\n${sec.description ? `_${sec.description}_\n\n` : ''}${sectionMd(project, mod, sec)}\n`
+  }
   return out
 }
 

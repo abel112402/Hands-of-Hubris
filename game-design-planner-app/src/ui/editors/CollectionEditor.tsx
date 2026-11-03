@@ -9,7 +9,8 @@ import { getModule } from '../../core/modules/registry'
 import { useSection, useProject } from '../hooks'
 import { FieldInput, displayValue, isLongField } from '../FieldInput'
 import { Link } from 'react-router-dom'
-import { RadarView, Grid2dView, TimelineView } from './views'
+import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView } from './views'
+import { GateReadiness } from './GateReadiness'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   cards: 'Cards',
@@ -18,6 +19,8 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   radar: 'Radar',
   grid2d: 'Matrix',
   timeline: 'Timeline',
+  ladder: 'Cut order',
+  progression: 'Progression',
 }
 
 export type ViewProps = {
@@ -96,6 +99,8 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
+          {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
+          {view.kind === 'progression' && <ProgressionView {...props} scaleField={view.scaleField} leadsField={view.leadsField} />}
           {items.length === 0 && <p className="empty">Nothing here yet. Use “Add {sec.singular}”.</p>}
         </div>
         {sel && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
@@ -180,6 +185,7 @@ function Inspector({
             {f.help && <small className="muted" id={`${docId}-${entity.id}-${f.key}-help`}>{f.help}</small>}
           </div>
         ))}
+        {docId === 'overview.roadmap' && sec.id === 'gates' && <GateReadiness entity={entity} />}
         <div className="field">
           <label>Used by</label>
           {usages.length === 0 ? (

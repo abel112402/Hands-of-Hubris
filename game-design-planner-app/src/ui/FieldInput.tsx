@@ -119,6 +119,8 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
         </div>
       )
     }
+    case 'date':
+      return <input id={id} aria-describedby={describedBy} type="date" value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)} />
     case 'color':
       return (
         <div className="row">

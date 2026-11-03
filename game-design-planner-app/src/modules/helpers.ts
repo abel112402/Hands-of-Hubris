@@ -1,6 +1,7 @@
 import type {
   CollectionView,
   FieldDef,
+  GraphSource,
   ModuleGroup,
   PlannerModule,
   SectionDef,
@@ -44,6 +45,7 @@ export const f = {
     source,
     ...o,
   }),
+  date: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'date', ...o }),
   color: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'color', ...o }),
   list: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'list', ...o }),
   map: (key: string, label: string, source: Source, max?: number, o: Opt = {}): FieldDef => ({
@@ -71,11 +73,13 @@ export const v = {
     yField,
     max,
   }),
+  progression: (scaleField: string, leadsField: string): CollectionView => ({ kind: 'progression', scaleField, leadsField }),
+  ladder: (orderField: string, linkFields?: string[]): CollectionView => ({ kind: 'ladder', orderField, linkFields }),
   timeline: (
     startField: string,
     durationField: string,
     unit: string,
-    o: { laneField?: string; depsField?: string } = {},
+    o: Partial<Pick<Extract<CollectionView, { kind: 'timeline' }>, 'laneField' | 'depsField' | 'kindField' | 'calendar' | 'bands'>> = {},
   ): CollectionView => ({ kind: 'timeline', startField, durationField, unit, ...o }),
 }
 
@@ -93,7 +97,11 @@ export const s = {
     singular: string,
     fields: FieldDef[],
     views: CollectionView[] = [v.cards(), v.table()],
-    o: { description?: string; seed?: Record<string, unknown>[] } = {},
+    o: {
+      description?: string
+      seed?: Record<string, unknown>[]
+      exportSplit?: Extract<SectionDef, { kind: 'collection' }>['exportSplit']
+    } = {},
   ): SectionDef => ({
     id,
     title,
@@ -103,6 +111,7 @@ export const s = {
     fields: fields.some((x) => x.key === 'name') ? fields : [NAME, ...fields],
     views,
     seed: o.seed,
+    exportSplit: o.exportSplit,
   }),
   matrix: (
     id: string,
@@ -116,8 +125,17 @@ export const s = {
     id: string,
     title: string,
     nodeKinds: string[],
-    o: { description?: string; edgeKinds?: string[]; nodeSource?: Source } = {},
-  ): SectionDef => ({ id, title, description: o.description, kind: 'graph', nodeKinds, edgeKinds: o.edgeKinds, nodeSource: o.nodeSource }),
+    o: { description?: string; edgeKinds?: string[]; nodeSource?: GraphSource; links?: Extract<SectionDef, { kind: 'graph' }>['links'] } = {},
+  ): SectionDef => ({
+    id,
+    title,
+    description: o.description,
+    kind: 'graph',
+    nodeKinds,
+    edgeKinds: o.edgeKinds,
+    nodeSource: o.nodeSource,
+    links: o.links,
+  }),
   canvas: (id: string, title: string, itemKinds: string[], description?: string): SectionDef => ({
     id,
     title,
