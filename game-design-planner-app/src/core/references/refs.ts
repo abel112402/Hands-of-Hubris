@@ -1,4 +1,4 @@
-import type { CatalogItem, CollectionSection, Entity, FieldDef, GraphSource, Project, Source } from '../model/types'
+import type { CatalogItem, CollectionSection, Entity, FieldDef, GraphSource, Project } from '../model/types'
 import { MODULES, getSections } from '../modules/registry'
 
 export const entityLabel = (e: Entity | undefined) =>
@@ -15,8 +15,8 @@ export function resolveSource(project: Project, currentDoc: string, source: Grap
   return list.map((e: Entity) => ({ id: e.id, label: entityLabel(e) }))
 }
 
-const sourceKey = (doc: string, src: Source) =>
-  'catalog' in src ? `catalog:${src.catalog}` : `${src.doc ?? doc}/${src.section}`
+const sourceKey = (doc: string, src: GraphSource): string =>
+  'any' in src ? `any:${src.any.map((s) => sourceKey(doc, s)).join(',')}` : 'catalog' in src ? `catalog:${src.catalog}` : `${src.doc ?? doc}/${src.section}`
 
 export interface Usage {
   docId: string
@@ -102,7 +102,7 @@ export function validateProject(project: Project): Issue[] {
           }
         }
         for (const fd of sec.fields) {
-          if (fd.type === 'multiref' && !('catalog' in fd.source) && sourceKey(m.id, fd.source) === `${m.id}/${sec.id}`) {
+          if (fd.type === 'multiref' && !('catalog' in fd.source) && !('any' in fd.source) && sourceKey(m.id, fd.source) === `${m.id}/${sec.id}`) {
             const edges = new Map<string, string[]>()
             for (const e of data as Entity[]) edges.set(e.id, Array.isArray(e[fd.key]) ? e[fd.key] : [])
             if (hasCycle(edges)) issues.push({ level: 'error', ...base, message: `Circular dependency in “${fd.label}”` })

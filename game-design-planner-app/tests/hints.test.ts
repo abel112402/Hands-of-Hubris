@@ -238,3 +238,57 @@ describe('core loop design checks', () => {
     expect(loop({ loopGraph: cyc })).not.toEqual(expect.arrayContaining(['coreLoop.isolated']))
   })
 })
+
+describe('difficulty tuning checks', () => {
+  const diff = (params: any[], cells: Record<string, number>, presets: any[] = [{ id: 'p', name: 'Easy', intent: 'x' }]) => {
+    const p = empty()
+    p.documents['design.difficulty'] = { moduleVersion: 2, data: { params, presets, values: { cells } } }
+    return collectHints(makeContext(p, { docId: 'design.difficulty' })).map((h) => h.ruleId).filter((r) => r.startsWith('difficulty.'))
+  }
+  const param = (extra: Record<string, any> = {}) => ({ id: 'a', name: 'A', direction: 'Higher = harder', min: 0, max: 2, ...extra })
+
+  it('stays quiet without parameters', () => {
+    expect(diff([], {})).toEqual([])
+  })
+
+  it('flags missing values and out-of-range values', () => {
+    expect(diff([param()], { 'a|easy': 1, 'a|medium': 5 })).toEqual(expect.arrayContaining(['difficulty.missing', 'difficulty.range']))
+  })
+
+  it('flags reversals, unless the parameter is an intentional exception', () => {
+    const cells = { 'a|easy': 1, 'a|medium': 2, 'a|hard': 1.5 }
+    expect(diff([param()], cells)).toContain('difficulty.reversal')
+    expect(diff([param({ exception: true })], cells)).not.toContain('difficulty.reversal')
+    expect(diff([param({ direction: 'Higher = easier' })], { 'a|easy': 2, 'a|medium': 1, 'a|hard': 0 })).not.toContain('difficulty.reversal')
+  })
+
+  it('asks for tuning context and preset intent', () => {
+    expect(diff([param({ direction: undefined })], {}, [{ id: 'p', name: 'Easy' }])).toEqual(expect.arrayContaining(['difficulty.context', 'difficulty.intent']))
+  })
+})
+
+describe('factions advisory checks', () => {
+  const fac = (data: Record<string, any>) => {
+    const p = empty()
+    p.documents['design.factions'] = { moduleVersion: 2, data: { factions: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], thresholds: [], actions: [], relations: { cells: {} }, ...data } }
+    return collectHints(makeContext(p, { docId: 'design.factions' })).map((h) => h.ruleId).filter((r) => r.startsWith('diplomacy.'))
+  }
+
+  it('stays quiet when there are no factions', () => {
+    expect(fac({ factions: [] })).toEqual([])
+  })
+
+  it('flags incomplete profiles, missing levels and empty matrix cells', () => {
+    expect(fac({})).toEqual(expect.arrayContaining(['diplomacy.profile', 'diplomacy.thresholds', 'diplomacy.matrix']))
+  })
+
+  it('flags threshold gaps, asymmetry, graph conflicts and missing spillover', () => {
+    const r = fac({
+      thresholds: [{ id: 't1', name: 'Low', min: -100, max: -20 }, { id: 't2', name: 'High', min: 20 }],
+      relations: { cells: { 'a|b': -80, 'b|a': 30 } },
+      relationGraph: { nodes: [{ id: 'n1', refId: 'a', kind: 'Faction', label: 'A' }, { id: 'n2', refId: 'b', kind: 'Faction', label: 'B' }], edges: [{ id: 'e', source: 'n1', target: 'n2', kind: 'Ally' }] },
+      actions: [{ id: 'x', name: 'Help A', faction: 'a' }],
+    })
+    expect(r).toEqual(expect.arrayContaining(['diplomacy.ranges', 'diplomacy.asymmetry', 'diplomacy.graph', 'diplomacy.spillover']))
+  })
+})

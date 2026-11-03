@@ -1,3 +1,4 @@
+import { EASIER, HARDER } from '../core/difficulty'
 import type { GraphSource } from '../core/model/types'
 import { catalog, f, mod, s, section, v } from './helpers'
 
@@ -16,6 +17,57 @@ const LOOP_SYSTEMS: GraphSource = {
     section('factions', 'design.factions'),
     section('biomes', 'design.world'),
   ],
+}
+
+const UNLOCKABLE: GraphSource = { any: [section('skillTree', 'design.player'), section('items', 'design.items')] }
+
+/** v1 kept characters and unlocks as free-text lists and one "effect on others" number. */
+function migrateFactions(data: Record<string, any>) {
+  for (const fa of Array.isArray(data.factions) ? data.factions : []) {
+    for (const [key, label] of [['characters', 'Characters'], ['unlocks', 'Unlocks']] as const) {
+      const old = fa[key]
+      if (!Array.isArray(old) || old.length === 0) continue
+      fa.legacyNotes = [fa.legacyNotes, `${label}: ${old.join(', ')}`].filter(Boolean).join('\n')
+      delete fa[key]
+    }
+  }
+  for (const a of Array.isArray(data.actions) ? data.actions : []) {
+    if (a.effectOnOthers !== undefined && a.spilloverDefault === undefined) a.spilloverDefault = a.effectOnOthers
+    delete a.effectOnOthers
+  }
+}
+
+const CATEGORIES = ['Combat', 'Survival', 'Economy', 'NPC', 'Other']
+const UNITS = ['×', '%', 'absolute', 'seconds', 'other']
+
+const PARAM_SEED = [
+  { name: 'Hunger / thirst decay rate', unit: '×', category: 'Survival', direction: HARDER, baseline: 1, min: 0.25, max: 3 },
+  { name: 'Enemy HP multiplier', unit: '×', category: 'Combat', direction: HARDER, baseline: 1, min: 0.25, max: 3 },
+  { name: 'Enemy damage multiplier', unit: '×', category: 'Combat', direction: HARDER, baseline: 1, min: 0.25, max: 3 },
+  { name: 'Corruption growth', unit: '×', category: 'Survival', direction: HARDER, baseline: 1, min: 0.25, max: 3 },
+  { name: 'NPC need multiplier', unit: '×', category: 'NPC', direction: HARDER, baseline: 1, min: 0.25, max: 3 },
+  { name: 'Morale loss threshold', unit: '%', category: 'Economy', direction: EASIER, baseline: 50, min: 0, max: 100 },
+  { name: 'Economy price multiplier', unit: '×', category: 'Economy', direction: HARDER, baseline: 1, min: 0.25, max: 3 },
+]
+
+/** v1 had free-text unit and category, and one "rules" form. */
+function migrateDifficulty(data: Record<string, any>) {
+  if (Array.isArray(data.params)) {
+    for (const p of data.params) {
+      const unit = String(p.unit ?? '').trim()
+      if (unit && !UNITS.includes(unit)) {
+        p.notes = [p.notes, `Unit: ${unit}`].filter(Boolean).join('\n')
+        p.unit = 'other'
+      }
+      const cat = String(p.category ?? '').trim()
+      if (cat) p.category = CATEGORIES.find((c) => c.toLowerCase() === cat.toLowerCase()) ?? 'Other'
+    }
+  }
+  if (data.rules && typeof data.rules === 'object') {
+    data.switching = { ...(data.switching ?? {}), switching: data.rules.switching }
+    data.storage = { ...(data.storage ?? {}), storage: data.rules.storage }
+    delete data.rules
+  }
 }
 
 /** v1 stored one free-text "rewards" field per loop. */
@@ -76,82 +128,169 @@ export const designModules = [
     version: 2,
     migrate: migrateCoreLoop,
   },
-  mod('design', 'difficulty', 'Difficulty Levels', 'docs/01_design/difficulty.md', '⚖️', 'Parameters scaled by difficulty.', [
-    s.collection(
-      'params',
-      'Parameters',
-      'parameter',
-      [f.text('unit', 'Unit'), f.text('category', 'Category (combat, survival, economy…)'), f.long('notes', 'Notes')],
-      [v.table(), v.cards()],
-      {
-        seed: [
-          { name: 'Hunger / thirst decay rate', unit: '×', category: 'Survival' },
-          { name: 'Enemy HP multiplier', unit: '×', category: 'Combat' },
-          { name: 'Enemy damage multiplier', unit: '×', category: 'Combat' },
-          { name: 'Corruption growth', unit: '×', category: 'Survival' },
-          { name: 'NPC need multiplier', unit: '×', category: 'Economy' },
-          { name: 'Morale loss threshold', unit: '%', category: 'Economy' },
-          { name: 'Economy price multiplier', unit: '×', category: 'Economy' },
+  {
+    ...mod('design', 'difficulty', 'Difficulty Levels', 'docs/01_design/difficulty.md', '⚖️', 'Parameters scaled by difficulty.', [
+      s.form('principles', 'Principles', [
+        f.long('principles', 'Principles', {
+          help: 'What does difficulty scale: combat, survival, economy, NPC needs? What should it never change?',
+          placeholder: 'e.g. Difficulty changes pressure, not the rules; no preset locks content.',
+        }),
+      ]),
+      s.collection(
+        'presets',
+        'Difficulty presets',
+        'preset',
+        [
+          f.ref('level', 'Level', catalog('difficulties'), { help: 'Which entry of the “Difficulty levels” catalog (Definitions) this describes.' }),
+          f.long('intent', 'Intended experience', { help: 'What should this preset feel like?', placeholder: 'e.g. Relaxed; mistakes are forgiven and the story stays in focus.' }),
+          f.long('targetPlayer', 'Target player', { help: 'Who is it for?', placeholder: 'e.g. Newcomers to survival games.' }),
         ],
-      },
-    ),
-    s.matrix('values', 'Parameter values per difficulty', section('params'), catalog('difficulties'), { type: 'number', min: 0, max: 10 }, {
-      description: 'Rows are the parameters above, columns come from the “Difficulty levels” catalog (extendable in Definitions).',
-    }),
-    s.form('rules', 'Rules', [
-      f.long('switching', 'Can difficulty be changed during play? Permadeath? Achievements?'),
-      f.long('storage', 'How parameters are stored in data'),
+        [v.cards(), v.table()],
+        {
+          seed: [
+            { name: 'Easy', level: 'easy' },
+            { name: 'Medium', level: 'medium' },
+            { name: 'Hard', level: 'hard' },
+          ],
+        },
+      ),
+      s.collection(
+        'params',
+        'Parameters',
+        'parameter',
+        [
+          f.enm('category', 'Category', CATEGORIES),
+          f.enm('unit', 'Unit', UNITS, { help: '× multiplier, % percentage, or an absolute amount. Sets how values are entered and compared.' }),
+          f.enm('direction', 'Effect of a higher value', [HARDER, EASIER, 'Neutral'], { help: 'Lets the editor spot unintended difficulty reversals.' }),
+          f.num('baseline', 'Baseline', { help: 'The value of the reference / default experience.', step: 0.01 }),
+          f.num('min', 'Range min', { help: 'Lowest meaningful value.', step: 0.01 }),
+          f.num('max', 'Range max', { help: 'Highest meaningful value.', step: 0.01 }),
+          f.bool('exception', 'Intentional exception', { help: 'Tick if this parameter is meant not to follow the harder-is-higher ordering.' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['category', 'unit', 'direction', 'baseline', 'min', 'max']), v.cards(), v.compare('values', catalog('difficulties'))],
+        { seed: PARAM_SEED },
+      ),
+      s.matrix(
+        'values',
+        'Parameter values per difficulty',
+        section('params'),
+        catalog('difficulties'),
+        { type: 'number', min: 0, max: 10 },
+        {
+          description: 'Rows are the parameters above, columns come from the “Difficulty levels” catalog (extendable in Definitions). Each row uses its own range and unit.',
+          rowMeta: { unit: 'unit', min: 'min', max: 'max', baseline: 'baseline', notes: 'notes', group: 'category' },
+        },
+      ),
+      s.collection(
+        'custom',
+        'Custom and accessibility settings',
+        'setting',
+        [
+          f.text('pressure', 'Pressure the player adjusts', { placeholder: 'e.g. Hunger speed' }),
+          f.multi('params', 'Parameters it changes', section('params')),
+          f.num('min', 'Lowest setting', { step: 0.01 }),
+          f.num('max', 'Highest setting', { step: 0.01 }),
+          f.long('notes', 'Notes', { help: 'Optional: lets players tune selected pressures without a new fixed preset.' }),
+        ],
+        [v.table(), v.cards()],
+        { description: 'Optional. Selected pressures players can adjust themselves, so you need fewer fixed presets.' },
+      ),
+      s.form('switching', 'Changing difficulty', [
+        f.long('switching', 'Can difficulty be changed during play?'),
+        f.long('timing', 'When do changes take effect?', { placeholder: 'e.g. Immediately, or at the next day / save.' }),
+        f.long('persistence', 'Is the choice stored per save?'),
+        f.long('achievements', 'Effect on achievements'),
+        f.long('permadeath', 'Permadeath and other interactions'),
+      ]),
+      s.form('storage', 'Data storage', [
+        f.long('storage', 'Data storage', { help: 'Where the parameters live in data; see the data-driven design document.' }),
+      ]),
     ]),
-  ]),
-  mod('design', 'factions', 'Factions & Diplomacy', 'docs/01_design/factions_diplomacy.md', '🏛️', 'Four factions, relations and consequences.', [
-    s.collection(
-      'factions',
-      'Factions',
-      'faction',
-      [
-        f.color('color', 'Color'),
-        f.long('history', 'History'),
-        f.long('goals', 'Goals and ideology'),
-        f.list('characters', 'Key characters'),
-        f.text('capital', 'Capital'),
-        f.long('capitalDescription', 'Capital: mood, services, trade, quests'),
-        f.long('playstyle', 'Playstyle focus'),
-        f.list('unlocks', 'Unlockable skills / items'),
-      ],
-      [v.cards(), v.table(['name', 'capital', 'goals'])],
-    ),
-    s.matrix('relations', 'Relationship matrix', section('factions'), section('factions'), { type: 'number', min: -100, max: 100 }, {
-      diagonal: false,
-      description: '-100 = hostile, 0 = neutral, 100 = allied.',
-    }),
-    s.graph('relationGraph', 'Relationship graph', ['Faction'], { nodeSource: section('factions'), edgeKinds: ['Ally', 'Enemy', 'Neutral', 'Trade'] }),
-    s.collection(
-      'actions',
-      'Actions → reputation effects',
-      'action',
-      [
-        f.ref('faction', 'Faction', section('factions')),
-        f.num('effectOnFaction', 'Effect on this faction', { min: -100, max: 100 }),
-        f.num('effectOnOthers', 'Effect on other factions', { min: -100, max: 100 }),
-        f.long('description', 'Description'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.collection(
-      'thresholds',
-      'Relationship levels and consequences',
-      'level',
-      [f.num('min', 'Min value', { min: -100, max: 100 }), f.long('consequences', 'Trade, attacks, quests, biome access')],
-      [v.table()],
-    ),
-    s.collection(
-      'endings',
-      'Endings',
-      'ending',
-      [f.multi('factions', 'Involved factions', section('factions')), f.long('conditions', 'Conditions'), f.long('description', 'Description')],
-      [v.cards(), v.table()],
-    ),
-  ]),
+    version: 2,
+    migrate: migrateDifficulty,
+  },
+  {
+    ...mod('design', 'factions', 'Factions & Diplomacy', 'docs/01_design/factions_diplomacy.md', '🏛️', 'Factions, relations and consequences.', [
+      s.form('overview', 'System overview', [
+        f.long('model', 'Reputation model', {
+          help: 'How does reputation work? Per faction, per player, shared between factions?',
+          placeholder: 'e.g. Each faction tracks one reputation number for the player; it moves through actions and drifts back to neutral.',
+        }),
+        f.num('scaleMin', 'Scale: lowest value', { help: 'Default -100. Relationship levels and the matrix use this range.' }),
+        f.num('scaleMax', 'Scale: highest value', { help: 'Default 100.' }),
+        f.num('startValue', 'Starting value', { help: 'Reputation a new game starts with.' }),
+        f.text('decay', 'Decay', { placeholder: 'e.g. 1 point per day towards 0' }),
+        f.num('allyAt', 'Counts as allied from', { help: 'Matrix values at or above this are “allied” (default 50). Used to check the relationship graph.' }),
+        f.num('enemyAt', 'Counts as hostile up to', { help: 'Matrix values at or below this are “hostile” (default -50).' }),
+        f.long('changeRules', 'How relationships change', { help: 'Actions, time, events; and how supporting one group affects others.' }),
+      ], 'Settle the scale first. The editor is flexible about how many factions there are: add as many as the design needs.'),
+      s.collection(
+        'factions',
+        'Factions',
+        'faction',
+        [
+          f.color('color', 'Color'),
+          f.long('history', 'History'),
+          f.long('goals', 'Goals and ideology'),
+          f.multi('characters', 'Key characters', section('characters', 'design.story'), { help: 'Pick from the characters in Story & Quests.' }),
+          f.text('capital', 'Capital'),
+          f.long('capitalDescription', 'Capital: mood, services, trade, quests'),
+          f.long('playstyle', 'Playstyle focus', { help: 'Which build or playstyle suits this faction?' }),
+          f.multi('unlocks', 'Unlockable skills / items', UNLOCKABLE, { help: 'Pick from the skill tree and the item list.' }),
+          f.long('unlockConditions', 'Unlock conditions', { placeholder: 'e.g. Reputation 40+ and the “Border Patrol” quest done.' }),
+          f.long('legacyNotes', 'Earlier notes', { help: 'Free text carried over from before characters and unlocks became links.' }),
+        ],
+        [v.cards(), v.table(['name', 'capital', 'goals'])],
+      ),
+      s.matrix('relations', 'Relationship matrix', section('factions'), section('factions'), { type: 'number', min: -100, max: 100 }, {
+        diagonal: false,
+        symmetric: true,
+        rangeFrom: { section: 'overview', minField: 'scaleMin', maxField: 'scaleMax' },
+        description:
+          'Reputation: how the row faction regards the column faction. -100 = hostile, 0 = neutral, 100 = allied (or your own scale). Directional: asymmetric pairs are marked for review, not forbidden. This matrix is the authoritative model; the graph below shows named relationships.',
+      }),
+      s.graph('relationGraph', 'Relationship graph', ['Faction'], {
+        nodeSource: section('factions'),
+        edgeKinds: ['Ally', 'Enemy', 'Neutral', 'Trade'],
+        description: 'Named relationships such as alliances, wars and trade pacts. It is checked against the matrix, but the two are separate data.',
+      }),
+      s.collection(
+        'actions',
+        'Actions → reputation effects',
+        'action',
+        [
+          f.ref('faction', 'Faction', section('factions'), { help: 'The faction that cares about this action.' }),
+          f.num('effectOnFaction', 'Direct change with this faction', { min: -100, max: 100, help: 'Reputation change with the faction above.' }),
+          f.map('spillover', 'Spillover per faction', section('factions'), 100, { min: -100, help: 'Reputation change with each other faction, when it differs from the default.' }),
+          f.num('spilloverDefault', 'Default spillover (all others)', { min: -100, max: 100, help: 'Rough estimate applied to every other faction when no per-faction value is set.' }),
+          f.long('spilloverWhy', 'Why others react', { help: 'e.g. Supporting the guild antagonizes the crown.' }),
+          f.long('description', 'Description'),
+        ],
+        [v.table(), v.cards()],
+      ),
+      s.collection(
+        'thresholds',
+        'Relationship levels and consequences',
+        'level',
+        [
+          f.num('min', 'Min value', { min: -100, max: 100 }),
+          f.num('max', 'Max value', { min: -100, max: 100, help: 'Optional. Without it the level runs up to the next level’s minimum.' }),
+          f.long('consequences', 'Trade, attacks, quests, biome access'),
+        ],
+        [v.table(), v.ranges('min', 'max', { section: 'overview', minField: 'scaleMin', maxField: 'scaleMax', fallback: [-100, 100] })],
+      ),
+      s.collection(
+        'endings',
+        'Endings',
+        'ending',
+        [f.multi('factions', 'Involved factions', section('factions')), f.long('conditions', 'Conditions'), f.long('description', 'Description')],
+        [v.cards(), v.table()],
+      ),
+    ]),
+    version: 2,
+    migrate: migrateFactions,
+  },
   mod('design', 'world', 'World & Biomes', 'docs/01_design/world_biomes.md', '🌍', 'Biomes, progression, outposts, map.', [
     s.collection(
       'biomes',

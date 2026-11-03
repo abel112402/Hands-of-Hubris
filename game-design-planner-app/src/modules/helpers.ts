@@ -38,7 +38,7 @@ export const f = {
     source,
     ...o,
   }),
-  multi: (key: string, label: string, source: Source, o: Opt = {}): FieldDef => ({
+  multi: (key: string, label: string, source: GraphSource, o: Opt = {}): FieldDef => ({
     key,
     label,
     type: 'multiref',
@@ -48,7 +48,7 @@ export const f = {
   date: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'date', ...o }),
   color: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'color', ...o }),
   list: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'list', ...o }),
-  map: (key: string, label: string, source: Source, max?: number, o: Opt = {}): FieldDef => ({
+  map: (key: string, label: string, source: Source, max?: number, o: Opt & { min?: number } = {}): FieldDef => ({
     key,
     label,
     type: 'map',
@@ -73,6 +73,8 @@ export const v = {
     yField,
     max,
   }),
+  ranges: (minField: string, maxField: string, scale: Extract<CollectionView, { kind: 'ranges' }>['scale']): CollectionView => ({ kind: 'ranges', minField, maxField, scale }),
+  compare: (valuesSection: string, columns: Source): CollectionView => ({ kind: 'compare', valuesSection, columns }),
   progression: (scaleField: string, leadsField: string): CollectionView => ({ kind: 'progression', scaleField, leadsField }),
   ladder: (orderField: string, linkFields?: string[]): CollectionView => ({ kind: 'ladder', orderField, linkFields }),
   timeline: (
@@ -119,8 +121,8 @@ export const s = {
     rows: Source,
     cols: Source,
     cell: Extract<SectionDef, { kind: 'matrix' }>['cell'],
-    o: { description?: string; diagonal?: boolean } = {},
-  ): SectionDef => ({ id, title, description: o.description, kind: 'matrix', rows, cols, cell, diagonal: o.diagonal }),
+    o: { description?: string; diagonal?: boolean; rangeFrom?: Extract<SectionDef, { kind: 'matrix' }>['rangeFrom']; symmetric?: boolean; rowMeta?: Extract<SectionDef, { kind: 'matrix' }>['rowMeta'] } = {},
+  ): SectionDef => ({ id, title, description: o.description, kind: 'matrix', rows, cols, cell, diagonal: o.diagonal, rangeFrom: o.rangeFrom, symmetric: o.symmetric, rowMeta: o.rowMeta }),
   graph: (
     id: string,
     title: string,

@@ -77,8 +77,21 @@ function matrixMd(project: Project, docId: string, sec: Extract<SectionDef, { ki
   const rows = resolveSource(project, docId, sec.rows)
   const cols = resolveSource(project, docId, sec.cols)
   if (!rows.length || !cols.length) return '_Matrix is empty._\n'
-  let out = `| | ${cols.map((c) => esc(c.label)).join(' | ')} |\n|${'---|'.repeat(cols.length + 1)}\n`
-  for (const r of rows) out += `| ${esc(r.label)} | ${cols.map((c) => esc(data.cells?.[`${r.id}|${c.id}`] ?? '')).join(' | ')} |\n`
+  const meta = sec.rowMeta
+  const entities: Entity[] = !('catalog' in sec.rows) ? project.documents[sec.rows.doc ?? docId]?.data[sec.rows.section] ?? [] : []
+  const rowEntity = (id: string) => entities.find((e) => e.id === id)
+  const head = ['', ...(meta?.unit ? ['Unit'] : []), ...cols.map((c) => c.label), ...(meta?.notes ? ['Notes'] : [])]
+  let out = `| ${head.map(esc).join(' | ')} |\n|${'---|'.repeat(head.length)}\n`
+  for (const r of rows) {
+    const e = rowEntity(r.id)
+    const cells = [
+      r.label,
+      ...(meta?.unit ? [e?.[meta.unit] ?? ''] : []),
+      ...cols.map((c) => data.cells?.[`${r.id}|${c.id}`] ?? ''),
+      ...(meta?.notes ? [e?.[meta.notes] ?? ''] : []),
+    ]
+    out += `| ${cells.map(esc).join(' | ')} |\n`
+  }
   return out
 }
 

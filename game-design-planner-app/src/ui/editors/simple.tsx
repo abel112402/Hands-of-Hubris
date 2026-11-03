@@ -1,9 +1,10 @@
 import { Fragment, useMemo, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { ChecklistData, FormulaData, MatrixData, SectionDef } from '../../core/model/types'
+import type { ChecklistData, Entity, FormulaData, MatrixData, SectionDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { resolveSource } from '../../core/references/refs'
 import { tryEvaluate, variablesOf } from '../../core/formula'
+import { ASYMMETRY_TOLERANCE } from '../../core/diplomacy'
 import { useSection, useProject } from '../hooks'
 import { FieldInput } from '../FieldInput'
 
@@ -41,6 +42,7 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
   const rows = resolveSource(project, docId, sec.rows)
   const cols = resolveSource(project, docId, sec.cols)
   const cells = data?.cells ?? {}
+  const [filter, setFilter] = useState('')
   if (!rows.length || !cols.length)
     return <p className="empty">The matrix needs rows and columns. Add entries to the source list first (rows: {'catalog' in sec.rows ? sec.rows.catalog : sec.rows.section}, columns: {'catalog' in sec.cols ? sec.cols.catalog : sec.cols.section}).</p>
 
@@ -50,9 +52,42 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
       else d.cells[`${r}|${c}`] = v
     }, `${r}|${c}`)
 
-  const heat = (v: unknown) => {
+  const meta = sec.rowMeta
+  const settings = sec.rangeFrom ? project.documents[docId]?.data[sec.rangeFrom.section] : undefined
+  const fromSettings = (key?: string) => (key && typeof settings?.[key] === 'number' ? (settings[key] as number) : undefined)
+  const sectionMin = fromSettings(sec.rangeFrom?.minField) ?? (sec.cell.type === 'number' ? sec.cell.min : 0)
+  const sectionMax = fromSettings(sec.rangeFrom?.maxField) ?? (sec.cell.type === 'number' ? sec.cell.max : 0)
+  const asymmetric = (r: string, c: string) => {
+    if (!sec.symmetric || r === c) return false
+    const x = cells[`${r}|${c}`]
+    const y = cells[`${c}|${r}`]
+    return typeof x === 'number' && typeof y === 'number' && Math.abs(x - y) > ASYMMETRY_TOLERANCE
+  }
+  const mirror = () =>
+    update((d) => {
+      for (const r of rows)
+        for (const c of cols) {
+          const v = d.cells[`${r.id}|${c.id}`]
+          if (r.id !== c.id && v !== undefined && d.cells[`${c.id}|${r.id}`] === undefined) d.cells[`${c.id}|${r.id}`] = v
+        }
+    })
+  const rowEntities: Entity[] = !('catalog' in sec.rows) ? project.documents[sec.rows.doc ?? docId]?.data[sec.rows.section] ?? [] : []
+  const entityOf = (id: string) => rowEntities.find((e) => e.id === id)
+  const num = (e: Entity | undefined, key?: string) => {
+    const v = key && e ? e[key] : undefined
+    return typeof v === 'number' ? v : undefined
+  }
+  // Each row may bring its own range; without row metadata the section-wide range applies.
+  const rangeOf = (id: string) => {
+    if (!meta) return sec.cell.type === 'number' ? { min: sectionMin, max: sectionMax } : {}
+    const e = entityOf(id)
+    return { min: num(e, meta.min), max: num(e, meta.max) }
+  }
+
+  const heat = (rowId: string, v: unknown) => {
     if (sec.cell.type !== 'number' || typeof v !== 'number') return undefined
-    const { min, max } = sec.cell
+    const { min, max } = rangeOf(rowId)
+    if (min === undefined || max === undefined) return undefined
     if (min < 0) {
       const t = Math.max(-1, Math.min(1, v / Math.max(Math.abs(min), Math.abs(max))))
       return t >= 0 ? `rgba(83,194,139,${t * 0.6})` : `rgba(229,112,126,${-t * 0.6})`
@@ -61,8 +96,26 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
     return `rgba(79,156,249,${Math.max(0, Math.min(1, t)) * 0.55})`
   }
 
+  const groupOf = (id: string) => (meta?.group ? String(entityOf(id)?.[meta.group] ?? '') || 'Uncategorized' : '')
+  const groups = meta?.group ? [...new Set(rows.map((r) => groupOf(r.id)))] : ['']
+  const visible = (g: string) => !filter || g === filter
+
   return (
     <div className="table-wrap">
+      {sec.symmetric && (
+        <div className="toolbar">
+          <button onClick={mirror} title="Copy each value to its empty reverse cell">Mirror to empty cells</button>
+          <span className="muted">Pairs that differ by more than {ASYMMETRY_TOLERANCE} are marked; asymmetry is allowed if intended.</span>
+        </div>
+      )}
+      {meta?.group && groups.length > 1 && (
+        <div className="toolbar">
+          <select aria-label="Filter by category" value={filter} onChange={(e) => setFilter(e.target.value)}>
+            <option value="">All categories</option>
+            {groups.map((g) => <option key={g}>{g}</option>)}
+          </select>
+        </div>
+      )}
       <table className="grid matrix">
         <thead>
           <tr>
@@ -72,40 +125,58 @@ export function MatrixEditor({ docId, sec }: { docId: string; sec: Extract<Secti
             ))}
           </tr>
         </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <th>{r.label}</th>
-              {cols.map((c) => {
-                const key = `${r.id}|${c.id}`
-                const disabled = sec.diagonal === false && r.id === c.id
-                return (
-                  <td key={c.id} style={{ background: disabled ? 'transparent' : heat(cells[key]) }}>
-                    {disabled ? (
-                      <span className="muted">–</span>
-                    ) : sec.cell.type === 'number' ? (
-                      <input
-                        type="number"
-                        min={sec.cell.min}
-                        max={sec.cell.max}
-                        step="any"
-                        value={cells[key] ?? ''}
-                        onChange={(e) => setCell(r.id, c.id, e.target.value === '' ? undefined : Number(e.target.value))}
-                      />
-                    ) : (
-                      <select value={String(cells[key] ?? '')} onChange={(e) => setCell(r.id, c.id, e.target.value)}>
-                        <option value="">—</option>
-                        {sec.cell.options.map((o) => (
-                          <option key={o}>{o}</option>
-                        ))}
-                      </select>
-                    )}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
+        {groups.filter(visible).map((g) => (
+          <tbody key={g}>
+            {g && <tr><th className="matrix-group" colSpan={cols.length + 1}>{g}</th></tr>}
+            {rows.filter((r) => groupOf(r.id) === g).map((r) => {
+              const e = entityOf(r.id)
+              const { min, max } = rangeOf(r.id)
+              const unit = meta?.unit ? e?.[meta.unit] : undefined
+              const base = num(e, meta?.baseline)
+              return (
+                <tr key={r.id}>
+                  <th>
+                    {r.label}
+                    {unit && <span className="muted"> ({unit})</span>}
+                    {meta && min !== undefined && max !== undefined && <div className="muted matrix-sub">{min}–{max}{base !== undefined ? ` · base ${base}` : ''}</div>}
+                    {meta?.notes && e?.[meta.notes] && <div className="muted matrix-sub">{String(e[meta.notes])}</div>}
+                  </th>
+                  {cols.map((c) => {
+                    const key = `${r.id}|${c.id}`
+                    const disabled = sec.diagonal === false && r.id === c.id
+                    const val = cells[key]
+                    const outside = typeof val === 'number' && ((min !== undefined && val < min) || (max !== undefined && val > max))
+                    return (
+                      <td key={c.id} style={{ background: disabled ? 'transparent' : heat(r.id, val) }} className={(outside ? 'out-of-range ' : '') + (asymmetric(r.id, c.id) ? 'asymmetric' : '')}>
+                        {disabled ? (
+                          <span className="muted">–</span>
+                        ) : sec.cell.type === 'number' ? (
+                          <input
+                            type="number"
+                            aria-label={`${r.label}, ${c.label}`}
+                            title={outside ? 'Outside the allowed range' : asymmetric(r.id, c.id) ? 'Differs from the reverse direction' : undefined}
+                            min={meta ? undefined : sectionMin}
+                            max={meta ? undefined : sectionMax}
+                            step="any"
+                            value={val ?? ''}
+                            onChange={(ev) => setCell(r.id, c.id, ev.target.value === '' ? undefined : Number(ev.target.value))}
+                          />
+                        ) : (
+                          <select value={String(val ?? '')} onChange={(ev) => setCell(r.id, c.id, ev.target.value)}>
+                            <option value="">—</option>
+                            {sec.cell.options.map((o) => (
+                              <option key={o}>{o}</option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
+          </tbody>
+        ))}
       </table>
     </div>
   )

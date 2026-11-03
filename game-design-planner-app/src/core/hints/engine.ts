@@ -3,13 +3,15 @@ import { declarativeRule } from './rules/declarative'
 import { documentRules } from './rules/document'
 import { projectRules } from './rules/project'
 import { coreLoopRules } from './rules/coreLoop'
+import { difficultyRules } from './rules/difficulty'
+import { diplomacyRules } from './rules/diplomacy'
 import { roadmapRules } from './rules/roadmap'
 import { visionRules } from './rules/vision'
 import { SEVERITY_RANK, type Hint, type HintContext, type HintRule } from './types'
 
 export const MAX_ACTIVE_HINTS = 5
 
-export const RULES: HintRule[] = [...projectRules, ...documentRules, ...visionRules, ...roadmapRules, ...coreLoopRules, declarativeRule]
+export const RULES: HintRule[] = [...projectRules, ...documentRules, ...visionRules, ...roadmapRules, ...coreLoopRules, ...difficultyRules, ...diplomacyRules, declarativeRule]
 
 export const ruleOf = (hintRuleId: string) => (hintRuleId.startsWith('user:') ? 'user.declarative' : hintRuleId)
 

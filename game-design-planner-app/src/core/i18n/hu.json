@@ -223,6 +223,58 @@
     "coreLoopFeedback": {
       "title": "Az ábrán nincs visszacsatolás",
       "body": "Egyetlen kapcsolat sem vezet vissza egy korábbi csomóponthoz, így az ábra vonal, nem ciklus. Kösd vissza a jutalmat vagy az eredményt egy cselekvéshez."
+    },
+    "difficultyMissing": {
+      "title": "Hiányzó nehézségi értékek",
+      "body": "Néhány fokozatnál üres értékek vannak: {{names}}."
+    },
+    "difficultyRange": {
+      "title": "Tartományon kívüli értékek",
+      "body": "{{count}} érték kívül esik a paraméter tartományán: {{names}}. Módosítsd az értéket vagy a tartományt."
+    },
+    "difficultyReversal": {
+      "title": "Az irányukkal ellentétesen változó paraméterek",
+      "body": "Szomszédos fokozatok között ezek az irányukkal ellentétesen változnak: {{names}}. Ha szándékos, jelöld a paramétert tudatos kivételnek."
+    },
+    "difficultyContext": {
+      "title": "Hangolási környezet nélküli paraméterek",
+      "body": "{{count}} paraméterből hiányzik az irány vagy a tartomány: {{names}}. Ezek teszik észlelhetővé az ellentmondásokat."
+    },
+    "difficultyIntent": {
+      "title": "Szándék nélküli fokozatok",
+      "body": "{{count}} fokozatnál nincs leírva, milyen érzést kell adnia: {{names}}."
+    },
+    "difficultyNoPresets": {
+      "title": "Nincsenek leírt nehézségi fokozatok",
+      "body": "Írd le, milyen érzést adjon az egyes fokozat, és kinek szól."
+    },
+    "diplomacyProfile": {
+      "title": "Hiányos frakcióadatlapok",
+      "body": "{{count}} frakciónál hiányzik a cél, a főváros vagy a karakterek: {{names}}."
+    },
+    "diplomacyNoThresholds": {
+      "title": "Még nincsenek kapcsolati szintek",
+      "body": "Add meg, mi változik az egyes hírnévszinteken: kereskedelem, támadások, küldetések, biom-hozzáférés."
+    },
+    "diplomacyRanges": {
+      "title": "A kapcsolati szintek között rés vagy átfedés van",
+      "body": "{{names}}. Igazítsd a minimumokat vagy maximumokat, hogy minden érték egy szintre essen."
+    },
+    "diplomacyAsymmetry": {
+      "title": "Átnézendő aszimmetrikus kapcsolatok",
+      "body": "{{count}} pár két iránya eltér: {{names}}. Szándékos esetben rendben; különben tükrözd őket."
+    },
+    "diplomacyGraph": {
+      "title": "Az ábra és a mátrix ellentmond",
+      "body": "{{count}} ábrabeli kapcsolat ellentmond a mátrixnak: {{names}}. A mátrix a hírnévmodell; frissítsd azt, ami elavult."
+    },
+    "diplomacyMatrix": {
+      "title": "A viszonymátrixban üres cellák vannak",
+      "body": "{{count}} frakcióközi kapcsolat még nincs megadva."
+    },
+    "diplomacySpillover": {
+      "title": "Átgyűrűzés nélküli tettek",
+      "body": "{{count}} tett olyan frakciót érint, amelynek ellenségei vannak, de nincs átgyűrűzés rögzítve: {{names}}."
     }
   },
   "ai": {

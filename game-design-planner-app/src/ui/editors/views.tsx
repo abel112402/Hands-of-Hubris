@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts'
-import type { CollectionView, Entity } from '../../core/model/types'
+import type { CollectionView, Entity, Source } from '../../core/model/types'
 import { analyze, isMilestone, weekToDate, withBuffer } from '../../core/schedule'
 import { resolveSource } from '../../core/references/refs'
+import { pressure } from '../../core/difficulty'
+import { analyzeRanges } from '../../core/diplomacy'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
@@ -339,6 +341,79 @@ export function ProgressionView({ sec, items, onSelect, selected, scaleField, le
             ))}
         </div>
       ))}
+    </div>
+  )
+}
+
+/** Radar of how hard each preset is per parameter. Values are scaled to each parameter's own range, so units can mix. */
+export function CompareView({ docId, items, valuesSection, columns }: ViewProps & { valuesSection: string; columns: Source }) {
+  const project = useProject()
+  const levels = resolveSource(project, docId, columns)
+  const cells: Record<string, number | string> = project.documents[docId]?.data[valuesSection]?.cells ?? {}
+  const scaled = items.filter((p) => typeof p.min === 'number' && typeof p.max === 'number' && p.max !== p.min)
+  const skipped = items.filter((p) => !scaled.includes(p))
+  const data = scaled.map((p) => {
+    const row: Record<string, any> = { axis: p.name }
+    for (const l of levels) {
+      const t = pressure(p, cells[`${p.id}|${l.id}`])
+      row[l.id] = t === null ? 0 : Math.round(Math.max(0, Math.min(1, t)) * 100)
+    }
+    return row
+  })
+  return (
+    <div className="radar">
+      <p className="muted">Each value is shown as a share of its parameter’s range; “higher = easier” parameters are flipped, so outward always means harder.</p>
+      {scaled.length < 3 ? (
+        <p className="empty">Comparison needs at least 3 parameters with a range (min and max).</p>
+      ) : (
+        <div style={{ height: 380 }}>
+          <ResponsiveContainer>
+            <RadarChart data={data}>
+              <PolarGrid />
+              <PolarAngleAxis dataKey="axis" />
+              <PolarRadiusAxis domain={[0, 100]} />
+              {levels.map((l, i) => (
+                <Radar key={l.id} name={l.label} dataKey={l.id} stroke={PALETTE[i % PALETTE.length]} fill={PALETTE[i % PALETTE.length]} fillOpacity={0.2} />
+              ))}
+              <Legend />
+              <Tooltip />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {skipped.length > 0 && <p className="muted">Not shown (no range): {skipped.map((p) => p.name).join(', ')}</p>}
+    </div>
+  )
+}
+
+/** Levels laid out on the scale in order, with gaps and overlaps called out. */
+export function RangesView({ docId, items, onSelect, selected, view }: ViewProps & { view: Extract<CollectionView, { kind: 'ranges' }> }) {
+  const project = useProject()
+  const sc = view.scale
+  const settings = project.documents[docId]?.data[sc.section] ?? {}
+  const lo = typeof settings[sc.minField] === 'number' ? settings[sc.minField] : sc.fallback[0]
+  const hi = typeof settings[sc.maxField] === 'number' ? settings[sc.maxField] : sc.fallback[1]
+  const scale: [number, number] = lo < hi ? [lo, hi] : sc.fallback
+  const a = analyzeRanges(items, scale, view.minField, view.maxField)
+  const span = scale[1] - scale[0] || 1
+  const pos = (v: number) => `${Math.max(0, Math.min(100, ((v - scale[0]) / span) * 100))}%`
+  return (
+    <div className="ranges">
+      <div className="muted">Scale {scale[0]} to {scale[1]}</div>
+      {a.rows.map((r) => (
+        <div key={r.id} className={'range-row' + (r.id === selected ? ' selected' : '')} onClick={() => onSelect(r.id)}>
+          <span className="range-name">{r.name || '(unnamed)'}</span>
+          <div className="range-track">
+            <div className={'range-bar' + (r.overlaps ? ' overlap' : '')} style={{ left: pos(r.from), width: `calc(${pos(r.to)} - ${pos(r.from)})` }} />
+          </div>
+          <span className="muted">{r.from} to {r.to}{r.open ? ' (to next level)' : ''}</span>
+          {r.overlaps && <span className="pill warning">overlaps previous</span>}
+          {r.gapBefore && <span className="pill warning">gap before</span>}
+        </div>
+      ))}
+      {a.rows.length > 0 && a.gapAtBottom && <p className="muted">Values below {a.rows[0].from} have no level.</p>}
+      {a.rows.length > 0 && a.gapAtTop && <p className="muted">Values above {a.rows[a.rows.length - 1].to} have no level.</p>}
+      {a.unset.length > 0 && <p className="muted">No minimum yet: {a.unset.map((l) => l.name || '(unnamed)').join(', ')}</p>}
     </div>
   )
 }

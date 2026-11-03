@@ -223,6 +223,58 @@
     "coreLoopFeedback": {
       "title": "The loop diagram has no feedback path",
       "body": "No connection leads back to an earlier node, so the diagram reads as a line, not a loop. Add an edge from a reward or outcome back to an action."
+    },
+    "difficultyMissing": {
+      "title": "Difficulty values still missing",
+      "body": "Some presets have empty values: {{names}}."
+    },
+    "difficultyRange": {
+      "title": "Values outside the intended range",
+      "body": "{{count}} value(s) fall outside the parameter’s range: {{names}}. Adjust the value or the range."
+    },
+    "difficultyReversal": {
+      "title": "Parameters that move against their direction",
+      "body": "Between adjacent presets these change the opposite way to their direction: {{names}}. Mark a parameter as an intentional exception if that is deliberate."
+    },
+    "difficultyContext": {
+      "title": "Parameters without tuning context",
+      "body": "{{count}} parameter(s) lack a direction or range: {{names}}. These make reversals and out-of-range values detectable."
+    },
+    "difficultyIntent": {
+      "title": "Presets without an intent",
+      "body": "{{count}} preset(s) don’t say what they should feel like: {{names}}."
+    },
+    "difficultyNoPresets": {
+      "title": "No difficulty presets described",
+      "body": "Describe what each preset should feel like and who it is for."
+    },
+    "diplomacyProfile": {
+      "title": "Faction profiles are incomplete",
+      "body": "{{count}} faction(s) lack goals, a capital or key characters: {{names}}."
+    },
+    "diplomacyNoThresholds": {
+      "title": "No relationship levels yet",
+      "body": "Define what changes at each reputation level: trade, attacks, quests, biome access."
+    },
+    "diplomacyRanges": {
+      "title": "Relationship levels have gaps or overlaps",
+      "body": "{{names}}. Adjust the minimums or maximums so every value maps to one level."
+    },
+    "diplomacyAsymmetry": {
+      "title": "Asymmetric relations to review",
+      "body": "{{count}} pair(s) differ between directions: {{names}}. Fine if intended; otherwise mirror them."
+    },
+    "diplomacyGraph": {
+      "title": "Graph and matrix disagree",
+      "body": "{{count}} graph relation(s) contradict the matrix: {{names}}. The matrix is the reputation model; update whichever is out of date."
+    },
+    "diplomacyMatrix": {
+      "title": "Relationship matrix has empty cells",
+      "body": "{{count}} relation(s) between factions are not set yet."
+    },
+    "diplomacySpillover": {
+      "title": "Actions without spillover",
+      "body": "{{count}} action(s) involve a faction with hostile rivals but record no spillover: {{names}}."
     }
   },
   "ai": {
