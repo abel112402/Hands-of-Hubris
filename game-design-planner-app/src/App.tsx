@@ -4,6 +4,7 @@ import { Home } from './ui/pages/Home'
 import { EditorPage } from './ui/pages/EditorPage'
 import { Definitions } from './ui/pages/Definitions'
 import { Issues } from './ui/pages/Issues'
+import { AiSettings } from './ui/ai/AiSettings'
 import { HintsPage } from './ui/hints/HintsPage'
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
           <Route path="definitions" element={<Definitions />} />
           <Route path="issues" element={<Issues />} />
           <Route path="hints" element={<HintsPage />} />
+          <Route path="ai" element={<AiSettings />} />
         </Route>
       </Routes>
     </HashRouter>

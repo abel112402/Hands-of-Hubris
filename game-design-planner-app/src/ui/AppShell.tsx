@@ -17,6 +17,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     { label: 'Definitions', to: '/definitions' },
     { label: 'Issues', to: '/issues' },
     { label: 'Hints', to: '/hints' },
+    { label: 'AI settings', to: '/ai' },
     { label: 'Menu', to: '/' },
   ].filter((i) => i.label.toLowerCase().includes(q.toLowerCase()))
   return (
@@ -101,6 +102,7 @@ export function AppShell() {
         <Link to="/definitions">{t('nav.definitions')}</Link>
         <Link to="/issues">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</Link>
         <Link to="/hints">{t('nav.hints')}{hintCount > 0 && <span className="badge">{hintCount}</span>}</Link>
+        <Link to="/ai">🤖 AI</Link>
         <button onClick={() => setPalette(true)} title={t('actions.search')}>🔍</button>
         </div>
       </header>

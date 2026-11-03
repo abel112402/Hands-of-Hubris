@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CollectionSection, CollectionView, Entity, FieldDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
+import { AiBadge } from '../ai/AiBadge'
 import { findUsages, resolveSource } from '../../core/references/refs'
 import { downloadText } from '../../core/persistence/file'
 import { sectionCsv } from '../../core/export/markdown'
@@ -153,6 +154,7 @@ function Inspector({
     <aside className="inspector">
       <div className="inspector-head">
         <strong>{sec.singular}</strong>
+        <AiBadge entity={entity} />
         <span className="spacer" />
         <button className="icon" title="Move up" onClick={() => move(-1)}>↑</button>
         <button className="icon" title="Move down" onClick={() => move(1)}>↓</button>
@@ -205,7 +207,7 @@ function CardsView({ docId, sec, items, selected, onSelect }: ViewProps) {
     <div className="cards">
       {items.map((e) => (
         <div key={e.id} className={'card' + (e.id === selected ? ' selected' : '')} onClick={() => onSelect(e.id)} style={colorField && e[colorField.key] ? { borderTopColor: e[colorField.key] } : undefined}>
-          <div className="card-title">{e.name || <em>unnamed</em>}</div>
+          <div className="card-title">{e.name || <em>unnamed</em>}<AiBadge entity={e} /></div>
           {summary(project, docId, sec, e).map(({ f, t }) => (
             <div key={f.key} className="card-line">
               <span className="muted">{f.label}: </span>
@@ -310,7 +312,7 @@ function KanbanView({ docId, sec, items, selected, onSelect, patch, groupBy, onA
                 className={'card small-card' + (e.id === selected ? ' selected' : '')}
                 onClick={() => onSelect(e.id)}
               >
-                <div className="card-title">{e.name}</div>
+                <div className="card-title">{e.name}<AiBadge entity={e} /></div>
                 {summary(project, docId, sec, e).filter((x) => x.f.key !== groupBy).slice(0, 2).map(({ f, t }) => (
                   <div key={f.key} className="card-line"><span className="muted">{f.label}: </span>{t.length > 50 ? t.slice(0, 50) + '…' : t}</div>
                 ))}

@@ -107,3 +107,19 @@ h1,h2,h3{margin:.6em 0 .3em}
   .hint-panel .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:'title' 'body' 'actions'}
   .hint-panel .hint-actions{flex-direction:row;flex-wrap:wrap}
 }
+/* ai */
+.hint-head .tabs{display:flex;gap:4px}
+.ai-badge{margin-left:6px;font-size:12px}
+.ai-panel{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.ai-panel select,.ai-panel input,.ai-panel textarea{max-width:100%}
+.ai-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ai-fieldset{border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;gap:4px;margin:0;padding:6px 8px}
+.ai-docs{max-height:120px;overflow:auto;display:flex;flex-direction:column}
+.ai-preview{background:var(--panel2);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:4px}
+.ai-payload{max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;margin:0}
+.ai-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.ai-msg{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.ai-msg.user{border-left:3px solid var(--accent)}.ai-msg.assistant{border-left:3px solid var(--secondary)}
+.ai-sources,.ai-findings{padding-left:16px;margin:0;font-size:12px}
+.ai-diff .list li{align-items:flex-start}
+.diff-old{color:var(--danger);overflow-wrap:anywhere}.diff-new{color:var(--ok);overflow-wrap:anywhere}

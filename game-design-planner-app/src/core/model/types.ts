@@ -96,6 +96,13 @@ export interface Registry {
   hintRules?: DeclarativeHintRule[]
 }
 
+/** User prompt template shared in the project file (never contains keys). */
+export interface AiTemplate {
+  id: string
+  name: string
+  text: string
+}
+
 export type HintSeverity = 'info' | 'suggest' | 'important'
 export type HintCondition =
   | { kind: 'isEmpty' }
@@ -153,7 +160,7 @@ export interface Link {
 export interface Project {
   format: typeof FORMAT
   formatVersion: number
-  meta: { name: string; createdAt: string; updatedAt: string; appVersion: string; hints?: HintPrefs }
+  meta: { name: string; createdAt: string; updatedAt: string; appVersion: string; hints?: HintPrefs; aiTemplates?: AiTemplate[] }
   registry: Registry
   documents: Record<string, DocumentEnvelope>
   links: Link[]

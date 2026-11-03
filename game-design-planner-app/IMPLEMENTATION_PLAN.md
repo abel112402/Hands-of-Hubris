@@ -419,3 +419,137 @@ A szabályok a **séma meta-adatából** általánosan is generálhatók (pl. `r
 
 **Megvalósítva (H0–H4):** `src/core/hints/` (típusok, motor, szabályok, deklaratív szabályok), `src/ui/hints/` (panel, beállítások, hook), `/hints` útvonal, AppShell badge, Home „Next steps”, tesztek: `tests/hints.test.ts`, `tests/editing.test.tsx`.
 **Hátra / későbbi:** az elavult dismissed bejegyzések automatikus törlése (GC), Web Worker (H5 mérés után).
+
+## 12. Opcionális AI integráció (API kulccsal)
+
+**Döntések (egyeztetve):**
+
+| Téma | Döntés |
+|------|--------|
+| Szolgáltatók | OpenAI, Anthropic (Claude), Google Gemini |
+| Kulcs tárolása | Csak a munkamenetben (memória); nem kerül sem a projektfájlba, sem localStorage/IndexedDB-be, sem autosave-be, sem exportba |
+| Módosítások | Mindig diff + jóváhagyás; az AI soha nem ír közvetlenül a projektbe |
+| Kontextus | A felhasználó választja ki kérésenként, mit kap az AI |
+| Költség | Tokenbecslés küldés előtt + napi/havi limit a beállításokban |
+| Funkciók | Chat, tartalomgenerálás, elem kibővítés/átírás/fordítás, konzisztencia- és egyensúly-review, hint-magyarázat és -kiegészítés, képlet/gazdasági javaslat, dokumentum-összefoglaló/Markdown, kérdések a `docs/` alapján |
+
+### 12.1 Alapelvek
+* **Teljesen opcionális:** kulcs nélkül az app és a szabályalapú tippmotor (11. fejezet) változatlanul működik; az AI UI-elemek rejtettek/letiltottak. A `core/ai/` modul lazy-loadolt, nincs hatása a bundle-re, ha nem használják.
+* **Nincs saját backend:** a böngésző közvetlenül hívja a szolgáltatót (BYOK). Emiatt a kulcs a felhasználó gépén marad; ezt a beállítások oldalon egyértelműen jelezni kell.
+* **Az AI csak javasol:** minden eredmény egy *javaslat* (`AiProposal`), amit a felhasználó diffben lát és hagy jóvá.
+* **Adatvédelem:** csak az küldhető el, amit a felhasználó kijelölt; küldés előtt előnézet a pontos tartalomról és a tokenbecslésről.
+
+### 12.2 Architektúra (`core/ai/`)
+```
+core/ai/
+  types.ts            // AiProvider, ChatMessage, AiRequest, AiProposal, Usage
+  providers/
+    openai.ts         // /v1/chat/completions vagy /v1/responses, streaming (SSE)
+    anthropic.ts      // /v1/messages, fejléc: anthropic-dangerous-direct-browser-access
+    gemini.ts         // generativelanguage.googleapis.com, streamGenerateContent
+    index.ts          // regisztráció (új szolgáltató = új fájl)
+  session.ts          // memória-only kulcs- és beállításkezelés (Zustand, nem perzisztált)
+  context.ts          // kontextus-építő a kijelölés alapján + méretkorlát
+  tokens.ts           // tokenbecslés (karakter/4 heurisztika, szolgáltatónként kalibrálható)
+  budget.ts           // napi/havi limit, használat-számláló
+  tools.ts            // strukturált kimenet sémák (Zod) a javaslatokhoz
+  prompts/            // rendszer-promptok funkciónként, en/hu
+  proposals.ts        // AiProposal -> patch -> diff -> alkalmazás
+  docsIndex.ts        // `docs/` keresés (lásd 12.6)
+```
+* **Provider interfész:** `stream(req, signal): AsyncIterable<Chunk>` + `complete(req)`; közös hibatérkép (401 érvénytelen kulcs, 429 rate limit, hálózat, CORS, megszakítás). Megszakítás `AbortController`-rel.
+* **Modellválasztás:** szolgáltatónként a modelllista a beállításokban szerkeszthető (nem hardcode-olt), alapértelmezett modell előre kitöltve.
+* **Strukturált kimenet:** módosító funkcióknál a modell JSON-t ad vissza, amit Zod sémával validálunk (a modul mezősémájából generálva: `FieldDef` → JSON Schema). Érvénytelen kimenet: egyszeri automatikus újrapróbálás hibaüzenettel, utána hiba a felhasználónak.
+
+### 12.3 Kulcskezelés
+* A kulcs csak a `session.ts` memóriaállapotában él; oldal-újratöltéskor elvész (újra be kell írni). Ez tudatos döntés.
+* Soha nem kerül be: projektfájl, autosave/snapshot, Markdown export, hibajelentés, konzol-napló. Az `aiSettings` külön store, a `project` objektumon kívül; teszt ellenőrzi, hogy a szerializált projekt nem tartalmazza.
+* Jelszókezelő-barát `type="password"` mező, „Kulcs törlése” gomb, „Kapcsolat tesztelése” (olcsó hívás).
+* Szigorú CSP javaslat: `connect-src` csak a három szolgáltató domainjére; harmadik fél szkript nincs.
+* Figyelmeztetés a beállításokban: a böngészőből hívott API kulcs XSS esetén kiszivároghat; ajánlott korlátozott jogosultságú, költséglimites kulcs.
+
+### 12.4 Funkciók és UI
+Közös UI: **AI panel** (a jobb oldali hint-panel mellett/alatt fül: „Hints | AI”), kontextus-választó, tokenbecslés-sáv, „Küldés” / „Megszakítás”, előzmények a munkamenetben (nem perzisztált).
+
+| Funkció | Működés | Kimenet |
+|---------|---------|---------|
+| Chat asszisztens | Szabad beszélgetés a kijelölt kontextussal, streaming | Szöveg; „Javaslat készítése” gomb szövegből `AiProposal`-t |
+| Tartalomgenerálás | A kollekció szekcióban „✨ Generate”: darabszám + irány megadása; a modul sémája alapján | N új elem javaslatként (diff: csupa hozzáadás) |
+| Elem kibővítés/átírás/fordítás | Elem/mező menüjében: „Bővítés”, „Átírás (stílus)”, „Fordítás HU/EN” | Mező-szintű diff (régi → új) |
+| Konzisztencia- és egyensúly-review | Kiválasztott dokumentumok/szekciók elemzése (hivatkozások, ellentmondások, kiugró értékek) | Strukturált találatlista (súlyosság, hely, indoklás), kattintásra ugrás; opcionálisan javított mezők javaslata |
+| Hint-magyarázat és -kiegészítés | A hint kártyán „Magyarázd el”; a szabály-hint + érintett adatok alapján bővebb indoklás és javítási lépések | Szöveg + opcionális `AiProposal` a javításra; az AI-hint külön jelölt, soha nem keveredik a szabályalapúval |
+| Képlet / gazdasági egyensúly | A képlet-szekcióban: bemenet a képletek, változók, releváns táblák; kérés: egyensúly-ellenőrzés, alternatív képlet, példaszámok | Képletjavaslat (`expr` + `vars`) diffben; a javasolt képletet a `core/formula.ts` kiértékelővel validáljuk, érvénytelen nem javasolható |
+| Dokumentum összefoglaló / Markdown | Dokumentum vagy projekt összefoglalása, Markdown-szöveg generálás | Szöveg (másolás / „Beszúrás richtext szekcióba” diffen át) |
+| Kérdések a `docs/` alapján | Természetes nyelvű kérdés a dokumentációra | Válasz forrás-hivatkozásokkal (fájl + szakasz) |
+
+### 12.5 Javaslat → diff → jóváhagyás
+* `AiProposal = { id, summary, ops: Op[] }`, ahol `Op = addEntity | updateField | removeEntity(nem engedélyezett az AI-nak) | setFormula | appendRichtext`. A törlés szándékosan kizárt.
+* `proposals.ts` az opokat Immer-patchekké fordítja a *másolaton*; a UI a régi/új értéket mezőnként mutatja (zöld/piros), elemenként és mezőnként ki/be kapcsolható.
+* Jóváhagyás után egyetlen `mutate` hívás → **egy undo lépés** (Ctrl+Z visszavonja az egész AI-módosítást).
+* Alkalmazás előtt validáció: mezőtípusok, `ref` hivatkozások léteznek-e, enum értékek, `required`; hibás op automatikusan kihagyva, jelezve.
+* Elavulás-védelem: ha a célelem a javaslat készítése óta változott, a diff újraszámolódik / figyelmeztet.
+
+### 12.6 Kérdések a `docs/` alapján
+A `docs/` a repóban Markdown, az app böngészőben fut, így a forrás kétféle lehet:
+1. **A projekt saját Markdown exportja** (`core/export/markdown.ts`) – mindig elérhető, nincs extra lépés (alapértelmezett).
+2. **Opcionális `docs/` mappa megnyitása** (File System Access API, fallback: fájlfeltöltés): a Markdown fájlok fejléc szerint darabolva, memóriában indexelve.
+* Keresés AI nélkül: egyszerű kulcsszó/BM25-szerű pontozás a darabokon; a legjobb N darab kerül a promptba forrás-azonosítóval, a válasz hivatkozik rájuk. Nincs embedding/vektor-DB az első körben.
+
+### 12.7 Kontextus-választó és adatvédelem
+* Kérésenként választható: aktuális szekció / dokumentum / kijelölt elemek / több dokumentum / egész projekt, plusz „hivatkozott elemek is” kapcsoló.
+* A panel mutatja a pontos elküldendő szöveget (összecsukható) és a tokenbecslést; méretkorlát felett figyelmeztet, és kérés nélkül nem vág le csendben.
+* Alapértelmezés: az aktuális szekció; a választás nem perzisztált (kérésenként újra).
+
+### 12.8 Költség és limitek
+* Küldés előtt: becsült bemeneti token + várható kimenet (max_tokens beállítás) → becsült költség a beállítható árlista alapján (az árak a beállításokban szerkeszthetők, mert változnak).
+* Napi/havi limit (token vagy összeg, a felhasználó választja) a beállításokban; a számláló a szolgáltató által visszaadott tényleges használatból frissül. Mivel a kulcs csak memóriában él, a limit-számláló és a limitértékek helyi (localStorage) beállítások, **kulcs nélkül**. Limit elérésekor a küldés blokkolt, felülbírálható megerősítéssel.
+* Egy kérés kimeneti tokenkorlátja és időtúllépése konfigurálható; megszakítás után a már megkapott tokenek is elszámolódnak.
+
+### 12.9 Hibakezelés és biztonság
+* Hibák: érvénytelen kulcs, kvóta/429 (exponenciális backoff max. 2 próba), hálózat/CORS, tartalomszűrés, érvénytelen strukturált kimenet; mind érthető (en/hu) üzenettel.
+* **Prompt injection:** a projekt tartalma adat, nem utasítás – a rendszerprompt ezt rögzíti; az AI nem hívhat eszközt, csak javaslatot adhat, az alkalmazás pedig csak az engedélyezett opokat hajtja végre, jóváhagyással.
+* A modell kimenete soha nem kerül HTML-ként renderelésre (Markdown megjelenítés szanitizálva).
+* i18n: UI en/hu; a prompt nyelve a projekt/UI nyelvéhez igazodik, felülbírálható.
+
+### 12.10 Fázisok
+| Fázis | Tartalom | Kész, ha |
+|-------|----------|----------|
+| A0 | `core/ai` váz, provider interfész, **Anthropic + OpenAI + Gemini** streaming, session-store, beállítás-oldal (kulcs, modell, kapcsolat-teszt) | Mock szerveres tesztek zöldek mindhárom providerre; kulcs nincs a szerializált projektben |
+| A1 | AI panel, kontextus-választó, tokenbecslés, limitek, chat | Streaming, megszakítás, limit-blokkolás UI teszt |
+| A2 | Javaslat → diff → jóváhagyás motor, egyetlen undo lépés | Op-ok validációja és alkalmazása tesztelt |
+| A3 | Tartalomgenerálás, elem bővítés/átírás/fordítás | Séma-valid kimenet, diff UI |
+| A4 | Hint-magyarázat/-kiegészítés, konzisztencia/egyensúly review, képlet-javaslat | Képlet-validáció, találatlista navigációval |
+| A5 | Dokumentum-összefoglaló, `docs/` kérdezés (index + hivatkozások) | Forráshivatkozásos válasz teszt |
+| A6 | Finomhangolás: promptok, hibaüzenetek, CSP, dokumentáció | Manuális átvizsgálás, README frissítve |
+
+### 12.11 Tesztelés
+* Provider-tesztek mock `fetch`/SSE folyammal (normál, hiba, megszakítás, részleges chunk).
+* Kulcs-szivárgás tesztek: szerializált projekt, autosave, Markdown export, snapshot nem tartalmazza.
+* Javaslat-motor: érvénytelen ref/enum kihagyása, undo = egy lépés, törlés op elutasítása.
+* Költségszámítás és limitek; kontextus-építő méretkorlát.
+* UI: kulcs nélkül minden AI elem rejtett/letiltott; hint „Magyarázd el” folyam mock providerrel.
+* Valódi API-hívás csak kézi, opcionális smoke teszt (nincs a CI-ben).
+
+### 12.12 Kockázatok
+| Kockázat | Megoldás |
+|----------|----------|
+| CORS/böngészős hívás korlátai (pl. Anthropic külön fejléc) | Providerenként kezelve és dokumentálva; hibaüzenet útmutatással |
+| Kulcs kiszivárgása | Csak memória, CSP, figyelmeztetés, nincs perzisztálás |
+| Váratlan költség | Előzetes becslés, limitek, max_tokens |
+| Rossz/halucinált tartalom | Mindig diff + jóváhagyás, séma- és ref-validáció, AI-tartalom jelölése |
+| Provider API-változások | Vékony provider réteg, modell- és árlista szerkeszthető |
+
+### 12.13 Nyitott kérdések
+1. A `docs/` mappát az app csak a felhasználó által megnyitva olvassa (File System Access), vagy legyen a build része is egy beágyazott másolat?
+2. Az AI-javaslatok kapjanak-e „AI” jelölést az elemeken (pl. kis ikon), hogy később is látszódjon, mi generált?
+3. Szükség van-e promptsablonok szerkesztésére/mentésére a projektfájlban (a kulcs nélkül, csak a sablonok)?
+4. Egyedi modellnevek/árak kézi megadása elég, vagy legyen modelllista-lekérés az API-ból?
+
+### 12.14 Döntések és megvalósítási állapot
+
+- Dokumentáció: beágyazott `docs/` másolat + opcionális mappa megnyitása (memóriában).
+- AI által létrehozott/módosított elemek 🤖 jelölést kapnak (`_ai` mező).
+- Prompt sablonok a projektfájlban (`meta.aiTemplates`).
+- Modelllista a szolgáltatói API-ból (kézi megadás regex-validálással).
+- Állapot: A0–A6 megvalósítva (`src/core/ai`, `src/ui/ai`, `/ai` beállítások, AI fül a jobb sávban), tesztek: `tests/ai.test.ts`.
+- Ismert korlátok: a tipp-magyarázat csak szöveg; richtext hozzáfűzés nem kap `_ai` jelölést; a CSP és az élő szolgáltatói hívások böngészőben/valódi kulccsal nem lettek ellenőrizve.
