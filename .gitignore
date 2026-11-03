@@ -107,3 +107,12 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Game Design Planner web app (Node/Vite)
+/game-design-planner-app/node_modules/
+/game-design-planner-app/dist/
+/game-design-planner-app/coverage/
+/game-design-planner-app/test-results/
+/game-design-planner-app/playwright-report/
+/game-design-planner-app/*.tsbuildinfo
+/game-design-planner-app/.vite/

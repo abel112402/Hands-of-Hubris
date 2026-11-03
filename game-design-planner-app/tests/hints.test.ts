@@ -238,3 +238,31 @@ describe('core loop design checks', () => {
     expect(loop({ loopGraph: cyc })).not.toEqual(expect.arrayContaining(['coreLoop.isolated']))
   })
 })
+
+describe('difficulty tuning checks', () => {
+  const diff = (params: any[], cells: Record<string, number>, presets: any[] = [{ id: 'p', name: 'Easy', intent: 'x' }]) => {
+    const p = empty()
+    p.documents['design.difficulty'] = { moduleVersion: 2, data: { params, presets, values: { cells } } }
+    return collectHints(makeContext(p, { docId: 'design.difficulty' })).map((h) => h.ruleId).filter((r) => r.startsWith('difficulty.'))
+  }
+  const param = (extra: Record<string, any> = {}) => ({ id: 'a', name: 'A', direction: 'Higher = harder', min: 0, max: 2, ...extra })
+
+  it('stays quiet without parameters', () => {
+    expect(diff([], {})).toEqual([])
+  })
+
+  it('flags missing values and out-of-range values', () => {
+    expect(diff([param()], { 'a|easy': 1, 'a|medium': 5 })).toEqual(expect.arrayContaining(['difficulty.missing', 'difficulty.range']))
+  })
+
+  it('flags reversals, unless the parameter is an intentional exception', () => {
+    const cells = { 'a|easy': 1, 'a|medium': 2, 'a|hard': 1.5 }
+    expect(diff([param()], cells)).toContain('difficulty.reversal')
+    expect(diff([param({ exception: true })], cells)).not.toContain('difficulty.reversal')
+    expect(diff([param({ direction: 'Higher = easier' })], { 'a|easy': 2, 'a|medium': 1, 'a|hard': 0 })).not.toContain('difficulty.reversal')
+  })
+
+  it('asks for tuning context and preset intent', () => {
+    expect(diff([param({ direction: undefined })], {}, [{ id: 'p', name: 'Easy' }])).toEqual(expect.arrayContaining(['difficulty.context', 'difficulty.intent']))
+  })
+})

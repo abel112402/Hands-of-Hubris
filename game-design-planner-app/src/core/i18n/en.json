@@ -223,6 +223,30 @@
     "coreLoopFeedback": {
       "title": "The loop diagram has no feedback path",
       "body": "No connection leads back to an earlier node, so the diagram reads as a line, not a loop. Add an edge from a reward or outcome back to an action."
+    },
+    "difficultyMissing": {
+      "title": "Difficulty values still missing",
+      "body": "Some presets have empty values: {{names}}."
+    },
+    "difficultyRange": {
+      "title": "Values outside the intended range",
+      "body": "{{count}} value(s) fall outside the parameter’s range: {{names}}. Adjust the value or the range."
+    },
+    "difficultyReversal": {
+      "title": "Parameters that move against their direction",
+      "body": "Between adjacent presets these change the opposite way to their direction: {{names}}. Mark a parameter as an intentional exception if that is deliberate."
+    },
+    "difficultyContext": {
+      "title": "Parameters without tuning context",
+      "body": "{{count}} parameter(s) lack a direction or range: {{names}}. These make reversals and out-of-range values detectable."
+    },
+    "difficultyIntent": {
+      "title": "Presets without an intent",
+      "body": "{{count}} preset(s) don’t say what they should feel like: {{names}}."
+    },
+    "difficultyNoPresets": {
+      "title": "No difficulty presets described",
+      "body": "Describe what each preset should feel like and who it is for."
     }
   },
   "ai": {

@@ -223,6 +223,30 @@
     "coreLoopFeedback": {
       "title": "Az ábrán nincs visszacsatolás",
       "body": "Egyetlen kapcsolat sem vezet vissza egy korábbi csomóponthoz, így az ábra vonal, nem ciklus. Kösd vissza a jutalmat vagy az eredményt egy cselekvéshez."
+    },
+    "difficultyMissing": {
+      "title": "Hiányzó nehézségi értékek",
+      "body": "Néhány fokozatnál üres értékek vannak: {{names}}."
+    },
+    "difficultyRange": {
+      "title": "Tartományon kívüli értékek",
+      "body": "{{count}} érték kívül esik a paraméter tartományán: {{names}}. Módosítsd az értéket vagy a tartományt."
+    },
+    "difficultyReversal": {
+      "title": "Az irányukkal ellentétesen változó paraméterek",
+      "body": "Szomszédos fokozatok között ezek az irányukkal ellentétesen változnak: {{names}}. Ha szándékos, jelöld a paramétert tudatos kivételnek."
+    },
+    "difficultyContext": {
+      "title": "Hangolási környezet nélküli paraméterek",
+      "body": "{{count}} paraméterből hiányzik az irány vagy a tartomány: {{names}}. Ezek teszik észlelhetővé az ellentmondásokat."
+    },
+    "difficultyIntent": {
+      "title": "Szándék nélküli fokozatok",
+      "body": "{{count}} fokozatnál nincs leírva, milyen érzést kell adnia: {{names}}."
+    },
+    "difficultyNoPresets": {
+      "title": "Nincsenek leírt nehézségi fokozatok",
+      "body": "Írd le, milyen érzést adjon az egyes fokozat, és kinek szól."
     }
   },
   "ai": {

@@ -73,6 +73,7 @@ export const v = {
     yField,
     max,
   }),
+  compare: (valuesSection: string, columns: Source): CollectionView => ({ kind: 'compare', valuesSection, columns }),
   progression: (scaleField: string, leadsField: string): CollectionView => ({ kind: 'progression', scaleField, leadsField }),
   ladder: (orderField: string, linkFields?: string[]): CollectionView => ({ kind: 'ladder', orderField, linkFields }),
   timeline: (
@@ -119,8 +120,8 @@ export const s = {
     rows: Source,
     cols: Source,
     cell: Extract<SectionDef, { kind: 'matrix' }>['cell'],
-    o: { description?: string; diagonal?: boolean } = {},
-  ): SectionDef => ({ id, title, description: o.description, kind: 'matrix', rows, cols, cell, diagonal: o.diagonal }),
+    o: { description?: string; diagonal?: boolean; rowMeta?: Extract<SectionDef, { kind: 'matrix' }>['rowMeta'] } = {},
+  ): SectionDef => ({ id, title, description: o.description, kind: 'matrix', rows, cols, cell, diagonal: o.diagonal, rowMeta: o.rowMeta }),
   graph: (
     id: string,
     title: string,

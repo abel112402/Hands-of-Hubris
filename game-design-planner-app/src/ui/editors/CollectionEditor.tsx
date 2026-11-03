@@ -9,7 +9,7 @@ import { getModule } from '../../core/modules/registry'
 import { useSection, useProject } from '../hooks'
 import { FieldInput, displayValue, isLongField } from '../FieldInput'
 import { Link } from 'react-router-dom'
-import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView } from './views'
+import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView } from './views'
 import { GateReadiness } from './GateReadiness'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
@@ -21,6 +21,7 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   timeline: 'Timeline',
   ladder: 'Cut order',
   progression: 'Progression',
+  compare: 'Compare',
 }
 
 export type ViewProps = {
@@ -101,6 +102,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
           {view.kind === 'progression' && <ProgressionView {...props} scaleField={view.scaleField} leadsField={view.leadsField} />}
+          {view.kind === 'compare' && <CompareView {...props} valuesSection={view.valuesSection} columns={view.columns} />}
           {items.length === 0 && <p className="empty">Nothing here yet. Use “Add {sec.singular}”.</p>}
         </div>
         {sel && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}

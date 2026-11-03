@@ -34,6 +34,12 @@ export type CollectionView =
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | { kind: 'progression'; scaleField: string; leadsField: string }
   | {
+      kind: 'compare'
+      /** Matrix section holding the values, and the catalog giving its columns. */
+      valuesSection: string
+      columns: Source
+    }
+  | {
       kind: 'timeline'
       startField: string
       durationField: string
@@ -67,6 +73,8 @@ export type SectionDef = SectionBase &
         cols: Source
         cell: { type: 'number'; min: number; max: number } | { type: 'enum'; options: string[] }
         diagonal?: boolean
+        /** Row entity fields that give each row its own range, unit, notes and group. */
+        rowMeta?: { unit?: string; min?: string; max?: string; baseline?: string; notes?: string; group?: string }
       }
     | {
         kind: 'graph'

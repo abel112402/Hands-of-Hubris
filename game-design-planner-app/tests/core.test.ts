@@ -225,3 +225,41 @@ describe('core loop module v2', () => {
     expect(md).toContain('Crafting motivates gathering.')
   })
 })
+
+describe('difficulty module v2', () => {
+  const mod = MODULES.find((m) => m.id === 'design.difficulty')!
+
+  it('migrates free-text units, categories and the rules form', () => {
+    const p = createProject('T', false)
+    p.documents['design.difficulty'] = {
+      moduleVersion: 1,
+      data: {
+        params: [{ id: 'a', name: 'A', unit: 'hp/s', category: 'combat' }, { id: 'b', name: 'B', unit: '%', category: 'Weird' }],
+        rules: { switching: 'No', storage: 'JSON' },
+      },
+    }
+    const back = deserializeProject(serializeProject(p)).project.documents['design.difficulty']
+    expect(back.moduleVersion).toBe(mod.version)
+    expect(back.data.params[0]).toMatchObject({ unit: 'other', category: 'Combat', notes: 'Unit: hp/s' })
+    expect(back.data.params[1]).toMatchObject({ unit: '%', category: 'Other' })
+    expect(back.data.switching.switching).toBe('No')
+    expect(back.data.storage.storage).toBe('JSON')
+    expect(back.data.rules).toBeUndefined()
+  })
+
+  it('seeds ranges and presets, and exports principles, unit and notes', () => {
+    const p = createProject('T', true)
+    const data = p.documents['design.difficulty'].data
+    expect(data.presets.map((x: any) => x.level)).toEqual(['easy', 'medium', 'hard'])
+    const morale = data.params.find((x: any) => x.name === 'Morale loss threshold')
+    expect(morale).toMatchObject({ unit: '%', min: 0, max: 100 })
+    data.params[0].notes = 'Watch late game'
+    data.values.cells[`${morale.id}|hard`] = 70
+    data.principles = { principles: 'Scale pressure, not rules.' }
+    const md = moduleToMarkdown(p, mod)
+    expect(md).toContain('Scale pressure, not rules.')
+    expect(md).toContain('| Unit |')
+    expect(md).toContain('Watch late game')
+    expect(validateProject(p).filter((i) => i.level === 'error')).toEqual([])
+  })
+})
