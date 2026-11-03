@@ -4,7 +4,7 @@ export const APP_VERSION = '0.1.0'
 
 export type Source = { catalog: string } | { doc?: string; section: string }
 
-export type FieldBase = { key: string; label: string; help?: string; required?: boolean }
+export type FieldBase = { key: string; label: string; help?: string; placeholder?: string; required?: boolean }
 export type FieldDef = FieldBase &
   (
     | { type: 'text' }
@@ -81,6 +81,8 @@ export interface PlannerModule {
   icon: string
   docsPath: string
   version: number
+  /** Upgrades stored section data when a document's moduleVersion is older than `version`. */
+  migrate?: (data: Record<string, any>) => void
   sections: SectionDef[] | ((registry: Registry) => SectionDef[])
 }
 

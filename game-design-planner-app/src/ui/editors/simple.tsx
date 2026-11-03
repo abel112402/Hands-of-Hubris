@@ -14,8 +14,11 @@ export function FormEditor({ docId, sec }: { docId: string; sec: Extract<Section
     <div className="form wide">
       {sec.fields.map((f) => (
         <div key={f.key} className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
-          <label>{f.label}</label>
+          <label htmlFor={`${docId}-${sec.id}-${f.key}`}>{f.label}</label>
+          {f.help && <small className="muted field-hint" id={`${docId}-${sec.id}-${f.key}-help`}>{f.help}</small>}
           <FieldInput
+            id={`${docId}-${sec.id}-${f.key}`}
+            describedBy={f.help ? `${docId}-${sec.id}-${f.key}-help` : undefined}
             field={f}
             value={values[f.key]}
             docId={docId}

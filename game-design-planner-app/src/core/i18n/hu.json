@@ -135,6 +135,34 @@
     "backlog": {
       "title": "Backlog elemeknél hiányzik a becslés vagy mérföldkő",
       "body": "{{count}} nyitott feature tervezésre vár: {{names}}."
+    },
+    "visionPitch": {
+      "title": "A pitch még üres",
+      "body": "Írj egy vázlatos egymondatos pitchet; később, a vízió tisztulásával finomíthatod."
+    },
+    "visionNoPillars": {
+      "title": "Add meg a tervezési pilléreket",
+      "body": "Még nincs pillér. 3–5 pillér támpontot ad a funkciók elfogadásához vagy elvetéséhez."
+    },
+    "visionPillarCount": {
+      "title": "{{count}} tervezési pillér",
+      "body": "Az ajánlott tartomány {{min}}–{{max}} pillér. Túl kevés homályos, túl sok már nem vezérli a döntéseket."
+    },
+    "visionPillarTest": {
+      "title": "Döntési teszt nélküli pillérek",
+      "body": "{{count}} pillérnél hiányzik, hogyan segít a döntésben: {{names}}."
+    },
+    "visionUspBenefit": {
+      "title": "Játékoselőny nélküli USP-k",
+      "body": "{{count}} USP nem mondja meg, mit nyer a játékos: {{names}}."
+    },
+    "visionScopeBucket": {
+      "title": "Döntés nélküli hatókör-elemek",
+      "body": "{{count}} elemnek nincs kategóriája (MVP / Később / Nincs benne): {{names}}."
+    },
+    "visionScopeMvp": {
+      "title": "Még semmi sincs az MVP-ben",
+      "body": "Vannak hatókör-elemek, de egyik sincs „In MVP” kategóriában."
     }
   },
   "ai": {

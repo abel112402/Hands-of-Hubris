@@ -21,6 +21,18 @@ describe('editing', () => {
   })
 })
 
+describe('vision form accessibility', () => {
+  it('associates labels and help text with their inputs', async () => {
+    window.location.hash = '#/doc/overview.vision'
+    render(<App />)
+    const pitch = await screen.findByLabelText('One-sentence pitch', { selector: 'input' })
+    fireEvent.change(pitch, { target: { value: 'A town sim' } })
+    expect(useStore.getState().project.documents['overview.vision'].data.pitch.pitch).toBe('A town sim')
+    expect(pitch.getAttribute('aria-describedby')).toBeTruthy()
+    expect(document.getElementById(pitch.getAttribute('aria-describedby')!)?.textContent).toMatch(/refine it last/)
+  })
+})
+
 describe('hints UI', () => {
   it('shows the hint panel and asks for confirmation before creating an entity', async () => {
     useStore.getState().loadProject(createProject('T', false))

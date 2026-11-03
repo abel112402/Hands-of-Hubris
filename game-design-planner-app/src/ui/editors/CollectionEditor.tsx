@@ -165,12 +165,19 @@ function Inspector({
       <div className="form">
         {sec.fields.map((f) => (
           <div key={f.key} className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
-            <label>
+            <label htmlFor={`${docId}-${entity.id}-${f.key}`}>
               {f.label}
               {f.required && <span className="req"> *</span>}
             </label>
-            <FieldInput field={f} value={entity[f.key]} docId={docId} onChange={(v) => patch(entity.id, f.key, v)} />
-            {f.help && <small className="muted">{f.help}</small>}
+            <FieldInput
+              id={`${docId}-${entity.id}-${f.key}`}
+              describedBy={f.help ? `${docId}-${entity.id}-${f.key}-help` : undefined}
+              field={f}
+              value={entity[f.key]}
+              docId={docId}
+              onChange={(v) => patch(entity.id, f.key, v)}
+            />
+            {f.help && <small className="muted" id={`${docId}-${entity.id}-${f.key}-help`}>{f.help}</small>}
           </div>
         ))}
         <div className="field">

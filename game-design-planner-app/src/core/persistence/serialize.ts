@@ -1,5 +1,6 @@
 import { projectSchema } from '../model/schema'
 import { FORMAT_VERSION, type Project } from '../model/types'
+import { MODULES, migrateDocument } from '../modules/registry'
 
 export interface LoadResult {
   project: Project
@@ -41,7 +42,9 @@ export function deserializeProject(text: string, maxBytes = 50 * 1024 * 1024): L
     const first = parsed.error.issues[0]
     throw new Error(`Invalid project file: ${first.path.join('.')} – ${first.message}`)
   }
-  return { project: parsed.data as unknown as Project, warnings }
+  const project = parsed.data as unknown as Project
+  for (const m of MODULES) if (project.documents[m.id]) migrateDocument(m, project.documents[m.id])
+  return { project, warnings }
 }
 
 /** Exports one document (module) so it can be imported into another project. */
@@ -56,5 +59,7 @@ export function parseDocumentFile(text: string): { docId: string; document: Proj
   const raw = JSON.parse(text)
   if (raw?.format !== 'hands-of-hubris-planner-document' || !raw.docId || !raw.document?.data)
     throw new Error('Not a planner document file')
+  const m = MODULES.find((x) => x.id === raw.docId)
+  if (m) migrateDocument(m, raw.document)
   return { docId: raw.docId, document: raw.document }
 }

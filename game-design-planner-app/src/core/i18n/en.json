@@ -135,6 +135,34 @@
     "backlog": {
       "title": "Backlog items lack estimate or milestone",
       "body": "{{count}} open features need planning: {{names}}."
+    },
+    "visionPitch": {
+      "title": "The pitch is still empty",
+      "body": "Write a draft one-sentence pitch; you can refine it once the rest of the vision is clear."
+    },
+    "visionNoPillars": {
+      "title": "Add your design pillars",
+      "body": "No pillars yet. 3–5 pillars give you a test for accepting or rejecting features."
+    },
+    "visionPillarCount": {
+      "title": "{{count}} design pillars",
+      "body": "The suggested range is {{min}}–{{max}} pillars. Too few is vague, too many stops guiding decisions."
+    },
+    "visionPillarTest": {
+      "title": "Pillars without a decision test",
+      "body": "{{count}} pillar(s) have no “how it guides a decision”: {{names}}."
+    },
+    "visionUspBenefit": {
+      "title": "USPs without a player benefit",
+      "body": "{{count}} USP(s) do not say what the player gains: {{names}}."
+    },
+    "visionScopeBucket": {
+      "title": "Scope items without a decision",
+      "body": "{{count}} scope item(s) have no bucket (MVP / Later / Out of scope): {{names}}."
+    },
+    "visionScopeMvp": {
+      "title": "Nothing is in the MVP yet",
+      "body": "Scope items exist, but none are marked “In MVP”."
     }
   },
   "ai": {

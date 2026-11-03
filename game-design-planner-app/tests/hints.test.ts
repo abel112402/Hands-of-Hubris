@@ -125,3 +125,47 @@ describe('hint engine', () => {
     expect(deserializeProject(serializeProject(old)).project.meta.hints).toBeUndefined()
   })
 })
+
+describe('vision readiness rules', () => {
+  const vision = () => {
+    const p = empty()
+    p.documents['overview.vision'] = {
+      moduleVersion: 2,
+      data: { pitch: {}, pillars: [], usps: [], scope: [], audience: { audience: 'Cozy builders' } },
+    }
+    return p
+  }
+  const vids = (p: ReturnType<typeof empty>) => ids(p, 'overview.vision')
+
+  it('stays quiet for an empty vision and for other documents', () => {
+    const p = empty()
+    expect(vids(p).filter((r) => r.startsWith('vision.'))).toEqual([])
+    expect(ids(vision(), 'design.items').filter((r) => r.startsWith('vision.'))).toEqual([])
+  })
+
+  it('prompts for a pitch and pillars once the vision has content', () => {
+    expect(vids(vision())).toEqual(expect.arrayContaining(['vision.pitch', 'vision.pillars']))
+  })
+
+  it('checks pillar count, decision tests, USP benefits and scope buckets', () => {
+    const p = vision()
+    const d = p.documents['overview.vision'].data
+    d.pitch = { pitch: 'A town sim' }
+    d.pillars = [{ id: 'a', name: 'Cozy' }]
+    d.usps = [{ id: 'u', name: 'Magic', description: 'x' }]
+    d.scope = [{ id: 's1', name: 'Combat' }, { id: 's2', name: 'Trade', bucket: 'Later' }]
+    const r = vids(p)
+    expect(r).toEqual(expect.arrayContaining(['vision.pillarCount', 'vision.pillarTest', 'vision.uspBenefit', 'vision.scopeBucket']))
+    expect(r).not.toContain('vision.pitch')
+    d.scope[0].bucket = 'Later'
+    expect(vids(p)).toContain('vision.scopeMvp')
+    d.scope[0].bucket = 'In MVP'
+    expect(vids(p)).not.toContain('vision.scopeMvp')
+  })
+
+  it('never exceeds suggest severity', () => {
+    const hints = collectHints(makeContext(vision(), { docId: 'overview.vision' })).filter((h) => h.ruleId.startsWith('vision.'))
+    expect(hints.length).toBeGreaterThan(0)
+    expect(hints.every((h) => h.severity !== 'important')).toBe(true)
+  })
+})

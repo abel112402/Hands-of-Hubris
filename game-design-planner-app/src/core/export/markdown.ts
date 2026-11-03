@@ -100,10 +100,12 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
   if (data === undefined) return '_No data._\n'
   switch (sec.kind) {
     case 'form': {
-      const lines = sec.fields
+      const filled = sec.fields
         .map((f) => ({ f, t: valueToText(project, mod.id, f, data[f.key]) }))
         .filter((x) => x.t)
-        .map(({ f, t }) => `* **${f.label}:** ${t}`)
+      // The section heading already names a single-field form, so a bullet repeating that title is dropped.
+      if (sec.fields.length === 1 && filled.length === 1 && filled[0].f.label === sec.title) return filled[0].t + '\n'
+      const lines = filled.map(({ f, t }) => `* **${f.label}:** ${t}`)
       return lines.length ? lines.join('\n') + '\n' : '_No data._\n'
     }
     case 'collection':

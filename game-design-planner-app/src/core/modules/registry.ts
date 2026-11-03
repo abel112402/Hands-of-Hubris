@@ -69,9 +69,16 @@ export function emptySectionData(sec: SectionDef, withSeed = false, makeId: () =
   }
 }
 
+export function migrateDocument(mod: PlannerModule, doc: { moduleVersion: number; data: Record<string, any> }) {
+  if (doc.moduleVersion >= mod.version) return
+  mod.migrate?.(doc.data)
+  doc.moduleVersion = mod.version
+}
+
 export function ensureDocument(project: Project, mod: PlannerModule, makeId: () => string, withSeed = false) {
   const sections = getSections(mod, project.registry)
   const doc = project.documents[mod.id] ?? { moduleVersion: mod.version, data: {} }
+  migrateDocument(mod, doc)
   for (const sec of sections) {
     if (doc.data[sec.id] === undefined) {
       doc.data[sec.id] = emptySectionData(sec, withSeed && (sec.kind !== 'checklist' || mod.id === 'production.release'), makeId)

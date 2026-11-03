@@ -64,3 +64,48 @@ describe('validation', () => {
     expect(sec === undefined || typeof sec === 'string').toBe(true)
   })
 })
+
+describe('vision module v2', () => {
+  const vision = MODULES.find((m) => m.id === 'overview.vision')!
+
+  it('migrates the v1 concept form into separate sections', () => {
+    const p = createProject('T', false)
+    p.documents['overview.vision'] = {
+      moduleVersion: 1,
+      data: { concept: { pitch: 'P', genres: 'G', audience: 'A', tone: 'T', platform: 'PL', monetization: 'M' }, pillars: [], usps: [], scope: [] },
+    }
+    const back = deserializeProject(serializeProject(p)).project.documents['overview.vision']
+    expect(back.moduleVersion).toBe(vision.version)
+    expect(back.data.concept).toBeUndefined()
+    expect(back.data.pitch).toEqual({ pitch: 'P' })
+    expect(back.data.references).toEqual({ genres: 'G' })
+    expect(back.data.audience).toEqual({ audience: 'A' })
+    expect(back.data.tone).toEqual({ tone: 'T' })
+    expect(back.data.platform).toEqual({ platform: 'PL' })
+    expect(back.data.monetization).toEqual({ monetization: 'M' })
+  })
+
+  it('exports in the source outline order without repeating single-field labels', () => {
+    const p = createProject('T', false)
+    const doc = ensureDocument(p, vision, makeId)
+    doc.data.pitch = { pitch: 'A town sim' }
+    doc.data.audience = { audience: 'Cozy builders' }
+    doc.data.monetization = { monetization: 'Premium' }
+    const md = moduleToMarkdown(p, vision)
+    const headings = [...md.matchAll(/^## \d+\. (.+)$/gm)].map((m) => m[1])
+    expect(headings).toEqual([
+      'One-sentence pitch',
+      'Genre and reference games',
+      'Target audience',
+      'Unique selling points',
+      'Design pillars',
+      'Mood and tone',
+      'Scope',
+      'Platform and technical frame',
+      'Monetization / release plan',
+    ])
+    expect(md).toContain('* **One-sentence pitch:** A town sim')
+    expect(md).toContain('Cozy builders')
+    expect(md).not.toContain('**Target audience:**')
+  })
+})

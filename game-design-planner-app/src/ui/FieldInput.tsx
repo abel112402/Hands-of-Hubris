@@ -11,6 +11,8 @@ export type FieldProps = {
   onChange: (v: any) => void
   docId: string
   compact?: boolean
+  id?: string
+  describedBy?: string
 }
 
 export function ChecklistItems({ items, onChange }: { items: ChecklistData['groups'][number]['items']; onChange: (v: typeof items) => void }) {
@@ -29,7 +31,7 @@ export function ChecklistItems({ items, onChange }: { items: ChecklistData['grou
   )
 }
 
-export function FieldInput({ field, value, onChange, docId, compact }: FieldProps) {
+export function FieldInput({ field, value, onChange, docId, compact, id, describedBy }: FieldProps) {
   const project = useProject()
   const options = useMemo(
     () => (field.type === 'ref' || field.type === 'multiref' || field.type === 'map' ? resolveSource(project, docId, field.source) : []),
@@ -38,12 +40,14 @@ export function FieldInput({ field, value, onChange, docId, compact }: FieldProp
 
   switch (field.type) {
     case 'text':
-      return <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <input id={id} aria-describedby={describedBy} placeholder={field.placeholder} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'longtext':
-      return <textarea rows={compact ? 2 : 4} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <textarea id={id} aria-describedby={describedBy} placeholder={field.placeholder} rows={compact ? 2 : 4} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'number':
       return (
         <input
+          id={id}
+          aria-describedby={describedBy}
           type="number"
           value={value ?? ''}
           min={field.min}
@@ -53,10 +57,10 @@ export function FieldInput({ field, value, onChange, docId, compact }: FieldProp
         />
       )
     case 'boolean':
-      return <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+      return <input id={id} aria-describedby={describedBy} type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
     case 'enum':
       return (
-        <select value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
+        <select id={id} aria-describedby={describedBy} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
           <option value="">—</option>
           {field.options.map((o) => (
             <option key={o}>{o}</option>
@@ -65,7 +69,7 @@ export function FieldInput({ field, value, onChange, docId, compact }: FieldProp
       )
     case 'ref':
       return (
-        <select value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
+        <select id={id} aria-describedby={describedBy} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
           <option value="">—</option>
           {options.map((o) => (
             <option key={o.id} value={o.id}>
@@ -118,15 +122,17 @@ export function FieldInput({ field, value, onChange, docId, compact }: FieldProp
     case 'color':
       return (
         <div className="row">
-          <input type="color" value={value || '#888888'} onChange={(e) => onChange(e.target.value)} />
+          <input id={id} aria-describedby={describedBy} type="color" value={value || '#888888'} onChange={(e) => onChange(e.target.value)} />
           {value && <button className="small" onClick={() => onChange(undefined)}>clear</button>}
         </div>
       )
     case 'list':
       return (
         <textarea
+          id={id}
+          aria-describedby={describedBy}
           rows={compact ? 2 : 4}
-          placeholder="One entry per line"
+          placeholder={field.placeholder ?? 'One entry per line'}
           value={(value ?? []).join('\n')}
           onChange={(e) => onChange(e.target.value === '' ? [] : e.target.value.split('\n'))}
         />
@@ -137,7 +143,7 @@ export function FieldInput({ field, value, onChange, docId, compact }: FieldProp
       const r = expr ? tryEvaluate(expr, vars) : null
       return (
         <div>
-          <input value={expr} placeholder="e.g. base * (1 + level / 10)" onChange={(e) => onChange(e.target.value)} />
+          <input id={id} aria-describedby={describedBy} value={expr} placeholder="e.g. base * (1 + level / 10)" onChange={(e) => onChange(e.target.value)} />
           {r && !r.ok && <div className="error-text">{r.error}</div>}
         </div>
       )

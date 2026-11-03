@@ -8,7 +8,7 @@ import type {
 } from '../core/model/types'
 
 type K<T> = Omit<T, 'key' | 'label' | 'type'>
-type Opt = { help?: string; required?: boolean }
+type Opt = { help?: string; placeholder?: string; required?: boolean }
 
 export const catalog = (c: string): Source => ({ catalog: c })
 export const section = (s: string, doc?: string): Source => ({ section: s, ...(doc ? { doc } : {}) })
