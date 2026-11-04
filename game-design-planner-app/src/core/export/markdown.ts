@@ -14,6 +14,7 @@ import { getSections, MODULES } from '../modules/registry'
 import { entityLabel, resolveSource } from '../references/refs'
 import { tryEvaluate } from '../formula'
 import { analyze, weekToDate, withBuffer } from '../schedule'
+import { needsBalance } from '../npc'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
 
@@ -126,6 +127,20 @@ function scheduleSummaryMd(project: Project, docId: string, sec: Extract<Section
   return out
 }
 
+/** Needs-vs-supply line per population scenario, for collections with a needs balance view. */
+function needsBalanceMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const view = sec.views.find((v) => v.kind === 'needsBalance')
+  if (!view || view.kind !== 'needsBalance' || !data.length) return ''
+  const r = (n: number) => Math.round(n * 100) / 100
+  let out = '\n'
+  for (const s of data) {
+    const b = needsBalance(project, s, view.populationField)
+    const parts = b.rows.map((x) => `${x.label} ${r(x.demand)}/${x.supply === null ? '–' : r(x.supply)}${x.short ? ' (short)' : ''}`)
+    out += `_Needs balance for ${entityLabel(s)} (population ${r(b.population)}; needed/supplied): ${parts.join(', ') || 'no needs set'}._\n`
+  }
+  return out
+}
+
 export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef): string {
   const data = project.documents[mod.id]?.data[sec.id]
   if (data === undefined) return '_No data._\n'
@@ -140,7 +155,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       return lines.length ? lines.join('\n') + '\n' : '_No data._\n'
     }
     case 'collection':
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data)
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data)
     case 'matrix':
       return matrixMd(project, mod.id, sec, data)
     case 'graph':

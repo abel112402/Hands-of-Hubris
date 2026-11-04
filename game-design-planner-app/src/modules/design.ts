@@ -49,6 +49,47 @@ function migrateWorld(data: Record<string, any>) {
   }
 }
 
+const BUILDING_CATEGORIES = ['Housing', 'Production', 'Storage', 'Services', 'Defense', 'Culture', 'Infrastructure', 'Other']
+const STATUSES = ['Draft', 'Ready for testing', 'Final']
+const BASE_TYPES = ['Settlement', 'Warehouse', 'Outpost', 'Market', 'Other']
+
+/** v1 routes named their endpoints as free text; each distinct name becomes a base the route now points at. */
+function migrateTown(data: Record<string, any>) {
+  if (!Array.isArray(data.routes)) return
+  if (!Array.isArray(data.bases)) data.bases = []
+  const idOf = (name: string): string => {
+    const found = data.bases.find((b: any) => String(b.name).toLowerCase() === name.toLowerCase())
+    if (found) return found.id
+    const id = `base-${data.bases.length + 1}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+    data.bases.push({ id, name })
+    return id
+  }
+  for (const r of data.routes) {
+    for (const [old, key] of [['from', 'fromBase'], ['to', 'toBase']] as const) {
+      const name = typeof r[old] === 'string' ? r[old].trim() : ''
+      if (name && r[key] === undefined) r[key] = idOf(name)
+      delete r[old]
+    }
+  }
+}
+
+/** v1 kept equipment, mercenaries, AI and generation as four boxes in one "Other" form. */
+function migrateNpc(data: Record<string, any>) {
+  const misc = data.misc
+  if (!misc || typeof misc !== 'object') return
+  const move = (from: string, section: string, field: string) => {
+    const text = typeof misc[from] === 'string' ? misc[from].trim() : ''
+    if (!text) return
+    const target = (data[section] && typeof data[section] === 'object' ? data[section] : (data[section] = {})) as Record<string, any>
+    target[field] = [target[field], text].filter(Boolean).join('\n')
+  }
+  move('equipment', 'equipmentRules', 'notes')
+  move('mercenaries', 'mercenaries', 'notes')
+  move('ai', 'behaviour', 'routine')
+  move('generation', 'generation', 'notes')
+  delete data.misc
+}
+
 const CATEGORIES = ['Combat', 'Survival', 'Economy', 'NPC', 'Other']
 const UNITS = ['×', '%', 'absolute', 'seconds', 'other']
 
@@ -368,39 +409,71 @@ export const designModules = [
     version: 2,
     migrate: migrateWorld,
   },
-  mod('design', 'town', 'Town Management & Logistics', 'docs/01_design/town_management.md', '🏘️', 'Buildings, resource flow, economy, morale.', [
+  {
+    ...mod('design', 'town', 'Town Management & Logistics', 'docs/01_design/town_management.md', '🏘️', 'Buildings, resource flow, economy, morale.', [
     s.collection(
       'buildings',
       'Buildings',
       'building',
       [
+        f.enm('category', 'Category', BUILDING_CATEGORIES),
+        f.enm('status', 'Status', STATUSES),
         f.text('function', 'Function'),
-        f.num('capacity', 'Capacity (NPCs)', { min: 0 }),
+        f.num('count', 'Planned count', { min: 0, help: 'How many copies the estimate assumes. Empty counts as 1.' }),
+        f.num('capacity', 'Capacity (population housed)', { min: 0 }),
+        f.num('storage', 'Storage provided', { min: 0 }),
         f.num('tiers', 'Upgrade tiers', { min: 1 }),
         f.map('cost', 'Build cost', catalog('resources')),
-        f.map('inputs', 'Inputs / tick', catalog('resources')),
-        f.map('outputs', 'Outputs / tick', catalog('resources')),
+        f.num('buildTime', 'Construction time', { min: 0, help: 'In the same time unit as the economy model.' }),
+        f.num('cycle', 'Production cycle (time units)', { min: 0, help: 'Length of one production cycle. Inputs and outputs below are per cycle; empty counts as 1.' }),
+        f.map('inputs', 'Inputs per cycle', catalog('resources')),
+        f.map('outputs', 'Outputs per cycle', catalog('resources')),
+        f.map('wasteOutputs', 'Waste / by-products per cycle', catalog('resources')),
         f.multi('workers', 'Worker professions', catalog('professions')),
-        f.long('upgrades', 'Upgrade path'),
+        f.num('workersRequired', 'Workers required', { min: 0 }),
+        f.num('skillLevel', 'Required skill level', { min: 0 }),
+        f.long('efficiencyConditions', 'Conditions affecting efficiency'),
+        f.multi('requires', 'Requires buildings', section('buildings')),
+        f.multi('upgradesTo', 'Upgrades into', section('buildings')),
+        f.long('upgrades', 'Upgrade path (notes)'),
         f.long('unlockedBy', 'Unlocked by'),
       ],
-      [v.cards(), v.table(['name', 'function', 'capacity', 'tiers'])],
+      [v.cards(), v.table(['name', 'category', 'status', 'function', 'count', 'capacity', 'workersRequired', 'inputs', 'outputs', 'cost']), v.economy()],
       {
         seed: [
-          { name: 'House', function: 'Housing for NPCs', capacity: 4 },
-          { name: 'Miner', function: 'Collects and smelts ore' },
-          { name: 'Lumberjack', function: 'Produces wood' },
-          { name: 'Farmer', function: 'Produces food' },
-          { name: 'Tavern', function: 'Entertainment, random quests' },
-          { name: 'School', function: 'Trains young NPCs (needs a teacher)' },
+          { name: 'House', function: 'Housing for NPCs', capacity: 4, category: 'Housing' },
+          { name: 'Miner', function: 'Collects and smelts ore', category: 'Production' },
+          { name: 'Lumberjack', function: 'Produces wood', category: 'Production' },
+          { name: 'Farmer', function: 'Produces food', category: 'Production' },
+          { name: 'Tavern', function: 'Entertainment, random quests', category: 'Services' },
+          { name: 'School', function: 'Trains young NPCs (needs a teacher)', category: 'Services' },
         ],
       },
+    ),
+    s.collection(
+      'bases',
+      'Bases & warehouses',
+      'base',
+      [
+        f.enm('type', 'Type', BASE_TYPES),
+        f.num('capacity', 'Storage capacity', { min: 0 }),
+        f.map('startStock', 'Starting stock', catalog('resources')),
+        f.map('minStock', 'Minimum stock', catalog('resources')),
+        f.map('targetStock', 'Target stock', catalog('resources')),
+        f.enm('resupply', 'Resupply', ['Automatic', 'Manual', 'None']),
+        f.long('rules', 'Storage rules'),
+      ],
+      [v.table(['name', 'type', 'capacity', 'resupply']), v.cards()],
+      { description: 'Places that hold stock and that routes connect. Use them for settlements, depots, outposts or shops, whatever fits the game.' },
     ),
     s.graph('flow', 'Resource flow', ['Building', 'Resource', 'NPC role', 'Market', 'Player'], {
       nodeSource: section('buildings'),
       edgeKinds: ['produces', 'consumes', 'sells to', 'buys from', 'transports'],
     }),
     s.form('economy', 'Economy model', [
+      f.text('timeUnit', 'Time unit', { placeholder: 'tick, minute, day…', help: 'Name of the clock the cycles and rates use. Only a label.' }),
+      f.num('horizon', 'Estimate horizon (time units)', { min: 1 }),
+      f.num('population', 'Assumed population', { min: 0, help: 'Overrides the population housed by buildings in the estimate.' }),
       f.long('moneyFlow', 'Money flow (wages, tax, treasury)'),
       f.num('buyMargin', 'Player buy price multiplier', { min: 0 }),
       f.num('sellMargin', 'Player sell price multiplier', { min: 0 }),
@@ -408,13 +481,42 @@ export const designModules = [
       f.num('storageLimit', 'Default storage limit', { min: 0 }),
       f.long('storageRules', 'Storage rules'),
     ]),
-    s.collection('commands', 'Player commands', 'command', [f.long('description', 'Description'), f.long('ui', 'UI notes')], [v.cards(), v.table()]),
+    s.collection(
+      'commands',
+      'Player commands',
+      'command',
+      [
+        f.long('description', 'Description'),
+        f.long('conditions', 'Conditions'),
+        f.text('target', 'Target'),
+        f.num('priority', 'Priority', { min: 0 }),
+        f.map('cost', 'Cost', catalog('resources')),
+        f.num('executionTime', 'Execution time', { min: 0 }),
+        f.long('effects', 'Effects'),
+        f.long('ui', 'UI notes'),
+      ],
+      [v.cards(), v.table(['name', 'target', 'priority', 'executionTime', 'cost'])],
+    ),
     s.collection(
       'routes',
       'Logistics routes',
       'route',
-      [f.text('from', 'From base'), f.text('to', 'To base'), f.multi('cargo', 'Cargo', catalog('resources')), f.long('risks', 'Risks')],
-      [v.table(), v.cards()],
+      [
+        f.ref('fromBase', 'From', section('bases')),
+        f.ref('toBase', 'To', section('bases')),
+        f.multi('cargo', 'Cargo', catalog('resources')),
+        f.map('quantity', 'Wanted per time unit', catalog('resources')),
+        f.text('transport', 'Transport type'),
+        f.num('capacity', 'Capacity per trip', { min: 0 }),
+        f.num('frequency', 'Trips per time unit', { min: 0 }),
+        f.num('travelTime', 'Travel time', { min: 0 }),
+        f.map('upkeep', 'Upkeep per time unit', catalog('resources')),
+        f.enm('risk', 'Risk level', ['Low', 'Medium', 'High']),
+        f.num('priority', 'Priority', { min: 0 }),
+        f.long('restrictions', 'Restrictions (region, faction, event…)'),
+        f.long('risks', 'Risks'),
+      ],
+      [v.table(['name', 'fromBase', 'toBase', 'cargo', 'capacity', 'frequency', 'travelTime', 'risk']), v.cards()],
     ),
     s.collection(
       'morale',
@@ -423,68 +525,218 @@ export const designModules = [
       [f.num('value', 'Morale value', { min: 0, max: 100 }), f.enm('effect', 'Effect', ['Bonus', 'None', 'Slowdown', 'Production stops', 'Leave town', 'Rebel']), f.long('notes', 'Notes')],
       [v.table()],
     ),
+    s.collection(
+      'factors',
+      'Morale factors',
+      'factor',
+      [
+        f.enm('kind', 'Kind', ['Food', 'Safety', 'Housing', 'Services', 'Wages', 'Environment', 'Other']),
+        f.num('change', 'Morale change', { min: -100, max: 100 }),
+        f.enm('duration', 'Duration', ['One-time', 'Gradual', 'Permanent']),
+        f.num('durationTime', 'Duration (time units)', { min: 0 }),
+        f.multi('groups', 'Affected groups', catalog('professions'), { help: 'Leave empty for the whole population.' }),
+        f.ref('need', 'Linked need', section('needRules', 'design.npc')),
+        f.enm('consequence', 'Consequence', ['None', 'Slowdown', 'Production stops', 'Leave town', 'Conflict', 'Rebel']),
+        f.long('remedy', 'Remedy'),
+        f.map('remedyCost', 'Remedy cost', catalog('resources')),
+        f.num('remedyTime', 'Remedy time', { min: 0 }),
+      ],
+      [v.table(['name', 'kind', 'change', 'duration', 'consequence']), v.cards()],
+      { description: 'What raises or lowers morale, who it hits, how long it lasts and what follows. Chain a shortage to its consequence here.' },
+    ),
     s.form('extensibility', 'Extensibility', [f.long('plan', 'How new needs, stats and functions are added without touching core code')]),
-  ]),
-  mod('design', 'npc', 'NPC System', 'docs/01_design/npc_system.md', '🧑‍🤝‍🧑', 'Stats, needs, life cycle, events.', [
-    s.collection(
-      'archetypes',
-      'NPC archetypes',
-      'archetype',
-      [
-        f.ref('profession', 'Profession', catalog('professions')),
-        f.map('stats', 'Stats', catalog('npcStats'), 10),
-        f.map('needs', 'Needs (consumption / day)', catalog('needs')),
-        f.long('notes', 'Notes'),
-      ],
-      [v.cards(), v.radar('stats'), v.table(['name', 'profession'])],
-      { description: 'Stats and needs come from catalogs: add a new stat in Definitions and it appears here and in the radar.' },
-    ),
-    s.collection(
-      'statRules',
-      'Stat rules',
-      'stat rule',
-      [f.ref('stat', 'Stat', catalog('npcStats')), f.long('effect', 'Effect'), f.formula('formula', 'Formula'), f.long('growth', 'Growth')],
-      [v.table(), v.cards()],
-    ),
-    s.collection(
-      'needRules',
-      'Need rules',
-      'need rule',
-      [
-        f.ref('need', 'Need', catalog('needs')),
-        f.long('scaling', 'Scales with'),
-        f.enm('consequence', 'Consequence when unmet', ['Production stops', 'Morale loss', 'Leaves town', 'Rebels', 'Dies']),
-        f.long('notes', 'Notes'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.graph('lifecycle', 'Life cycle state machine', ['State', 'Event', 'End'], { edgeKinds: ['when', 'after time', 'on event'] }),
-    s.collection(
-      'lifeStages',
-      'Life stages',
-      'stage',
-      [f.num('ageFrom', 'Age from', { min: 0 }), f.num('ageTo', 'Age to', { min: 0 }), f.long('notes', 'Notes')],
-      [v.table(), v.timeline('ageFrom', 'ageTo', 'y')],
-    ),
-    s.collection(
-      'events',
-      'Random events',
-      'event',
-      [
-        f.enm('category', 'Category', ['Marriage', 'Romance', 'Feud', 'Birth', 'Death', 'Other']),
-        f.long('trigger', 'Trigger'),
-        f.long('effect', 'Effect'),
-        f.num('chance', 'Chance (%)', { min: 0, max: 100 }),
-      ],
-      [v.kanban('category'), v.table()],
-    ),
-    s.form('misc', 'Other', [
-      f.long('equipment', 'Equipment slots'),
-      f.long('mercenaries', 'Mercenary armies'),
-      f.long('ai', 'Behavior / daily routine'),
-      f.long('generation', 'Procedural generation'),
     ]),
-  ]),
+    version: 2,
+    migrate: migrateTown,
+  },
+  {
+    ...mod('design', 'npc', 'NPC System', 'docs/01_design/npc_system.md', '🧑‍🤝‍🧑', 'Stats, needs, life cycle, work, relationships, events.', [
+      s.form('overview', 'Overview', [
+        f.long('role', 'Role of NPCs in the game', { help: 'What do NPCs do for the player and the town? What should managing them feel like?', placeholder: 'e.g. Townsfolk are the workforce; keeping their needs met is the main town-management pressure.' }),
+        f.num('populationTarget', 'Typical population', { min: 0, help: 'Rough size of a mid-game town; used as context, not a limit.' }),
+        f.num('statMin', 'Stat scale: lowest', { help: 'Default 0. Archetype stats, the radar and the stat checks use this range.' }),
+        f.num('statMax', 'Stat scale: highest', { help: 'Default 10.' }),
+        f.num('maxAge', 'Maximum age', { min: 1, help: 'Default 100. Life stages are checked against 0 … this age.' }),
+        f.enm('ageUnit', 'Age unit', ['in-game days', 'in-game years', 'real-time hours']),
+        f.num('unitsPerDay', 'Town time units per NPC day', { min: 0, step: 0.01, help: 'Town rates are per its own time unit; needs here are per day. Default 1.' }),
+      ], 'Set the scales first: they drive the stat inputs, the radar, the life-stage ranges and the needs balance.'),
+      s.collection(
+        'statRules',
+        'Stats',
+        'stat rule',
+        [
+          f.ref('stat', 'Stat', catalog('npcStats'), { help: 'From the “NPC stats” catalog (Definitions).' }),
+          f.long('effect', 'Effect', { placeholder: 'e.g. Raises carry capacity and building speed.' }),
+          f.formula('formula', 'Formula', {
+            help: 'Use stat names as variables (lower case, “-” becomes “_”), plus level and age, e.g. 10 + strength * 2. The Preview view evaluates it for every archetype.',
+          }),
+          f.enm('progression', 'How it changes', ['Fixed', 'Grows with work', 'Trained', 'Changes with age', 'Event-driven']),
+          f.long('growth', 'Growth details'),
+        ],
+        [v.table(['name', 'stat', 'formula', 'progression']), v.statPreview('formula', 'stat', { section: 'archetypes', mapField: 'stats' }), v.cards()],
+        { description: 'One rule per stat: what it does, its formula and how it develops.' },
+      ),
+      s.collection(
+        'needRules',
+        'Needs',
+        'need rule',
+        [
+          f.ref('need', 'Need', catalog('needs'), { help: 'From the “NPC needs” catalog (Definitions).' }),
+          f.enm('kind', 'Kind', ['Basic', 'Profession', 'Comfort']),
+          f.long('scaling', 'Scales with', { placeholder: 'e.g. Profession, life stage, difficulty multiplier.' }),
+          f.ref('resource', 'Satisfied by resource', catalog('resources'), { help: 'Consumed from the town stock. The needs balance compares it with the Town estimate.', group: 'Supply' }),
+          f.multi('buildings', 'Satisfied by buildings', section('buildings', 'design.town'), { help: 'Buildings that provide this need as places (e.g. housing).', group: 'Supply' }),
+          f.num('perBuilding', 'Places per building', { min: 0, help: 'Empty uses the building’s capacity.', group: 'Supply' }),
+          f.num('graceDays', 'Days before consequences', { min: 0, group: 'When unmet' }),
+          f.enm('consequence', 'Consequence when unmet', ['Production stops', 'Morale loss', 'Leaves town', 'Rebels', 'Dies'], { group: 'When unmet' }),
+          f.num('moraleImpact', 'Morale change per day unmet', { min: -100, max: 100, group: 'When unmet' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'need', 'kind', 'resource', 'buildings', 'consequence']), v.cards()],
+      ),
+      s.collection(
+        'archetypes',
+        'NPC archetypes',
+        'archetype',
+        [
+          f.ref('profession', 'Profession', catalog('professions'), { group: 'Identity' }),
+          f.num('share', 'Share of population (%)', { min: 0, max: 100, help: 'Also the spawn weight for generation.', group: 'Identity' }),
+          f.ref('faction', 'Faction', FACTIONS, { group: 'Identity' }),
+          f.list('traits', 'Traits', { group: 'Identity' }),
+          f.map('stats', 'Stats', catalog('npcStats'), undefined, { rangeFrom: { section: 'overview', minField: 'statMin', maxField: 'statMax' }, group: 'Stats & needs' }),
+          f.map('needs', 'Needs per day', catalog('needs'), undefined, { group: 'Stats & needs', help: 'Units per NPC day; for place-based needs such as housing, places per NPC.' }),
+          f.ref('home', 'Lives in', section('buildings', 'design.town'), { group: 'Town' }),
+          f.multi('workplaces', 'Works in', section('buildings', 'design.town'), { group: 'Town' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.cards(), v.radar('stats', { section: 'overview', minField: 'statMin', maxField: 'statMax' }), v.table(['name', 'profession', 'share', 'faction', 'home'])],
+        { description: 'Stats and needs come from catalogs: add a new stat in Definitions and it appears here, in the radar and in the stat preview.' },
+      ),
+      s.collection(
+        'lifeStages',
+        'Life stages',
+        'stage',
+        [
+          f.num('ageFrom', 'Age from', { min: 0 }),
+          f.num('ageTo', 'Age to', { min: 0, help: 'Optional. Without it the stage runs up to the next stage’s start.' }),
+          f.bool('canWork', 'Can work'),
+          f.map('statModifiers', 'Stat modifiers (%)', catalog('npcStats'), undefined, { min: -100 }),
+          f.num('needModifier', 'Need modifier (%)', { min: -100 }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'ageFrom', 'ageTo', 'canWork', 'needModifier']), v.ranges('ageFrom', 'ageTo', { section: 'overview', minField: 'ageMin', maxField: 'maxAge', fallback: [0, 100] })],
+      ),
+      s.graph('lifecycle', 'Life cycle state machine', ['Start', 'State', 'Event', 'End'], {
+        nodeSource: section('lifeStages'),
+        edgeSource: section('events'),
+        edgeKinds: ['when', 'after time', 'on event'],
+        description: 'Start: how an NPC enters (birth, arrival). State: a phase, ideally linked to a life stage. End: death or leaving. Link “on event” connections to the event that causes them.',
+      }),
+      s.collection(
+        'jobs',
+        'Work and professions',
+        'job',
+        [
+          f.ref('profession', 'Profession', catalog('professions')),
+          f.multi('buildings', 'Works in', section('buildings', 'design.town'), { help: 'Should match the building’s worker professions in Town.' }),
+          f.multi('keyStats', 'Key stats', catalog('npcStats')),
+          f.formula('efficiency', 'Efficiency formula', { help: 'Same variables as stat formulas, e.g. 0.5 + strength / 20.' }),
+          f.ref('minStage', 'Earliest life stage', section('lifeStages')),
+          f.num('wage', 'Wage per day', { min: 0 }),
+          f.long('training', 'Training (school, apprenticeship)'),
+          f.long('assignment', 'How NPCs get assigned'),
+        ],
+        [v.table(['name', 'profession', 'buildings', 'keyStats', 'efficiency', 'wage']), v.cards()],
+      ),
+      s.matrix('routine', 'Daily routine', catalog('professions'), catalog('timeOfDay'), { type: 'enum', options: ['Sleep', 'Work', 'Eat', 'Leisure', 'Socialize', 'Patrol', 'Travel', 'Train'] }, {
+        description: 'What each profession does at each time of day. Rows and columns come from the “NPC professions” and “Times of day” catalogs.',
+      }),
+      s.form('relationships', 'Relationships', [
+        f.num('scaleMin', 'Affinity: lowest', { help: 'Default -100.' }),
+        f.num('scaleMax', 'Affinity: highest', { help: 'Default 100.' }),
+        f.num('start', 'Starting affinity'),
+        f.text('decay', 'Decay', { placeholder: 'e.g. 1 point per week towards 0' }),
+        f.long('changes', 'What changes affinity', { placeholder: 'e.g. Working together, shared meals, insults, gifts.' }),
+      ]),
+      s.collection(
+        'relationLevels',
+        'Relationship levels',
+        'level',
+        [f.num('min', 'Min affinity'), f.num('max', 'Max affinity', { help: 'Optional. Without it the level runs up to the next level’s minimum.' }), f.long('effects', 'Effects')],
+        [v.table(), v.ranges('min', 'max', { section: 'relationships', minField: 'scaleMin', maxField: 'scaleMax', fallback: [-100, 100] })],
+      ),
+      s.collection(
+        'bonds',
+        'Bonds',
+        'bond',
+        [
+          f.enm('kind', 'Kind', ['Friendship', 'Romance', 'Marriage', 'Family', 'Rivalry', 'Feud']),
+          f.ref('requiresLevel', 'Requires level', section('relationLevels')),
+          f.bool('exclusive', 'Exclusive (only one at a time)'),
+          f.long('effects', 'Effects'),
+        ],
+        [v.table(), v.cards()],
+        { description: 'Named relationships between two NPCs and what forming them requires.' },
+      ),
+      s.collection(
+        'events',
+        'Random events',
+        'event',
+        [
+          f.enm('category', 'Category', ['Marriage', 'Romance', 'Friendship', 'Feud', 'Birth', 'Death', 'Illness', 'Accident', 'Arrival', 'Departure', 'Other']),
+          f.long('trigger', 'Trigger', { group: 'When' }),
+          f.num('chance', 'Chance (%)', { min: 0, max: 100, group: 'When' }),
+          f.enm('period', 'Chance per', ['day', 'week', 'season', 'year', 'once'], { group: 'When' }),
+          f.num('cooldown', 'Cooldown (days)', { min: 0, group: 'When' }),
+          f.multi('participants', 'Archetypes involved', section('archetypes'), { group: 'Who', help: 'Leave empty for anyone.' }),
+          f.ref('requiresBond', 'Requires bond', section('bonds'), { group: 'Who' }),
+          f.map('statEffects', 'Stat changes', catalog('npcStats'), undefined, { min: -100, group: 'Effect' }),
+          f.num('moraleEffect', 'Morale change', { min: -100, max: 100, group: 'Effect' }),
+          f.long('effect', 'Other effects', { group: 'Effect' }),
+        ],
+        [v.kanban('category'), v.table(['name', 'category', 'chance', 'period', 'cooldown', 'moraleEffect'])],
+      ),
+      s.form('equipmentRules', 'Equipment', [f.long('notes', 'Equipment rules', { help: 'Who equips NPCs, durability, upgrades.' })]),
+      s.collection(
+        'slots',
+        'Equipment slots',
+        'slot',
+        [f.multi('itemTypes', 'Allowed item types', catalog('itemTypes')), f.multi('professions', 'Only for professions', catalog('professions')), f.long('effects', 'Effects')],
+        [v.table(), v.cards()],
+      ),
+      s.form('mercenaries', 'Mercenary armies', [
+        f.long('recruitment', 'Recruitment'),
+        f.long('control', 'Control and orders'),
+        f.num('upkeep', 'Upkeep per soldier per day', { min: 0 }),
+        f.num('maxSize', 'Maximum army size', { min: 0 }),
+        f.long('notes', 'Notes'),
+      ]),
+      s.form('behaviour', 'Behaviour (AI)', [
+        f.long('decision', 'Decision model', { placeholder: 'e.g. Utility scores per need; the highest unmet need wins.' }),
+        f.long('priorities', 'Need priorities'),
+        f.long('routine', 'Daily routine notes', { help: 'The routine matrix above shows the plan per profession; technical details belong in the AI systems document.' }),
+      ]),
+      s.form('generation', 'Generation, names and appearance', [
+        f.long('names', 'Names'),
+        f.long('appearance', 'Appearance'),
+        f.num('statVariance', 'Stat variance (±)', { min: 0, help: 'How far a generated NPC may differ from its archetype.' }),
+        f.long('notes', 'Generation rules', { help: 'Archetype shares act as spawn weights.' }),
+      ]),
+      s.collection(
+        'scenarios',
+        'Population scenarios',
+        'scenario',
+        [
+          f.map('population', 'Population per archetype', section('archetypes')),
+          f.long('notes', 'Notes'),
+        ],
+        [v.needsBalance('population'), v.table()],
+        { description: 'Check a population mix against the town: daily needs per archetype against the Town estimate. Planning estimate, not a simulation.' },
+      ),
+    ]),
+    version: 2,
+    migrate: migrateNpc,
+  },
   mod('design', 'player', 'Player Character', 'docs/01_design/player_character.md', '🧍', 'Hero, survival, casts, skill trees, XP.', [
     s.form('hero', 'The hero', [f.long('background', 'Background'), f.long('personality', 'Personality'), f.long('start', 'Starting state'), f.long('death', 'Death and respawn')]),
     s.collection(

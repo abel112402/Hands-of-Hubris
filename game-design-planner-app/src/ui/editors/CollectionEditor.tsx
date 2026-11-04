@@ -9,7 +9,8 @@ import { getModule } from '../../core/modules/registry'
 import { useSection, useProject } from '../hooks'
 import { FieldInput, displayValue, isLongField } from '../FieldInput'
 import { Link } from 'react-router-dom'
-import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView, RangesView } from './views'
+import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView, RangesView, EconomyView } from './views'
+import { NeedsBalanceView, StatPreviewView } from './npcViews'
 import { GateReadiness } from './GateReadiness'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
@@ -23,6 +24,9 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   progression: 'Progression',
   compare: 'Compare',
   ranges: 'Ranges',
+  economy: 'Estimate',
+  statPreview: 'Preview',
+  needsBalance: 'Needs balance',
 }
 
 export type ViewProps = {
@@ -98,13 +102,16 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'cards' && <CardsView {...props} />}
           {view.kind === 'table' && <TableView {...props} columns={view.columns} />}
           {view.kind === 'kanban' && <KanbanView {...props} groupBy={view.groupBy} onAdd={add} />}
-          {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} />}
+          {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} scale={view.scale} />}
+          {view.kind === 'statPreview' && <StatPreviewView {...props} view={view} />}
+          {view.kind === 'needsBalance' && <NeedsBalanceView {...props} view={view} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
           {view.kind === 'progression' && <ProgressionView {...props} scaleField={view.scaleField} leadsField={view.leadsField} />}
           {view.kind === 'compare' && <CompareView {...props} valuesSection={view.valuesSection} columns={view.columns} />}
           {view.kind === 'ranges' && <RangesView {...props} view={view} />}
+          {view.kind === 'economy' && <EconomyView />}
           {items.length === 0 && <p className="empty">Nothing here yet. Use “Add {sec.singular}”.</p>}
         </div>
         {sel && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
@@ -172,23 +179,35 @@ function Inspector({
         <button className="icon" onClick={onClose}>✕</button>
       </div>
       <div className="form">
-        {sec.fields.map((f) => (
-          <div key={f.key} className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
-            <label htmlFor={`${docId}-${entity.id}-${f.key}`}>
-              {f.label}
-              {f.required && <span className="req"> *</span>}
-            </label>
-            <FieldInput
-              id={`${docId}-${entity.id}-${f.key}`}
-              describedBy={f.help ? `${docId}-${entity.id}-${f.key}-help` : undefined}
-              field={f}
-              value={entity[f.key]}
-              docId={docId}
-              onChange={(v) => patch(entity.id, f.key, v)}
-            />
-            {f.help && <small className="muted" id={`${docId}-${entity.id}-${f.key}-help`}>{f.help}</small>}
-          </div>
-        ))}
+        {fieldGroups(sec.fields).map(({ group, fields }) => {
+          const body = fields.map((f) => (
+            <div key={f.key} className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
+              <label htmlFor={`${docId}-${entity.id}-${f.key}`}>
+                {f.label}
+                {f.required && <span className="req"> *</span>}
+              </label>
+              <FieldInput
+                id={`${docId}-${entity.id}-${f.key}`}
+                describedBy={f.help ? `${docId}-${entity.id}-${f.key}-help` : undefined}
+                field={f}
+                value={entity[f.key]}
+                docId={docId}
+                onChange={(v) => patch(entity.id, f.key, v)}
+              />
+              {f.help && <small className="muted" id={`${docId}-${entity.id}-${f.key}-help`}>{f.help}</small>}
+            </div>
+          ))
+          if (!group) return body
+          const filled = fields.filter((f) => !isBlankValue(entity[f.key])).length
+          return (
+            <details key={group} className="field-group" open>
+              <summary>
+                {group} <span className="muted">{filled}/{fields.length}</span>
+              </summary>
+              {body}
+            </details>
+          )
+        })}
         {docId === 'overview.roadmap' && sec.id === 'gates' && <GateReadiness entity={entity} />}
         <div className="field">
           <label>Used by</label>
@@ -207,6 +226,20 @@ function Inspector({
       </div>
     </aside>
   )
+}
+
+const isBlankValue = (v: unknown) =>
+  v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v as object).length === 0)
+
+/** Consecutive runs of fields that share a `group`; ungrouped fields form runs with `group` undefined. */
+export function fieldGroups(fields: FieldDef[]): { group?: string; fields: FieldDef[] }[] {
+  const out: { group?: string; fields: FieldDef[] }[] = []
+  for (const f of fields) {
+    const last = out[out.length - 1]
+    if (last && last.group === f.group) last.fields.push(f)
+    else out.push({ group: f.group, fields: [f] })
+  }
+  return out
 }
 
 function summary(project: ReturnType<typeof useProject>, docId: string, sec: CollectionSection, e: Entity) {

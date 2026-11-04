@@ -1,26 +1,35 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts'
-import type { CollectionView, Entity, Source } from '../../core/model/types'
+import type { CollectionView, Entity, RangeFrom, Source } from '../../core/model/types'
+import { mapRange } from '../FieldInput'
 import { analyze, isMilestone, weekToDate, withBuffer } from '../../core/schedule'
 import { resolveSource } from '../../core/references/refs'
 import { pressure } from '../../core/difficulty'
 import { analyzeRanges } from '../../core/diplomacy'
+import { estimateTown } from '../../core/town'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
 const PALETTE = ['#4f9cf9', '#f97b4f', '#53c28b', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e']
 
-export function RadarView({ docId, sec, items, mapField }: ViewProps & { mapField: string }) {
+const AVERAGE = '__average'
+
+export function RadarView({ docId, sec, items, mapField, scale }: ViewProps & { mapField: string; scale?: RangeFrom }) {
   const project = useProject()
   const field = sec.fields.find((f) => f.key === mapField)
   const [picked, setPicked] = useState<string[] | null>(null)
+  const [showAverage, setShowAverage] = useState(false)
   if (!field || field.type !== 'map') return <p className="empty">Map field “{mapField}” not found.</p>
   const axes = resolveSource(project, docId, field.source)
   const chosen = (picked ?? items.slice(0, 3).map((e) => e.id)).filter((id) => items.some((e) => e.id === id))
-  const max = field.max ?? 10
+  const range = mapRange(project, docId, scale ? { ...field, rangeFrom: scale } : field)
+  const lo = range.min ?? 0
+  const values = items.flatMap((e) => Object.values((e[mapField] ?? {}) as Record<string, number>)).filter((n) => typeof n === 'number')
+  const max = range.max ?? Math.max(10, ...values)
   const data = axes.map((a) => {
     const row: Record<string, any> = { axis: a.label }
-    for (const id of chosen) row[id] = items.find((e) => e.id === id)?.[mapField]?.[a.id] ?? 0
+    for (const id of chosen) row[id] = items.find((e) => e.id === id)?.[mapField]?.[a.id] ?? lo
+    if (showAverage && items.length) row[AVERAGE] = Math.round((items.reduce((s, e) => s + (e[mapField]?.[a.id] ?? lo), 0) / items.length) * 100) / 100
     return row
   })
   return (
@@ -36,6 +45,12 @@ export function RadarView({ docId, sec, items, mapField }: ViewProps & { mapFiel
             {e.name}
           </label>
         ))}
+        {items.length > 1 && (
+          <label className={'chip' + (showAverage ? ' on' : '')} title="Mean of all entries; unset values count as the bottom of the scale">
+            <input type="checkbox" checked={showAverage} onChange={(e) => setShowAverage(e.target.checked)} />
+            Average of all
+          </label>
+        )}
       </div>
       {axes.length < 3 ? (
         <p className="empty">Radar needs at least 3 entries in the “{field.label}” catalog.</p>
@@ -45,10 +60,11 @@ export function RadarView({ docId, sec, items, mapField }: ViewProps & { mapFiel
             <RadarChart data={data}>
               <PolarGrid />
               <PolarAngleAxis dataKey="axis" />
-              <PolarRadiusAxis domain={[0, max]} />
+              <PolarRadiusAxis domain={[lo, max]} />
               {chosen.map((id, i) => (
                 <Radar key={id} name={items.find((e) => e.id === id)?.name} dataKey={id} stroke={PALETTE[i % PALETTE.length]} fill={PALETTE[i % PALETTE.length]} fillOpacity={0.25} />
               ))}
+              {showAverage && <Radar name="Average of all" dataKey={AVERAGE} stroke="#aaa" strokeDasharray="4 3" fill="none" />}
               <Legend />
               <Tooltip />
             </RadarChart>
@@ -382,6 +398,86 @@ export function CompareView({ docId, items, valuesSection, columns }: ViewProps 
         </div>
       )}
       {skipped.length > 0 && <p className="muted">Not shown (no range): {skipped.map((p) => p.name).join(', ')}</p>}
+    </div>
+  )
+}
+
+/** Straight-line planning estimate from the Town data; not a gameplay simulation. */
+export function EconomyView() {
+  const project = useProject()
+  const est = useMemo(() => estimateTown(project), [project])
+  const { workforce: w } = est
+  const fmt = (n: number) => (Math.round(n * 100) / 100).toString()
+  return (
+    <div className="economy">
+      <p className="muted">
+        Planning estimate: rates are per {est.timeUnit}, from the buildings, bases and routes entered. It assumes everything runs at full speed and
+        is not a gameplay simulation. Horizon: {est.horizon} {est.timeUnit}(s). Set the time unit, horizon and population in “Economy model”.
+      </p>
+      {est.resources.length === 0 ? (
+        <p className="empty">Add inputs and outputs to buildings to see the resource balance.</p>
+      ) : (
+        <table className="grid">
+          <thead>
+            <tr>
+              <th>Resource</th>
+              <th>Produced</th>
+              <th>Consumed</th>
+              <th>Net</th>
+              <th>Stock</th>
+              <th>Runs out in</th>
+              <th>At horizon</th>
+            </tr>
+          </thead>
+          <tbody>
+            {est.resources.map((r) => (
+              <tr key={r.id}>
+                <td>{r.label}</td>
+                <td>{fmt(r.produced)}</td>
+                <td>{fmt(r.consumed)}</td>
+                <td>
+                  <span className={'pill' + (r.net < 0 ? ' warning' : '')}>{fmt(r.net)}</span>
+                </td>
+                <td>{fmt(r.stock)}</td>
+                <td>{r.runway === null ? '–' : fmt(r.runway)}</td>
+                <td>{fmt(r.projected)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <h4>Workforce</h4>
+      <p>
+        Needed {fmt(w.demand)}, available {fmt(w.supply)}
+        {w.population !== null ? ' (assumed population)' : ' (housing capacity)'}.{' '}
+        {w.shortage > 0 && <span className="pill warning">short by {fmt(w.shortage)}</span>}
+        {w.shortage === 0 && w.unused > 0 && <span className="muted">{fmt(w.unused)} unused</span>}
+      </p>
+      {est.routes.length > 0 && (
+        <>
+          <h4>Routes</h4>
+          <table className="grid">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Can move</th>
+                <th>Wanted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {est.routes.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.name}</td>
+                  <td>{fmt(r.throughput)}</td>
+                  <td>
+                    {fmt(r.demand)} {r.overloaded && <span className="pill warning">overloaded</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </div>
   )
 }

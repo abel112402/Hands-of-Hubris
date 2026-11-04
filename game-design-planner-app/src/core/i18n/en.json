@@ -272,6 +272,30 @@
       "title": "Relationship matrix has empty cells",
       "body": "{{count}} relation(s) between factions are not set yet."
     },
+    "townNoSource": {
+      "title": "Resources with no source",
+      "body": "Buildings consume {{names}}, but nothing produces it and no base starts with any."
+    },
+    "townNoConsumer": {
+      "title": "Resources nothing uses",
+      "body": "{{names}} are produced but never consumed by a building. Fine if they are sold or exported."
+    },
+    "townDepleting": {
+      "title": "Resources running out",
+      "body": "At the planned rates, {{names}} run out before the estimate horizon ends."
+    },
+    "townWorkforce": {
+      "title": "Not enough workers",
+      "body": "Buildings need {{count}} more workers than the population available."
+    },
+    "townRoutes": {
+      "title": "Route problems",
+      "body": "{{names}}"
+    },
+    "townBases": {
+      "title": "Base stock problems",
+      "body": "{{names}}"
+    },
     "diplomacySpillover": {
       "title": "Actions without spillover",
       "body": "{{count}} action(s) involve a faction with hostile rivals but record no spillover: {{names}}."
@@ -303,6 +327,62 @@
     "worldEnemies": {
       "title": "Biomes without enemies",
       "body": "{{count}} biome(s) list no enemies or bosses: {{names}}."
+    },
+    "npcStatCoverage": {
+      "title": "Stats without a rule",
+      "body": "{{count}} stat(s) have no entry under Stats yet: {{names}}. Describe what each one does."
+    },
+    "npcNeedCoverage": {
+      "title": "Needs without a rule",
+      "body": "{{count}} need(s) have no entry under Needs: {{names}}. Say what satisfies them and what happens when they are unmet."
+    },
+    "npcNeedConsequence": {
+      "title": "Needs with no consequence",
+      "body": "{{count}} need rule(s) do not say what happens when the need goes unmet: {{names}}."
+    },
+    "npcNeedSupply": {
+      "title": "Needs with no supply",
+      "body": "{{count}} need rule(s) name no resource or building that satisfies them: {{names}}. The needs balance cannot check them."
+    },
+    "npcStatRange": {
+      "title": "Stats outside the scale",
+      "body": "{{count}} archetype(s) have stats outside {{min}}–{{max}}: {{names}}. Fix the values or widen the scale in Overview."
+    },
+    "npcFormula": {
+      "title": "Formulas that do not evaluate",
+      "body": "{{count}} formula(s) fail with the stat variables: {{names}}."
+    },
+    "npcStages": {
+      "title": "Life stages have gaps or overlaps",
+      "body": "{{names}}."
+    },
+    "npcRelationLevels": {
+      "title": "Relationship levels have gaps or overlaps",
+      "body": "{{names}}."
+    },
+    "npcLifecycle": {
+      "title": "Life cycle diagram is incomplete",
+      "body": "{{names}}."
+    },
+    "npcProfessionJob": {
+      "title": "Professions without a job description",
+      "body": "{{count}} profession(s) used by archetypes have no entry under Work and professions: {{names}}."
+    },
+    "npcJobBuilding": {
+      "title": "Job and building disagree",
+      "body": "These jobs are placed in buildings whose worker professions in Town do not include them: {{names}}."
+    },
+    "npcShares": {
+      "title": "Population shares do not add up",
+      "body": "Archetype shares add up to {{total}}%, not 100%."
+    },
+    "npcEvents": {
+      "title": "Events are incomplete",
+      "body": "{{count}} event(s) lack a chance or any effect: {{names}}."
+    },
+    "npcBalance": {
+      "title": "Town cannot meet the population's needs",
+      "body": "{{count}} scenario(s) fall short: {{names}}. Compare them in the Needs balance view."
     }
   },
   "ai": {

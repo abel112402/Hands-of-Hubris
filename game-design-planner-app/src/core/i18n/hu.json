@@ -272,6 +272,30 @@
       "title": "A viszonymátrixban üres cellák vannak",
       "body": "{{count}} frakcióközi kapcsolat még nincs megadva."
     },
+    "townNoSource": {
+      "title": "Forrás nélküli nyersanyagok",
+      "body": "Az épületek fogyasztják ezt: {{names}}, de semmi nem termeli, és egyik bázis sem indul vele."
+    },
+    "townNoConsumer": {
+      "title": "Nyersanyagok, amiket semmi nem használ",
+      "body": "{{names}} termelődik, de egy épület sem fogyasztja. Rendben van, ha eladják vagy exportálják."
+    },
+    "townDepleting": {
+      "title": "Fogyó nyersanyagok",
+      "body": "A tervezett ütemekkel {{names}} elfogy a becslési időtáv vége előtt."
+    },
+    "townWorkforce": {
+      "title": "Kevés a munkaerő",
+      "body": "Az épületeknek {{count}} fővel több munkásra van szükségük, mint amennyi elérhető."
+    },
+    "townRoutes": {
+      "title": "Útvonal-problémák",
+      "body": "{{names}}"
+    },
+    "townBases": {
+      "title": "Báziskészlet-problémák",
+      "body": "{{names}}"
+    },
     "diplomacySpillover": {
       "title": "Átgyűrűzés nélküli tettek",
       "body": "{{count}} tett olyan frakciót érint, amelynek ellenségei vannak, de nincs átgyűrűzés rögzítve: {{names}}."
@@ -303,6 +327,62 @@
     "worldEnemies": {
       "title": "Ellenség nélküli biómok",
       "body": "{{count}} biomnál nincs ellenség vagy főellenség: {{names}}."
+    },
+    "npcStatCoverage": {
+      "title": "Szabály nélküli statok",
+      "body": "{{count}} statnak még nincs bejegyzése a Statok között: {{names}}. Írd le, mit csinál mindegyik."
+    },
+    "npcNeedCoverage": {
+      "title": "Szabály nélküli igények",
+      "body": "{{count}} igénynek nincs bejegyzése az Igények között: {{names}}. Add meg, mi elégíti ki, és mi történik, ha nem teljesül."
+    },
+    "npcNeedConsequence": {
+      "title": "Következmény nélküli igények",
+      "body": "{{count}} igényszabály nem mondja meg, mi történik, ha az igény nem teljesül: {{names}}."
+    },
+    "npcNeedSupply": {
+      "title": "Forrás nélküli igények",
+      "body": "{{count}} igényszabály nem nevez meg nyersanyagot vagy épületet, ami kielégíti: {{names}}. Az igénymérleg ezeket nem tudja ellenőrizni."
+    },
+    "npcStatRange": {
+      "title": "Skálán kívüli statok",
+      "body": "{{count}} archetípus statja a {{min}}–{{max}} tartományon kívül esik: {{names}}. Javítsd az értékeket, vagy bővítsd a skálát az Áttekintésben."
+    },
+    "npcFormula": {
+      "title": "Ki nem értékelhető képletek",
+      "body": "{{count}} képlet hibás a stat-változókkal: {{names}}."
+    },
+    "npcStages": {
+      "title": "Hézag vagy átfedés az életszakaszokban",
+      "body": "{{names}}."
+    },
+    "npcRelationLevels": {
+      "title": "Hézag vagy átfedés a kapcsolati szintekben",
+      "body": "{{names}}."
+    },
+    "npcLifecycle": {
+      "title": "Hiányos életciklus-diagram",
+      "body": "{{names}}."
+    },
+    "npcProfessionJob": {
+      "title": "Munkaleírás nélküli szakmák",
+      "body": "{{count}} archetípusok által használt szakmának nincs bejegyzése a Munka és szakmák között: {{names}}."
+    },
+    "npcJobBuilding": {
+      "title": "Munka és épület nem egyezik",
+      "body": "Ezek a munkák olyan épületekhez vannak rendelve, amelyek dolgozói szakmái között (Town) nem szerepelnek: {{names}}."
+    },
+    "npcShares": {
+      "title": "A népességi arányok összege nem 100%",
+      "body": "Az archetípusok aránya összesen {{total}}%, nem 100%."
+    },
+    "npcEvents": {
+      "title": "Hiányos események",
+      "body": "{{count}} eseménynél hiányzik az esély vagy bármilyen hatás: {{names}}."
+    },
+    "npcBalance": {
+      "title": "A város nem fedezi a lakosság igényeit",
+      "body": "{{count}} forgatókönyvben hiány van: {{names}}. Hasonlítsd össze őket az Igénymérleg nézetben."
     }
   },
   "ai": {

@@ -9,7 +9,7 @@ afterEach(cleanup)
 
 describe('editing', () => {
   it('add button creates an entity and the input edits it', async () => {
-    window.location.hash = '#/doc/design.npc'
+    window.location.hash = '#/doc/design.npc?s=archetypes'
     render(<App />)
     const count = () => Object.values(useStore.getState().project.documents['design.npc'].data).flat().length
     const before = count()
