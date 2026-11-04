@@ -272,6 +272,30 @@
       "title": "Relationship matrix has empty cells",
       "body": "{{count}} relation(s) between factions are not set yet."
     },
+    "townNoSource": {
+      "title": "Resources with no source",
+      "body": "Buildings consume {{names}}, but nothing produces it and no base starts with any."
+    },
+    "townNoConsumer": {
+      "title": "Resources nothing uses",
+      "body": "{{names}} are produced but never consumed by a building. Fine if they are sold or exported."
+    },
+    "townDepleting": {
+      "title": "Resources running out",
+      "body": "At the planned rates, {{names}} run out before the estimate horizon ends."
+    },
+    "townWorkforce": {
+      "title": "Not enough workers",
+      "body": "Buildings need {{count}} more workers than the population available."
+    },
+    "townRoutes": {
+      "title": "Route problems",
+      "body": "{{names}}"
+    },
+    "townBases": {
+      "title": "Base stock problems",
+      "body": "{{names}}"
+    },
     "diplomacySpillover": {
       "title": "Actions without spillover",
       "body": "{{count}} action(s) involve a faction with hostile rivals but record no spillover: {{names}}."
@@ -303,6 +327,202 @@
     "worldEnemies": {
       "title": "Biomes without enemies",
       "body": "{{count}} biome(s) list no enemies or bosses: {{names}}."
+    },
+    "npcStatCoverage": {
+      "title": "Stats without a rule",
+      "body": "{{count}} stat(s) have no entry under Stats yet: {{names}}. Describe what each one does."
+    },
+    "npcNeedCoverage": {
+      "title": "Needs without a rule",
+      "body": "{{count}} need(s) have no entry under Needs: {{names}}. Say what satisfies them and what happens when they are unmet."
+    },
+    "npcNeedConsequence": {
+      "title": "Needs with no consequence",
+      "body": "{{count}} need rule(s) do not say what happens when the need goes unmet: {{names}}."
+    },
+    "npcNeedSupply": {
+      "title": "Needs with no supply",
+      "body": "{{count}} need rule(s) name no resource or building that satisfies them: {{names}}. The needs balance cannot check them."
+    },
+    "npcStatRange": {
+      "title": "Stats outside the scale",
+      "body": "{{count}} archetype(s) have stats outside {{min}}–{{max}}: {{names}}. Fix the values or widen the scale in Overview."
+    },
+    "npcFormula": {
+      "title": "Formulas that do not evaluate",
+      "body": "{{count}} formula(s) fail with the stat variables: {{names}}."
+    },
+    "npcStages": {
+      "title": "Life stages have gaps or overlaps",
+      "body": "{{names}}."
+    },
+    "npcRelationLevels": {
+      "title": "Relationship levels have gaps or overlaps",
+      "body": "{{names}}."
+    },
+    "npcLifecycle": {
+      "title": "Life cycle diagram is incomplete",
+      "body": "{{names}}."
+    },
+    "npcProfessionJob": {
+      "title": "Professions without a job description",
+      "body": "{{count}} profession(s) used by archetypes have no entry under Work and professions: {{names}}."
+    },
+    "npcJobBuilding": {
+      "title": "Job and building disagree",
+      "body": "These jobs are placed in buildings whose worker professions in Town do not include them: {{names}}."
+    },
+    "npcShares": {
+      "title": "Population shares do not add up",
+      "body": "Archetype shares add up to {{total}}%, not 100%."
+    },
+    "npcEvents": {
+      "title": "Events are incomplete",
+      "body": "{{count}} event(s) lack a chance or any effect: {{names}}."
+    },
+    "npcBalance": {
+      "title": "Town cannot meet the population's needs",
+      "body": "{{count}} scenario(s) fall short: {{names}}. Compare them in the Needs balance view."
+    },
+    "playerSurvivalRestore": {
+      "title": "Survival stats nothing restores",
+      "body": "{{count}} survival stat(s) name no way to restore them: {{names}}."
+    },
+    "playerSurvivalPace": {
+      "title": "Unusual survival pacing",
+      "body": "On {{level}}, these reach critical outside {{min}}–{{max}} real minutes: {{names}}. Check the Depletion view."
+    },
+    "playerSurvivalDifficulty": {
+      "title": "Survival not linked to difficulty",
+      "body": "{{count}} survival stat(s) ignore the Difficulty parameters: {{names}}. Link one to scale decay per level."
+    },
+    "playerCurveMissing": {
+      "title": "No levelling curve yet",
+      "body": "Set a level cap and an XP formula in Levelling, so XP sources and skill budgets can be checked."
+    },
+    "playerCurve": {
+      "title": "Levelling curve problems",
+      "body": "{{names}}."
+    },
+    "playerXpSourcesNone": {
+      "title": "No XP sources",
+      "body": "Add where XP comes from (kills, quests, crafting…) to estimate how long each level takes."
+    },
+    "playerXpSourcesRate": {
+      "title": "XP sources have no rate",
+      "body": "Give at least one XP source an XP value and actions per hour to see hours per level."
+    },
+    "playerCastEntry": {
+      "title": "Casts without an entry",
+      "body": "{{count}} cast(s) from the catalog have no entry under Casts: {{names}}."
+    },
+    "playerCastContent": {
+      "title": "Casts without skills or abilities",
+      "body": "{{count}} cast(s) are missing content: {{names}}."
+    },
+    "playerTreeOver": {
+      "title": "Skill trees cost more than the budget",
+      "body": "Total cost vs. points at the level cap: {{names}}. Fine if players should specialise; otherwise lower costs or raise points."
+    },
+    "playerTreeUnder": {
+      "title": "Skill trees use under half the budget",
+      "body": "Total cost vs. points at the level cap: {{names}}. Players may run out of things to learn."
+    },
+    "playerTreeShape": {
+      "title": "Skill tree structure problems",
+      "body": "{{names}}."
+    },
+    "playerSkillAbility": {
+      "title": "Active skills without an ability",
+      "body": "{{count}} active skill(s) or spell(s) grant no ability: {{names}}."
+    },
+    "playerAbilityCost": {
+      "title": "Abilities without cost or cooldown",
+      "body": "{{count}} ability(ies) lack a resource cost or a cooldown: {{names}}."
+    },
+    "playerAbilityCast": {
+      "title": "Skill grants another cast's ability",
+      "body": "These skills grant an ability of a different cast: {{names}}."
+    },
+    "playerStartGear": {
+      "title": "Casts start empty-handed",
+      "body": "{{count}} cast(s) have no starting abilities or gear: {{names}}."
+    },
+    "itemsNoSource": {
+      "title": "Items nobody can obtain",
+      "body": "{{count}} item(s) have no recipe, loot table, merchant, reward, starting gear or Town output: {{names}}."
+    },
+    "itemsUnused": {
+      "title": "Items nothing uses",
+      "body": "{{count}} item(s) are never an ingredient, never restore anything and are not traded: {{names}}."
+    },
+    "itemsRecipeShape": {
+      "title": "Recipe problems",
+      "body": "{{names}}."
+    },
+    "itemsValueLoss": {
+      "title": "Crafting changes value oddly",
+      "body": "These recipes make less than their ingredients are worth, or more than {{max}}× their worth: {{names}}. Check the Crafting tree."
+    },
+    "itemsCoverage": {
+      "title": "Gaps in rarity coverage",
+      "body": "{{count}} type and rarity pair(s) have no item between rarities the type already uses: {{names}}."
+    },
+    "itemsTiers": {
+      "title": "Rarity or quality tiers out of order",
+      "body": "{{names}}. Rarer should drop less and be worth more."
+    },
+    "itemsLoot": {
+      "title": "Loot tables need attention",
+      "body": "{{count}} table(s) lack a source or weights, roll zero times, or guarantee a deleted item: {{names}}."
+    },
+    "itemsTypeFields": {
+      "title": "Fields that do not fit the item type",
+      "body": "These items have values in field groups their type does not use: {{names}}."
+    },
+    "itemsBasics": {
+      "title": "Items missing basics",
+      "body": "{{count}} item(s) lack a stack size (resources) or weight and durability (gear and tools): {{names}}."
+    },
+    "combatEnemyBasics": {
+      "title": "Enemies missing basics",
+      "body": "{{count}} enemy(ies) lack a biome, HP, damage or attacks per second: {{names}}."
+    },
+    "combatTtk": {
+      "title": "Unusual fight lengths",
+      "body": "With “{{loadout}}” on {{level}}: {{names}}. Check the Combat sandbox."
+    },
+    "combatThreatRamp": {
+      "title": "Threat drops in later biomes",
+      "body": "These enemies are weaker than the median of an earlier biome stage: {{names}}. Check the Threat curve."
+    },
+    "combatImmune": {
+      "title": "Enemies the player cannot hurt",
+      "body": "These resist every damage type the player can deal: {{names}}."
+    },
+    "combatNoLoot": {
+      "title": "Enemies that drop nothing",
+      "body": "{{count}} enemy(ies) or boss(es) are not a source in any Items loot table: {{names}}."
+    },
+    "combatPhases": {
+      "title": "Boss phases need attention",
+      "body": "{{names}}. Check the Phase bars."
+    },
+    "combatBossGates": {
+      "title": "Bosses that gate nothing",
+      "body": "These bosses unlock nothing and no biome or progression step requires them: {{names}}."
+    },
+    "combatVariants": {
+      "title": "Incomplete variants",
+      "body": "{{count}} variant(s) lack a base enemy, a time or event, or a multiplier: {{names}}."
+    },
+    "combatStatus": {
+      "title": "Incomplete status effects",
+      "body": "{{count}} status effect(s) lack a duration, or tick damage without an interval: {{names}}."
+    },
+    "combatFormula": {
+      "title": "Damage formula does not work",
+      "body": "The damage formula fails with attack, armor, resist and crit: {{error}}."
     }
   },
   "ai": {

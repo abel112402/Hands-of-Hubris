@@ -1,4 +1,5 @@
 import { EASIER, HARDER } from '../core/difficulty'
+import { DEFAULT_DAMAGE_FORMULA } from '../core/combatFormula'
 import type { GraphSource } from '../core/model/types'
 import { catalog, f, mod, s, section, v } from './helpers'
 
@@ -19,7 +20,7 @@ const LOOP_SYSTEMS: GraphSource = {
   ],
 }
 
-const UNLOCKABLE: GraphSource = { any: [section('skillTree', 'design.player'), section('items', 'design.items')] }
+const UNLOCKABLE: GraphSource = { any: [section('skills', 'design.player'), section('items', 'design.items')] }
 
 /** v1 kept characters and unlocks as free-text lists and one "effect on others" number. */
 function migrateFactions(data: Record<string, any>) {
@@ -47,6 +48,182 @@ function migrateWorld(data: Record<string, any>) {
     ex.navigation = ex.map
     delete ex.map
   }
+}
+
+const BUILDING_CATEGORIES = ['Housing', 'Production', 'Storage', 'Services', 'Defense', 'Culture', 'Infrastructure', 'Other']
+const STATUSES = ['Draft', 'Ready for testing', 'Final']
+const BASE_TYPES = ['Settlement', 'Warehouse', 'Outpost', 'Market', 'Other']
+
+/** v1 routes named their endpoints as free text; each distinct name becomes a base the route now points at. */
+function migrateTown(data: Record<string, any>) {
+  if (!Array.isArray(data.routes)) return
+  if (!Array.isArray(data.bases)) data.bases = []
+  const idOf = (name: string): string => {
+    const found = data.bases.find((b: any) => String(b.name).toLowerCase() === name.toLowerCase())
+    if (found) return found.id
+    const id = `base-${data.bases.length + 1}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+    data.bases.push({ id, name })
+    return id
+  }
+  for (const r of data.routes) {
+    for (const [old, key] of [['from', 'fromBase'], ['to', 'toBase']] as const) {
+      const name = typeof r[old] === 'string' ? r[old].trim() : ''
+      if (name && r[key] === undefined) r[key] = idOf(name)
+      delete r[old]
+    }
+  }
+}
+
+/** v1 kept drops, boss unlocks / reward / phases and status effects as free text; they move to notes fields. */
+function migrateCombat(data: Record<string, any>) {
+  const join = (...parts: unknown[]) => parts.filter((x) => typeof x === 'string' && x.trim()).join('\n')
+  for (const e of Array.isArray(data.enemies) ? data.enemies : []) {
+    if (Array.isArray(e.drops)) {
+      const lines = e.drops.filter((x: unknown) => typeof x === 'string' && x.trim())
+      if (lines.length) e.legacyNotes = join(e.legacyNotes, `Drops: ${lines.join(', ')}`)
+      delete e.drops
+    }
+  }
+  for (const b of Array.isArray(data.bosses) ? data.bosses : []) {
+    for (const [from, to] of [['unlocks', 'unlockNotes'], ['reward', 'rewardNotes'], ['phases', 'phaseNotes']] as const) {
+      if (typeof b[from] === 'string') {
+        if (b[from].trim()) b[to] = join(b[to], b[from])
+        delete b[from]
+      }
+    }
+  }
+  const sys = data.system
+  if (sys && typeof sys === 'object' && typeof sys.status === 'string') {
+    sys.statusNotes = join(sys.statusNotes, sys.status)
+    delete sys.status
+  }
+}
+
+/** Default field groups per item type, matched to the default "Item types" catalog ids. */
+export const TYPE_PROFILE_SEED = [
+  { name: 'Building item', type: 'building-item', build: true, usage: 'Placed in the world to build structures.' },
+  { name: 'Resource item', type: 'resource-item', usage: 'Gathered or produced; used as a crafting ingredient.' },
+  { name: 'Tool', type: 'tool', tool: true, usage: 'Equipped to gather resources faster or at all.' },
+  { name: 'Machine', type: 'machine', build: true, usage: 'Placed to process items automatically.' },
+  { name: 'Weapon', type: 'weapon', combat: true, usage: 'Equipped to deal damage.' },
+  { name: 'Armor', type: 'armor', combat: true, usage: 'Worn to reduce damage taken.' },
+  { name: 'Consumable', type: 'consumable', use: true, usage: 'Used up for an effect: food, drink, potions, buffs and debuffs.' },
+  { name: 'Accessory', type: 'accessory', combat: true, use: true, usage: 'Worn for passive bonuses; some are cursed.' },
+  { name: 'Decoration', type: 'decoration', build: true, usage: 'Placed for looks and comfort.' },
+  { name: 'Beacon', type: 'beacon', use: true, build: true, usage: 'Placed to project an aura or effect around it.' },
+  { name: 'Valuable', type: 'valuable', usage: 'Sold for money; some are junk.' },
+]
+
+/**
+ * v1 kept ingredients without quantities, the station and loot entries as text, and free-text stats and sources.
+ * Text that cannot become a link is kept in `legacyNotes` / `notes`.
+ */
+function migrateItems(data: Record<string, any>) {
+  const items: any[] = Array.isArray(data.items) ? data.items : []
+  const join = (...parts: unknown[]) => parts.filter((x) => typeof x === 'string' && x.trim()).join('\n')
+  for (const it of items) {
+    if (typeof it.stats === 'string') {
+      it.notes = join(it.notes, it.stats)
+      delete it.stats
+    }
+    if (typeof it.sources === 'string') {
+      if (it.sources.trim()) it.legacyNotes = join(it.legacyNotes, `Sources: ${it.sources}`)
+      delete it.sources
+    }
+  }
+  const stations: any[] = Array.isArray(data.stations) ? data.stations : (data.stations = [])
+  const stationId = (name: string): string => {
+    const found = stations.find((s) => String(s.name).toLowerCase() === name.toLowerCase())
+    if (found) return found.id
+    const id = `station-${stations.length + 1}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+    stations.push({ id, name })
+    return id
+  }
+  for (const r of Array.isArray(data.recipes) ? data.recipes : []) {
+    if (Array.isArray(r.ingredients)) r.ingredients = Object.fromEntries(r.ingredients.map((id: string) => [id, 1]))
+    if (typeof r.station === 'string') {
+      const name = r.station.trim()
+      if (name) r.station = stationId(name)
+      else delete r.station
+    }
+  }
+  const byName = (name: string) => items.find((i) => String(i.name ?? '').trim().toLowerCase() === name.trim().toLowerCase())
+  for (const t of Array.isArray(data.loot) ? data.loot : []) {
+    const left: string[] = []
+    if (typeof t.source === 'string' && t.source.trim()) left.push(`Source: ${t.source}`)
+    delete t.source
+    if (Array.isArray(t.entries)) {
+      const weights: Record<string, number> = { ...(t.weights ?? {}) }
+      for (const line of t.entries as unknown[]) {
+        const m = /^(.*?)[,:;]\s*([\d.]+)\s*%?\s*$/.exec(String(line ?? '').trim())
+        const item = m && byName(m[1])
+        if (item && Number.isFinite(Number(m![2]))) weights[item.id] = Number(m![2])
+        else if (String(line ?? '').trim()) left.push(String(line))
+      }
+      if (Object.keys(weights).length) t.weights = weights
+      delete t.entries
+    }
+    if (left.length) t.legacyNotes = join(t.legacyNotes, left.join('\n'))
+  }
+  const inv = data.inventory
+  if (inv && typeof inv === 'object' && typeof inv.slots === 'string') {
+    inv.notes = join(inv.notes, inv.slots)
+    delete inv.slots
+  }
+}
+
+/**
+ * v1 drew skills as a free graph (kept: nodes become skill entries with the same ids, so faction unlocks still resolve),
+ * kept death in the hero form, and stored starting abilities / gear as text and affinity as one faction.
+ */
+function migratePlayer(data: Record<string, any>) {
+  const hero = data.hero
+  if (hero && typeof hero === 'object' && typeof hero.death === 'string' && hero.death.trim()) {
+    data.death = { ...(data.death ?? {}), penalty: [data.death?.penalty, hero.death].filter(Boolean).join('\n') }
+  }
+  if (hero && typeof hero === 'object') delete hero.death
+  const g = data.skillTree
+  if (g && Array.isArray(g.nodes)) {
+    const skills: any[] = Array.isArray(data.skills) ? data.skills : []
+    const kinds: Record<string, string> = { Passive: 'Passive', Active: 'Active', Spell: 'Spell' }
+    for (const n of g.nodes) {
+      if (skills.some((sk) => sk.id === n.id)) continue
+      skills.push({ id: n.id, name: n.label, ...(n.refId ? { cast: n.refId } : {}), ...(kinds[n.kind] ? { kind: kinds[n.kind] } : {}), ...(n.notes ? { effect: n.notes } : {}) })
+    }
+    for (const e of Array.isArray(g.edges) ? g.edges : []) {
+      const target = skills.find((sk) => sk.id === e.target)
+      if (target && skills.some((sk) => sk.id === e.source)) target.requires = [...new Set([...(target.requires ?? []), e.source])]
+    }
+    data.skills = skills
+    delete data.skillTree
+  }
+  for (const c of Array.isArray(data.casts) ? data.casts : []) {
+    if (typeof c.affinity === 'string') c.affinity = c.affinity ? [c.affinity] : []
+    for (const [key, label] of [['startAbilities', 'Starting abilities'], ['startGear', 'Starting gear']] as const) {
+      const old = c[key]
+      if (!Array.isArray(old)) continue
+      delete c[key]
+      if (!old.length) continue
+      c.legacyNotes = [c.legacyNotes, `${label}: ${old.join(', ')}`].filter(Boolean).join('\n')
+    }
+  }
+}
+
+/** v1 kept equipment, mercenaries, AI and generation as four boxes in one "Other" form. */
+function migrateNpc(data: Record<string, any>) {
+  const misc = data.misc
+  if (!misc || typeof misc !== 'object') return
+  const move = (from: string, section: string, field: string) => {
+    const text = typeof misc[from] === 'string' ? misc[from].trim() : ''
+    if (!text) return
+    const target = (data[section] && typeof data[section] === 'object' ? data[section] : (data[section] = {})) as Record<string, any>
+    target[field] = [target[field], text].filter(Boolean).join('\n')
+  }
+  move('equipment', 'equipmentRules', 'notes')
+  move('mercenaries', 'mercenaries', 'notes')
+  move('ai', 'behaviour', 'routine')
+  move('generation', 'generation', 'notes')
+  delete data.misc
 }
 
 const CATEGORIES = ['Combat', 'Survival', 'Economy', 'NPC', 'Other']
@@ -368,39 +545,71 @@ export const designModules = [
     version: 2,
     migrate: migrateWorld,
   },
-  mod('design', 'town', 'Town Management & Logistics', 'docs/01_design/town_management.md', '🏘️', 'Buildings, resource flow, economy, morale.', [
+  {
+    ...mod('design', 'town', 'Town Management & Logistics', 'docs/01_design/town_management.md', '🏘️', 'Buildings, resource flow, economy, morale.', [
     s.collection(
       'buildings',
       'Buildings',
       'building',
       [
+        f.enm('category', 'Category', BUILDING_CATEGORIES),
+        f.enm('status', 'Status', STATUSES),
         f.text('function', 'Function'),
-        f.num('capacity', 'Capacity (NPCs)', { min: 0 }),
+        f.num('count', 'Planned count', { min: 0, help: 'How many copies the estimate assumes. Empty counts as 1.' }),
+        f.num('capacity', 'Capacity (population housed)', { min: 0 }),
+        f.num('storage', 'Storage provided', { min: 0 }),
         f.num('tiers', 'Upgrade tiers', { min: 1 }),
         f.map('cost', 'Build cost', catalog('resources')),
-        f.map('inputs', 'Inputs / tick', catalog('resources')),
-        f.map('outputs', 'Outputs / tick', catalog('resources')),
+        f.num('buildTime', 'Construction time', { min: 0, help: 'In the same time unit as the economy model.' }),
+        f.num('cycle', 'Production cycle (time units)', { min: 0, help: 'Length of one production cycle. Inputs and outputs below are per cycle; empty counts as 1.' }),
+        f.map('inputs', 'Inputs per cycle', catalog('resources')),
+        f.map('outputs', 'Outputs per cycle', catalog('resources')),
+        f.map('wasteOutputs', 'Waste / by-products per cycle', catalog('resources')),
         f.multi('workers', 'Worker professions', catalog('professions')),
-        f.long('upgrades', 'Upgrade path'),
+        f.num('workersRequired', 'Workers required', { min: 0 }),
+        f.num('skillLevel', 'Required skill level', { min: 0 }),
+        f.long('efficiencyConditions', 'Conditions affecting efficiency'),
+        f.multi('requires', 'Requires buildings', section('buildings')),
+        f.multi('upgradesTo', 'Upgrades into', section('buildings')),
+        f.long('upgrades', 'Upgrade path (notes)'),
         f.long('unlockedBy', 'Unlocked by'),
       ],
-      [v.cards(), v.table(['name', 'function', 'capacity', 'tiers'])],
+      [v.cards(), v.table(['name', 'category', 'status', 'function', 'count', 'capacity', 'workersRequired', 'inputs', 'outputs', 'cost']), v.economy()],
       {
         seed: [
-          { name: 'House', function: 'Housing for NPCs', capacity: 4 },
-          { name: 'Miner', function: 'Collects and smelts ore' },
-          { name: 'Lumberjack', function: 'Produces wood' },
-          { name: 'Farmer', function: 'Produces food' },
-          { name: 'Tavern', function: 'Entertainment, random quests' },
-          { name: 'School', function: 'Trains young NPCs (needs a teacher)' },
+          { name: 'House', function: 'Housing for NPCs', capacity: 4, category: 'Housing' },
+          { name: 'Miner', function: 'Collects and smelts ore', category: 'Production' },
+          { name: 'Lumberjack', function: 'Produces wood', category: 'Production' },
+          { name: 'Farmer', function: 'Produces food', category: 'Production' },
+          { name: 'Tavern', function: 'Entertainment, random quests', category: 'Services' },
+          { name: 'School', function: 'Trains young NPCs (needs a teacher)', category: 'Services' },
         ],
       },
+    ),
+    s.collection(
+      'bases',
+      'Bases & warehouses',
+      'base',
+      [
+        f.enm('type', 'Type', BASE_TYPES),
+        f.num('capacity', 'Storage capacity', { min: 0 }),
+        f.map('startStock', 'Starting stock', catalog('resources')),
+        f.map('minStock', 'Minimum stock', catalog('resources')),
+        f.map('targetStock', 'Target stock', catalog('resources')),
+        f.enm('resupply', 'Resupply', ['Automatic', 'Manual', 'None']),
+        f.long('rules', 'Storage rules'),
+      ],
+      [v.table(['name', 'type', 'capacity', 'resupply']), v.cards()],
+      { description: 'Places that hold stock and that routes connect. Use them for settlements, depots, outposts or shops, whatever fits the game.' },
     ),
     s.graph('flow', 'Resource flow', ['Building', 'Resource', 'NPC role', 'Market', 'Player'], {
       nodeSource: section('buildings'),
       edgeKinds: ['produces', 'consumes', 'sells to', 'buys from', 'transports'],
     }),
     s.form('economy', 'Economy model', [
+      f.text('timeUnit', 'Time unit', { placeholder: 'tick, minute, day…', help: 'Name of the clock the cycles and rates use. Only a label.' }),
+      f.num('horizon', 'Estimate horizon (time units)', { min: 1 }),
+      f.num('population', 'Assumed population', { min: 0, help: 'Overrides the population housed by buildings in the estimate.' }),
       f.long('moneyFlow', 'Money flow (wages, tax, treasury)'),
       f.num('buyMargin', 'Player buy price multiplier', { min: 0 }),
       f.num('sellMargin', 'Player sell price multiplier', { min: 0 }),
@@ -408,13 +617,42 @@ export const designModules = [
       f.num('storageLimit', 'Default storage limit', { min: 0 }),
       f.long('storageRules', 'Storage rules'),
     ]),
-    s.collection('commands', 'Player commands', 'command', [f.long('description', 'Description'), f.long('ui', 'UI notes')], [v.cards(), v.table()]),
+    s.collection(
+      'commands',
+      'Player commands',
+      'command',
+      [
+        f.long('description', 'Description'),
+        f.long('conditions', 'Conditions'),
+        f.text('target', 'Target'),
+        f.num('priority', 'Priority', { min: 0 }),
+        f.map('cost', 'Cost', catalog('resources')),
+        f.num('executionTime', 'Execution time', { min: 0 }),
+        f.long('effects', 'Effects'),
+        f.long('ui', 'UI notes'),
+      ],
+      [v.cards(), v.table(['name', 'target', 'priority', 'executionTime', 'cost'])],
+    ),
     s.collection(
       'routes',
       'Logistics routes',
       'route',
-      [f.text('from', 'From base'), f.text('to', 'To base'), f.multi('cargo', 'Cargo', catalog('resources')), f.long('risks', 'Risks')],
-      [v.table(), v.cards()],
+      [
+        f.ref('fromBase', 'From', section('bases')),
+        f.ref('toBase', 'To', section('bases')),
+        f.multi('cargo', 'Cargo', catalog('resources')),
+        f.map('quantity', 'Wanted per time unit', catalog('resources')),
+        f.text('transport', 'Transport type'),
+        f.num('capacity', 'Capacity per trip', { min: 0 }),
+        f.num('frequency', 'Trips per time unit', { min: 0 }),
+        f.num('travelTime', 'Travel time', { min: 0 }),
+        f.map('upkeep', 'Upkeep per time unit', catalog('resources')),
+        f.enm('risk', 'Risk level', ['Low', 'Medium', 'High']),
+        f.num('priority', 'Priority', { min: 0 }),
+        f.long('restrictions', 'Restrictions (region, faction, event…)'),
+        f.long('risks', 'Risks'),
+      ],
+      [v.table(['name', 'fromBase', 'toBase', 'cargo', 'capacity', 'frequency', 'travelTime', 'risk']), v.cards()],
     ),
     s.collection(
       'morale',
@@ -423,194 +661,629 @@ export const designModules = [
       [f.num('value', 'Morale value', { min: 0, max: 100 }), f.enm('effect', 'Effect', ['Bonus', 'None', 'Slowdown', 'Production stops', 'Leave town', 'Rebel']), f.long('notes', 'Notes')],
       [v.table()],
     ),
+    s.collection(
+      'factors',
+      'Morale factors',
+      'factor',
+      [
+        f.enm('kind', 'Kind', ['Food', 'Safety', 'Housing', 'Services', 'Wages', 'Environment', 'Other']),
+        f.num('change', 'Morale change', { min: -100, max: 100 }),
+        f.enm('duration', 'Duration', ['One-time', 'Gradual', 'Permanent']),
+        f.num('durationTime', 'Duration (time units)', { min: 0 }),
+        f.multi('groups', 'Affected groups', catalog('professions'), { help: 'Leave empty for the whole population.' }),
+        f.ref('need', 'Linked need', section('needRules', 'design.npc')),
+        f.enm('consequence', 'Consequence', ['None', 'Slowdown', 'Production stops', 'Leave town', 'Conflict', 'Rebel']),
+        f.long('remedy', 'Remedy'),
+        f.map('remedyCost', 'Remedy cost', catalog('resources')),
+        f.num('remedyTime', 'Remedy time', { min: 0 }),
+      ],
+      [v.table(['name', 'kind', 'change', 'duration', 'consequence']), v.cards()],
+      { description: 'What raises or lowers morale, who it hits, how long it lasts and what follows. Chain a shortage to its consequence here.' },
+    ),
     s.form('extensibility', 'Extensibility', [f.long('plan', 'How new needs, stats and functions are added without touching core code')]),
-  ]),
-  mod('design', 'npc', 'NPC System', 'docs/01_design/npc_system.md', '🧑‍🤝‍🧑', 'Stats, needs, life cycle, events.', [
-    s.collection(
-      'archetypes',
-      'NPC archetypes',
-      'archetype',
-      [
-        f.ref('profession', 'Profession', catalog('professions')),
-        f.map('stats', 'Stats', catalog('npcStats'), 10),
-        f.map('needs', 'Needs (consumption / day)', catalog('needs')),
-        f.long('notes', 'Notes'),
-      ],
-      [v.cards(), v.radar('stats'), v.table(['name', 'profession'])],
-      { description: 'Stats and needs come from catalogs: add a new stat in Definitions and it appears here and in the radar.' },
-    ),
-    s.collection(
-      'statRules',
-      'Stat rules',
-      'stat rule',
-      [f.ref('stat', 'Stat', catalog('npcStats')), f.long('effect', 'Effect'), f.formula('formula', 'Formula'), f.long('growth', 'Growth')],
-      [v.table(), v.cards()],
-    ),
-    s.collection(
-      'needRules',
-      'Need rules',
-      'need rule',
-      [
-        f.ref('need', 'Need', catalog('needs')),
-        f.long('scaling', 'Scales with'),
-        f.enm('consequence', 'Consequence when unmet', ['Production stops', 'Morale loss', 'Leaves town', 'Rebels', 'Dies']),
-        f.long('notes', 'Notes'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.graph('lifecycle', 'Life cycle state machine', ['State', 'Event', 'End'], { edgeKinds: ['when', 'after time', 'on event'] }),
-    s.collection(
-      'lifeStages',
-      'Life stages',
-      'stage',
-      [f.num('ageFrom', 'Age from', { min: 0 }), f.num('ageTo', 'Age to', { min: 0 }), f.long('notes', 'Notes')],
-      [v.table(), v.timeline('ageFrom', 'ageTo', 'y')],
-    ),
-    s.collection(
-      'events',
-      'Random events',
-      'event',
-      [
-        f.enm('category', 'Category', ['Marriage', 'Romance', 'Feud', 'Birth', 'Death', 'Other']),
-        f.long('trigger', 'Trigger'),
-        f.long('effect', 'Effect'),
-        f.num('chance', 'Chance (%)', { min: 0, max: 100 }),
-      ],
-      [v.kanban('category'), v.table()],
-    ),
-    s.form('misc', 'Other', [
-      f.long('equipment', 'Equipment slots'),
-      f.long('mercenaries', 'Mercenary armies'),
-      f.long('ai', 'Behavior / daily routine'),
-      f.long('generation', 'Procedural generation'),
     ]),
-  ]),
-  mod('design', 'player', 'Player Character', 'docs/01_design/player_character.md', '🧍', 'Hero, survival, casts, skill trees, XP.', [
-    s.form('hero', 'The hero', [f.long('background', 'Background'), f.long('personality', 'Personality'), f.long('start', 'Starting state'), f.long('death', 'Death and respawn')]),
-    s.collection(
-      'survival',
-      'Survival stats',
-      'stat',
-      [
-        f.ref('stat', 'Stat', catalog('survivalStats')),
-        f.num('max', 'Max', { min: 0 }),
-        f.num('decay', 'Decay / minute', { min: 0, step: 0.01 }),
-        f.long('lowEffect', 'Effect at low value'),
-        f.long('restore', 'Restored by'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.collection(
-      'casts',
-      'Casts',
-      'cast',
-      [
-        f.ref('cast', 'Cast', catalog('casts')),
-        f.long('playstyle', 'Playstyle'),
-        f.list('startAbilities', 'Starting abilities'),
-        f.list('startGear', 'Starting gear'),
-        f.ref('affinity', 'Faction affinity', FACTIONS),
-      ],
-      [v.cards(), v.table()],
-    ),
-    s.graph('skillTree', 'Skill tree', ['Skill', 'Passive', 'Active', 'Spell'], {
-      nodeSource: catalog('casts'),
-      edgeKinds: ['requires'],
-      description: 'Node reference = the cast the node belongs to.',
-    }),
-    s.collection(
-      'abilities',
-      'Abilities and spells',
-      'ability',
-      [
-        f.ref('cast', 'Cast', catalog('casts')),
-        f.num('mana', 'Mana cost', { min: 0 }),
-        f.num('cooldown', 'Cooldown (s)', { min: 0 }),
-        f.formula('formula', 'Effect formula'),
-        f.long('description', 'Description'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.formulas('xp', 'XP curve and formulas', 'e.g. xp = base * level ^ exponent'),
-    s.form('controls', 'Controls and camera', [f.long('input', 'Input schemes'), f.long('camera', 'Camera')]),
-  ]),
-  mod('design', 'items', 'Items & Crafting', 'docs/01_design/items_crafting.md', '🎒', 'Item database, rarity/quality, recipes, loot.', [
-    s.collection(
-      'items',
-      'Items',
-      'item',
-      [
-        f.ref('type', 'Type', catalog('itemTypes')),
-        f.ref('rarity', 'Rarity', catalog('rarities')),
-        f.ref('quality', 'Quality', catalog('qualities')),
-        f.num('weight', 'Weight', { min: 0, step: 0.1 }),
-        f.num('value', 'Base value', { min: 0 }),
-        f.num('stack', 'Max stack', { min: 1 }),
-        f.long('description', 'Description'),
-        f.long('stats', 'Stats and effects'),
-        f.long('sources', 'Sources (drop, craft, shop)'),
-      ],
-      [v.table(['name', 'type', 'rarity', 'quality', 'value']), v.cards(), v.kanban('rarity')],
-    ),
-    s.matrix('multipliers', 'Value multiplier: rarity × quality', catalog('rarities'), catalog('qualities'), { type: 'number', min: 0, max: 100 }),
-    s.collection(
-      'recipes',
-      'Recipes',
-      'recipe',
-      [
-        f.ref('result', 'Result', ITEMS),
-        f.multi('ingredients', 'Ingredients', ITEMS),
-        f.text('station', 'Crafting station'),
-        f.num('tier', 'Tier', { min: 0 }),
-        f.long('unlock', 'Unlock'),
-      ],
-      [v.table(), v.cards()],
-    ),
-    s.graph('recipeGraph', 'Crafting graph', ['Item', 'Resource', 'Station'], { nodeSource: ITEMS, edgeKinds: ['crafted into', 'requires station'] }),
-    s.collection(
-      'loot',
-      'Loot tables',
-      'loot table',
-      [f.text('source', 'Source'), f.list('entries', 'Entries (item, chance)'), f.long('notes', 'Notes')],
-      [v.table(), v.cards()],
-    ),
-    s.form('inventory', 'Inventory', [f.long('slots', 'Slots, weight, storage limits')]),
-  ]),
-  mod('design', 'combat', 'Combat, Enemies & Bosses', 'docs/01_design/combat_enemies.md', '⚔️', 'Combat model, enemy and boss sheets.', [
-    s.form('system', 'Combat system', [f.long('model', 'Real-time / action, aiming, dodge, block'), f.long('status', 'Status effects')]),
-    s.formulas('damage', 'Damage and defense model', 'e.g. damage = attack * (1 - resist)'),
-    s.collection(
-      'enemies',
-      'Enemies',
-      'enemy',
-      [
-        f.ref('biome', 'Biome', BIOMES),
-        f.num('hp', 'HP', { min: 0 }),
-        f.num('damage', 'Damage', { min: 0 }),
-        f.num('speed', 'Speed', { min: 0 }),
-        f.multi('weaknesses', 'Weaknesses', catalog('damageTypes')),
-        f.bool('nightVariant', 'Has night variant'),
-        f.long('behavior', 'Behavior (AI)'),
-        f.list('drops', 'Drops'),
-      ],
-      [v.cards(), v.table(['name', 'biome', 'hp', 'damage', 'speed'])],
-    ),
-    s.collection(
-      'bosses',
-      'Bosses',
-      'boss',
-      [
-        f.ref('biome', 'Biome', BIOMES),
-        f.long('unlocks', 'Unlocks'),
-        f.long('arena', 'Arena'),
-        f.long('phases', 'Phases and mechanics'),
-        f.long('reward', 'Reward'),
-      ],
-      [v.cards(), v.table()],
-    ),
-    s.graph('bossPhases', 'Boss phase diagram', ['Phase', 'Attack', 'Transition'], { edgeKinds: ['when HP <', 'after', 'on event'] }),
-    s.form('siege', 'NPC combat and sieges', [f.long('notes', 'Defenders, siege, mercenary armies')]),
-  ]),
+    version: 2,
+    migrate: migrateTown,
+  },
+  {
+    ...mod('design', 'npc', 'NPC System', 'docs/01_design/npc_system.md', '🧑‍🤝‍🧑', 'Stats, needs, life cycle, work, relationships, events.', [
+      s.form('overview', 'Overview', [
+        f.long('role', 'Role of NPCs in the game', { help: 'What do NPCs do for the player and the town? What should managing them feel like?', placeholder: 'e.g. Townsfolk are the workforce; keeping their needs met is the main town-management pressure.' }),
+        f.num('populationTarget', 'Typical population', { min: 0, help: 'Rough size of a mid-game town; used as context, not a limit.' }),
+        f.num('statMin', 'Stat scale: lowest', { help: 'Default 0. Archetype stats, the radar and the stat checks use this range.' }),
+        f.num('statMax', 'Stat scale: highest', { help: 'Default 10.' }),
+        f.num('maxAge', 'Maximum age', { min: 1, help: 'Default 100. Life stages are checked against 0 … this age.' }),
+        f.enm('ageUnit', 'Age unit', ['in-game days', 'in-game years', 'real-time hours']),
+        f.num('unitsPerDay', 'Town time units per NPC day', { min: 0, step: 0.01, help: 'Town rates are per its own time unit; needs here are per day. Default 1.' }),
+      ], 'Set the scales first: they drive the stat inputs, the radar, the life-stage ranges and the needs balance.'),
+      s.collection(
+        'statRules',
+        'Stats',
+        'stat rule',
+        [
+          f.ref('stat', 'Stat', catalog('npcStats'), { help: 'From the “NPC stats” catalog (Definitions).' }),
+          f.long('effect', 'Effect', { placeholder: 'e.g. Raises carry capacity and building speed.' }),
+          f.formula('formula', 'Formula', {
+            help: 'Use stat names as variables (lower case, “-” becomes “_”), plus level and age, e.g. 10 + strength * 2. The Preview view evaluates it for every archetype.',
+          }),
+          f.enm('progression', 'How it changes', ['Fixed', 'Grows with work', 'Trained', 'Changes with age', 'Event-driven']),
+          f.long('growth', 'Growth details'),
+        ],
+        [v.table(['name', 'stat', 'formula', 'progression']), v.statPreview('formula', 'stat', { section: 'archetypes', mapField: 'stats' }), v.cards()],
+        { description: 'One rule per stat: what it does, its formula and how it develops.' },
+      ),
+      s.collection(
+        'needRules',
+        'Needs',
+        'need rule',
+        [
+          f.ref('need', 'Need', catalog('needs'), { help: 'From the “NPC needs” catalog (Definitions).' }),
+          f.enm('kind', 'Kind', ['Basic', 'Profession', 'Comfort']),
+          f.long('scaling', 'Scales with', { placeholder: 'e.g. Profession, life stage, difficulty multiplier.' }),
+          f.ref('resource', 'Satisfied by resource', catalog('resources'), { help: 'Consumed from the town stock. The needs balance compares it with the Town estimate.', group: 'Supply' }),
+          f.multi('buildings', 'Satisfied by buildings', section('buildings', 'design.town'), { help: 'Buildings that provide this need as places (e.g. housing).', group: 'Supply' }),
+          f.num('perBuilding', 'Places per building', { min: 0, help: 'Empty uses the building’s capacity.', group: 'Supply' }),
+          f.num('graceDays', 'Days before consequences', { min: 0, group: 'When unmet' }),
+          f.enm('consequence', 'Consequence when unmet', ['Production stops', 'Morale loss', 'Leaves town', 'Rebels', 'Dies'], { group: 'When unmet' }),
+          f.num('moraleImpact', 'Morale change per day unmet', { min: -100, max: 100, group: 'When unmet' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'need', 'kind', 'resource', 'buildings', 'consequence']), v.cards()],
+      ),
+      s.collection(
+        'archetypes',
+        'NPC archetypes',
+        'archetype',
+        [
+          f.ref('profession', 'Profession', catalog('professions'), { group: 'Identity' }),
+          f.num('share', 'Share of population (%)', { min: 0, max: 100, help: 'Also the spawn weight for generation.', group: 'Identity' }),
+          f.ref('faction', 'Faction', FACTIONS, { group: 'Identity' }),
+          f.list('traits', 'Traits', { group: 'Identity' }),
+          f.map('stats', 'Stats', catalog('npcStats'), undefined, { rangeFrom: { section: 'overview', minField: 'statMin', maxField: 'statMax' }, group: 'Stats & needs' }),
+          f.map('needs', 'Needs per day', catalog('needs'), undefined, { group: 'Stats & needs', help: 'Units per NPC day; for place-based needs such as housing, places per NPC.' }),
+          f.ref('home', 'Lives in', section('buildings', 'design.town'), { group: 'Town' }),
+          f.multi('workplaces', 'Works in', section('buildings', 'design.town'), { group: 'Town' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.cards(), v.radar('stats', { section: 'overview', minField: 'statMin', maxField: 'statMax' }), v.table(['name', 'profession', 'share', 'faction', 'home'])],
+        { description: 'Stats and needs come from catalogs: add a new stat in Definitions and it appears here, in the radar and in the stat preview.' },
+      ),
+      s.collection(
+        'lifeStages',
+        'Life stages',
+        'stage',
+        [
+          f.num('ageFrom', 'Age from', { min: 0 }),
+          f.num('ageTo', 'Age to', { min: 0, help: 'Optional. Without it the stage runs up to the next stage’s start.' }),
+          f.bool('canWork', 'Can work'),
+          f.map('statModifiers', 'Stat modifiers (%)', catalog('npcStats'), undefined, { min: -100 }),
+          f.num('needModifier', 'Need modifier (%)', { min: -100 }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'ageFrom', 'ageTo', 'canWork', 'needModifier']), v.ranges('ageFrom', 'ageTo', { section: 'overview', minField: 'ageMin', maxField: 'maxAge', fallback: [0, 100] })],
+      ),
+      s.graph('lifecycle', 'Life cycle state machine', ['Start', 'State', 'Event', 'End'], {
+        nodeSource: section('lifeStages'),
+        edgeSource: section('events'),
+        edgeKinds: ['when', 'after time', 'on event'],
+        description: 'Start: how an NPC enters (birth, arrival). State: a phase, ideally linked to a life stage. End: death or leaving. Link “on event” connections to the event that causes them.',
+      }),
+      s.collection(
+        'jobs',
+        'Work and professions',
+        'job',
+        [
+          f.ref('profession', 'Profession', catalog('professions')),
+          f.multi('buildings', 'Works in', section('buildings', 'design.town'), { help: 'Should match the building’s worker professions in Town.' }),
+          f.multi('keyStats', 'Key stats', catalog('npcStats')),
+          f.formula('efficiency', 'Efficiency formula', { help: 'Same variables as stat formulas, e.g. 0.5 + strength / 20.' }),
+          f.ref('minStage', 'Earliest life stage', section('lifeStages')),
+          f.num('wage', 'Wage per day', { min: 0 }),
+          f.long('training', 'Training (school, apprenticeship)'),
+          f.long('assignment', 'How NPCs get assigned'),
+        ],
+        [v.table(['name', 'profession', 'buildings', 'keyStats', 'efficiency', 'wage']), v.cards()],
+      ),
+      s.matrix('routine', 'Daily routine', catalog('professions'), catalog('timeOfDay'), { type: 'enum', options: ['Sleep', 'Work', 'Eat', 'Leisure', 'Socialize', 'Patrol', 'Travel', 'Train'] }, {
+        description: 'What each profession does at each time of day. Rows and columns come from the “NPC professions” and “Times of day” catalogs.',
+      }),
+      s.form('relationships', 'Relationships', [
+        f.num('scaleMin', 'Affinity: lowest', { help: 'Default -100.' }),
+        f.num('scaleMax', 'Affinity: highest', { help: 'Default 100.' }),
+        f.num('start', 'Starting affinity'),
+        f.text('decay', 'Decay', { placeholder: 'e.g. 1 point per week towards 0' }),
+        f.long('changes', 'What changes affinity', { placeholder: 'e.g. Working together, shared meals, insults, gifts.' }),
+      ]),
+      s.collection(
+        'relationLevels',
+        'Relationship levels',
+        'level',
+        [f.num('min', 'Min affinity'), f.num('max', 'Max affinity', { help: 'Optional. Without it the level runs up to the next level’s minimum.' }), f.long('effects', 'Effects')],
+        [v.table(), v.ranges('min', 'max', { section: 'relationships', minField: 'scaleMin', maxField: 'scaleMax', fallback: [-100, 100] })],
+      ),
+      s.collection(
+        'bonds',
+        'Bonds',
+        'bond',
+        [
+          f.enm('kind', 'Kind', ['Friendship', 'Romance', 'Marriage', 'Family', 'Rivalry', 'Feud']),
+          f.ref('requiresLevel', 'Requires level', section('relationLevels')),
+          f.bool('exclusive', 'Exclusive (only one at a time)'),
+          f.long('effects', 'Effects'),
+        ],
+        [v.table(), v.cards()],
+        { description: 'Named relationships between two NPCs and what forming them requires.' },
+      ),
+      s.collection(
+        'events',
+        'Random events',
+        'event',
+        [
+          f.enm('category', 'Category', ['Marriage', 'Romance', 'Friendship', 'Feud', 'Birth', 'Death', 'Illness', 'Accident', 'Arrival', 'Departure', 'Other']),
+          f.long('trigger', 'Trigger', { group: 'When' }),
+          f.num('chance', 'Chance (%)', { min: 0, max: 100, group: 'When' }),
+          f.enm('period', 'Chance per', ['day', 'week', 'season', 'year', 'once'], { group: 'When' }),
+          f.num('cooldown', 'Cooldown (days)', { min: 0, group: 'When' }),
+          f.multi('participants', 'Archetypes involved', section('archetypes'), { group: 'Who', help: 'Leave empty for anyone.' }),
+          f.ref('requiresBond', 'Requires bond', section('bonds'), { group: 'Who' }),
+          f.map('statEffects', 'Stat changes', catalog('npcStats'), undefined, { min: -100, group: 'Effect' }),
+          f.num('moraleEffect', 'Morale change', { min: -100, max: 100, group: 'Effect' }),
+          f.long('effect', 'Other effects', { group: 'Effect' }),
+        ],
+        [v.kanban('category'), v.table(['name', 'category', 'chance', 'period', 'cooldown', 'moraleEffect'])],
+      ),
+      s.form('equipmentRules', 'Equipment', [f.long('notes', 'Equipment rules', { help: 'Who equips NPCs, durability, upgrades.' })]),
+      s.collection(
+        'slots',
+        'Equipment slots',
+        'slot',
+        [f.multi('itemTypes', 'Allowed item types', catalog('itemTypes')), f.multi('professions', 'Only for professions', catalog('professions')), f.long('effects', 'Effects')],
+        [v.table(), v.cards()],
+      ),
+      s.form('mercenaries', 'Mercenary armies', [
+        f.long('recruitment', 'Recruitment'),
+        f.long('control', 'Control and orders'),
+        f.num('upkeep', 'Upkeep per soldier per day', { min: 0 }),
+        f.num('maxSize', 'Maximum army size', { min: 0 }),
+        f.long('notes', 'Notes'),
+      ]),
+      s.form('behaviour', 'Behaviour (AI)', [
+        f.long('decision', 'Decision model', { placeholder: 'e.g. Utility scores per need; the highest unmet need wins.' }),
+        f.long('priorities', 'Need priorities'),
+        f.long('routine', 'Daily routine notes', { help: 'The routine matrix above shows the plan per profession; technical details belong in the AI systems document.' }),
+      ]),
+      s.form('generation', 'Generation, names and appearance', [
+        f.long('names', 'Names'),
+        f.long('appearance', 'Appearance'),
+        f.num('statVariance', 'Stat variance (±)', { min: 0, help: 'How far a generated NPC may differ from its archetype.' }),
+        f.long('notes', 'Generation rules', { help: 'Archetype shares act as spawn weights.' }),
+      ]),
+      s.collection(
+        'scenarios',
+        'Population scenarios',
+        'scenario',
+        [
+          f.map('population', 'Population per archetype', section('archetypes')),
+          f.long('notes', 'Notes'),
+        ],
+        [v.needsBalance('population'), v.table()],
+        { description: 'Check a population mix against the town: daily needs per archetype against the Town estimate. Planning estimate, not a simulation.' },
+      ),
+    ]),
+    version: 2,
+    migrate: migrateNpc,
+  },
+  {
+    ...mod('design', 'player', 'Player Character', 'docs/01_design/player_character.md', '🧍', 'Hero, survival, levelling, casts, skills, abilities.', [
+      s.form('hero', 'The hero', [
+        f.text('fantasy', 'Player fantasy', { help: 'One line: what does playing the hero feel like?', placeholder: 'e.g. A stranded soldier who learns to bend old magic to industrial will.' }),
+        f.long('background', 'Background'),
+        f.long('personality', 'Personality'),
+        f.long('start', 'Starting state', { placeholder: 'e.g. Washed ashore with a broken rifle, half health, no food.' }),
+        f.multi('startItems', 'Starting items', ITEMS),
+      ]),
+      s.collection(
+        'survival',
+        'Survival stats',
+        'stat',
+        [
+          f.ref('stat', 'Stat', catalog('survivalStats'), { help: 'From the “Survival stats” catalog (Definitions).' }),
+          f.num('max', 'Max', { min: 0, group: 'Pacing' }),
+          f.num('decay', 'Decay per time unit', { min: 0, step: 0.01, group: 'Pacing' }),
+          f.enm('decayUnit', 'Time unit', ['real minute', 'in-game hour'], { group: 'Pacing', help: 'Empty counts as real minutes.' }),
+          f.num('criticalAt', 'Critical at', { min: 0, group: 'Pacing', help: 'Value where the low effect starts. Empty counts as 0.' }),
+          f.ref('difficultyParam', 'Difficulty parameter', section('params', 'design.difficulty'), { group: 'Pacing', help: 'The Difficulty parameter that multiplies this decay per level.' }),
+          f.list('tiers', 'Effect tiers', { group: 'Effects', placeholder: 'e.g. ≤ 30: move 10% slower' }),
+          f.long('lowEffect', 'Effect at low value', { group: 'Effects' }),
+          f.long('restore', 'Restored by', { group: 'Restore' }),
+          f.multi('restoreItems', 'Restoring items', ITEMS, { group: 'Restore' }),
+        ],
+        [v.table(['name', 'stat', 'max', 'decay', 'decayUnit', 'criticalAt', 'difficultyParam']), v.depletion(), v.cards()],
+      ),
+      s.form('leveling', 'Levelling', [
+        f.num('levelCap', 'Level cap', { min: 1 }),
+        f.formula('xpFormula', 'XP needed for the next level', { help: 'Use the variable level, e.g. 100 * level ^ 1.5.' }),
+        f.num('skillPointsPerLevel', 'Skill points per level', { min: 0, step: 0.5 }),
+        f.num('startSkillPoints', 'Skill points at level 1', { min: 0 }),
+        f.num('statPointsPerLevel', 'Stat points per level', { min: 0 }),
+        f.long('respec', 'Respec rules'),
+      ], 'The curve, the points it gives and the cap together decide how much of each skill tree a player can own.'),
+      s.collection(
+        'xpSources',
+        'XP sources',
+        'source',
+        [
+          f.enm('kind', 'Kind', ['Kill', 'Quest', 'Craft', 'Build', 'Explore', 'Gather', 'Trade', 'Other']),
+          f.num('xp', 'XP per action', { min: 0 }),
+          f.num('perHour', 'Actions per hour (estimate)', { min: 0, step: 0.1, help: 'Rough rate for a typical player; drives the hours-to-level estimate.' }),
+          f.multi('content', 'Linked content', { any: [section('enemies', 'design.combat'), section('quests', 'design.story'), section('recipes', 'design.items')] }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.levelCurve(), v.table(['name', 'kind', 'xp', 'perHour'])],
+      ),
+      s.collection(
+        'casts',
+        'Casts',
+        'cast',
+        [
+          f.ref('cast', 'Cast', catalog('casts')),
+          f.color('color', 'Color'),
+          f.long('playstyle', 'Playstyle'),
+          f.enm('primaryResource', 'Primary resource', ['Mana', 'Stamina', 'None']),
+          f.multi('startAbilities', 'Starting abilities', section('abilities')),
+          f.multi('startGear', 'Starting gear', ITEMS),
+          f.multi('affinity', 'Faction affinity', FACTIONS),
+          f.long('legacyNotes', 'Earlier notes', { help: 'Free text carried over from before abilities and gear became links.' }),
+        ],
+        [v.cards(), v.table(['name', 'cast', 'primaryResource', 'startAbilities', 'affinity'])],
+      ),
+      s.collection(
+        'skills',
+        'Skills',
+        'skill',
+        [
+          f.ref('cast', 'Cast', catalog('casts')),
+          f.enm('kind', 'Kind', ['Passive', 'Active', 'Spell']),
+          f.num('tier', 'Tier', { min: 1 }),
+          f.num('cost', 'Cost (skill points)', { min: 0 }),
+          f.num('requiredLevel', 'Required level', { min: 1 }),
+          f.multi('requires', 'Requires', section('skills'), { help: 'Skills that must be learned first.' }),
+          f.ref('grants', 'Grants ability', section('abilities')),
+          f.long('effect', 'Effect'),
+        ],
+        [v.skillTree(), v.buildPlanner(), v.table(['name', 'cast', 'kind', 'tier', 'cost', 'requiredLevel', 'requires', 'grants'])],
+        { description: 'One entry per skill. The tree draws casts as lanes and tiers as rows; the build planner lets you learn skills at a chosen level.' },
+      ),
+      s.collection(
+        'abilities',
+        'Abilities and spells',
+        'ability',
+        [
+          f.ref('cast', 'Cast', catalog('casts')),
+          f.enm('kind', 'Kind', ['Active', 'Spell', 'Passive']),
+          f.num('mana', 'Resource cost', { min: 0, help: 'Mana or stamina, per the cast’s primary resource.' }),
+          f.num('cooldown', 'Cooldown (s)', { min: 0 }),
+          f.num('castTime', 'Cast time (s)', { min: 0, step: 0.1 }),
+          f.num('range', 'Range', { min: 0 }),
+          f.ref('damageType', 'Damage type', catalog('damageTypes')),
+          f.formula('formula', 'Effect formula', { help: 'Variables: level and any you choose; test values are set in the formula section.' }),
+          f.long('description', 'Description'),
+        ],
+        [v.table(['name', 'cast', 'kind', 'mana', 'cooldown', 'castTime', 'damageType']), v.cards()],
+      ),
+      s.formulas('xp', 'Other formulas', 'Damage scaling, regeneration and other formulas. The XP curve itself is set in Levelling.'),
+      s.form('controls', 'Controls and camera', [f.long('input', 'Input schemes'), f.long('camera', 'Camera')]),
+      s.collection(
+        'actions',
+        'Input actions',
+        'action',
+        [f.text('keyboard', 'Keyboard / mouse'), f.text('gamepad', 'Gamepad'), f.text('context', 'Context'), f.bool('rebindable', 'Rebindable')],
+        [v.table()],
+      ),
+      s.form('death', 'Death and respawn', [
+        f.long('penalty', 'Penalty'),
+        f.long('respawn', 'Respawn point'),
+        f.long('itemLoss', 'Item loss and corpse run'),
+        f.long('permadeath', 'Permadeath', { help: 'Which difficulty presets use it; see the Difficulty document.' }),
+      ]),
+    ]),
+    version: 2,
+    migrate: migratePlayer,
+  },
+  {
+    ...mod('design', 'items', 'Items & Crafting', 'docs/01_design/items_crafting.md', '🎒', 'Item model, rarity and quality, types, recipes, loot, inventory.', [
+      s.form('model', 'Item model', [
+        f.text('currency', 'Value unit', { placeholder: 'e.g. silver shillings' }),
+        f.text('weightUnit', 'Weight unit', { placeholder: 'e.g. kg' }),
+        f.num('defaultStack', 'Default stack size', { min: 1 }),
+        f.long('durability', 'Durability model', { placeholder: 'e.g. Tools and weapons lose 1 durability per use; repair at a workbench.' }),
+        f.long('valueNotes', 'How value works', { help: 'The editor computes final value = base value × the rarity × quality multiplier below.' }),
+      ], 'Common rules every item follows. Item-specific numbers go on the items themselves.'),
+      s.collection(
+        'rarityTiers',
+        'Rarity tiers',
+        'rarity tier',
+        [
+          f.ref('rarity', 'Rarity', catalog('rarities'), { help: 'From the “Item rarities” catalog (Definitions).' }),
+          f.color('color', 'Color'),
+          f.num('statMultiplier', 'Stat multiplier (×)', { min: 0, step: 0.05 }),
+          f.num('dropWeight', 'Drop weight (occurrence)', { min: 0, help: 'Relative weight: 100 for common and 1 for legendary means legendary is 100 times rarer.' }),
+          f.long('effect', 'Effect on properties'),
+        ],
+        [v.table(['name', 'rarity', 'statMultiplier', 'dropWeight']), v.rarityCurve()],
+      ),
+      s.collection(
+        'qualityTiers',
+        'Quality tiers',
+        'quality tier',
+        [
+          f.ref('quality', 'Quality', catalog('qualities')),
+          f.num('statMultiplier', 'Stat multiplier (×)', { min: 0, step: 0.05 }),
+          f.long('obtained', 'How it is obtained', { placeholder: 'e.g. Craft skill roll; loot rolls one tier lower.' }),
+          f.long('effect', 'Effect on properties'),
+        ],
+        [v.table(['name', 'quality', 'statMultiplier'])],
+      ),
+      s.matrix('multipliers', 'Value multiplier: rarity × quality', catalog('rarities'), catalog('qualities'), { type: 'number', min: 0, max: 100 }, {
+        description: 'Each cell multiplies an item’s base value (× multiplier; empty counts as 1). Values should grow to the right and downward.',
+      }),
+      s.collection(
+        'types',
+        'Item types',
+        'type profile',
+        [
+          f.ref('type', 'Type', catalog('itemTypes')),
+          f.bool('combat', 'Uses combat fields'),
+          f.bool('use', 'Uses consumable / effect fields'),
+          f.bool('build', 'Uses building fields'),
+          f.bool('tool', 'Uses tool fields'),
+          f.long('usage', 'Usage'),
+          f.list('examples', 'Examples'),
+        ],
+        [v.table(['name', 'type', 'combat', 'use', 'build', 'tool']), v.cards()],
+        {
+          description: 'Which field groups each item type uses. Items only show the groups their type uses; the rest stay under “Other fields”.',
+          seed: TYPE_PROFILE_SEED,
+        },
+      ),
+      s.collection(
+        'items',
+        'Items',
+        'item',
+        [
+          f.ref('type', 'Type', catalog('itemTypes'), { group: 'Identity' }),
+          f.ref('rarity', 'Rarity', catalog('rarities'), { group: 'Identity' }),
+          f.ref('quality', 'Default quality', catalog('qualities'), { group: 'Identity' }),
+          f.list('tags', 'Tags', { group: 'Identity' }),
+          f.num('value', 'Base value', { min: 0, group: 'Common' }),
+          f.num('weight', 'Weight', { min: 0, step: 0.1, group: 'Common' }),
+          f.num('stack', 'Max stack', { min: 1, group: 'Common' }),
+          f.num('durability', 'Durability', { min: 0, group: 'Common' }),
+          f.num('damage', 'Damage', { min: 0, group: 'Combat' }),
+          f.ref('damageType', 'Damage type', catalog('damageTypes'), { group: 'Combat' }),
+          f.num('attackSpeed', 'Attacks per second', { min: 0, step: 0.05, group: 'Combat' }),
+          f.num('armor', 'Armor', { min: 0, group: 'Combat' }),
+          f.map('resistances', 'Resistances (%)', catalog('damageTypes'), 100, { group: 'Combat' }),
+          f.enm('equipSlot', 'Equip slot', ['Main hand', 'Off hand', 'Two hands', 'Head', 'Body', 'Legs', 'Feet', 'Accessory', 'Tool belt'], { group: 'Combat' }),
+          f.long('effect', 'Effect', { group: 'Use' }),
+          f.map('restores', 'Restores', catalog('survivalStats'), undefined, { group: 'Use', help: 'Amount restored per survival stat (Player Character).' }),
+          f.num('duration', 'Duration (s)', { min: 0, group: 'Use' }),
+          f.num('cooldown', 'Cooldown (s)', { min: 0, group: 'Use' }),
+          f.ref('places', 'Places building', section('buildings', 'design.town'), { group: 'Build' }),
+          f.long('placement', 'Placement rules', { group: 'Build' }),
+          f.num('toolPower', 'Tool power / tier', { min: 0, group: 'Tool' }),
+          f.multi('harvests', 'Harvests', catalog('resources'), { group: 'Tool' }),
+          f.long('description', 'Description (in-game text)'),
+          f.long('notes', 'Other stats and notes'),
+          f.long('legacyNotes', 'Earlier notes', { help: 'Free text carried over from before sources were computed from links.' }),
+        ],
+        [v.table(['name', 'type', 'rarity', 'quality', 'value', 'weight', 'stack']), v.itemCoverage(), v.valuePreview(), v.cards(), v.kanban('rarity')],
+        { groupFilter: { field: 'type', profiles: { section: 'types', key: 'type' }, groups: { Combat: 'combat', Use: 'use', Build: 'build', Tool: 'tool' } } },
+      ),
+      s.collection(
+        'stations',
+        'Crafting stations',
+        'station',
+        [
+          f.ref('building', 'Town building', section('buildings', 'design.town')),
+          f.num('tier', 'Tier', { min: 0 }),
+          f.long('unlock', 'Unlock'),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'building', 'tier']), v.cards()],
+      ),
+      s.collection(
+        'recipes',
+        'Recipes',
+        'recipe',
+        [
+          f.ref('result', 'Result', ITEMS),
+          f.num('outputQty', 'Output quantity', { min: 1, help: 'Empty counts as 1.' }),
+          f.map('ingredients', 'Ingredients (item × quantity)', ITEMS, undefined, { min: 0 }),
+          f.map('resources', 'Raw resources (× quantity)', catalog('resources'), undefined, { min: 0 }),
+          f.ref('station', 'Station', section('stations')),
+          f.num('tier', 'Tier', { min: 0 }),
+          f.num('craftTime', 'Craft time (s)', { min: 0 }),
+          f.ref('requiresSkill', 'Requires skill', section('skills', 'design.player')),
+          f.multi('unlockedBy', 'Unlocked by', { any: [section('quests', 'design.story'), FACTIONS, section('skills', 'design.player')] }),
+          f.long('unlock', 'Unlock notes'),
+        ],
+        [v.table(['name', 'result', 'outputQty', 'ingredients', 'resources', 'station', 'tier']), v.craftTree(), v.cards()],
+        { description: 'Quantities matter: the crafting tree and the value checks use them.' },
+      ),
+      s.graph('recipeGraph', 'Crafting sketch (free diagram)', ['Item', 'Resource', 'Station'], {
+        nodeSource: ITEMS,
+        edgeKinds: ['crafted into', 'requires station'],
+        description: 'Optional free sketch. The Crafting tree view under Recipes is drawn from the recipe data and is the source of truth.',
+      }),
+      s.form('inventory', 'Inventory and storage', [
+        f.num('slots', 'Inventory slots', { min: 0 }),
+        f.num('weightLimit', 'Carry weight limit', { min: 0 }),
+        f.num('hotbar', 'Hotbar slots', { min: 0 }),
+        f.long('encumbrance', 'Over the weight limit'),
+        f.long('notes', 'Storage rules', { help: 'Chests, warehouses (Town bases), stack limits.' }),
+      ]),
+      s.collection(
+        'loot',
+        'Loot tables',
+        'loot table',
+        [
+          f.multi('sources', 'Dropped by', { any: [section('enemies', 'design.combat'), section('bosses', 'design.combat'), BIOMES, section('outposts', 'design.world')] }),
+          f.num('rolls', 'Rolls per drop', { min: 0, help: 'How many times the table is rolled each time it drops. Empty counts as 1.' }),
+          f.map('weights', 'Item weights', ITEMS, undefined, { min: 0, help: 'Relative weights: chance per roll = weight ÷ sum of weights.' }),
+          f.multi('guaranteed', 'Always drops', ITEMS),
+          f.long('notes', 'Notes'),
+          f.long('legacyNotes', 'Earlier notes'),
+        ],
+        [v.table(['name', 'sources', 'rolls', 'guaranteed']), v.lootOdds(), v.cards()],
+      ),
+    ]),
+    version: 2,
+    migrate: migrateItems,
+  },
+  {
+    ...mod('design', 'combat', 'Combat, Enemies & Bosses', 'docs/01_design/combat_enemies.md', '⚔️', 'Combat model, damage, enemies, variants, bosses and sieges.', [
+      s.form('system', 'Combat system', [
+        f.long('model', 'Real-time / action, aiming, dodge, block'),
+        f.long('statusNotes', 'Status effect rules', { help: 'General rules; individual effects are listed below.' }),
+      ]),
+      s.collection(
+        'statusEffects',
+        'Status effects',
+        'status effect',
+        [
+          f.ref('damageType', 'Damage type', catalog('damageTypes')),
+          f.num('tickDamage', 'Damage per tick', { min: 0 }),
+          f.num('tickInterval', 'Tick interval (s)', { min: 0, step: 0.1 }),
+          f.num('duration', 'Duration (s)', { min: 0, step: 0.1 }),
+          f.num('maxStacks', 'Max stacks', { min: 1 }),
+          f.num('slow', 'Slow (%)', { min: 0, max: 100 }),
+          f.multi('cleansedBy', 'Cleansed by', ITEMS),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'damageType', 'tickDamage', 'tickInterval', 'duration', 'maxStacks', 'slow']), v.cards()],
+      ),
+      s.form('damageModel', 'Damage and defense model', [
+        f.formula('damageFormula', 'Damage per hit', {
+          help: `Variables: attack, armor, resist (%), crit (1 or the crit multiplier). Empty uses ${DEFAULT_DAMAGE_FORMULA}.`,
+          placeholder: DEFAULT_DAMAGE_FORMULA,
+        }),
+        f.num('critChance', 'Crit chance (%)', { min: 0, max: 100 }),
+        f.num('critMultiplier', 'Crit multiplier (×)', { min: 1, step: 0.1 }),
+        f.ref('hpParam', 'Difficulty parameter for enemy HP', section('params', 'design.difficulty')),
+        f.ref('damageParam', 'Difficulty parameter for enemy damage', section('params', 'design.difficulty')),
+        f.bool('useNightStrength', 'Apply night monster strength (Time & Weather)'),
+        f.long('notes', 'Notes'),
+      ], 'This formula is applied to every enemy, boss and loadout in the views below.'),
+      s.formulas('damage', 'Other formulas', 'Scaling and other formulas that are not the damage formula itself.'),
+      s.collection(
+        'enemies',
+        'Enemies',
+        'enemy',
+        [
+          f.ref('biome', 'Biome', BIOMES, { group: 'Identity' }),
+          f.enm('role', 'Role', ['Swarm', 'Brute', 'Ranged', 'Caster', 'Elite', 'Support'], { group: 'Identity' }),
+          f.num('tier', 'Tier', { min: 1, group: 'Identity' }),
+          f.num('hp', 'HP', { min: 0, group: 'Stats' }),
+          f.num('damage', 'Damage per hit', { min: 0, group: 'Stats' }),
+          f.num('attackRate', 'Attacks per second', { min: 0, step: 0.05, group: 'Stats' }),
+          f.num('speed', 'Speed', { min: 0, group: 'Stats' }),
+          f.num('armor', 'Armor', { min: 0, group: 'Stats' }),
+          f.ref('damageType', 'Deals damage type', catalog('damageTypes'), { group: 'Stats' }),
+          f.map('resistances', 'Resistances (%)', catalog('damageTypes'), 100, { min: -100, group: 'Stats', help: 'Negative values are weaknesses (take extra damage).' }),
+          f.multi('weaknesses', 'Weaknesses', catalog('damageTypes'), { group: 'Stats' }),
+          f.enm('aggression', 'Aggression', ['Passive', 'Territorial', 'Hunter'], { group: 'Behavior' }),
+          f.text('pattern', 'Attack pattern', { group: 'Behavior', placeholder: 'e.g. Charges, then three quick swipes' }),
+          f.long('behavior', 'Behavior notes (AI)', { group: 'Behavior' }),
+          f.bool('nightVariant', 'Has night variant', { group: 'Behavior' }),
+          f.num('xp', 'XP reward', { min: 0, group: 'Reward' }),
+          f.long('legacyNotes', 'Earlier notes', { group: 'Reward', help: 'Free text carried over, e.g. old drop lists. Drops now come from Items › Loot tables.' }),
+        ],
+        [v.table(['name', 'biome', 'role', 'hp', 'damage', 'attackRate', 'armor']), v.threatCurve(), v.weaknessMatrix(), v.cards()],
+      ),
+      s.collection(
+        'bosses',
+        'Bosses',
+        'boss',
+        [
+          f.ref('biome', 'Biome', BIOMES, { group: 'Identity' }),
+          f.long('arena', 'Arena', { group: 'Identity' }),
+          f.num('hp', 'HP', { min: 0, group: 'Stats' }),
+          f.num('damage', 'Damage per hit', { min: 0, group: 'Stats' }),
+          f.num('attackRate', 'Attacks per second', { min: 0, step: 0.05, group: 'Stats' }),
+          f.num('armor', 'Armor', { min: 0, group: 'Stats' }),
+          f.ref('damageType', 'Deals damage type', catalog('damageTypes'), { group: 'Stats' }),
+          f.map('resistances', 'Resistances (%)', catalog('damageTypes'), 100, { min: -100, group: 'Stats' }),
+          f.multi('unlockRefs', 'Unlocks', { any: [BIOMES, section('skills', 'design.player'), ITEMS] }, { group: 'Progress' }),
+          f.multi('rewardItems', 'Reward items', ITEMS, { group: 'Progress' }),
+          f.num('xp', 'XP reward', { min: 0, group: 'Progress' }),
+          f.long('unlockNotes', 'Unlock notes', { group: 'Progress' }),
+          f.long('rewardNotes', 'Reward notes', { group: 'Progress' }),
+          f.long('phaseNotes', 'Phase notes', { help: 'Free text; structured phases are in Boss phases.' }),
+        ],
+        [v.cards(), v.phaseBars(), v.table(['name', 'biome', 'hp', 'damage', 'attackRate', 'armor'])],
+      ),
+      s.collection(
+        'phases',
+        'Boss phases',
+        'phase',
+        [
+          f.ref('boss', 'Boss', section('bosses')),
+          f.num('hpFrom', 'From HP (%)', { min: 0, max: 100 }),
+          f.num('hpTo', 'To HP (%)', { min: 0, max: 100 }),
+          f.long('mechanics', 'Mechanics'),
+          f.list('attacks', 'Attacks'),
+          f.multi('adds', 'Adds (summoned enemies)', section('enemies')),
+          f.num('damageMult', 'Damage ×', { min: 0, step: 0.05 }),
+          f.long('transition', 'Transition'),
+        ],
+        [v.phaseBars(), v.table(['name', 'boss', 'hpFrom', 'hpTo', 'damageMult'])],
+        { description: 'Each phase covers a slice of the boss’s HP, from 100% down to 0%.' },
+      ),
+      s.graph('bossPhases', 'Boss phase sketch (free diagram)', ['Phase', 'Attack', 'Transition'], {
+        edgeKinds: ['when HP <', 'after', 'on event'],
+        description: 'Optional free sketch. Boss phases above are the structured data the checks use.',
+      }),
+      s.collection(
+        'variants',
+        'Night and event variants',
+        'variant',
+        [
+          f.ref('base', 'Base enemy', section('enemies')),
+          f.multi('when', 'Appears during', { any: [section('dayPhases', 'design.timeWeather'), section('events', 'design.timeWeather')] }),
+          f.num('hpMult', 'HP ×', { min: 0, step: 0.05 }),
+          f.num('damageMult', 'Damage ×', { min: 0, step: 0.05 }),
+          f.long('behavior', 'Extra behavior'),
+        ],
+        [v.table(['name', 'base', 'when', 'hpMult', 'damageMult']), v.cards()],
+        { description: 'Stronger or changed enemies at night, on Full moon, Blood moon and similar events.' },
+      ),
+      s.collection(
+        'loadouts',
+        'Test loadouts',
+        'loadout',
+        [
+          f.ref('cast', 'Cast', section('casts', 'design.player')),
+          f.num('level', 'Level', { min: 1 }),
+          f.ref('weapon', 'Weapon', ITEMS, { help: 'Uses the item’s damage, damage type and attacks per second.' }),
+          f.multi('abilities', 'Abilities', section('abilities', 'design.player'), { help: 'Their damage comes from a numeric effect formula (variable level).' }),
+          f.multi('armorItems', 'Armor and accessories', ITEMS),
+          f.num('hp', 'HP', { min: 0, help: 'Empty uses the Player’s Health max.' }),
+        ],
+        [v.combatSandbox(), v.table(['name', 'cast', 'level', 'weapon', 'hp'])],
+        { description: 'Player setups to test fights against. They are design probes, not game data.' },
+      ),
+      s.form('siege', 'NPC combat and sieges', [
+        f.multi('defenders', 'Defenders', { any: [section('archetypes', 'design.npc'), section('enemies')] }),
+        f.num('waves', 'Waves per siege', { min: 0 }),
+        f.num('waveSize', 'Enemies per wave', { min: 0 }),
+        f.long('mercenaries', 'Mercenary armies'),
+        f.long('notes', 'Notes'),
+      ]),
+    ]),
+    version: 2,
+    migrate: migrateCombat,
+  },
   mod('design', 'timeWeather', 'Time, Weather & Events', 'docs/01_design/time_weather_events.md', '🌙', 'Day cycle, weather, special events.', [
     s.form('time', 'Time system', [f.num('dayLength', 'Day length (real minutes)', { min: 0 }), f.long('calendar', 'Seasons / calendar')]),
     s.collection(

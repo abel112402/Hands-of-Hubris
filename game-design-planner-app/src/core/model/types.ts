@@ -6,7 +6,13 @@ export type Source = { catalog: string } | { doc?: string; section: string }
 /** A graph's node source may merge several sections (e.g. all the systems a loop can refer to). */
 export type GraphSource = Source | { any: Source[] }
 
-export type FieldBase = { key: string; label: string; help?: string; placeholder?: string; required?: boolean }
+export type GroupFilter = { field: string; profiles: { section: string; key: string }; groups: Record<string, string> }
+
+/** Reads a numeric range from a form section of the same document (e.g. a stat scale). */
+export type RangeFrom = { section: string; minField: string; maxField: string }
+
+/** `group` collects fields under one collapsible heading in the inspector. */
+export type FieldBase = { key: string; label: string; help?: string; placeholder?: string; required?: boolean; group?: string }
 export type FieldDef = FieldBase &
   (
     | { type: 'text' }
@@ -19,7 +25,7 @@ export type FieldDef = FieldBase &
     | { type: 'color' }
     | { type: 'date' }
     | { type: 'list' }
-    | { type: 'map'; source: Source; min?: number; max?: number }
+    | { type: 'map'; source: Source; min?: number; max?: number; rangeFrom?: RangeFrom }
     | { type: 'formula' }
     | { type: 'checklist' }
   )
@@ -29,7 +35,35 @@ export type CollectionView =
   | { kind: 'cards' }
   | { kind: 'table'; columns?: string[] }
   | { kind: 'kanban'; groupBy: string }
-  | { kind: 'radar'; mapField: string }
+  | { kind: 'radar'; mapField: string; scale?: RangeFrom }
+  | {
+      kind: 'statPreview'
+      /** Formula and stat-ref fields of this collection, evaluated against the map field of another collection's entries. */
+      formulaField: string
+      statField: string
+      against: { section: string; mapField: string }
+    }
+  | {
+      kind: 'needsBalance'
+      /** Map field giving the population per archetype; building counts come from the Town module. */
+      populationField: string
+    }
+  /** Player Character views; the fields they read are fixed by the module (see core/player.ts). */
+  | { kind: 'depletion' }
+  | { kind: 'levelCurve' }
+  | { kind: 'skillTree' }
+  | { kind: 'buildPlanner' }
+  /** Items & Crafting views; fields are fixed by the module (see core/items.ts). */
+  | { kind: 'itemCoverage' }
+  | { kind: 'valuePreview' }
+  | { kind: 'craftTree' }
+  | { kind: 'rarityCurve' }
+  | { kind: 'lootOdds' }
+  /** Combat views; fields are fixed by the module (see core/combat.ts). */
+  | { kind: 'combatSandbox' }
+  | { kind: 'threatCurve' }
+  | { kind: 'weaknessMatrix' }
+  | { kind: 'phaseBars' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {
@@ -39,6 +73,8 @@ export type CollectionView =
       /** Form section whose fields give the full scale the ranges should cover. */
       scale: { section: string; minField: string; maxField: string; fallback: [number, number] }
     }
+  /** Planning estimate of resource balance, workforce and route load, derived from the Town module. */
+  | { kind: 'economy' }
   | { kind: 'progression'; scaleField: string; leadsField: string }
   | {
       kind: 'compare'
@@ -73,6 +109,11 @@ export type SectionDef = SectionBase &
         seed?: Record<string, unknown>[]
         /** Exports one heading per option of this enum field instead of a single list. */
         exportSplit?: { field: string; headings: string[] }
+        /**
+         * Hides field groups that do not apply to an entity's kind. The profile entry whose `key` equals the entity's
+         * `field` value says, per group, through a boolean field, whether the group applies. Without a profile all groups show.
+         */
+        groupFilter?: GroupFilter
       }
     | {
         kind: 'matrix'

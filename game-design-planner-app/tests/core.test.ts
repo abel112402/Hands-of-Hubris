@@ -287,7 +287,9 @@ describe('factions module v2', () => {
 
   it('resolves unlocks from the skill tree and items, and flags a broken one', () => {
     const p = createProject('T', false)
+    // A v1 skill-tree node keeps its id when the Player module migrates it into a skill entry.
     p.documents['design.player'] = { moduleVersion: 1, data: { skillTree: { nodes: [{ id: 's1', kind: 'Skill', label: 'Parry', x: 0, y: 0 }], edges: [] } } }
+    ensureDocument(p, MODULES.find((m) => m.id === 'design.player')!, makeId)
     p.documents['design.factions'] = { moduleVersion: 2, data: { factions: [{ id: 'f', name: 'F', unlocks: ['s1'] }] } }
     expect(validateProject(p).filter((i) => i.message.includes('broken reference'))).toEqual([])
     p.documents['design.factions'].data.factions[0].unlocks = ['gone']

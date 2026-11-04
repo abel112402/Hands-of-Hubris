@@ -14,6 +14,10 @@ import { getSections, MODULES } from '../modules/registry'
 import { entityLabel, resolveSource } from '../references/refs'
 import { tryEvaluate } from '../formula'
 import { analyze, weekToDate, withBuffer } from '../schedule'
+import { needsBalance } from '../npc'
+import { comparedLevels, depletion, levelTable, PLAYER_DOC, treeAnalysis } from '../player'
+import { coverage, finalValue, itemList, itemSources, lootOdds, rawCost, valueAdded } from '../items'
+import { bossGates, COMBAT_DOC, damageFormula, damagePerHit, fighterOf, phaseCoverage, threatRamp, timeToDie, timeToKill } from '../combat'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
 
@@ -126,6 +130,166 @@ function scheduleSummaryMd(project: Project, docId: string, sec: Extract<Section
   return out
 }
 
+/** Needs-vs-supply line per population scenario, for collections with a needs balance view. */
+function needsBalanceMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const view = sec.views.find((v) => v.kind === 'needsBalance')
+  if (!view || view.kind !== 'needsBalance' || !data.length) return ''
+  const r = (n: number) => Math.round(n * 100) / 100
+  let out = '\n'
+  for (const s of data) {
+    const b = needsBalance(project, s, view.populationField)
+    const parts = b.rows.map((x) => `${x.label} ${r(x.demand)}/${x.supply === null ? '–' : r(x.supply)}${x.short ? ' (short)' : ''}`)
+    out += `_Needs balance for ${entityLabel(s)} (population ${r(b.population)}; needed/supplied): ${parts.join(', ') || 'no needs set'}._\n`
+  }
+  return out
+}
+
+/** Pacing summaries for the Player Character views: time to critical, level table, tree cost and a Mermaid tree. */
+function playerSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => Math.round(n * 10) / 10
+  let out = ''
+  if (kinds.has('depletion')) {
+    const levels = comparedLevels(project)
+    const rows = depletion(project).filter((x) => Object.values(x.times).some((t) => t !== null))
+    if (rows.length) {
+      out += `\n**Time from full to critical** (${rows[0].unit}s unless noted):\n\n| Stat | ${levels.map((l) => esc(l.label)).join(' | ')} |\n|---|${'---|'.repeat(levels.length)}\n`
+      for (const x of rows) out += `| ${esc(x.stat.name)}${x.unit !== rows[0].unit ? ` (${x.unit}s)` : ''} | ${levels.map((l) => (x.times[l.id] === null ? '–' : r(x.times[l.id]!))).join(' | ')} |\n`
+    }
+  }
+  if (kinds.has('levelCurve')) {
+    const t = levelTable(project)
+    if (String(project.documents[PLAYER_DOC]?.data.leveling?.xpFormula ?? '').trim() && !t.error) {
+      const step = t.cap > 20 ? 5 : t.cap > 10 ? 2 : 1
+      out += `\n**Level table** (cap ${t.cap}):\n\n| Level | XP to reach | Total XP | Hours | Skill points |\n|---|---|---|---|---|\n`
+      for (const row of t.rows.filter((x) => x.level % step === 0 || x.level === t.cap))
+        out += `| ${row.level} | ${row.next === null ? '–' : r(row.next)} | ${r(row.total)} | ${row.hours === null ? '–' : r(row.hours)} | ${r(row.points)} |\n`
+    }
+  }
+  if (kinds.has('skillTree')) {
+    const trees = treeAnalysis(project).casts.filter((c) => c.skills.length)
+    if (trees.length) {
+      out += `\n**Tree cost per cast:** ${trees.map((c) => `${c.cast.label} ${r(c.totalCost)} of ${r(c.budget)} points at cap${c.affordableAt ? ` (complete at level ${c.affordableAt})` : ''}`).join('; ')}.\n`
+      const skills = trees.flatMap((c) => c.skills)
+      const id = (s: string) => `s_${s.replace(/[^A-Za-z0-9]/g, '_')}`
+      out += '\n```mermaid\nflowchart TB\n'
+      for (const c of trees) {
+        out += `  subgraph ${id(c.cast.id)}["${c.cast.label.replace(/"/g, "'")}"]\n`
+        for (const s of c.skills) out += `    ${id(s.id)}["${String(s.name ?? '').replace(/"/g, "'")}${typeof s.cost === 'number' ? ` (${s.cost})` : ''}"]\n`
+        out += '  end\n'
+      }
+      for (const s of skills) for (const req of (s.requires ?? []) as string[]) if (skills.some((x) => x.id === req)) out += `  ${id(req)} --> ${id(s.id)}\n`
+      out += '```\n'
+    }
+  }
+  return out
+}
+
+/** Items & Crafting summaries: coverage and item sheets, recipe cost and value, loot odds, and a Mermaid crafting graph. */
+function itemsSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => Math.round(n * 100) / 100
+  const cat = (id: string, v: unknown) => project.registry.catalogs[id]?.items.find((i) => i.id === v)?.label ?? ''
+  const items = itemList(project, 'items')
+  const itemName = (id: string) => entityLabel(items.find((i) => i.id === id)) || id
+  let out = ''
+  if (kinds.has('itemCoverage') && data.length) {
+    const c = coverage(project)
+    const used = c.types.filter((t) => c.rarities.some((ra) => c.counts[`${t.id}|${ra.id}`]))
+    if (used.length) {
+      out += `\n**Coverage** (items per type × rarity):\n\n| Type | ${c.rarities.map((ra) => esc(ra.label)).join(' | ')} |\n|---|${'---|'.repeat(c.rarities.length)}\n`
+      for (const t of used) out += `| ${esc(t.label)} | ${c.rarities.map((ra) => c.counts[`${t.id}|${ra.id}`] ?? '').join(' | ')} |\n`
+    }
+    out += '\n**Item sheets:**\n\n'
+    for (const it of data) {
+      const fv = finalValue(project, it)
+      const src = itemSources(project, it.id).map((s) => `${s.kind}: ${s.label}`)
+      const parts = [
+        [cat('itemTypes', it.type), cat('rarities', it.rarity), cat('qualities', it.quality)].filter(Boolean).join(' / '),
+        typeof it.value === 'number' ? `value ${it.value}${fv !== null && fv !== it.value ? ` (final ${r(fv)})` : ''}` : '',
+        typeof it.weight === 'number' ? `weight ${it.weight}` : '',
+        typeof it.stack === 'number' ? `stack ${it.stack}` : '',
+        src.length ? `obtained from ${src.join(', ')}` : 'not obtainable yet',
+      ].filter(Boolean)
+      out += `* **${esc(entityLabel(it))}:** ${parts.join(' · ')}\n`
+    }
+  }
+  if (kinds.has('craftTree') && data.length) {
+    const res = (id: string) => cat('resources', id) || id
+    out += '\n**Crafting cost and value:**\n\n| Recipe | Raw cost | Depth | Value added |\n|---|---|---|---|\n'
+    for (const rec of data.filter((x) => x.result)) {
+      const cost = rawCost(project, rec.result, typeof rec.outputQty === 'number' ? rec.outputQty : 1)
+      const raw = [...Object.entries(cost.resources).map(([id, n]) => `${r(n)} ${res(id)}`), ...Object.entries(cost.items).map(([id, n]) => `${r(n)} ${itemName(id)}`)].join(', ')
+      const va = valueAdded(project, rec)
+      out += `| ${esc(entityLabel(rec))} | ${esc(raw || '–')} | ${cost.depth}${cost.cycle ? ' (loops)' : ''} | ${va ? `×${va.ratio === Infinity ? '∞' : r(va.ratio)}` : '–'} |\n`
+    }
+    const id = (s: string) => `i_${s.replace(/[^A-Za-z0-9]/g, '_')}`
+    const edges = data.flatMap((rec) => (rec.result ? Object.keys((rec.ingredients ?? {}) as object).map((ing) => `  ${id(ing)}["${itemName(ing).replace(/"/g, "'")}"] --> ${id(rec.result)}["${itemName(rec.result).replace(/"/g, "'")}"]\n`) : []))
+    if (edges.length) out += '\n```mermaid\nflowchart LR\n' + [...new Set(edges)].join('') + '```\n'
+  }
+  if (kinds.has('lootOdds') && data.length) {
+    out += '\n**Loot odds** (chance per drop):\n\n'
+    for (const t of data) {
+      const o = lootOdds(project, t)
+      if (!o.rows.length) continue
+      out += `* **${esc(entityLabel(t))}** (${o.rolls} roll${o.rolls === 1 ? '' : 's'}): ${o.rows.map((x) => `${itemName(x.id)} ${r(x.perDrop * 100)}%${x.killsFor90 ? ` (90% in ${x.killsFor90})` : ''}`).join(', ')}\n`
+    }
+  }
+  return out
+}
+
+/** Combat summaries: enemy sheets and threat ramp, the damage formula with time to kill / die, and boss phases with gates. */
+function combatSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => Math.round(n * 10) / 10
+  const cat = (id: string, v: unknown) => project.registry.catalogs[id]?.items.find((i) => i.id === v)?.label ?? ''
+  const biome = (id: unknown) => entityLabel(((project.documents['design.world']?.data.biomes ?? []) as Entity[]).find((b) => b.id === id))
+  let out = ''
+  if (kinds.has('threatCurve') && data.length) {
+    const loot = (project.documents['design.items']?.data.loot ?? []) as Entity[]
+    out += '\n**Enemy sheets:**\n\n'
+    for (const e of data) {
+      const f = fighterOf(e)
+      const res = Object.entries(f.resistances).filter(([, v]) => typeof v === 'number' && v !== 0).map(([t, v]) => `${cat('damageTypes', t)} ${v}%`)
+      const drops = loot.filter((t) => Array.isArray(t.sources) && t.sources.includes(e.id)).map((t) => entityLabel(t))
+      const parts = [
+        [biome(e.biome), e.role].filter(Boolean).join(', '),
+        [f.hp !== null ? `HP ${f.hp}` : '', f.damage !== null ? `damage ${f.damage} × ${f.attackRate}/s` : '', f.armor ? `armor ${f.armor}` : ''].filter(Boolean).join(', '),
+        e.pattern || e.behavior ? `behavior: ${[e.pattern, e.behavior].filter(Boolean).join('; ')}` : '',
+        res.length ? `resistances: ${res.join(', ')}` : f.weaknesses.length ? `weak to ${f.weaknesses.map((w) => cat('damageTypes', w)).join(', ')}` : '',
+        drops.length ? `drops: ${drops.join(', ')}` : 'drops: none',
+      ].filter(Boolean)
+      out += `* **${esc(entityLabel(e))}:** ${esc(parts.join(' · '))}\n`
+    }
+    const ramp = threatRamp(project)
+    if (ramp.medians.size) out += `\n**Threat ramp** (median per biome stage): ${[...ramp.medians].map(([s, m]) => `${['Starter', 'Early', 'Mid', 'Late', 'Final'][s]} ${Math.round(m)}`).join(' → ')}.\n`
+  }
+  if (kinds.has('combatSandbox') && data.length) {
+    const levels = comparedLevels(project)
+    const mid = levels[Math.floor((levels.length - 1) / 2)]
+    const foes = [...((project.documents[COMBAT_DOC]?.data.enemies ?? []) as Entity[]), ...((project.documents[COMBAT_DOC]?.data.bosses ?? []) as Entity[])].map(fighterOf)
+    const sample = damagePerHit(project, 20, { armor: 100, resistances: {}, weaknesses: [] })
+    out += `\n**Damage formula:** \`${damageFormula(project)}\`${sample !== null ? ` (20 attack against 100 armor: ${r(sample)} per hit)` : ''}.\n`
+    if (foes.length) {
+      out += `\n**Seconds to kill / to die** (${mid.label}):\n\n| Loadout | ${foes.map((f) => esc(f.name)).join(' | ')} |\n|---|${'---|'.repeat(foes.length)}\n`
+      for (const l of data) {
+        const c = { levelId: mid.id || undefined }
+        out += `| ${esc(entityLabel(l))} | ${foes.map((f) => { const k = timeToKill(project, l, f, c); const d = timeToDie(project, l, f, c); return `${k ? r(k.seconds) : '–'} / ${d ? r(d.seconds) : '∞'}` }).join(' | ')} |\n`
+      }
+    }
+  }
+  if (kinds.has('phaseBars') && sec.id === 'bosses' && data.length) {
+    out += '\n**Boss phases and gates:**\n\n'
+    for (const b of data) {
+      const cov = phaseCoverage(project, b.id)
+      const phases = cov.phases.map((p) => `${entityLabel(p)} ${p.hpFrom}–${p.hpTo}%${p.mechanics ? ` (${p.mechanics})` : ''}`)
+      const gates = bossGates(project, b.id)
+      out += `* **${esc(entityLabel(b))}:** ${esc(phases.join(' → ') || 'no phases')}${cov.gaps.length ? ' · gaps!' : ''} · gates: ${esc(gates.join(', ') || 'nothing')}\n`
+    }
+  }
+  return out
+}
+
 export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef): string {
   const data = project.documents[mod.id]?.data[sec.id]
   if (data === undefined) return '_No data._\n'
@@ -140,7 +304,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       return lines.length ? lines.join('\n') + '\n' : '_No data._\n'
     }
     case 'collection':
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data)
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data)
     case 'graph':

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { ChecklistData, Entity, FieldDef } from '../core/model/types'
+import type { ChecklistData, Entity, FieldDef, Project } from '../core/model/types'
 import { makeId } from '../core/model/project'
 import { resolveSource } from '../core/references/refs'
 import { tryEvaluate, variablesOf } from '../core/formula'
@@ -107,15 +107,20 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
         else next[id] = Number(raw)
         onChange(next)
       }
+      const { min, max } = mapRange(project, docId, field)
       return (
         <div className="map-grid">
           {options.length === 0 && <span className="muted">No options available</span>}
-          {options.map((o) => (
-            <label key={o.id}>
-              <span>{o.label}</span>
-              <input type="number" min={field.min ?? 0} max={field.max} value={map[o.id] ?? ''} onChange={(e) => set(o.id, e.target.value)} />
-            </label>
-          ))}
+          {options.map((o) => {
+            const v = map[o.id]
+            const outside = typeof v === 'number' && ((min !== undefined && v < min) || (max !== undefined && v > max))
+            return (
+              <label key={o.id} className={outside ? 'out-of-range' : undefined} title={outside ? `Outside ${min ?? '…'}–${max ?? '…'}` : undefined}>
+                <span>{o.label}</span>
+                <input type="number" min={min} max={max} step="any" value={v ?? ''} onChange={(e) => set(o.id, e.target.value)} />
+              </label>
+            )
+          })}
         </div>
       )
     }
@@ -153,6 +158,15 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
     case 'checklist':
       return <ChecklistItems items={value ?? []} onChange={onChange} />
   }
+}
+
+/** A map field's allowed range: from its `rangeFrom` form section when set there, else its fixed min/max (min defaults to 0). */
+export function mapRange(project: Project, docId: string, field: FieldDef): { min?: number; max?: number } {
+  if (field.type !== 'map') return {}
+  const r = field.rangeFrom
+  const settings = r ? project.documents[docId]?.data[r.section] : undefined
+  const pick = (key: string | undefined, fallback?: number) => (key && typeof settings?.[key] === 'number' ? (settings[key] as number) : fallback)
+  return { min: pick(r?.minField, field.min ?? 0), max: pick(r?.maxField, field.max) }
 }
 
 export const isLongField = (f: FieldDef) => ['longtext', 'map', 'multiref', 'checklist', 'list'].includes(f.type)

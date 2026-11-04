@@ -5,8 +5,8 @@ import type { Hint } from '../../core/hints/types'
 
 /** Session-only UI state (never persisted). */
 export const useAiUi = create<{
-  tab: 'hints' | 'ai'
-  setTab: (t: 'hints' | 'ai') => void
+  tab: 'hints' | 'ai' | 'guide'
+  setTab: (t: 'hints' | 'ai' | 'guide') => void
   hintRequest: Hint | null
   explain: (h: Hint) => void
   chat: ChatMessage[]

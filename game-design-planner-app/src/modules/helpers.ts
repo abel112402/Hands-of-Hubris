@@ -3,13 +3,14 @@ import type {
   FieldDef,
   GraphSource,
   ModuleGroup,
+  RangeFrom,
   PlannerModule,
   SectionDef,
   Source,
 } from '../core/model/types'
 
 type K<T> = Omit<T, 'key' | 'label' | 'type'>
-type Opt = { help?: string; placeholder?: string; required?: boolean }
+type Opt = { help?: string; placeholder?: string; required?: boolean; group?: string }
 
 export const catalog = (c: string): Source => ({ catalog: c })
 export const section = (s: string, doc?: string): Source => ({ section: s, ...(doc ? { doc } : {}) })
@@ -48,7 +49,7 @@ export const f = {
   date: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'date', ...o }),
   color: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'color', ...o }),
   list: (key: string, label: string, o: Opt = {}): FieldDef => ({ key, label, type: 'list', ...o }),
-  map: (key: string, label: string, source: Source, max?: number, o: Opt & { min?: number } = {}): FieldDef => ({
+  map: (key: string, label: string, source: Source, max?: number, o: Opt & { min?: number; rangeFrom?: RangeFrom } = {}): FieldDef => ({
     key,
     label,
     type: 'map',
@@ -66,13 +67,29 @@ export const v = {
   cards: (): CollectionView => ({ kind: 'cards' }),
   table: (columns?: string[]): CollectionView => ({ kind: 'table', columns }),
   kanban: (groupBy: string): CollectionView => ({ kind: 'kanban', groupBy }),
-  radar: (mapField: string): CollectionView => ({ kind: 'radar', mapField }),
+  radar: (mapField: string, scale?: RangeFrom): CollectionView => ({ kind: 'radar', mapField, ...(scale ? { scale } : {}) }),
+  statPreview: (formulaField: string, statField: string, against: { section: string; mapField: string }): CollectionView => ({ kind: 'statPreview', formulaField, statField, against }),
+  needsBalance: (populationField: string): CollectionView => ({ kind: 'needsBalance', populationField }),
   grid2d: (xField: string, yField: string, max = 5): CollectionView => ({
     kind: 'grid2d',
     xField,
     yField,
     max,
   }),
+  economy: (): CollectionView => ({ kind: 'economy' }),
+  depletion: (): CollectionView => ({ kind: 'depletion' }),
+  levelCurve: (): CollectionView => ({ kind: 'levelCurve' }),
+  skillTree: (): CollectionView => ({ kind: 'skillTree' }),
+  buildPlanner: (): CollectionView => ({ kind: 'buildPlanner' }),
+  itemCoverage: (): CollectionView => ({ kind: 'itemCoverage' }),
+  valuePreview: (): CollectionView => ({ kind: 'valuePreview' }),
+  craftTree: (): CollectionView => ({ kind: 'craftTree' }),
+  rarityCurve: (): CollectionView => ({ kind: 'rarityCurve' }),
+  lootOdds: (): CollectionView => ({ kind: 'lootOdds' }),
+  combatSandbox: (): CollectionView => ({ kind: 'combatSandbox' }),
+  threatCurve: (): CollectionView => ({ kind: 'threatCurve' }),
+  weaknessMatrix: (): CollectionView => ({ kind: 'weaknessMatrix' }),
+  phaseBars: (): CollectionView => ({ kind: 'phaseBars' }),
   ranges: (minField: string, maxField: string, scale: Extract<CollectionView, { kind: 'ranges' }>['scale']): CollectionView => ({ kind: 'ranges', minField, maxField, scale }),
   compare: (valuesSection: string, columns: Source): CollectionView => ({ kind: 'compare', valuesSection, columns }),
   progression: (scaleField: string, leadsField: string): CollectionView => ({ kind: 'progression', scaleField, leadsField }),
@@ -103,6 +120,7 @@ export const s = {
       description?: string
       seed?: Record<string, unknown>[]
       exportSplit?: Extract<SectionDef, { kind: 'collection' }>['exportSplit']
+      groupFilter?: Extract<SectionDef, { kind: 'collection' }>['groupFilter']
     } = {},
   ): SectionDef => ({
     id,
@@ -114,6 +132,7 @@ export const s = {
     views,
     seed: o.seed,
     exportSplit: o.exportSplit,
+    ...(o.groupFilter ? { groupFilter: o.groupFilter } : {}),
   }),
   matrix: (
     id: string,

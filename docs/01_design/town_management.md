@@ -32,6 +32,11 @@ Tervezett épületek: Lakóház, Bányász, Favágó, Farmer, Kocsma, Iskola, Pi
 ## 6. Logisztikai hálózat
 <Bázisok közötti szállítás, útvonalak, kockázatok, biomfüggő nyersanyagok.>
 
+### Tervezőeszköz-mezők (Town Management modul)
+* **Bázisok és raktárak:** az útvonalak végpontjai valódi bázis-bejegyzések (kezdő-, minimum- és célkészlet, kapacitás, utánpótlás módja).
+* **Útvonalak:** szállítás típusa, kapacitás/út, utak száma időegységenként, menetidő, fenntartás, kockázat, prioritás, korlátozások.
+* **Becslés:** az épületek ciklusa, bemenete/kimenete, darabszáma és munkásigénye alapján a nyersanyag-egyenleg, a készlet kifogyásáig hátralévő idő, a munkaerőhiány és az útvonalak terhelése. Tervezési becslés, nem játékszimuláció; az időegység neve szabadon megadható.
+
 ## 7. Morál és elégedettség
 <Mérőszámok, hatások, kritikus szintek (lázadás, távozás).>
 
