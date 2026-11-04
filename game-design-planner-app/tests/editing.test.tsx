@@ -54,7 +54,8 @@ describe('hints UI', () => {
     useStore.getState().loadProject(createProject('T', false))
     useStore.getState().ensureDoc('design.items')
     useStore.getState().mutate((p) => void (p.documents['design.items'].data.items = []))
-    window.location.hash = '#/doc/design.items'
+    // Items v2 opens on the Item model form; the items collection's own tips rank first on its section.
+    window.location.hash = '#/doc/design.items?s=items'
     render(<App />)
     expect((await screen.findAllByTestId('hint')).length).toBeGreaterThan(0)
     const items = () => useStore.getState().project.documents['design.items'].data.items.length

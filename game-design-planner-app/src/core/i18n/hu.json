@@ -383,6 +383,146 @@
     "npcBalance": {
       "title": "A város nem fedezi a lakosság igényeit",
       "body": "{{count}} forgatókönyvben hiány van: {{names}}. Hasonlítsd össze őket az Igénymérleg nézetben."
+    },
+    "playerSurvivalRestore": {
+      "title": "Pótolhatatlan túlélési mutatók",
+      "body": "{{count}} túlélési mutatónál nincs megadva, mi pótolja: {{names}}."
+    },
+    "playerSurvivalPace": {
+      "title": "Szokatlan túlélési tempó",
+      "body": "{{level}} szinten ezek {{min}}–{{max}} valós percen kívül érik el a kritikus értéket: {{names}}. Nézd meg a Kimerülés nézetet."
+    },
+    "playerSurvivalDifficulty": {
+      "title": "A túlélés nincs a nehézséghez kötve",
+      "body": "{{count}} túlélési mutató nem használja a Nehézség paramétereit: {{names}}. Kösd egyhez, hogy a csökkenés szintenként skálázódjon."
+    },
+    "playerCurveMissing": {
+      "title": "Még nincs szintgörbe",
+      "body": "Adj meg szintkorlátot és XP-képletet a Szintlépésnél, hogy az XP-források és a skillkeretek ellenőrizhetők legyenek."
+    },
+    "playerCurve": {
+      "title": "Hibák a szintgörbében",
+      "body": "{{names}}."
+    },
+    "playerXpSourcesNone": {
+      "title": "Nincsenek XP-források",
+      "body": "Add meg, honnan jön az XP (ölés, küldetés, crafting…), hogy becsülhető legyen az egyes szintek ideje."
+    },
+    "playerXpSourcesRate": {
+      "title": "Az XP-forrásoknak nincs ütemük",
+      "body": "Legalább egy forrásnál adj meg XP-értéket és óránkénti darabszámot, hogy látszódjon a szintenkénti idő."
+    },
+    "playerCastEntry": {
+      "title": "Bejegyzés nélküli kasztok",
+      "body": "{{count}} katalógusbeli kasztnak nincs bejegyzése a Kasztok között: {{names}}."
+    },
+    "playerCastContent": {
+      "title": "Kasztok skillek vagy képességek nélkül",
+      "body": "{{count}} kasztból hiányzik tartalom: {{names}}."
+    },
+    "playerTreeOver": {
+      "title": "A skillfa drágább a keretnél",
+      "body": "Teljes költség és pontok a szintkorlátnál: {{names}}. Rendben van, ha specializálódni kell; különben csökkentsd a költséget vagy növeld a pontokat."
+    },
+    "playerTreeUnder": {
+      "title": "A skillfa a keret felét sem használja",
+      "body": "Teljes költség és pontok a szintkorlátnál: {{names}}. A játékosnak elfogyhat, mit tanuljon."
+    },
+    "playerTreeShape": {
+      "title": "Szerkezeti hibák a skillfában",
+      "body": "{{names}}."
+    },
+    "playerSkillAbility": {
+      "title": "Aktív skillek képesség nélkül",
+      "body": "{{count}} aktív skill vagy varázslat nem ad képességet: {{names}}."
+    },
+    "playerAbilityCost": {
+      "title": "Képességek költség vagy cooldown nélkül",
+      "body": "{{count}} képességnél hiányzik az erőforrás-költség vagy a cooldown: {{names}}."
+    },
+    "playerAbilityCast": {
+      "title": "Skill másik kaszt képességét adja",
+      "body": "Ezek a skillek egy másik kaszt képességét adják: {{names}}."
+    },
+    "playerStartGear": {
+      "title": "Üres kézzel induló kasztok",
+      "body": "{{count}} kasztnak nincs kezdő képessége vagy felszerelése: {{names}}."
+    },
+    "itemsNoSource": {
+      "title": "Megszerezhetetlen itemek",
+      "body": "{{count}} itemhez nincs recept, loot tábla, kereskedő, jutalom, kezdő felszerelés vagy városi termelés: {{names}}."
+    },
+    "itemsUnused": {
+      "title": "Semmire sem használt itemek",
+      "body": "{{count}} item sosem alapanyag, nem pótol semmit és nem kereskednek vele: {{names}}."
+    },
+    "itemsRecipeShape": {
+      "title": "Hibás receptek",
+      "body": "{{names}}."
+    },
+    "itemsValueLoss": {
+      "title": "Furcsa értékváltozás craftoláskor",
+      "body": "Ezek a receptek kevesebbet érnek, mint az alapanyagaik, vagy több mint {{max}}-szorosukat: {{names}}. Nézd meg a Crafting fát."
+    },
+    "itemsCoverage": {
+      "title": "Hiányok a ritkaságokban",
+      "body": "{{count}} típus–ritkaság párnál nincs item a típus által már használt ritkaságok között: {{names}}."
+    },
+    "itemsTiers": {
+      "title": "Ritkasági vagy minőségi szintek rossz sorrendben",
+      "body": "{{names}}. A ritkább item kevesebbszer essen, és többet érjen."
+    },
+    "itemsLoot": {
+      "title": "Javítandó loot táblák",
+      "body": "{{count}} táblánál hiányzik a forrás vagy a súlyok, nulla a dobások száma, vagy törölt itemet garantál: {{names}}."
+    },
+    "itemsTypeFields": {
+      "title": "A típushoz nem illő mezők",
+      "body": "Ezeknek az itemeknek olyan mezőcsoportban van értékük, amit a típusuk nem használ: {{names}}."
+    },
+    "itemsBasics": {
+      "title": "Hiányzó alapadatok",
+      "body": "{{count}} itemnél hiányzik a stack méret (nyersanyag) vagy a súly és a tartósság (felszerelés, szerszám): {{names}}."
+    },
+    "combatEnemyBasics": {
+      "title": "Hiányos ellenségek",
+      "body": "{{count}} ellenségnél hiányzik a biom, az életerő, a sebzés vagy a másodpercenkénti támadás: {{names}}."
+    },
+    "combatTtk": {
+      "title": "Szokatlan harchossz",
+      "body": "A(z) „{{loadout}}” felszereléssel, {{level}} szinten: {{names}}. Nézd meg a Harci homokozót."
+    },
+    "combatThreatRamp": {
+      "title": "Későbbi biomban gyengébb ellenség",
+      "body": "Ezek gyengébbek egy korábbi biomszakasz mediánjánál: {{names}}. Nézd meg a Fenyegetés-görbét."
+    },
+    "combatImmune": {
+      "title": "Sebezhetetlen ellenségek",
+      "body": "Ezek minden sebzéstípusnak ellenállnak, amit a játékos okozni tud: {{names}}."
+    },
+    "combatNoLoot": {
+      "title": "Semmit sem dobó ellenségek",
+      "body": "{{count}} ellenség vagy boss egyik loot táblában sem szerepel forrásként: {{names}}."
+    },
+    "combatPhases": {
+      "title": "Javítandó boss fázisok",
+      "body": "{{names}}. Nézd meg a Fázissávokat."
+    },
+    "combatBossGates": {
+      "title": "Semmit sem nyitó bossok",
+      "body": "Ezek a bossok semmit sem nyitnak meg, és egyik biom vagy haladási lépés sem igényli őket: {{names}}."
+    },
+    "combatVariants": {
+      "title": "Hiányos változatok",
+      "body": "{{count}} változatnál hiányzik az alap ellenség, az időszak vagy esemény, vagy a szorzó: {{names}}."
+    },
+    "combatStatus": {
+      "title": "Hiányos státuszhatások",
+      "body": "{{count}} státuszhatásnál hiányzik az időtartam, vagy tick-sebzés van intervallum nélkül: {{names}}."
+    },
+    "combatFormula": {
+      "title": "Hibás sebzésképlet",
+      "body": "A sebzésképlet hibát ad az attack, armor, resist és crit változókkal: {{error}}."
     }
   },
   "ai": {

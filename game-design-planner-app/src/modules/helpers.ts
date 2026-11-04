@@ -77,6 +77,19 @@ export const v = {
     max,
   }),
   economy: (): CollectionView => ({ kind: 'economy' }),
+  depletion: (): CollectionView => ({ kind: 'depletion' }),
+  levelCurve: (): CollectionView => ({ kind: 'levelCurve' }),
+  skillTree: (): CollectionView => ({ kind: 'skillTree' }),
+  buildPlanner: (): CollectionView => ({ kind: 'buildPlanner' }),
+  itemCoverage: (): CollectionView => ({ kind: 'itemCoverage' }),
+  valuePreview: (): CollectionView => ({ kind: 'valuePreview' }),
+  craftTree: (): CollectionView => ({ kind: 'craftTree' }),
+  rarityCurve: (): CollectionView => ({ kind: 'rarityCurve' }),
+  lootOdds: (): CollectionView => ({ kind: 'lootOdds' }),
+  combatSandbox: (): CollectionView => ({ kind: 'combatSandbox' }),
+  threatCurve: (): CollectionView => ({ kind: 'threatCurve' }),
+  weaknessMatrix: (): CollectionView => ({ kind: 'weaknessMatrix' }),
+  phaseBars: (): CollectionView => ({ kind: 'phaseBars' }),
   ranges: (minField: string, maxField: string, scale: Extract<CollectionView, { kind: 'ranges' }>['scale']): CollectionView => ({ kind: 'ranges', minField, maxField, scale }),
   compare: (valuesSection: string, columns: Source): CollectionView => ({ kind: 'compare', valuesSection, columns }),
   progression: (scaleField: string, leadsField: string): CollectionView => ({ kind: 'progression', scaleField, leadsField }),
@@ -107,6 +120,7 @@ export const s = {
       description?: string
       seed?: Record<string, unknown>[]
       exportSplit?: Extract<SectionDef, { kind: 'collection' }>['exportSplit']
+      groupFilter?: Extract<SectionDef, { kind: 'collection' }>['groupFilter']
     } = {},
   ): SectionDef => ({
     id,
@@ -118,6 +132,7 @@ export const s = {
     views,
     seed: o.seed,
     exportSplit: o.exportSplit,
+    ...(o.groupFilter ? { groupFilter: o.groupFilter } : {}),
   }),
   matrix: (
     id: string,

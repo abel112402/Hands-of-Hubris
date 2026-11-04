@@ -10,6 +10,8 @@ import { useHints, useSnooze } from './useHints'
 import { AiPanel } from '../ai/AiPanel'
 import { useAiUi } from '../ai/aiStore'
 import { useAiSession, useAiSettings } from '../../core/ai/session'
+import { guideOf } from '../../modules/guides'
+import { GuidePanel } from '../guides/GuidePanel'
 
 const WIDTH_KEY = 'hohplan:hintWidth'
 const ICON = { info: '💡', suggest: '💡', important: '❗' } as const
@@ -73,6 +75,8 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
   const { tab, setTab, explain } = useAiUi()
   const provider = useAiSettings((s) => s.settings.provider)
   const aiReady = useAiSession((s) => s.hasKey[provider])
+  const guide = guideOf(docId)
+  const showGuide = tab === 'guide' && !!guide
   const showAi = tab === 'ai'
   const [width, setWidth] = useState(() => Number(localStorage.getItem(WIDTH_KEY)) || 280)
   const startResize = useCallback((e: React.PointerEvent) => {
@@ -97,13 +101,15 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
       <div className="hint-resize" role="separator" aria-orientation="vertical" onPointerDown={startResize} />
       <div className="hint-head">
         <div className="tabs">
-          <button className={!showAi ? 'active' : ''} onClick={() => setTab('hints')}>💡 {t('hints.panel')}{total > 0 && <span className="badge">{total}</span>}</button>
+          <button className={!showAi && !showGuide ? 'active' : ''} onClick={() => setTab('hints')}>💡 {t('hints.panel')}{total > 0 && <span className="badge">{total}</span>}</button>
+          {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}>🧭 Guide</button>}
           <button className={showAi ? 'active' : ''} onClick={() => setTab('ai')}>🤖 AI</button>
         </div>
         <button onClick={() => setOpen(!open)}>{open ? t('hints.hide') : t('hints.show')}</button>
       </div>
       {open && showAi && <AiPanel docId={docId} sectionId={sectionId} />}
-      {open && !showAi && (
+      {open && showGuide && <GuidePanel docId={docId} guide={guide} />}
+      {open && !showAi && !showGuide && (
         <>
           {visible.length === 0 && <p className="muted">{t('hints.none')}</p>}
           <ul className="list">{visible.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>

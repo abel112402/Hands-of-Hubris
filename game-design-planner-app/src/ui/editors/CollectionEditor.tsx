@@ -11,6 +11,13 @@ import { FieldInput, displayValue, isLongField } from '../FieldInput'
 import { Link } from 'react-router-dom'
 import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView, RangesView, EconomyView } from './views'
 import { NeedsBalanceView, StatPreviewView } from './npcViews'
+import { BuildPlannerView, DepletionView, LevelCurveView, SkillTreeView } from './playerViews'
+import { GuideEmpty } from '../guides/GuideEmpty'
+import { hiddenGroups } from '../../core/groupFilter'
+import { ItemLinks } from './ItemLinks'
+import { CombatSandboxView, PhaseBarsView, ThreatCurveView, WeaknessMatrixView } from './combatViews'
+import { CombatLinks } from './CombatLinks'
+import { CoverageView, CraftTreeView, LootOddsView, RarityCurveView, ValuePreviewView } from './itemViews'
 import { GateReadiness } from './GateReadiness'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
@@ -27,6 +34,19 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   economy: 'Estimate',
   statPreview: 'Preview',
   needsBalance: 'Needs balance',
+  depletion: 'Depletion',
+  levelCurve: 'Level curve',
+  skillTree: 'Skill tree',
+  buildPlanner: 'Build planner',
+  itemCoverage: 'Coverage',
+  valuePreview: 'Value preview',
+  craftTree: 'Crafting tree',
+  rarityCurve: 'Rarity curve',
+  lootOdds: 'Loot odds',
+  combatSandbox: 'Combat sandbox',
+  threatCurve: 'Threat curve',
+  weaknessMatrix: 'Weaknesses',
+  phaseBars: 'Phase bars',
 }
 
 export type ViewProps = {
@@ -77,7 +97,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
       <div className="toolbar">
         <div className="tabs">
           {sec.views.map((vw, i) => (
-            <button key={i} className={i === viewIdx ? 'active' : ''} onClick={() => setViewIdx(i)}>
+            <button key={i} data-guide={`view-${vw.kind}`} className={i === viewIdx ? 'active' : ''} onClick={() => setViewIdx(i)}>
               {VIEW_LABEL[vw.kind]}
             </button>
           ))}
@@ -95,7 +115,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
         >
           CSV
         </button>
-        <button className="primary" onClick={() => add()}>+ Add {sec.singular}</button>
+        <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>
       </div>
       <div className={'collection-body' + (sel ? ' with-inspector' : '')}>
         <div className="view-area">
@@ -105,6 +125,19 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} scale={view.scale} />}
           {view.kind === 'statPreview' && <StatPreviewView {...props} view={view} />}
           {view.kind === 'needsBalance' && <NeedsBalanceView {...props} view={view} />}
+          {view.kind === 'depletion' && <DepletionView {...props} />}
+          {view.kind === 'levelCurve' && <LevelCurveView />}
+          {view.kind === 'skillTree' && <SkillTreeView {...props} />}
+          {view.kind === 'buildPlanner' && <BuildPlannerView {...props} />}
+          {view.kind === 'itemCoverage' && <CoverageView {...props} />}
+          {view.kind === 'valuePreview' && <ValuePreviewView {...props} />}
+          {view.kind === 'craftTree' && <CraftTreeView {...props} />}
+          {view.kind === 'rarityCurve' && <RarityCurveView {...props} />}
+          {view.kind === 'lootOdds' && <LootOddsView {...props} />}
+          {view.kind === 'combatSandbox' && <CombatSandboxView {...props} />}
+          {view.kind === 'threatCurve' && <ThreatCurveView {...props} />}
+          {view.kind === 'weaknessMatrix' && <WeaknessMatrixView {...props} />}
+          {view.kind === 'phaseBars' && <PhaseBarsView {...props} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
@@ -112,7 +145,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'compare' && <CompareView {...props} valuesSection={view.valuesSection} columns={view.columns} />}
           {view.kind === 'ranges' && <RangesView {...props} view={view} />}
           {view.kind === 'economy' && <EconomyView />}
-          {items.length === 0 && <p className="empty">Nothing here yet. Use “Add {sec.singular}”.</p>}
+          {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
         {sel && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
       </div>
@@ -138,6 +171,8 @@ function Inspector({
   const { update } = useSection<Entity[]>(docId, sec.id)
   const project = useProject()
   const usages = useMemo(() => findUsages(project, entity.id), [project, entity.id])
+  const groups = fieldGroups(sec.fields)
+  const hidden = hiddenGroups(project, docId, sec, entity)
 
   const remove = () => {
     const msg = usages.length
@@ -179,7 +214,7 @@ function Inspector({
         <button className="icon" onClick={onClose}>✕</button>
       </div>
       <div className="form">
-        {fieldGroups(sec.fields).map(({ group, fields }) => {
+        {[...groups.filter((g) => !g.group || !hidden.has(g.group)), ...groups.filter((g) => g.group && hidden.has(g.group))].map(({ group, fields }) => {
           const body = fields.map((f) => (
             <div key={f.key} className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
               <label htmlFor={`${docId}-${entity.id}-${f.key}`}>
@@ -199,16 +234,19 @@ function Inspector({
           ))
           if (!group) return body
           const filled = fields.filter((f) => !isBlankValue(entity[f.key])).length
+          const off = hidden.has(group)
           return (
-            <details key={group} className="field-group" open>
+            <details key={group} className={'field-group' + (off ? ' off' : '')} open={!off} data-testid={`group-${group}`}>
               <summary>
-                {group} <span className="muted">{filled}/{fields.length}</span>
+                {group} <span className="muted">{filled}/{fields.length}{off ? ' · not used by this type' : ''}</span>
               </summary>
               {body}
             </details>
           )
         })}
         {docId === 'overview.roadmap' && sec.id === 'gates' && <GateReadiness entity={entity} />}
+        {docId === 'design.items' && sec.id === 'items' && <ItemLinks item={entity} />}
+        {docId === 'design.combat' && (sec.id === 'enemies' || sec.id === 'bosses') && <CombatLinks entity={entity} boss={sec.id === 'bosses'} />}
         <div className="field">
           <label>Used by</label>
           {usages.length === 0 ? (

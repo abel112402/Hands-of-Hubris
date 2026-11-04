@@ -1,9 +1,13 @@
 import { useEffect } from 'react'
 import type { SectionDef } from '../core/model/types'
 import { getHelp } from './help'
+import { guideOf } from '../modules/guides'
+import { GuideMap } from './guides/GuideMap'
+import { ConceptCard } from './guides/concepts'
 
 export function HelpPopup({ docId, title, sec, onClose }: { docId: string; title: string; sec?: SectionDef; onClose: () => void }) {
   const { module, kind } = getHelp(docId, sec)
+  const guide = guideOf(docId)
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', h)
@@ -15,6 +19,14 @@ export function HelpPopup({ docId, title, sec, onClose }: { docId: string; title
         <div className="inspector-head"><h2>{title}</h2><span className="spacer" /><button onClick={onClose}>✕</button></div>
         <h3>Why this plan matters</h3>
         <p>{module.purpose}</p>
+        {guide && (
+          <>
+            <h3>How the parts connect</h3>
+            <GuideMap docId={docId} map={guide.map} current={sec?.id} onNavigate={onClose} />
+            <p className="muted">Open the 🧭 Guide tab on the right for a step-by-step setup.</p>
+          </>
+        )}
+        {sec && guide?.concepts[sec.id] && <ConceptCard concept={guide.concepts[sec.id]} defaultOpen />}
         {kind && (<><h3>How to use this editor ({kind.title})</h3><ul>{kind.steps.map((s) => <li key={s}>{s}</li>)}</ul></>)}
         <h3>Tips</h3>
         <ul>{module.tips.map((s) => <li key={s}>{s}</li>)}</ul>

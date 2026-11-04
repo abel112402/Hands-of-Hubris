@@ -383,6 +383,146 @@
     "npcBalance": {
       "title": "Town cannot meet the population's needs",
       "body": "{{count}} scenario(s) fall short: {{names}}. Compare them in the Needs balance view."
+    },
+    "playerSurvivalRestore": {
+      "title": "Survival stats nothing restores",
+      "body": "{{count}} survival stat(s) name no way to restore them: {{names}}."
+    },
+    "playerSurvivalPace": {
+      "title": "Unusual survival pacing",
+      "body": "On {{level}}, these reach critical outside {{min}}–{{max}} real minutes: {{names}}. Check the Depletion view."
+    },
+    "playerSurvivalDifficulty": {
+      "title": "Survival not linked to difficulty",
+      "body": "{{count}} survival stat(s) ignore the Difficulty parameters: {{names}}. Link one to scale decay per level."
+    },
+    "playerCurveMissing": {
+      "title": "No levelling curve yet",
+      "body": "Set a level cap and an XP formula in Levelling, so XP sources and skill budgets can be checked."
+    },
+    "playerCurve": {
+      "title": "Levelling curve problems",
+      "body": "{{names}}."
+    },
+    "playerXpSourcesNone": {
+      "title": "No XP sources",
+      "body": "Add where XP comes from (kills, quests, crafting…) to estimate how long each level takes."
+    },
+    "playerXpSourcesRate": {
+      "title": "XP sources have no rate",
+      "body": "Give at least one XP source an XP value and actions per hour to see hours per level."
+    },
+    "playerCastEntry": {
+      "title": "Casts without an entry",
+      "body": "{{count}} cast(s) from the catalog have no entry under Casts: {{names}}."
+    },
+    "playerCastContent": {
+      "title": "Casts without skills or abilities",
+      "body": "{{count}} cast(s) are missing content: {{names}}."
+    },
+    "playerTreeOver": {
+      "title": "Skill trees cost more than the budget",
+      "body": "Total cost vs. points at the level cap: {{names}}. Fine if players should specialise; otherwise lower costs or raise points."
+    },
+    "playerTreeUnder": {
+      "title": "Skill trees use under half the budget",
+      "body": "Total cost vs. points at the level cap: {{names}}. Players may run out of things to learn."
+    },
+    "playerTreeShape": {
+      "title": "Skill tree structure problems",
+      "body": "{{names}}."
+    },
+    "playerSkillAbility": {
+      "title": "Active skills without an ability",
+      "body": "{{count}} active skill(s) or spell(s) grant no ability: {{names}}."
+    },
+    "playerAbilityCost": {
+      "title": "Abilities without cost or cooldown",
+      "body": "{{count}} ability(ies) lack a resource cost or a cooldown: {{names}}."
+    },
+    "playerAbilityCast": {
+      "title": "Skill grants another cast's ability",
+      "body": "These skills grant an ability of a different cast: {{names}}."
+    },
+    "playerStartGear": {
+      "title": "Casts start empty-handed",
+      "body": "{{count}} cast(s) have no starting abilities or gear: {{names}}."
+    },
+    "itemsNoSource": {
+      "title": "Items nobody can obtain",
+      "body": "{{count}} item(s) have no recipe, loot table, merchant, reward, starting gear or Town output: {{names}}."
+    },
+    "itemsUnused": {
+      "title": "Items nothing uses",
+      "body": "{{count}} item(s) are never an ingredient, never restore anything and are not traded: {{names}}."
+    },
+    "itemsRecipeShape": {
+      "title": "Recipe problems",
+      "body": "{{names}}."
+    },
+    "itemsValueLoss": {
+      "title": "Crafting changes value oddly",
+      "body": "These recipes make less than their ingredients are worth, or more than {{max}}× their worth: {{names}}. Check the Crafting tree."
+    },
+    "itemsCoverage": {
+      "title": "Gaps in rarity coverage",
+      "body": "{{count}} type and rarity pair(s) have no item between rarities the type already uses: {{names}}."
+    },
+    "itemsTiers": {
+      "title": "Rarity or quality tiers out of order",
+      "body": "{{names}}. Rarer should drop less and be worth more."
+    },
+    "itemsLoot": {
+      "title": "Loot tables need attention",
+      "body": "{{count}} table(s) lack a source or weights, roll zero times, or guarantee a deleted item: {{names}}."
+    },
+    "itemsTypeFields": {
+      "title": "Fields that do not fit the item type",
+      "body": "These items have values in field groups their type does not use: {{names}}."
+    },
+    "itemsBasics": {
+      "title": "Items missing basics",
+      "body": "{{count}} item(s) lack a stack size (resources) or weight and durability (gear and tools): {{names}}."
+    },
+    "combatEnemyBasics": {
+      "title": "Enemies missing basics",
+      "body": "{{count}} enemy(ies) lack a biome, HP, damage or attacks per second: {{names}}."
+    },
+    "combatTtk": {
+      "title": "Unusual fight lengths",
+      "body": "With “{{loadout}}” on {{level}}: {{names}}. Check the Combat sandbox."
+    },
+    "combatThreatRamp": {
+      "title": "Threat drops in later biomes",
+      "body": "These enemies are weaker than the median of an earlier biome stage: {{names}}. Check the Threat curve."
+    },
+    "combatImmune": {
+      "title": "Enemies the player cannot hurt",
+      "body": "These resist every damage type the player can deal: {{names}}."
+    },
+    "combatNoLoot": {
+      "title": "Enemies that drop nothing",
+      "body": "{{count}} enemy(ies) or boss(es) are not a source in any Items loot table: {{names}}."
+    },
+    "combatPhases": {
+      "title": "Boss phases need attention",
+      "body": "{{names}}. Check the Phase bars."
+    },
+    "combatBossGates": {
+      "title": "Bosses that gate nothing",
+      "body": "These bosses unlock nothing and no biome or progression step requires them: {{names}}."
+    },
+    "combatVariants": {
+      "title": "Incomplete variants",
+      "body": "{{count}} variant(s) lack a base enemy, a time or event, or a multiplier: {{names}}."
+    },
+    "combatStatus": {
+      "title": "Incomplete status effects",
+      "body": "{{count}} status effect(s) lack a duration, or tick damage without an interval: {{names}}."
+    },
+    "combatFormula": {
+      "title": "Damage formula does not work",
+      "body": "The damage formula fails with attack, armor, resist and crit: {{error}}."
     }
   },
   "ai": {

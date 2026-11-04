@@ -1,6 +1,7 @@
 import { tryEvaluate, variablesOf } from '../../formula'
 import { findUsages, resolveSource } from '../../references/refs'
 import type { FieldDef } from '../../model/types'
+import { hiddenGroups } from '../../groupFilter'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, entityName, hintId, isBlank, isSectionEmpty, quartiles, sectionsOf, shortList } from '../util'
 
@@ -39,11 +40,15 @@ export const documentRules: HintRule[] = [
       const out: Hint[] = []
       for (const sec of sectionsOf(project, docId!)) {
         if (sec.kind !== 'collection') continue
-        const fields = sec.fields.filter((f) => f.key !== 'name')
+        // Checkboxes (unticked is an answer) and carried-over notes do not count towards completeness.
+        const fields = sec.fields.filter((f) => f.key !== 'name' && f.key !== 'legacyNotes' && f.type !== 'boolean')
         if (fields.length < 3) continue
-        const sparse = entitiesOf(project, docId!, sec.id).filter(
-          (e) => fields.filter((f) => !isBlank(e[f.key])).length / fields.length < thresholds.sparseRatio,
-        )
+        const sparse = entitiesOf(project, docId!, sec.id).filter((e) => {
+          // Field groups the entity's type does not use (see groupFilter) are not expected to be filled.
+          const hidden = hiddenGroups(project, docId!, sec, e)
+          const own = fields.filter((f) => !f.group || !hidden.has(f.group))
+          return own.length > 0 && own.filter((f) => !isBlank(e[f.key])).length / own.length < thresholds.sparseRatio
+        })
         if (!sparse.length) continue
         out.push({
           id: hintId('completeness.sparseEntities', docId, sec.id),
