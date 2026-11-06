@@ -48,7 +48,22 @@ export const defaultCatalogs = (): Record<string, Catalog> => ({
   professions: cat('NPC professions', ['Builder', 'Miner', 'Lumberjack', 'Farmer', 'Innkeeper', 'Teacher', 'Merchant', 'Blacksmith']),
   timeOfDay: cat('Times of day', ['Dawn', 'Day', 'Dusk', 'Night']),
   survivalStats: cat('Survival stats', ['Hunger', 'Thirst', 'Health', 'Sanity']),
+  worldModifiers: cat('World modifiers', ['Monster spawn rate', 'Hunger / thirst decay', 'Movement speed', 'Crop growth', 'NPC morale', 'Loot rarity', 'Corruption growth']),
 })
+
+/**
+ * Adds default catalogs a project does not have yet (it was saved before they existed).
+ * Existing catalogs, including edited or emptied ones, are never changed. Returns the ids added.
+ */
+export function addMissingCatalogs(registry: Registry): string[] {
+  const added: string[] = []
+  for (const [id, c] of Object.entries(defaultCatalogs())) {
+    if (registry.catalogs[id]) continue
+    registry.catalogs[id] = c
+    added.push(id)
+  }
+  return added
+}
 
 export const defaultRegistry = (): Registry => ({
   catalogs: defaultCatalogs(),

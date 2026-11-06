@@ -6,6 +6,12 @@ import { comparedLevels, depletion, levelTable, playerList, treeAnalysis } from 
 import { useStore } from '../../core/store/store'
 import { itemList, lootOdds, multiplier, rawCost } from '../../core/items'
 import { combatList, damageFormula, damagePerHit, phaseCoverage, threat } from '../../core/combat'
+import { biomeWeather, dayCoverage, eventCalendar, seasonYear, timeList } from '../../core/timeWeather'
+import { ClockDial } from '../editors/timeWeatherViews'
+import { moneyFlow, priceOf, reputationLevels, tradeList, wanderingOdds } from '../../core/trade'
+import { actPacing, endingReachability, storyList } from '../../core/story'
+import { QuestFlowCanvas } from '../editors/storyViews'
+import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, screensOf, uiList } from '../../core/ui'
 import { TreeCanvas } from '../editors/playerViews'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
@@ -24,6 +30,60 @@ export function applyExample(ex: GuideExample, param?: string) {
 }
 
 function Preview({ project, ex, param }: { project: Project; ex: GuideExample; param?: string }) {
+  const real = useProject()
+  if (ex.preview === 'wireframe') {
+    // The screens the example changes: their layout differs from the real project's.
+    const before = new Map(screensOf(real).map((s) => [s.id, JSON.stringify(s.layout ?? null)]))
+    const changed = screensOf(project).filter((s) => layoutOf(s).length && before.get(s.id) !== JSON.stringify(s.layout ?? null))
+    const shown = changed.length ? changed : screensOf(project).filter((s) => layoutOf(s).length).slice(0, 1)
+    return shown.length ? (
+      <div className="stack">
+        {shown.slice(0, 2).map((s) => (
+          <figure key={s.id} className="wf-preview">
+            <img alt={`Wireframe of ${s.name}`} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(layoutSvg(project, s))}`} />
+            <figcaption className="muted">{s.name} · {layoutOf(s).length} elements{layoutIssues(project, s).filter((i) => i.level !== 'info').length ? ` · ${layoutIssues(project, s).filter((i) => i.level !== 'info').length} issue(s)` : ''}</figcaption>
+          </figure>
+        ))}
+      </div>
+    ) : (
+      <p className="muted">These rules apply to every wireframe; nothing to draw yet.</p>
+    )
+  }
+  if (ex.preview === 'screenMap') {
+    const f = flowAnalysis(project)
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Screen</th><th>Clicks from {f.entry?.name ?? 'entry'}</th><th>Way back</th></tr>
+        </thead>
+        <tbody>
+          {screensOf(project).filter((s) => layoutOf(s).length).map((s) => (
+            <tr key={s.id}>
+              <td>{s.name}</td>
+              <td className="num">{f.depth.get(s.id) ?? 'unreachable'}</td>
+              <td>{f.deadEnds.some((d) => d.id === s.id) ? 'none' : s.id === f.entry?.id ? '—' : 'yes'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'bindings') {
+    const c = controlConflicts(project)
+    return (
+      <div>
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Action</th><th>Keyboard</th><th>Mouse</th><th>Gamepad</th></tr>
+          </thead>
+          <tbody>
+            {uiList(project, 'controls').slice(0, 14).map((a) => <tr key={a.id}><td>{a.name}</td><td>{a.key}</td><td>{a.mouse}</td><td>{a.gamepad}</td></tr>)}
+          </tbody>
+        </table>
+        <p className="muted">{c.length ? `Conflicts: ${c.map((x) => `${x.value}: ${x.a.name} + ${x.b.name}`).join('; ')}` : 'No conflicts.'}</p>
+      </div>
+    )
+  }
   if (ex.preview === 'xpCurve') {
     const t = levelTable(project)
     return (
@@ -185,6 +245,181 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
           ))}
         </tbody>
       </table>
+    )
+  }
+  if (ex.preview === 'actTimeline') {
+    const rows = actPacing(project)
+    const total = Math.max(1, ...rows.map((r) => (r.act.start ?? 0) + (r.act.duration ?? 0)))
+    return (
+      <div className="stack">
+        {rows.map((r) => (
+          <div key={r.act.id} className="act-bar-row">
+            <span className="muted">{r.act.name}</span>
+            <div className="act-bar-track">
+              <div className="act-bar" style={{ marginLeft: `${(100 * (r.act.start ?? 0)) / total}%`, width: `${(100 * (r.act.duration ?? 0)) / total}%` }}>
+                {r.act.duration} d · lv {r.act.levelMin}–{r.act.levelMax}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  if (ex.preview === 'cast') {
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Character</th><th>Role</th><th>Importance</th></tr>
+        </thead>
+        <tbody>
+          {storyList(project, 'characters').slice(-4).map((c) => <tr key={c.id}><td>{c.name}</td><td>{c.role}</td><td>{c.importance}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'questFlow') return <QuestFlowCanvas project={project} />
+  if (ex.preview === 'endingPaths') {
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Ending</th><th>Needs</th><th>Reachable</th></tr>
+        </thead>
+        <tbody>
+          {endingReachability(project).map((r) => (
+            <tr key={r.ending.id}>
+              <td>{r.ending.name}</td>
+              <td className="muted">{[...r.options.map((o) => `“${o.name}”`), ...r.quests.map((q) => q.name)].join(', ')}</td>
+              <td>{r.reachable ? 'yes' : r.reasons[0]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'merchants') {
+    const items = itemList(project, 'items')
+    const m = tradeList(project, 'merchants').at(-1)
+    if (!m) return <p className="empty">No merchant.</p>
+    const goods = ((m.goods ?? []) as string[]).map((id) => items.find((i) => i.id === id)?.name ?? id)
+    return (
+      <table className="grid npc-preview">
+        <tbody>
+          <tr><th>{m.name}</th><td>{m.type}</td></tr>
+          <tr><td>Sells</td><td>{goods.join(', ') || <span className="muted">nothing yet: add items with a value and rarity first</span>}</td></tr>
+          <tr><td>Markup / buyback</td><td className="num">×{m.markup} / ×{m.buyback}</td></tr>
+          {m.type === 'Wandering' && (() => {
+            const o = wanderingOdds(project, m)
+            return <tr><td>Visits</td><td>{o ? `${fmt(o.expected(60))} per 60 days, ${fmt(o.atLeastOne(30) * 100)}% within 30 days` : '—'}</td></tr>
+          })()}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'priceLadder') {
+    const item = itemList(project, 'items').find((i) => typeof i.value === 'number')
+    const levels = reputationLevels(project)
+    if (!item) return <p className="empty">Give an item a base value to see its prices; the factors are set either way.</p>
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>{item.name}</th><th>×</th><th>Buy</th><th>Sell</th></tr>
+        </thead>
+        <tbody>
+          {levels.map((l) => (
+            <tr key={l.id}>
+              <td>{l.name}</td>
+              <td className="num">{project.documents['design.trade']?.data.margins?.byReputation?.[l.id] ?? 1}</td>
+              <td className="num">{fmt(priceOf(project, item.id, { side: 'buy', levelId: l.id })?.price ?? 0)}</td>
+              <td className="num">{fmt(priceOf(project, item.id, { side: 'sell', levelId: l.id })?.price ?? 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'moneyFlow') {
+    const flow = moneyFlow(project)
+    const rows = flow.byAct ? flow.periods : flow.periods.filter((_, i, a) => i === a.length - 1 || (i + 1) % 10 === 0)
+    return (
+      <div>
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>{flow.byAct ? 'Act' : 'Day'}</th><th>In</th><th>Out</th><th>Net / day</th><th>Wallet</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((p) => (
+              <tr key={p.id}><td>{p.label}</td><td className="num">{fmt(p.sources)}</td><td className="num">{fmt(p.sinks)}</td><td className="num">{fmt(p.perDay)}</td><td className="num">{fmt(p.wallet)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        {!flow.byAct && <p className="muted">Add Story acts to see the flow per act.</p>}
+      </div>
+    )
+  }
+  if (ex.preview === 'dayClock') {
+    const cov = dayCoverage(project)
+    return (
+      <div>
+        <ClockDial project={project} />
+        <p className="muted">
+          {cov.arcs.map((a) => `${a.phase.name} ${fmt(a.phase.duration)} h`).join(' · ')}
+          {cov.gaps.length || cov.overlaps.length ? ' · does not cover the day cleanly' : ' · covers all 24 hours'}
+        </p>
+      </div>
+    )
+  }
+  if (ex.preview === 'seasons') {
+    const s = seasonYear(project)
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Season</th><th>Days</th><th>From day</th><th>Modifiers</th></tr>
+        </thead>
+        <tbody>
+          {s.ranges.map((r) => (
+            <tr key={r.season.id}>
+              <td>{r.season.name}</td><td className="num">{r.season.days}</td><td className="num">{r.from}</td>
+              <td className="muted">{Object.entries(r.season.modifiers ?? {}).map(([k, v]) => `${k} ×${v}`).join(', ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'weatherMix') {
+    const rows = biomeWeather(project).filter((b) => b.weathers.length)
+    const weathers = timeList(project, 'weather').slice(-3)
+    return (
+      <div>
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Weather</th><th>Share</th><th>Visibility</th></tr>
+          </thead>
+          <tbody>
+            {weathers.map((w) => <tr key={w.id}><td>{w.name}</td><td className="num">{w.frequency}%</td><td className="num">{w.visibility}%</td></tr>)}
+          </tbody>
+        </table>
+        {rows.length > 0 && <p className="muted">{rows.map((r) => `${r.biome.name}: ${fmt(r.clear)}% clear${r.over ? ' (over 100%)' : ''}`).join(' · ')}</p>}
+      </div>
+    )
+  }
+  if (ex.preview === 'yearEvents') {
+    const cal = eventCalendar(project, 1)
+    return (
+      <div>
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Event</th><th>Per year</th><th>First days</th></tr>
+          </thead>
+          <tbody>
+            {timeList(project, 'events').map((e) => {
+              const days = cal.occurrences.filter((o) => o.event.id === e.id)
+              return <tr key={e.id}><td>{e.name}</td><td className="num">{fmt(cal.expected.get(e.id) ?? 0)}</td><td className="muted">{days.slice(0, 4).map((o) => o.day).join(', ')}{days.length > 4 ? ' …' : ''}</td></tr>
+            })}
+          </tbody>
+        </table>
+        <p className="muted">{cal.coincidences.length ? `${cal.coincidences.length} coincidence(s), e.g. day ${cal.coincidences[0].day}: ${cal.coincidences[0].a.event.name} + ${cal.coincidences[0].b.event.name}` : 'No events coincide.'}</p>
+      </div>
     )
   }
   if (ex.preview === 'typeProfiles') {

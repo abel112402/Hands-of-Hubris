@@ -523,6 +523,174 @@
     "combatFormula": {
       "title": "Damage formula does not work",
       "body": "The damage formula fails with attack, armor, resist and crit: {{error}}."
+    },
+    "timeDayCoverage": {
+      "title": "Day phases do not cover the day",
+      "body": "{{names}}. Check the Day clock."
+    },
+    "timeDayLength": {
+      "title": "No day length",
+      "body": "Set how many real minutes an in-game day lasts, so phases convert to real time."
+    },
+    "timePhaseBasics": {
+      "title": "Incomplete day phases",
+      "body": "{{count}} phase(s) lack a start, a duration or a time-of-day link (used by NPC routines and music): {{names}}."
+    },
+    "timeNightHarder": {
+      "title": "Night is not more dangerous",
+      "body": "{{names}}. The game design says nights are darker and monsters stronger."
+    },
+    "timeWeatherOver": {
+      "title": "Weather adds up past 100 %",
+      "body": "In these biomes the weather frequencies add up to more than 100 %: {{names}}."
+    },
+    "timeWeatherNone": {
+      "title": "Biomes without weather",
+      "body": "{{count}} biome(s) have no weather at all: {{names}}."
+    },
+    "timeEvents": {
+      "title": "Incomplete events",
+      "body": "{{count}} event(s) lack a usable schedule, a duration or any effect: {{names}}."
+    },
+    "timeCoincide": {
+      "title": "Events can coincide without a rule",
+      "body": "These events can happen at the same time but have no priority and do not both stack: {{names}}. See the Year strip."
+    },
+    "timeSeasons": {
+      "title": "Seasons do not fill the year",
+      "body": "Seasons add up to {{total}} days, the year has {{year}}."
+    },
+    "timeExtremes": {
+      "title": "Extreme multipliers",
+      "body": "These multipliers are ×0 or above ×5, which may be a typo: {{names}}."
+    },
+    "tradeArbitrage": {
+      "title": "Money loops",
+      "body": "{{count}} way(s) to make money from nothing: {{names}}. See the Price ladder."
+    },
+    "tradeMarginConflict": {
+      "title": "Two sets of margins",
+      "body": "Trade and Town both set the player’s buy/sell price and they differ ({{names}}). Trade’s values are used; clear Town’s or make them match."
+    },
+    "tradeRuleScope": {
+      "title": "Price rules without a scope",
+      "body": "{{count}} rule(s) have a factor but nothing they apply to, so they are not used: {{names}}."
+    },
+    "tradeFormulaVars": {
+      "title": "Unknown formula variables",
+      "body": "The price formula uses variables the price chain does not provide: {{names}}. Use value, base, mult, margin, markup, rep, difficulty or rule, or set the variable on the formula."
+    },
+    "tradeWanderingRule": {
+      "title": "Wandering merchants never come",
+      "body": "{{count}} wandering merchant(s) have no roll interval or chance, here or in the Wandering merchant rules: {{names}}."
+    },
+    "tradeCapitalGate": {
+      "title": "Capital merchants without a gate",
+      "body": "{{count}} faction capital merchant(s) lack a faction or a required relationship level: {{names}}."
+    },
+    "tradeRarityCap": {
+      "title": "Goods above the rarity limit",
+      "body": "These merchants sell items rarer than their highest rarity: {{names}}."
+    },
+    "tradeExclusive": {
+      "title": "Exclusive goods sold elsewhere",
+      "body": "These exclusive goods are also sold by another merchant: {{names}}."
+    },
+    "tradeUnsold": {
+      "title": "Valuable items nobody trades",
+      "body": "{{count}} item(s) with a value have no merchant that sells or buys them: {{names}}."
+    },
+    "tradeNoSinks": {
+      "title": "Money only comes in",
+      "body": "There are money sources but no sinks, so money piles up. Add repairs, upkeep, fees or purchases."
+    },
+    "tradePiling": {
+      "title": "Money piles up",
+      "body": "In the last period the player keeps {{kept}} % of their income (tolerance {{tolerance}} %). Late-game sinks keep prices meaningful."
+    },
+    "tradeRepCoverage": {
+      "title": "Relationship levels without a price factor",
+      "body": "{{count}} relationship level(s) have no buy price factor and count as ×1: {{names}}."
+    },
+    "storyQuestCycle": {
+      "title": "Quests require each other in a loop",
+      "body": "These quests wait for each other, so none of them can start: {{names}}. See Quest flow."
+    },
+    "storyUnreachable": {
+      "title": "Quests that can never start",
+      "body": "{{count}} quest(s) can never start: {{names}}."
+    },
+    "storyActOrder": {
+      "title": "Needs something from a later act",
+      "body": "{{count}} requirement(s) point forward in the story: {{names}}."
+    },
+    "storyEndings": {
+      "title": "Unreachable endings",
+      "body": "No path reaches these endings: {{names}}. See Ending paths."
+    },
+    "storyEndingsEmpty": {
+      "title": "Endings without requirements",
+      "body": "{{count}} ending(s) need no quest, option or reputation yet: {{names}}."
+    },
+    "storyPacing": {
+      "title": "Act pacing is off",
+      "body": "{{names}}. See Act pacing."
+    },
+    "storyQuestBasics": {
+      "title": "Incomplete main and faction quests",
+      "body": "{{count}} quest(s) lack a giver, objectives, an act or any reward: {{names}}."
+    },
+    "storyCastIdle": {
+      "title": "Main characters without quests",
+      "body": "{{count}} main character(s) give no quests: {{names}}."
+    },
+    "storyFactionQuests": {
+      "title": "Factions without quests",
+      "body": "{{count}} faction(s) have no Faction quest: {{names}}."
+    },
+    "storyReputation": {
+      "title": "Reputation out of reach",
+      "body": "Quest rewards and choices never reach the level something asks for: {{names}}."
+    },
+    "storyGraphSync": {
+      "title": "Sketch and quest data disagree",
+      "body": "The dialog sketch connects these quests, but no requirement or option does: {{names}}."
+    },
+    "uiUnreachable": {
+      "title": "Screens nobody can open",
+      "body": "{{count}} screen(s) cannot be reached from {{entry}} through the flow graph or any button: {{names}}. See Screen map."
+    },
+    "uiDeadEnd": {
+      "title": "Screens without a way back",
+      "body": "{{count}} screen(s) have no back, close or navigation out: {{names}}."
+    },
+    "uiNavMismatch": {
+      "title": "Flow graph and buttons disagree",
+      "body": "{{count}} connection(s) exist only on one side: {{names}}. “Add arrows from wireframes” in Screen flow fixes the button-only ones."
+    },
+    "uiLayout": {
+      "title": "Layout problems",
+      "body": "Small text or targets, elements outside the safe area or the screen, overlapping controls or broken links: {{names}}. Turn on Checks in the Wireframe view."
+    },
+    "uiTextFit": {
+      "title": "Labels too long for translation",
+      "body": "{{count}} label(s) would not fit at the configured text expansion, e.g. {{names}}."
+    },
+    "uiHudCoverage": {
+      "title": "HUD and game data differ",
+      "body": "{{names}}."
+    },
+    "uiUnbound": {
+      "title": "HUD widgets without data",
+      "body": "{{count}} widget(s) show nothing yet: {{names}}. Pick what they show under Data in the properties."
+    },
+    "uiControlConflicts": {
+      "title": "Two actions on one input",
+      "body": "These actions share a binding in the same context: {{names}}. See Binding map."
+    },
+    "uiScreenBasics": {
+      "title": "Screens not ready",
+      "body": "{{count}} screen(s) lack a purpose, a wireframe or states: {{names}}. See Readiness."
     }
   },
   "ai": {

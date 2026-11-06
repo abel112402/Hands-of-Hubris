@@ -6,7 +6,11 @@ export type Source = { catalog: string } | { doc?: string; section: string }
 /** A graph's node source may merge several sections (e.g. all the systems a loop can refer to). */
 export type GraphSource = Source | { any: Source[] }
 
-export type GroupFilter = { field: string; profiles: { section: string; key: string }; groups: Record<string, string> }
+/**
+ * `profiles` reads the flags per kind from a collection of the same document; `static` fixes them in the module
+ * (kind value → the flags that are on). One of the two is required.
+ */
+export type GroupFilter = { field: string; profiles?: { section: string; key: string }; static?: Record<string, string[]>; groups: Record<string, string> }
 
 /** Reads a numeric range from a form section of the same document (e.g. a stat scale). */
 export type RangeFrom = { section: string; minField: string; maxField: string }
@@ -64,6 +68,27 @@ export type CollectionView =
   | { kind: 'threatCurve' }
   | { kind: 'weaknessMatrix' }
   | { kind: 'phaseBars' }
+  /** Time, Weather & Events views; fields are fixed by the module (see core/timeWeather.ts). */
+  | { kind: 'dayClock' }
+  | { kind: 'biomeWeather' }
+  | { kind: 'yearStrip' }
+  | { kind: 'conditions' }
+  /** Trade & Economy views; fields are fixed by the module (see core/trade.ts). */
+  | { kind: 'priceLadder' }
+  | { kind: 'merchantStock' }
+  | { kind: 'wanderingCalendar' }
+  | { kind: 'moneyFlow' }
+  /** Story & Quests views; fields are fixed by the module (see core/story.ts). */
+  | { kind: 'questFlow' }
+  | { kind: 'actPacing' }
+  | { kind: 'rewardBudget' }
+  | { kind: 'endingPaths' }
+  | { kind: 'castCoverage' }
+  /** UI / UX views; fields are fixed by the module (see core/ui.ts). The wireframe view edits each screen's `layout`. */
+  | { kind: 'wireframe' }
+  | { kind: 'screenMap' }
+  | { kind: 'screenReadiness' }
+  | { kind: 'bindingMap' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {

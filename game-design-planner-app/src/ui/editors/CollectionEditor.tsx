@@ -17,8 +17,13 @@ import { hiddenGroups } from '../../core/groupFilter'
 import { ItemLinks } from './ItemLinks'
 import { CombatSandboxView, PhaseBarsView, ThreatCurveView, WeaknessMatrixView } from './combatViews'
 import { CombatLinks } from './CombatLinks'
+import { BiomeWeatherView, ConditionsView, DayClockView, YearStripView } from './timeWeatherViews'
 import { CoverageView, CraftTreeView, LootOddsView, RarityCurveView, ValuePreviewView } from './itemViews'
 import { GateReadiness } from './GateReadiness'
+import { MerchantStockView, MoneyFlowView, PriceLadderView, WanderingCalendarView } from './tradeViews'
+import { ActPacingView, CastCoverageView, EndingPathsView, QuestFlowView, RewardBudgetView } from './storyViews'
+import { WireframeView } from './wireframe/WireframeView'
+import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   cards: 'Cards',
@@ -47,6 +52,23 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   threatCurve: 'Threat curve',
   weaknessMatrix: 'Weaknesses',
   phaseBars: 'Phase bars',
+  dayClock: 'Day clock',
+  biomeWeather: 'Weather by biome',
+  yearStrip: 'Year strip',
+  conditions: 'Conditions simulator',
+  priceLadder: 'Price ladder',
+  merchantStock: 'Stock coverage',
+  wanderingCalendar: 'Wandering calendar',
+  moneyFlow: 'Money flow',
+  questFlow: 'Quest flow',
+  actPacing: 'Act pacing',
+  rewardBudget: 'Reward budget',
+  endingPaths: 'Ending paths',
+  castCoverage: 'Cast coverage',
+  wireframe: 'Wireframe',
+  screenMap: 'Screen map',
+  screenReadiness: 'Readiness',
+  bindingMap: 'Binding map',
 }
 
 export type ViewProps = {
@@ -117,7 +139,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
         </button>
         <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>
       </div>
-      <div className={'collection-body' + (sel ? ' with-inspector' : '')}>
+      <div className={'collection-body' + (sel && view.kind !== 'wireframe' ? ' with-inspector' : '')}>
         <div className="view-area">
           {view.kind === 'cards' && <CardsView {...props} />}
           {view.kind === 'table' && <TableView {...props} columns={view.columns} />}
@@ -138,6 +160,23 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'threatCurve' && <ThreatCurveView {...props} />}
           {view.kind === 'weaknessMatrix' && <WeaknessMatrixView {...props} />}
           {view.kind === 'phaseBars' && <PhaseBarsView {...props} />}
+          {view.kind === 'dayClock' && <DayClockView {...props} />}
+          {view.kind === 'biomeWeather' && <BiomeWeatherView {...props} />}
+          {view.kind === 'yearStrip' && <YearStripView {...props} />}
+          {view.kind === 'conditions' && <ConditionsView />}
+          {view.kind === 'priceLadder' && <PriceLadderView {...props} />}
+          {view.kind === 'merchantStock' && <MerchantStockView {...props} />}
+          {view.kind === 'wanderingCalendar' && <WanderingCalendarView {...props} />}
+          {view.kind === 'moneyFlow' && <MoneyFlowView />}
+          {view.kind === 'questFlow' && <QuestFlowView {...props} />}
+          {view.kind === 'actPacing' && <ActPacingView {...props} />}
+          {view.kind === 'rewardBudget' && <RewardBudgetView />}
+          {view.kind === 'endingPaths' && <EndingPathsView {...props} />}
+          {view.kind === 'castCoverage' && <CastCoverageView {...props} />}
+          {view.kind === 'wireframe' && <WireframeView {...props} />}
+          {view.kind === 'screenMap' && <ScreenMapView {...props} />}
+          {view.kind === 'screenReadiness' && <ScreenReadinessView {...props} />}
+          {view.kind === 'bindingMap' && <BindingMapView {...props} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
@@ -147,7 +186,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'economy' && <EconomyView />}
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
-        {sel && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
+        {sel && view.kind !== 'wireframe' && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
       </div>
     </div>
   )

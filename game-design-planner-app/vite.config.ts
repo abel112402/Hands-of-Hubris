@@ -26,5 +26,6 @@ export default defineConfig({
   base: './',
   // The AI docs search embeds ../docs at build time.
   server: { fs: { allow: ['..'] } },
-  test: { environment: 'jsdom', include: ['tests/**/*.test.ts?(x)'] },
+  // UI tests render the whole app; under a full parallel run the first render of a file can pass 5 s.
+  test: { environment: 'jsdom', include: ['tests/**/*.test.ts?(x)'], testTimeout: 15000 },
 })
