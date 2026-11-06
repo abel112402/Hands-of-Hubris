@@ -9,8 +9,15 @@ export function hiddenGroups(project: Project, docId: string, sec: CollectionSec
   if (!gf) return new Set()
   const kind = entity[gf.field]
   if (!kind) return new Set()
-  const profiles = project.documents[docId]?.data[gf.profiles.section]
-  const profile = Array.isArray(profiles) ? profiles.find((p: Entity) => p[gf.profiles.key] === kind) : undefined
+  let profile: Record<string, unknown> | undefined
+  if (gf.static) {
+    const on = gf.static[kind]
+    profile = on ? Object.fromEntries(on.map((flag) => [flag, true])) : undefined
+  } else if (gf.profiles) {
+    const { section, key } = gf.profiles
+    const profiles = project.documents[docId]?.data[section]
+    profile = Array.isArray(profiles) ? profiles.find((p: Entity) => p[key] === kind) : undefined
+  }
   if (!profile) return new Set()
   return new Set(Object.entries(gf.groups).filter(([, flag]) => !profile[flag]).map(([group]) => group))
 }

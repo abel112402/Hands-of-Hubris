@@ -17,7 +17,10 @@ import { analyze, weekToDate, withBuffer } from '../schedule'
 import { needsBalance } from '../npc'
 import { comparedLevels, depletion, levelTable, PLAYER_DOC, treeAnalysis } from '../player'
 import { coverage, finalValue, itemList, itemSources, lootOdds, rawCost, valueAdded } from '../items'
+import { biomeWeather, conditions, dayCoverage, eventCalendar, nightPhase, realMinutes, TIME_DOC, timeList, yearLength } from '../timeWeather'
 import { bossGates, COMBAT_DOC, damageFormula, damagePerHit, fighterOf, phaseCoverage, threatRamp, timeToDie, timeToKill } from '../combat'
+import { actPacing, actsInOrder, decisionsOf, endingReachability, questDeps, rewardsByAct, STORY_DOC } from '../story'
+import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
 
@@ -290,6 +293,176 @@ function combatSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'col
   return out
 }
 
+/** Time & Weather summaries: phases in real minutes, weather mix per biome, event dates and coincidences, worst-case conditions. */
+function timeWeatherSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => Math.round(n * 100) / 100
+  const hh = (h: number) => `${String(Math.floor(h) % 24).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`
+  let out = ''
+  if (kinds.has('dayClock') && data.length) {
+    const cov = dayCoverage(project)
+    out += '\n**Day clock:**\n\n| Phase | From – to | Real minutes |\n|---|---|---|\n'
+    for (const a of cov.arcs) {
+      const span = (a.to - a.from + 24) % 24 || 24
+      const real = realMinutes(project, span)
+      out += `| ${esc(entityLabel(a.phase))} | ${hh(a.from)} – ${hh(a.to)} | ${real === null ? '–' : r(real)} |\n`
+    }
+    if (cov.gaps.length || cov.overlaps.length) out += `\n_${[...cov.gaps.map(([f, t]) => `No phase ${hh(f)}–${hh(t)}`), ...cov.overlaps.map(([f, t]) => `Overlap ${hh(f)}–${hh(t)}`)].join('; ')}._\n`
+  }
+  if (kinds.has('biomeWeather') && data.length) {
+    const rows = biomeWeather(project).filter((b) => b.weathers.length)
+    if (rows.length) {
+      out += '\n**Weather per biome:**\n\n'
+      for (const b of rows) out += `* **${esc(entityLabel(b.biome))}:** ${b.weathers.map((w) => `${entityLabel(w.weather)} ${w.frequency}%`).join(', ')}, clear ${r(b.clear)}%${b.over ? ' (over 100%!)' : ''}\n`
+    }
+  }
+  if (kinds.has('yearStrip') && sec.id === 'events' && data.length) {
+    const cal = eventCalendar(project, 1)
+    out += `\n**Events per year** (${yearLength(project)} days):\n\n`
+    for (const e of data) {
+      const days = cal.occurrences.filter((o) => o.event.id === e.id)
+      const exp = cal.expected.get(e.id)
+      out += `* **${esc(entityLabel(e))}:** ${exp === null || exp === undefined ? 'not scheduled' : e.schedule === 'Random chance' ? `about ${r(exp)} times` : `${days.length} time(s): day ${days.map((o) => r(o.day)).join(', ')}`}\n`
+    }
+    if (cal.coincidences.length) out += `\n_Coinciding: ${cal.coincidences.slice(0, 8).map((c) => `day ${r(c.day)} ${entityLabel(c.a.event)} + ${entityLabel(c.b.event)}`).join('; ')}._\n`
+  }
+  if (kinds.has('conditions') && data.length) {
+    const night = nightPhase(project)
+    const harshest = [...timeList(project, 'weather')].filter((w) => typeof w.visibility === 'number').sort((a, b) => a.visibility - b.visibility)[0]
+    const head = ['Event', 'Visibility', 'Monster strength', ...((project.registry.catalogs.worldModifiers?.items ?? []).map((m) => m.label))]
+    out += `\n**Worst case** (${[night && entityLabel(night), harshest && entityLabel(harshest)].filter(Boolean).join(' + ') || 'no phase or weather'} + event):\n\n| ${head.map(esc).join(' | ')} |\n|${'---|'.repeat(head.length)}\n`
+    for (const e of data) {
+      const c = conditions(project, { phase: night?.id, weather: harshest?.id, event: e.id })
+      out += `| ${esc(entityLabel(e))} | ${r(c.visibility)}% | ${c.factors.map((f) => `×${r(f.value)}`).join(' | ')} |\n`
+    }
+  }
+  return out
+}
+
+/** Story summaries: the chapter-2 act table, quest flow and main path, rewards per act, endings and the decision tree. */
+function storySummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => (Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 100) / 100)
+  const field = (key: string) => sec.fields.find((f) => f.key === key)
+  const text = (e: Entity, key: string) => {
+    const f = field(key)
+    return f ? valueToText(project, STORY_DOC, f, e[key]) : ''
+  }
+  const mm = (s: string) => s.replace(/"/g, "'")
+  let out = ''
+  if (kinds.has('actPacing') && data.length) {
+    const pace = new Map(actPacing(project).map((p) => [p.act.id, p]))
+    out += '\n**Acts** (doc chapter 2):\n\n| Act | Content | Biome | Key events | Player level | Quest hours |\n|---|---|---|---|---|---|\n'
+    for (const a of actsInOrder(project)) {
+      const p = pace.get(a.id)
+      const lv = [a.levelMin, a.levelMax].some((x) => typeof x === 'number') ? `${a.levelMin ?? '…'}–${a.levelMax ?? '…'}` : ''
+      out += `| ${[entityLabel(a), a.goal || a.summary || '', [text(a, 'biome'), text(a, 'extraBiomes')].filter(Boolean).join(', '), text(a, 'keyEvents'), lv + (p?.level ? ` (est. ${p.level})` : ''), p ? String(r(p.questHours)) : ''].map(esc).join(' | ')} |\n`
+    }
+  }
+  if (kinds.has('questFlow') && data.length) {
+    const deps = questDeps(project)
+    if (deps.mainPath.length) out += `\n**Main questline:** ${deps.mainPath.map((q) => esc(entityLabel(q))).join(' → ')}\n`
+    if (deps.edges.length) {
+      out += '\n```mermaid\nflowchart LR\n'
+      for (const q of data) out += `  ${q.id.replace(/\W/g, '_')}["${mm(entityLabel(q))}"]\n`
+      for (const e of deps.edges) if (data.some((q) => q.id === e.from) && data.some((q) => q.id === e.to)) out += `  ${e.from.replace(/\W/g, '_')} ${e.kind === 'leadsTo' ? '-.->' : '-->'} ${e.to.replace(/\W/g, '_')}\n`
+      out += '```\n'
+    }
+  }
+  if (kinds.has('rewardBudget') && data.length) {
+    const { rows } = rewardsByAct(project)
+    if (rows.some((x) => x.xp || x.money || x.itemValue)) {
+      out += '\n**Rewards per act:**\n\n| Act | XP | Money | Item value |\n|---|---|---|---|\n'
+      for (const x of rows) out += `| ${esc(x.label)} | ${r(x.xp)} | ${r(x.money)} | ${r(x.itemValue)} |\n`
+    }
+  }
+  if (kinds.has('endingPaths') && data.length) {
+    out += '\n**Reachability:**\n\n'
+    for (const e of endingReachability(project)) out += `* **${esc(entityLabel(e.ending))}:** ${e.reachable ? (e.empty ? 'no requirements yet' : 'reachable') : `unreachable — ${esc(e.reasons.join('; '))}`}\n`
+    const decisions = decisionsOf(project)
+    if (decisions.length) {
+      out += '\n```mermaid\nflowchart LR\n'
+      decisions.forEach((d, i) => {
+        out += `  D${i}{"${mm(d.name)}"}\n`
+        for (const o of d.options) out += `  D${i} --> ${o.id.replace(/\W/g, '_')}["${mm(entityLabel(o))}"]\n`
+      })
+      for (const e of data) for (const id of (e.requiresChoices ?? []) as string[]) out += `  ${id.replace(/\W/g, '_')} --> E_${e.id.replace(/\W/g, '_')}(["${mm(entityLabel(e))}"])\n`
+      out += '```\n'
+    }
+  }
+  return out
+}
+
+/** Trade forms for doc chapters 2–4 list the merchants of their kind, so the export reads in doc order. */
+const TRADE_KIND_FORMS: Record<string, string> = { wandering: 'Wandering', market: 'Town market', capital: 'Faction capital' }
+
+function tradeKindMd(project: Project, sectionId: string): string {
+  const kind = TRADE_KIND_FORMS[sectionId]
+  if (!kind) return ''
+  const list = merchantsOf(project, kind)
+  if (!list.length) return ''
+  const items = itemList(project, 'items')
+  const goods = (m: Entity) => ((m.goods ?? []) as string[]).map((id) => items.find((i) => i.id === id)?.name ?? id).join(', ')
+  return `\n**${kind} merchants:**\n\n${list.map((m) => `* **${esc(entityLabel(m))}:** ${esc(goods(m)) || 'no goods yet'}`).join('\n')}\n`
+}
+
+/** Trade & Economy summaries: wandering odds, stock, prices and money loops, money flow per act. */
+function tradeSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => (Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 100) / 100)
+  const pc = (p: number) => `${Math.round(p * 1000) / 10}%`
+  let out = ''
+  if (kinds.has('wanderingCalendar')) {
+    const rows = data.filter((m) => m.type === 'Wandering').map((m) => ({ m, o: wanderingOdds(project, m) })).filter((x) => x.o)
+    if (rows.length) {
+      out += '\n**Wandering merchant odds:**\n\n| Merchant | Roll every | Chance | Visits / 60 days | ≥1 in 30 days |\n|---|---|---|---|---|\n'
+      for (const { m, o } of rows) out += `| ${esc(entityLabel(m))} | ${r(o!.interval)} d | ${pc(o!.chance)} | ${r(o!.expected(60))} | ${pc(o!.atLeastOne(30))} |\n`
+    }
+  }
+  if (kinds.has('merchantStock') && data.length) {
+    const c = stockCoverage(project)
+    const over = c.rows.filter((x) => x.overCap.length)
+    if (over.length) out += `\n_Above the rarity limit: ${over.map((x) => `${entityLabel(x.merchant)} (${x.overCap.map((g) => g.name).join(', ')})`).join('; ')}._\n`
+    if (c.unsold.length) out += `\n_Valuable items no merchant trades: ${c.unsold.map((i) => i.name).join(', ')}._\n`
+  }
+  if (kinds.has('priceLadder')) {
+    const items = itemList(project, 'items').filter((i) => typeof i.value === 'number').slice(0, 10)
+    const top = reputationLevels(project).at(-1)
+    if (items.length) {
+      const head = ['Item', 'Buy', 'Sell', ...(top ? [`Buy (${entityLabel(top)})`, `Sell (${entityLabel(top)})`] : [])]
+      out += `\n**Prices** (no merchant, baseline difficulty):\n\n| ${head.map(esc).join(' | ')} |\n|${'---|'.repeat(head.length)}\n`
+      for (const i of items) {
+        const p = (side: 'buy' | 'sell', levelId?: string) => {
+          const v = priceOf(project, i.id, { side, levelId })
+          return v ? String(r(v.price)) : '–'
+        }
+        out += `| ${[entityLabel(i), p('buy'), p('sell'), ...(top ? [p('buy', top.id), p('sell', top.id)] : [])].map(esc).join(' | ')} |\n`
+      }
+    }
+    const a = arbitrage(project)
+    const loops = [
+      ...(a.inverse ? ['The sell margin is at or above the buy margin.'] : []),
+      ...a.trade.map((l) => `Buy ${l.item.name} at ${l.from.name} for ${r(l.buy)}, sell at ${l.to.name} for ${r(l.sell)}.`),
+      ...a.craft.map((l) => `Craft ${l.item.name} from bought ingredients for ${r(l.cost)}, sell for ${r(l.income)}.`),
+    ]
+    if (loops.length) out += `\n**Money loops:**\n\n${loops.map((l) => `* ${esc(l)}`).join('\n')}\n`
+  }
+  if (kinds.has('moneyFlow') && data.length) {
+    const flow = moneyFlow(project)
+    const periods = flow.byAct ? flow.periods : flow.periods.slice(-1)
+    out += `\n**Money flow** (${flow.byAct ? 'per act' : `after ${flow.periods.length} days`}, starting with ${r(flow.start)}):\n\n| ${flow.byAct ? 'Act' : 'Period'} | In | Out | Net / day | Wallet | Kept |\n|---|---|---|---|---|---|\n`
+    for (const p of periods) out += `| ${esc(p.label)} | ${r(p.sources)} | ${r(p.sinks)} | ${r(p.perDay)} | ${r(p.wallet)} | ${p.sources > 0 ? pc(p.kept) : '–'} |\n`
+    const node = (e: Entity, i: number, prefix: string) => `  ${prefix}${i}["${String(entityLabel(e)).replace(/"/g, "'")} (${r(dailyAmount(e))}/day)"]`
+    const src = data.filter((f) => f.direction === 'Source')
+    const snk = data.filter((f) => f.direction === 'Sink')
+    out += '\n```mermaid\nflowchart LR\n  W(("Wallet"))\n'
+    src.forEach((f, i) => (out += `${node(f, i, 'S')}\n  S${i} --> W\n`))
+    snk.forEach((f, i) => (out += `${node(f, i, 'K')}\n  W --> K${i}\n`))
+    out += '```\n'
+  }
+  return out
+}
+
 export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef): string {
   const data = project.documents[mod.id]?.data[sec.id]
   if (data === undefined) return '_No data._\n'
@@ -301,10 +474,11 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       // The section heading already names a single-field form, so a bullet repeating that title is dropped.
       if (sec.fields.length === 1 && filled.length === 1 && filled[0].f.label === sec.title) return filled[0].t + '\n'
       const lines = filled.map(({ f, t }) => `* **${f.label}:** ${t}`)
-      return lines.length ? lines.join('\n') + '\n' : '_No data._\n'
+      const extra = mod.id === TRADE_DOC ? tradeKindMd(project, sec.id) : ''
+      return (lines.length ? lines.join('\n') + '\n' : extra ? '' : '_No data._\n') + extra
     }
     case 'collection':
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data)
     case 'graph':

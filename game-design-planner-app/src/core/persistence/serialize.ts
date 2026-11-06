@@ -1,4 +1,5 @@
 import { projectSchema } from '../model/schema'
+import { addMissingCatalogs } from '../model/catalogs'
 import { FORMAT_VERSION, type Project } from '../model/types'
 import { MODULES, migrateDocument } from '../modules/registry'
 
@@ -43,6 +44,7 @@ export function deserializeProject(text: string, maxBytes = 50 * 1024 * 1024): L
     throw new Error(`Invalid project file: ${first.path.join('.')} – ${first.message}`)
   }
   const project = parsed.data as unknown as Project
+  addMissingCatalogs(project.registry)
   for (const m of MODULES) if (project.documents[m.id]) migrateDocument(m, project.documents[m.id])
   return { project, warnings }
 }

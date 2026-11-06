@@ -33,6 +33,17 @@ export type PreviewKind =
   | 'bossPhases'
   | 'statusSet'
   | 'loadouts'
+  | 'dayClock'
+  | 'seasons'
+  | 'weatherMix'
+  | 'yearEvents'
+  | 'merchants'
+  | 'priceLadder'
+  | 'moneyFlow'
+  | 'actTimeline'
+  | 'cast'
+  | 'questFlow'
+  | 'endingPaths'
 
 export type GuideExample = {
   id: string
@@ -48,7 +59,7 @@ export type GuideExample = {
 }
 
 /** Explainer card under a section title. `diagram` picks an inline SVG from ui/guides/concepts. */
-export type GuideConcept = { title: string; body: string; diagram: 'decay' | 'pipeline' | 'tree' | 'abilityTimeline' | 'value' | 'craftChain' | 'lootRoll' | 'typeProfile' | 'damageFlow' | 'ttk' | 'threatRamp' | 'phaseBar' }
+export type GuideConcept = { title: string; body: string; diagram: 'decay' | 'pipeline' | 'tree' | 'abilityTimeline' | 'value' | 'craftChain' | 'lootRoll' | 'typeProfile' | 'damageFlow' | 'ttk' | 'threatRamp' | 'phaseBar' | 'dayClock' | 'modifierStack' | 'weatherMix' | 'eventCalendar' | 'priceChain' | 'spread' | 'wanderOdds' | 'sourceSink' | 'actPacing' | 'questChain' | 'choiceBranch' | 'rewardBudget' }
 
 export type ModuleGuide = {
   map: GuideMap

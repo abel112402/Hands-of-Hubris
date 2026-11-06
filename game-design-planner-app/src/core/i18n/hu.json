@@ -523,6 +523,138 @@
     "combatFormula": {
       "title": "Hibás sebzésképlet",
       "body": "A sebzésképlet hibát ad az attack, armor, resist és crit változókkal: {{error}}."
+    },
+    "timeDayCoverage": {
+      "title": "A napszakok nem fedik le a napot",
+      "body": "{{names}}. Nézd meg a Napórát."
+    },
+    "timeDayLength": {
+      "title": "Nincs megadva a nap hossza",
+      "body": "Add meg, hány valós perc egy játékbeli nap, hogy a napszakok valós időre válthatók legyenek."
+    },
+    "timePhaseBasics": {
+      "title": "Hiányos napszakok",
+      "body": "{{count}} napszaknál hiányzik a kezdés, a hossz vagy a napszak-kapcsolat (NPC napirend és zene használja): {{names}}."
+    },
+    "timeNightHarder": {
+      "title": "Az éjszaka nem veszélyesebb",
+      "body": "{{names}}. A játékterv szerint éjjel sötétebb van és erősebbek a szörnyek."
+    },
+    "timeWeatherOver": {
+      "title": "Az időjárás több mint 100%",
+      "body": "Ezekben a biomokban az időjárás-gyakoriságok összege 100% fölött van: {{names}}."
+    },
+    "timeWeatherNone": {
+      "title": "Időjárás nélküli biomok",
+      "body": "{{count}} biomnak nincs időjárása: {{names}}."
+    },
+    "timeEvents": {
+      "title": "Hiányos események",
+      "body": "{{count}} eseménynél hiányzik a használható ütemezés, az időtartam vagy bármilyen hatás: {{names}}."
+    },
+    "timeCoincide": {
+      "title": "Szabály nélkül egybeeső események",
+      "body": "Ezek az események egyszerre is bekövetkezhetnek, de nincs prioritásuk, és nem halmozódnak: {{names}}. Lásd az Évsávot."
+    },
+    "timeSeasons": {
+      "title": "Az évszakok nem töltik ki az évet",
+      "body": "Az évszakok összesen {{total}} naposak, az év {{year}} napos."
+    },
+    "timeExtremes": {
+      "title": "Szélsőséges szorzók",
+      "body": "Ezek a szorzók ×0 vagy ×5 fölöttiek, ami elírás lehet: {{names}}."
+    },
+    "tradeArbitrage": {
+      "title": "Pénzgyártó körök",
+      "body": "{{count}} módon lehet a semmiből pénzt csinálni: {{names}}. Lásd az Árlétrát."
+    },
+    "tradeMarginConflict": {
+      "title": "Kétféle árrés",
+      "body": "A Kereskedelem és a Város is megadja a játékos vételi/eladási árát, és eltérnek ({{names}}). A Kereskedelem értékei számítanak; töröld a Városét, vagy egyeztesd őket."
+    },
+    "tradeRuleScope": {
+      "title": "Hatókör nélküli árszabályok",
+      "body": "{{count}} szabálynak van szorzója, de nincs megadva, mire vonatkozik, ezért nem számít: {{names}}."
+    },
+    "tradeFormulaVars": {
+      "title": "Ismeretlen képletváltozók",
+      "body": "Az árképlet olyan változókat használ, amelyeket az árlánc nem ad meg: {{names}}. Használd a value, base, mult, margin, markup, rep, difficulty vagy rule változót, vagy add meg a változót a képletnél."
+    },
+    "tradeWanderingRule": {
+      "title": "A vándorkereskedők sosem jönnek",
+      "body": "{{count}} vándorkereskedőnek nincs dobási időköze vagy esélye, sem itt, sem a Vándorkereskedő szabályaiban: {{names}}."
+    },
+    "tradeCapitalGate": {
+      "title": "Feltétel nélküli fővárosi kereskedők",
+      "body": "{{count}} frakció-fővárosi kereskedőnél hiányzik a frakció vagy a szükséges kapcsolati szint: {{names}}."
+    },
+    "tradeRarityCap": {
+      "title": "Ritkasági korlát feletti áru",
+      "body": "Ezek a kereskedők a legmagasabb ritkaságuknál ritkább tárgyat árulnak: {{names}}."
+    },
+    "tradeExclusive": {
+      "title": "Máshol is kapható exkluzív áru",
+      "body": "Ezeket az exkluzív árukat egy másik kereskedő is árulja: {{names}}."
+    },
+    "tradeUnsold": {
+      "title": "Értékes tárgyak, amelyekkel senki sem kereskedik",
+      "body": "{{count}} értékkel bíró tárgyat egyetlen kereskedő sem árul és nem is vesz meg: {{names}}."
+    },
+    "tradeNoSinks": {
+      "title": "Csak bejön a pénz",
+      "body": "Vannak pénzforrások, de nincsenek pénznyelők, így a pénz felhalmozódik. Adj hozzá javítást, fenntartást, díjakat vagy vásárlást."
+    },
+    "tradePiling": {
+      "title": "Felhalmozódik a pénz",
+      "body": "Az utolsó szakaszban a játékos megtartja a bevétele {{kept}} %-át (tűréshatár: {{tolerance}} %). A késői pénznyelők értelmesen tartják az árakat."
+    },
+    "tradeRepCoverage": {
+      "title": "Árszorzó nélküli kapcsolati szintek",
+      "body": "{{count}} kapcsolati szintnek nincs vételi árszorzója, ezért ×1-nek számít: {{names}}."
+    },
+    "storyQuestCycle": {
+      "title": "Körbe érő küldetésfeltételek",
+      "body": "Ezek a küldetések egymásra várnak, így egyik sem indulhat el: {{names}}. Lásd a Küldetésfolyamot."
+    },
+    "storyUnreachable": {
+      "title": "Sosem induló küldetések",
+      "body": "{{count}} küldetés sosem indulhat el: {{names}}."
+    },
+    "storyActOrder": {
+      "title": "Egy későbbi felvonásra vár",
+      "body": "{{count}} feltétel előre mutat a történetben: {{names}}."
+    },
+    "storyEndings": {
+      "title": "Elérhetetlen befejezések",
+      "body": "Egyetlen út sem vezet ezekhez a befejezésekhez: {{names}}. Lásd a Befejezési utakat."
+    },
+    "storyEndingsEmpty": {
+      "title": "Feltétel nélküli befejezések",
+      "body": "{{count}} befejezéshez még nem kell sem küldetés, sem döntés, sem hírnév: {{names}}."
+    },
+    "storyPacing": {
+      "title": "Elcsúszott a felvonások tempója",
+      "body": "{{names}}. Lásd a Felvonástempót."
+    },
+    "storyQuestBasics": {
+      "title": "Hiányos fő- és frakcióküldetések",
+      "body": "{{count}} küldetésnél hiányzik a megbízó, a cél, a felvonás vagy bármilyen jutalom: {{names}}."
+    },
+    "storyCastIdle": {
+      "title": "Főszereplők küldetés nélkül",
+      "body": "{{count}} főszereplő nem ad küldetést: {{names}}."
+    },
+    "storyFactionQuests": {
+      "title": "Frakciók küldetés nélkül",
+      "body": "{{count}} frakciónak nincs frakcióküldetése: {{names}}."
+    },
+    "storyReputation": {
+      "title": "Elérhetetlen hírnév",
+      "body": "A küldetésjutalmak és döntések sosem érik el a megkövetelt szintet: {{names}}."
+    },
+    "storyGraphSync": {
+      "title": "A vázlat és a küldetésadatok eltérnek",
+      "body": "A párbeszédvázlat összeköti ezeket a küldetéseket, de egyetlen feltétel vagy döntés sem: {{names}}."
     }
   },
   "ai": {

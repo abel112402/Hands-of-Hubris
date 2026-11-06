@@ -74,6 +74,75 @@ function migrateTown(data: Record<string, any>) {
   }
 }
 
+const SCHEDULES = ['Every N days', 'Moon cycle', 'Random chance', 'Season', 'Story trigger']
+
+/** Default "Times of day" catalog ids a v1 day phase name can match. */
+const TIME_OF_DAY_IDS = ['dawn', 'day', 'dusk', 'night']
+
+/**
+ * v1 had no links: day phases get their time of day by name, and moon events get a moon-cycle schedule.
+ * Every v1 field stays valid, so no text moves.
+ */
+function migrateTimeWeather(data: Record<string, any>) {
+  for (const p of Array.isArray(data.dayPhases) ? data.dayPhases : []) {
+    const id = String(p.name ?? '').trim().toLowerCase()
+    if (p.timeOfDay === undefined && TIME_OF_DAY_IDS.includes(id)) p.timeOfDay = id
+  }
+  for (const e of Array.isArray(data.events) ? data.events : []) {
+    if (e.schedule !== undefined) continue
+    const name = String(e.name ?? '').toLowerCase()
+    if (name.includes('blood moon')) Object.assign(e, { schedule: 'Moon cycle', interval: e.interval ?? 3 })
+    else if (name.includes('full moon')) Object.assign(e, { schedule: 'Moon cycle', interval: e.interval ?? 1 })
+  }
+}
+
+export const QUEST_TYPES = ['Main', 'Faction', 'Tavern random', 'Event']
+export const ACT_UNITS = ['In-game days', 'Play hours']
+export const QUEST_TYPE_SEED = [
+  { name: 'Main quest', type: 'Main', purpose: 'Carries the story from act to act.', repeatable: false, rewardScale: 1 },
+  { name: 'Faction quest', type: 'Faction', purpose: 'Builds reputation and opens faction content.', repeatable: false, rewardScale: 0.8 },
+  { name: 'Tavern job', type: 'Tavern random', purpose: 'Repeatable filler that pays the bills.', repeatable: true, maxActive: 3, rewardScale: 0.3 },
+  { name: 'Event quest', type: 'Event', purpose: 'Appears with a special event and expires with it.', repeatable: true, rewardScale: 0.5 },
+]
+
+/**
+ * v1 kept the narrative style in the overview and choices and endings only as graph boxes.
+ * Tone moves to Dialogue; Ending and Choice nodes without a link become entries with the node's id (and the node links to it);
+ * a text objective becomes a checklist item. Quest text fields keep their keys.
+ */
+function migrateStory(data: Record<string, any>) {
+  const ov = data.overview
+  if (ov && typeof ov === 'object' && 'tone' in ov) {
+    if (typeof ov.tone === 'string' && ov.tone.trim()) data.dialogue = { ...(data.dialogue ?? {}), tone: ov.tone }
+    delete ov.tone
+  }
+  for (const q of Array.isArray(data.quests) ? data.quests : []) {
+    if (typeof q.objectives === 'string') q.objectives = q.objectives.trim() ? [{ id: `${q.id}-o1`, text: q.objectives, done: false }] : []
+  }
+  const nodes = Array.isArray(data.questGraph?.nodes) ? data.questGraph.nodes : []
+  for (const [kind, section, make] of [
+    ['Ending', 'endings', (n: any) => ({ id: n.id, name: n.label || 'Ending', ...(n.notes ? { description: n.notes } : {}) })],
+    ['Choice', 'choices', (n: any) => ({ id: n.id, name: n.label || 'Option', decision: n.label || 'Decision', ...(n.notes ? { notes: n.notes } : {}) })],
+  ] as const) {
+    for (const n of nodes) {
+      if (n.kind !== kind || n.refId) continue
+      if (!Array.isArray(data[section])) data[section] = []
+      if (!data[section].some((e: any) => e.id === n.id)) data[section].push(make(n))
+      n.refId = n.id
+    }
+  }
+}
+
+/**
+ * v1 had one goods list per merchant, unscoped price rules and text-only currency and balance forms. All text is kept;
+ * single goods ids become arrays. Price rules stay unscoped so no price changes silently (trade.ruleScope asks for a scope).
+ */
+function migrateTrade(data: Record<string, any>) {
+  for (const m of Array.isArray(data.merchants) ? data.merchants : []) {
+    if (typeof m.goods === 'string') m.goods = m.goods ? [m.goods] : []
+  }
+}
+
 /** v1 kept drops, boss unlocks / reward / phases and status effects as free text; they move to notes fields. */
 function migrateCombat(data: Record<string, any>) {
   const join = (...parts: unknown[]) => parts.filter((x) => typeof x === 'string' && x.trim()).join('\n')
@@ -1284,105 +1353,402 @@ export const designModules = [
     version: 2,
     migrate: migrateCombat,
   },
-  mod('design', 'timeWeather', 'Time, Weather & Events', 'docs/01_design/time_weather_events.md', '🌙', 'Day cycle, weather, special events.', [
-    s.form('time', 'Time system', [f.num('dayLength', 'Day length (real minutes)', { min: 0 }), f.long('calendar', 'Seasons / calendar')]),
-    s.collection(
-      'dayPhases',
-      'Day cycle',
-      'phase',
-      [
-        f.num('start', 'Start (hour)', { min: 0, max: 24 }),
-        f.num('duration', 'Duration (hours)', { min: 0, max: 24 }),
-        f.num('visibility', 'Visibility (%)', { min: 0, max: 100 }),
-        f.num('monsterStrength', 'Monster strength (×)', { min: 0 }),
-        f.color('color', 'Color'),
-        f.long('notes', 'Effects on survival / NPC routines'),
-      ],
-      [v.timeline('start', 'duration', 'h'), v.table()],
-    ),
-    s.collection(
-      'weather',
-      'Weather',
-      'weather',
-      [f.multi('biomes', 'Biomes', BIOMES), f.long('effects', 'Effects'), f.num('frequency', 'Frequency (%)', { min: 0, max: 100 })],
-      [v.cards(), v.table()],
-    ),
-    s.collection(
-      'events',
-      'Special events',
-      'event',
-      [
-        f.long('trigger', 'Trigger / schedule'),
-        f.num('duration', 'Duration (days)', { min: 0 }),
-        f.long('rules', 'Rule changes'),
-        f.long('rewards', 'Rewards / risks'),
-      ],
-      [v.cards(), v.table()],
-      { seed: [{ name: 'Full moon' }, { name: 'Blood moon' }, { name: 'Holiday' }] },
-    ),
-  ]),
-  mod('design', 'trade', 'Trade & Economy', 'docs/01_design/trade_economy.md', '💰', 'Merchants, pricing, currencies.', [
-    s.form('currency', 'Currency', [f.long('currencies', 'Currencies and base values')]),
-    s.formulas('pricing', 'Price formulas', 'e.g. price = base * rarityMult * (1 + margin)'),
-    s.collection(
-      'merchants',
-      'Merchants',
-      'merchant',
-      [
-        f.enm('type', 'Type', ['Wandering', 'Town market', 'Faction capital']),
-        f.ref('faction', 'Faction', FACTIONS),
-        f.long('appearance', 'Appearance rule'),
-        f.long('stock', 'Stock depends on'),
-        f.multi('goods', 'Goods', ITEMS),
-      ],
-      [v.cards(), v.kanban('type'), v.table()],
-    ),
-    s.collection(
-      'priceRules',
-      'Price rules',
-      'rule',
-      [f.num('factor', 'Factor', { step: 0.01 }), f.long('description', 'When applied')],
-      [v.table()],
-    ),
-    s.form('balance', 'Economic balance', [f.long('sinks', 'Money sinks and sources'), f.long('inflation', 'Inflation control')]),
-  ]),
-  mod('design', 'story', 'Story & Quests', 'docs/01_design/story_quests.md', '📜', 'Acts, characters, quest graph.', [
-    s.form('overview', 'Overview', [f.long('background', 'Background'), f.long('conflict', 'Main conflict'), f.long('secret', 'Secret of the island'), f.long('tone', 'Narrative style')]),
-    s.collection(
-      'acts',
-      'Acts',
-      'act',
-      [f.num('start', 'Start', { min: 0 }), f.num('duration', 'Length', { min: 0 }), f.ref('biome', 'Biome', BIOMES), f.long('summary', 'Summary')],
-      [v.timeline('start', 'duration', 'step'), v.cards()],
-    ),
-    s.collection(
-      'characters',
-      'Characters',
-      'character',
-      [f.ref('faction', 'Faction', FACTIONS), f.text('role', 'Role'), f.long('bio', 'Biography')],
-      [v.cards(), v.table()],
-    ),
-    s.collection(
-      'quests',
-      'Quests',
-      'quest',
-      [
-        f.enm('type', 'Type', ['Main', 'Faction', 'Tavern random', 'Event']),
-        f.ref('giver', 'Giver', section('characters')),
-        f.ref('faction', 'Faction', FACTIONS),
-        f.ref('act', 'Act', section('acts')),
-        f.long('conditions', 'Conditions'),
-        f.check('objectives', 'Objectives'),
-        f.long('rewards', 'Rewards'),
-        f.long('consequences', 'Consequences'),
-      ],
-      [v.cards(), v.kanban('type'), v.table(['name', 'type', 'giver', 'faction'])],
-    ),
-    s.graph('questGraph', 'Quest / dialog flow', ['Quest', 'Dialog', 'Choice', 'Event', 'Ending'], {
-      nodeSource: section('quests'),
-      edgeKinds: ['then', 'if choice', 'on failure', 'unlocks'],
-    }),
-  ]),
+  {
+    ...mod('design', 'timeWeather', 'Time, Weather & Events', 'docs/01_design/time_weather_events.md', '🌙', 'Day cycle, seasons, weather, special events and how they combine.', [
+      s.form('time', 'Time system', [
+        f.num('dayLength', 'Day length (real minutes)', { min: 0, help: 'Real minutes for one full in-game day; the day clock converts phases to real time with it.' }),
+        f.num('daysPerYear', 'Days per year', { min: 1 }),
+        f.num('moonCycle', 'Moon cycle (days)', { min: 1, help: 'Moon-cycle events repeat this often.' }),
+        f.ref('startSeason', 'Starting season', section('seasons')),
+        f.long('calendar', 'Calendar notes'),
+      ], 'Set the clock first: day length, year length and the moon cycle drive the day clock and the year strip.'),
+      s.collection(
+        'seasons',
+        'Seasons',
+        'season',
+        [
+          f.num('order', 'Order', { min: 1 }),
+          f.num('days', 'Days', { min: 1 }),
+          f.color('color', 'Color'),
+          f.map('modifiers', 'World modifiers (×)', catalog('worldModifiers'), undefined, { help: 'Multipliers while this season lasts. Add modifiers in Definitions › World modifiers.' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'order', 'days']), v.yearStrip()],
+      ),
+      s.collection(
+        'dayPhases',
+        'Day and night',
+        'phase',
+        [
+          f.num('start', 'Start (hour)', { min: 0, max: 24, step: 0.5 }),
+          f.num('duration', 'Duration (hours)', { min: 0, max: 24, step: 0.5 }),
+          f.ref('timeOfDay', 'Time of day', catalog('timeOfDay'), { help: 'Links this phase to NPC routines and music, which use the “Times of day” catalog.' }),
+          f.num('visibility', 'Visibility (%)', { min: 0, max: 100 }),
+          f.num('monsterStrength', 'Monster strength (×)', { min: 0, step: 0.05 }),
+          f.map('modifiers', 'World modifiers (×)', catalog('worldModifiers')),
+          f.color('color', 'Color'),
+          f.long('notes', 'Effects on survival / NPC routines'),
+        ],
+        [v.dayClock(), v.table(['name', 'start', 'duration', 'timeOfDay', 'visibility', 'monsterStrength'])],
+      ),
+      s.collection(
+        'weather',
+        'Weather',
+        'weather',
+        [
+          f.multi('biomes', 'Biomes', BIOMES),
+          f.num('frequency', 'Frequency (%)', { min: 0, max: 100, help: 'Share of time this weather holds in its biomes; the rest is clear.' }),
+          f.multi('seasons', 'Seasons', section('seasons'), { help: 'Empty means all year.' }),
+          f.num('duration', 'Typical duration (in-game hours)', { min: 0 }),
+          f.num('visibility', 'Visibility (%)', { min: 0, max: 100 }),
+          f.num('monsterStrength', 'Monster strength (×)', { min: 0, step: 0.05 }),
+          f.map('modifiers', 'World modifiers (×)', catalog('worldModifiers')),
+          f.long('effects', 'Other effects'),
+        ],
+        [v.table(['name', 'biomes', 'frequency', 'seasons', 'visibility']), v.biomeWeather(), v.cards()],
+      ),
+      s.collection(
+        'events',
+        'Special events',
+        'event',
+        [
+          f.enm('schedule', 'Schedule', SCHEDULES, { group: 'When' }),
+          f.num('interval', 'Every … days / cycles', { min: 1, group: 'When', help: 'Every N days, or every Nth moon cycle.' }),
+          f.num('offset', 'First on day', { min: 0, group: 'When' }),
+          f.num('chance', 'Chance per day (%)', { min: 0, max: 100, step: 0.1, group: 'When' }),
+          f.ref('season', 'Season', section('seasons'), { group: 'When' }),
+          f.ref('storyTrigger', 'Story trigger', section('quests', 'design.story'), { group: 'When' }),
+          f.long('trigger', 'Trigger notes', { group: 'When' }),
+          f.num('duration', 'Duration (days)', { min: 0, step: 0.5, group: 'When' }),
+          f.num('monsterStrength', 'Monster strength (×)', { min: 0, step: 0.05, group: 'Effect' }),
+          f.num('visibility', 'Visibility (%)', { min: 0, max: 100, group: 'Effect' }),
+          f.map('modifiers', 'World modifiers (×)', catalog('worldModifiers'), undefined, { group: 'Effect' }),
+          f.long('rules', 'Rule changes', { group: 'Effect' }),
+          f.num('priority', 'Priority', { min: 0, group: 'Combining', help: 'Higher wins when events conflict.' }),
+          f.bool('stacks', 'Stacks with other events', { group: 'Combining' }),
+          f.multi('rewardItems', 'Reward items', ITEMS, { group: 'Rewards' }),
+          f.long('rewards', 'Rewards / risks', { group: 'Rewards' }),
+        ],
+        [v.cards(), v.yearStrip(), v.conditions(), v.table(['name', 'schedule', 'interval', 'chance', 'duration', 'priority'])],
+        { seed: [{ name: 'Full moon', schedule: 'Moon cycle', interval: 1, duration: 1 }, { name: 'Blood moon', schedule: 'Moon cycle', interval: 3, duration: 1, monsterStrength: 1.5 }, { name: 'Holiday', schedule: 'Every N days', interval: 120, offset: 60, duration: 2 }] },
+      ),
+      s.form('eventSystem', 'Event system', [
+        f.long('priority', 'Priority rules', { placeholder: 'e.g. Story events beat moon events; the higher priority decides conflicting rules.' }),
+        f.long('stacking', 'Stacking', { placeholder: 'e.g. Multipliers of stacking events multiply; non-stacking events wait.' }),
+        f.long('combination', 'With weather and night'),
+        f.long('technical', 'Technical notes', { help: 'How the event manager is built; see Technical documents.' }),
+      ]),
+    ]),
+    version: 2,
+    migrate: migrateTimeWeather,
+  },
+  {
+    ...mod('design', 'trade', 'Trade & Economy', 'docs/01_design/trade_economy.md', '💰', 'Currencies, merchants, pricing and the money balance.', [
+      s.form(
+        'currency',
+        'Currency',
+        [
+          f.long('currencies', 'Currency notes', { placeholder: 'e.g. Silver is the everyday coin; gold only in capitals; factions pay in scrip.' }),
+          f.num('startingMoney', 'Starting money', { min: 0, help: 'What the player starts with, in the base unit. Money flow starts the wallet here.' }),
+          f.num('walletCap', 'Wallet limit', { min: 0, help: 'Optional. The most money the player can carry.' }),
+        ],
+        'The base unit and the item value formula (base × rarity × quality) come from Items & Crafting › Item model. Prices here build on that value.',
+      ),
+      s.collection(
+        'currencyTypes',
+        'Currencies',
+        'currency',
+        [
+          f.enm('kind', 'Kind', ['Coin', 'Barter good', 'Faction scrip', 'Token']),
+          f.num('rate', 'Worth (base units)', { min: 0, step: 0.01, help: 'How many base units one of this is worth.' }),
+          f.num('weight', 'Weight', { min: 0, step: 0.01 }),
+          f.ref('faction', 'Faction', FACTIONS, { help: 'For faction scrip: who issues and accepts it.' }),
+          f.ref('item', 'Item', ITEMS, { help: 'Optional: the item that represents this currency in the inventory.' }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'kind', 'rate', 'weight', 'faction']), v.cards()],
+      ),
+      s.form(
+        'wandering',
+        'Wandering merchant',
+        [
+          f.num('interval', 'Visit roll every (days)', { min: 0, help: 'How often the game rolls for a visit. Merchants can override it.' }),
+          f.num('chance', 'Chance per roll (%)', { min: 0, max: 100 }),
+          f.num('stayDays', 'Stays for (days)', { min: 0 }),
+          f.multi('biomes', 'Appears in biomes', BIOMES),
+          f.num('stockSize', 'Stock size (item slots)', { min: 0 }),
+          f.map('rarityMix', 'Rarity mix (weight)', catalog('rarities'), undefined, { help: 'Relative weights of rarities in the stock.' }),
+          f.bool('restockOnVisit', 'New stock on every visit'),
+          f.long('notes', 'Appearance rules', { placeholder: 'e.g. Only on clear days, never during a Blood moon.' }),
+        ],
+        'Default rules for every Wandering merchant. Wandering calendar (Merchants) shows how often the player meets one.',
+      ),
+      s.form('market', 'Town market', [
+        f.num('restockDays', 'Restock every (days)', { min: 0 }),
+        f.ref('building', 'Market building', section('buildings', 'design.town'), { help: 'The Town building that hosts the market.' }),
+        f.long('stockByAct', 'Stock by progression', { placeholder: 'e.g. Act 1: tools and food; Act 2: iron gear; Act 3: rare materials.' }),
+        f.long('reputationEffect', 'Effect of faction relations', { placeholder: 'e.g. Hostile factions’ goods disappear; allies add exclusive stock.' }),
+      ]),
+      s.form('capital', 'Faction capital trade', [
+        f.ref('minLevel', 'Default required relationship', section('thresholds', 'design.factions'), { help: 'From Factions › Relationship levels. Merchants can override it.' }),
+        f.long('exclusiveRule', 'High-tier and unique goods', { placeholder: 'e.g. Each capital sells one Legendary item no one else has.' }),
+      ]),
+      s.collection(
+        'merchants',
+        'Merchants',
+        'merchant',
+        [
+          f.enm('type', 'Type', ['Wandering', 'Town market', 'Faction capital'], { group: 'Identity' }),
+          f.ref('faction', 'Faction', FACTIONS, { group: 'Identity' }),
+          f.multi('goods', 'Sells', ITEMS, { group: 'Stock' }),
+          f.multi('buys', 'Buys item types', catalog('itemTypes'), { group: 'Stock', help: 'It also buys everything it sells.' }),
+          f.ref('rarityCap', 'Highest rarity', catalog('rarities'), { group: 'Stock' }),
+          f.num('stockSize', 'Stock size (item slots)', { min: 0, group: 'Stock' }),
+          f.num('gold', 'Money for buying', { min: 0, group: 'Stock', help: 'How much the merchant can pay out before it runs dry (a money limit).' }),
+          f.long('stock', 'Stock notes', { group: 'Stock' }),
+          f.num('markup', 'Markup (× when selling to the player)', { min: 0, step: 0.05, group: 'Pricing', help: 'Empty counts as ×1.' }),
+          f.num('buyback', 'Buyback (× when buying from the player)', { min: 0, step: 0.05, group: 'Pricing', help: 'Empty counts as ×1.' }),
+          f.long('appearance', 'Appearance rule', { group: 'Wandering' }),
+          f.num('chance', 'Chance per roll (%)', { min: 0, max: 100, group: 'Wandering', help: 'Empty uses the Wandering merchant rules.' }),
+          f.num('interval', 'Roll every (days)', { min: 0, group: 'Wandering' }),
+          f.num('stayDays', 'Stays for (days)', { min: 0, group: 'Wandering' }),
+          f.ref('building', 'Building', section('buildings', 'design.town'), { group: 'Market' }),
+          f.ref('unlockAct', 'Opens in act', section('acts', 'design.story'), { group: 'Market' }),
+          f.num('restockDays', 'Restock every (days)', { min: 0, group: 'Market' }),
+          f.ref('minLevel', 'Required relationship', section('thresholds', 'design.factions'), { group: 'Capital' }),
+          f.multi('exclusive', 'Exclusive goods', ITEMS, { group: 'Capital', help: 'Items only this merchant should sell.' }),
+        ],
+        [v.cards(), v.kanban('type'), v.table(['name', 'type', 'faction', 'goods', 'markup', 'buyback']), v.merchantStock(), v.wanderingCalendar()],
+        {
+          description: 'Every merchant, of all three kinds. Each kind shows its own field group.',
+          groupFilter: { field: 'type', static: { Wandering: ['wandering'], 'Town market': ['market'], 'Faction capital': ['capital'] }, groups: { Wandering: 'wandering', Market: 'market', Capital: 'capital' } },
+        },
+      ),
+      s.formulas(
+        'pricing',
+        'Price formulas',
+        'Optional. Name a formula “buy price” or “sell price” to replace the built-in chain on that side. Variables: value (base × rarity × quality), base, mult, margin, markup, rep, difficulty, rule.',
+      ),
+      s.form(
+        'margins',
+        'Margins',
+        [
+          f.num('buyMultiplier', 'Player buy price (×)', { min: 0, step: 0.05, help: 'What the player pays, × item value. Empty uses Town › Economy model, then ×1.' }),
+          f.num('sellMultiplier', 'Player sell price (×)', { min: 0, step: 0.05, help: 'What the player gets, × item value. Keep it below the buy price.' }),
+          f.map('byReputation', 'Buy price by relationship (×)', section('thresholds', 'design.factions'), undefined, { help: 'Per Factions relationship level. Selling divides by the same factor.' }),
+          f.ref('difficultyParam', 'Difficulty parameter', section('params', 'design.difficulty'), { help: 'Its value per difficulty multiplies buy prices and divides sell prices. Empty finds “Economy price multiplier” by name.' }),
+        ],
+        'Trade owns the price margins; Town’s buy and sell multipliers are only a fallback.',
+      ),
+      s.collection(
+        'priceRules',
+        'Price rules',
+        'rule',
+        [
+          f.num('factor', 'Factor (×)', { step: 0.01 }),
+          f.enm('side', 'Side', ['Buy', 'Sell', 'Both']),
+          f.bool('paused', 'Paused', { help: 'Paused rules are kept but not applied.' }),
+          f.enm('scope', 'Applies to', ['Global', 'Merchant type', 'Merchant', 'Faction', 'Reputation level', 'Item type', 'Rarity'], { help: 'A rule without a scope is not applied.' }),
+          f.enm('merchantType', 'Merchant type', ['Wandering', 'Town market', 'Faction capital'], { group: 'Merchant type' }),
+          f.ref('merchant', 'Merchant', section('merchants'), { group: 'Merchant' }),
+          f.ref('faction', 'Faction', FACTIONS, { group: 'Faction' }),
+          f.ref('level', 'Relationship level', section('thresholds', 'design.factions'), { group: 'Relationship level' }),
+          f.ref('itemType', 'Item type', catalog('itemTypes'), { group: 'Item type' }),
+          f.ref('rarity', 'Rarity', catalog('rarities'), { group: 'Rarity' }),
+          f.long('description', 'When applied'),
+        ],
+        [v.table(['name', 'factor', 'side', 'scope', 'paused']), v.priceLadder()],
+        {
+          description: 'Extra × factors on top of the margins, e.g. a festival discount or a scarcity premium.',
+          // Only the target field of the chosen scope applies; the others fold away.
+          groupFilter: {
+            field: 'scope',
+            static: { Global: [], 'Merchant type': ['merchantType'], Merchant: ['merchant'], Faction: ['faction'], 'Reputation level': ['level'], 'Item type': ['itemType'], Rarity: ['rarity'] },
+            groups: { 'Merchant type': 'merchantType', Merchant: 'merchant', Faction: 'faction', 'Relationship level': 'level', 'Item type': 'itemType', Rarity: 'rarity' },
+          },
+        },
+      ),
+      s.form('balance', 'Economic balance', [
+        f.long('sinks', 'Money sinks and sources'),
+        f.long('inflation', 'Inflation control'),
+        f.num('horizonDays', 'Estimate horizon (days)', { min: 1, help: 'Used by Money flow when there are no Story acts. Default 30.' }),
+        f.num('actDays', 'Days per act length unit', { min: 0, help: 'Story act lengths × this = days. Default 1.' }),
+        f.num('keepTolerance', 'Acceptable kept income (%)', { min: 0, max: 100, help: 'If the player keeps more of their income than this in the last act, money piles up. Default 50.' }),
+        f.num('dailySellCap', 'Daily sell limit', { min: 0, help: 'Optional. Most money a player can make by selling per day.' }),
+      ]),
+      s.collection(
+        'flows',
+        'Money flows',
+        'flow',
+        [
+          f.enm('direction', 'Direction', ['Source', 'Sink']),
+          f.enm('kind', 'Kind', ['Selling loot', 'Quest reward', 'Wages / tax', 'Buying', 'Repair', 'Building cost', 'Upkeep', 'Fee', 'Other']),
+          f.num('amount', 'Amount', { min: 0 }),
+          f.enm('per', 'Per', ['Day', 'Event']),
+          f.num('perDay', 'Events per day', { min: 0, step: 0.05, help: 'For per-event flows: how many happen a day on average.' }),
+          f.ref('fromAct', 'From act', section('acts', 'design.story')),
+          f.ref('toAct', 'Until act', section('acts', 'design.story')),
+          f.multi('links', 'Comes from / goes to', {
+            any: [section('quests', 'design.story'), section('merchants'), section('buildings', 'design.town'), section('loot', 'design.items')],
+          }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'direction', 'kind', 'amount', 'per', 'perDay']), v.moneyFlow(), v.cards()],
+        { description: 'Where money comes from and where it goes, as average amounts. A planning estimate, not a simulation.' },
+      ),
+    ]),
+    version: 2,
+    migrate: migrateTrade,
+  },
+  {
+    ...mod('design', 'story', 'Story & Quests', 'docs/01_design/story_quests.md', '📜', 'Acts, characters, quests, choices, endings and dialogue style.', [
+      s.form('overview', 'Story overview', [
+        f.text('premise', 'Premise', { placeholder: 'One sentence: who, where, what is at stake.' }),
+        f.long('background', 'Background'),
+        f.long('conflict', 'Main conflict'),
+        f.long('secret', 'Secret of the island'),
+        f.list('themes', 'Themes'),
+      ]),
+      s.form(
+        'structure',
+        'Structure',
+        [
+          f.enm('actUnit', 'Act length unit', ACT_UNITS, { help: 'What act start and length count. Empty means in-game days (Trade’s Money flow reads it the same way).' }),
+          f.num('hoursPerDay', 'Play hours per in-game day', { min: 0, step: 0.05, help: 'Converts days to play time for Act pacing.' }),
+          f.long('pacingNotes', 'Pacing notes', { placeholder: 'e.g. Act 1 is a tutorial week; Act 3 opens the whole island.' }),
+        ],
+        'How long acts are. Act pacing compares quest play time and the player level reached with each act.',
+      ),
+      s.collection(
+        'acts',
+        'Acts',
+        'act',
+        [
+          f.num('start', 'Start', { min: 0, help: 'In the act length unit (Structure).' }),
+          f.num('duration', 'Length', { min: 0 }),
+          f.ref('biome', 'Main biome', BIOMES),
+          f.multi('extraBiomes', 'Other biomes', BIOMES),
+          f.long('goal', 'Player goal'),
+          f.multi('keyEvents', 'Key events', { any: [section('quests'), section('bosses', 'design.combat'), section('events', 'design.timeWeather')] }),
+          f.num('levelMin', 'Player level from', { min: 1, help: 'Intended player level range in this act; Act pacing checks it against the XP curve.' }),
+          f.num('levelMax', 'Player level to', { min: 1 }),
+          f.long('summary', 'Summary'),
+        ],
+        [v.timeline('start', 'duration', 'day'), v.actPacing(), v.cards()],
+      ),
+      s.collection(
+        'characters',
+        'Characters',
+        'character',
+        [
+          f.ref('faction', 'Faction', FACTIONS, { group: 'Identity' }),
+          f.text('role', 'Role', { group: 'Identity', placeholder: 'e.g. Mentor, rival, quest giver' }),
+          f.enm('importance', 'Importance', ['Main', 'Supporting', 'Minor'], { group: 'Identity' }),
+          f.ref('archetype', 'NPC archetype', section('archetypes', 'design.npc'), { group: 'Identity', help: 'Stats and needs come from this NPC System archetype.' }),
+          f.long('bio', 'Biography', { group: 'Story' }),
+          f.ref('introducedIn', 'Introduced in act', section('acts'), { group: 'Story' }),
+          f.ref('location', 'Usually found in', BIOMES, { group: 'Story' }),
+          f.bool('essential', 'Essential (cannot die)', { group: 'Story' }),
+          f.long('fate', 'Fate / arc', { group: 'Story' }),
+          f.map('relations', 'Relations (affinity)', section('characters'), 100, { min: -100, group: 'Relations', help: 'How this character feels about others, −100 … 100.' }),
+          f.long('voice', 'Voice', { group: 'Voice', placeholder: 'e.g. Clipped sentences, sailor slang, never says “please”.' }),
+          f.text('sampleLine', 'Sample line', { group: 'Voice' }),
+        ],
+        [v.cards(), v.table(['name', 'faction', 'role', 'importance', 'introducedIn']), v.castCoverage()],
+      ),
+      s.collection(
+        'questTypes',
+        'Quest types',
+        'quest type',
+        [
+          f.enm('type', 'Type', QUEST_TYPES),
+          f.long('purpose', 'Purpose'),
+          f.bool('repeatable', 'Repeatable'),
+          f.num('maxActive', 'Most active at once', { min: 0 }),
+          f.num('rewardScale', 'Reward scale (×)', { min: 0, step: 0.05, help: 'How generous this type is compared with a main quest (×1).' }),
+          f.long('generator', 'How they are made', { placeholder: 'e.g. Tavern board picks a template, a target from the current biome and a reward from the act budget.' }),
+        ],
+        [v.table(['name', 'type', 'repeatable', 'maxActive', 'rewardScale']), v.cards()],
+        { seed: QUEST_TYPE_SEED },
+      ),
+      s.collection(
+        'quests',
+        'Quests',
+        'quest',
+        [
+          f.enm('type', 'Type', QUEST_TYPES, { group: 'Identity' }),
+          f.ref('giver', 'Giver', section('characters'), { group: 'Identity' }),
+          f.ref('faction', 'Faction', FACTIONS, { group: 'Identity' }),
+          f.ref('act', 'Act', section('acts'), { group: 'Identity' }),
+          f.num('estMinutes', 'Estimated play time (min)', { min: 0, group: 'Identity' }),
+          f.bool('missable', 'Missable', { group: 'Identity' }),
+          f.multi('requires', 'Requires quests', section('quests'), { group: 'Requirements' }),
+          f.num('minLevel', 'Minimum player level', { min: 1, group: 'Requirements' }),
+          f.ref('repFaction', 'Reputation with', FACTIONS, { group: 'Requirements' }),
+          f.ref('repLevel', 'At least', section('thresholds', 'design.factions'), { group: 'Requirements' }),
+          f.long('conditions', 'Condition notes', { group: 'Requirements' }),
+          f.check('objectives', 'Objectives', { group: 'Objectives' }),
+          f.multi('locations', 'Where', BIOMES, { group: 'Objectives' }),
+          f.multi('targets', 'Targets', { any: [section('enemies', 'design.combat'), section('bosses', 'design.combat'), section('items', 'design.items')] }, { group: 'Objectives' }),
+          f.num('rewardXp', 'XP', { min: 0, group: 'Rewards' }),
+          f.num('rewardMoney', 'Money', { min: 0, group: 'Rewards' }),
+          f.map('rewardItems', 'Items', section('items', 'design.items'), undefined, { group: 'Rewards' }),
+          f.map('rewardRep', 'Reputation change', FACTIONS, 100, { min: -100, group: 'Rewards' }),
+          f.multi('unlocks', 'Unlocks', { any: [section('skills', 'design.player'), section('recipes', 'design.items')] }, { group: 'Rewards' }),
+          f.long('rewards', 'Reward notes', { group: 'Rewards' }),
+          f.multi('blocks', 'Closes quests', section('quests'), { group: 'Consequences', help: 'Quests that can no longer be done after this one.' }),
+          f.long('consequences', 'Consequences', { group: 'Consequences' }),
+        ],
+        [v.cards(), v.kanban('type'), v.table(['name', 'type', 'giver', 'act', 'rewardXp', 'rewardMoney']), v.questFlow(), v.rewardBudget()],
+        { description: 'The quest sheet of doc chapter 5. Requirements and rewards are links and numbers so the editor can order quests and add up rewards.' },
+      ),
+      s.collection(
+        'choices',
+        'Choices',
+        'option',
+        [
+          f.text('decision', 'Decision', { required: true, help: 'Options with the same decision name exclude each other.', placeholder: 'e.g. Fate of the lighthouse' }),
+          f.ref('quest', 'Made in quest', section('quests')),
+          f.multi('leadsTo', 'Opens quests', section('quests')),
+          f.multi('blocks', 'Closes quests', section('quests')),
+          f.map('repEffects', 'Reputation change', FACTIONS, 100, { min: -100 }),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'decision', 'quest', 'leadsTo', 'blocks']), v.kanban('decision'), v.cards()],
+        { description: 'One entry per option. The player picks one option of each decision.' },
+      ),
+      s.collection(
+        'endings',
+        'Endings',
+        'ending',
+        [
+          f.enm('kind', 'Kind', ['Main', 'Faction', 'Secret', 'Bad']),
+          f.multi('requiresQuests', 'Requires quests', section('quests')),
+          f.multi('requiresChoices', 'Requires options', section('choices')),
+          f.ref('repFaction', 'Reputation with', FACTIONS),
+          f.ref('repLevel', 'At least', section('thresholds', 'design.factions')),
+          f.multi('factionEndings', 'Faction outcomes', section('endings', 'design.factions'), { help: 'Matching entries in Factions › Endings.' }),
+          f.long('description', 'Description'),
+        ],
+        [v.endingPaths(), v.cards(), v.table(['name', 'kind', 'requiresQuests', 'requiresChoices'])],
+      ),
+      s.graph('questGraph', 'Dialog and branching sketch', ['Quest', 'Dialog', 'Choice', 'Event', 'Ending'], {
+        nodeSource: { any: [section('quests'), section('choices'), section('endings')] },
+        edgeKinds: ['then', 'if choice', 'on failure', 'unlocks'],
+        description: 'A free sketch. Quest order comes from the quests’ requirements (see Quest flow); hints flag sketch edges the data does not have.',
+      }),
+      s.form('dialogue', 'Dialogue and narrative style', [
+        f.long('tone', 'Narrative style'),
+        f.enm('format', 'Dialogue format', ['Linear', 'Branching tree', 'Hub', 'Barks only']),
+        f.num('lineLimit', 'Line length limit (characters)', { min: 0, help: 'Keeps lines readable in the UI and leaves room for longer translations.' }),
+        f.long('voiceRules', 'Voice rules', { placeholder: 'e.g. Islanders speak in short sentences; outsiders are formal.' }),
+        f.long('localization', 'Localization', { placeholder: 'e.g. English and Hungarian; no puns that cannot be translated.' }),
+        f.long('vo', 'Voice-over'),
+      ]),
+    ]),
+    version: 2,
+    migrate: migrateStory,
+  },
   mod('design', 'ui', 'UI / UX', 'docs/01_design/ui_ux.md', '🖥️', 'Screens, flows, wireframes.', [
     s.form('principles', 'UX principles', [f.long('principles', 'Principles'), f.long('input', 'Input and controls'), f.long('a11y', 'Accessibility and localization')]),
     s.collection(

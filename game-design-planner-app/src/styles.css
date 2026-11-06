@@ -190,6 +190,23 @@ h1,h2,h3{margin:.6em 0 .3em}
 .phase-seg{position:absolute;top:0;bottom:0;border:none;border-right:1px solid #14161a;border-radius:0;padding:0 6px;font-size:11px;color:#14161a;overflow:hidden;white-space:nowrap;text-align:left}
 .phase-seg.selected{outline:3px solid var(--text);outline-offset:-3px}
 .phase-gap{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,transparent 0 5px,#e5b45566 5px 10px)}
+.clock-wrap{display:flex;justify-content:center}
+.day-clock{width:300px;max-width:100%;height:auto}
+.clock-track{stroke:var(--panel2)}
+.clock-arc{stroke:#14161a;stroke-width:1.5;cursor:pointer;opacity:.85}.clock-arc.selected{stroke:var(--text);stroke-width:3;opacity:1}
+.clock-hatch{fill:#e5b45599}
+.clock-overlap{fill:var(--danger)}
+.clock-tick{fill:var(--muted);font-size:11px}.clock-label{fill:#14161a;font-size:11px;font-weight:600;pointer-events:none}
+.clock-center{fill:var(--text);font-size:18px;font-weight:600}
+.year-strip{display:flex;flex-direction:column;gap:6px}
+.year-seasons{position:relative;height:24px;margin-left:150px;margin-right:110px;border-radius:6px;overflow:hidden;background:var(--panel2)}
+.year-season{position:absolute;top:0;bottom:0;font-size:11px;color:#14161a;padding-left:4px;overflow:hidden;white-space:nowrap;opacity:.8}
+.year-lane{display:grid;grid-template-columns:140px 1fr 100px;gap:10px;align-items:center}
+.year-lane .link-btn.on{color:var(--accent)}
+.year-track{position:relative;height:16px;background:var(--panel2);border-radius:4px}
+.year-mark{position:absolute;top:2px;bottom:2px;border-radius:2px}
+.year-mark.example{opacity:.5}
+.year-mark.coincide{outline:2px solid var(--danger);outline-offset:1px}
 .phase-overlap{position:absolute;top:0;bottom:0;background:#e5586b88;z-index:1;pointer-events:none}
 .system-map{border:1px solid var(--line);border-radius:8px;padding:4px 10px;margin:6px 0 4px;background:var(--panel)}
 .system-map>summary{cursor:pointer;padding:4px 0;font-weight:600}
@@ -235,3 +252,28 @@ h1,h2,h3{margin:.6em 0 .3em}
 .example-option.on{border-color:var(--accent);background:#22324a}
 .guide-empty p{margin:4px 0 8px}
 .st-key.learned{background:#24432f}.st-key.available{border-style:dashed}.st-key.locked{opacity:.45}
+/* Trade & Economy views */
+.price-ladders{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.price-ladder{display:flex;flex-direction:column;gap:4px}
+.npc-preview td.long{color:var(--ok)}
+.ladder-bar-cell{width:35%}.ladder-bar{height:8px;background:var(--accent);border-radius:2px;opacity:.7}
+tr.clickable{cursor:pointer}tr.clickable:hover td,tr.clickable:hover th{background:var(--panel2)}
+.loop-list{margin:0;padding-left:18px;color:var(--warn)}
+.visit-strip{width:100%;max-width:640px;height:30px;display:block}
+.visit-track{fill:var(--panel2)}.visit-roll{stroke:var(--line);stroke-width:1}.visit-on{fill:var(--accent)}
+/* Story & Quests views */
+.quest-flow{display:block}
+.qf-col{fill:var(--muted);font-size:12px;font-weight:600}
+.qf-node{cursor:pointer}.qf-node rect:first-child{fill:var(--panel2);stroke:var(--line)}
+.qf-node.main rect:first-child{stroke:var(--accent);stroke-width:2}
+.qf-node.selected rect:first-child{stroke:var(--text);stroke-width:2}
+.qf-node.cycle rect:first-child{stroke:var(--danger);stroke-width:2}
+.qf-node.unreachable rect:first-child{stroke:var(--warn);stroke-dasharray:4 3}
+.qf-name{fill:var(--text);font-size:12px}.qf-meta{fill:var(--muted);font-size:10px}
+.qf-edge{fill:none;stroke:var(--line);stroke-width:1.5}.qf-edge.main{stroke:var(--accent);stroke-width:2.5}
+.qf-edge.choice{stroke-dasharray:5 3}.qf-edge.back{stroke:var(--danger)}
+.qf-arrowhead{fill:var(--muted)}
+.coverage tr.idle th{outline:2px dashed var(--warn);outline-offset:-3px}
+.act-bar-row{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center}
+.act-bar-track{background:var(--panel2);border-radius:3px;height:20px}
+.act-bar{height:20px;background:var(--accent);opacity:.8;border-radius:3px;font-size:11px;white-space:nowrap;overflow:hidden;padding:2px 4px;color:var(--text)}
