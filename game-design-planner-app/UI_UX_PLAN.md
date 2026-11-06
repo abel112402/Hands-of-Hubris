@@ -1,6 +1,6 @@
 # UI / UX editor: analysis and v2 plan
 
-**Status:** Proposed | **Date:** 2026-11-06 | **Module:** `design.ui` ([src/modules/design.ts](src/modules/design.ts), `mod('design', 'ui', …)`) | **Method:** [EDITOR_UPGRADE_GUIDE.md](EDITOR_UPGRADE_GUIDE.md)
+**Status:** Implemented (see “Implementation notes” at the end) | **Date:** 2026-11-06 | **Module:** `design.ui` ([src/modules/design.ts](src/modules/design.ts), `mod('design', 'ui', …)`) | **Method:** [EDITOR_UPGRADE_GUIDE.md](EDITOR_UPGRADE_GUIDE.md)
 
 ## Context
 
@@ -373,3 +373,16 @@ Register them in `RULES`, and add `hints.ui*.title/body` to both `en.json` and `
 2. **A dedicated wireframe editor** instead of extending the generic `CanvasEditor`. The World map keeps the simple editor, so nothing there changes.
 3. **The flow graph remains the authoritative "intended flow"**; wireframe button actions are compared with it, and one click adds the missing arrows. The alternative is generating the graph from the wireframes and dropping the hand-drawn one.
 4. **Deliberately low fidelity:** greyscale, no images or custom fonts. This keeps it a wireframe tool, fast and theme-safe; hi-fi mockups stay in art tools.
+
+## Implementation notes (2026-11-06)
+
+All four decisions above were taken as recommended. Where the build differs from the plan:
+
+- **Element kinds:** there are 29, not 30. The layers list has no rename; an element's name is its text or its kind.
+- **Drag previews:** they live in local state and are committed once on pointer-up. The store's undo coalescing is time-based, so this is what guarantees one undo step per gesture. Keyboard nudges coalesce per selection.
+- **Window and popup screens:** they draw centred on a dimmed full-resolution backdrop. In Preview the backdrop is the screen they were opened from.
+- **⤢ Focus** takes the editor full-window. Container queries collapse the side panels when the editor is narrow.
+- **The artboard** is an inverted "paper" sheet built from theme variables (`--text` as paper, `--muted` strokes), so wireframes read like the exported SVGs.
+- **Templates** live in `core/uiTemplates.ts`; the editor's empty state and the guide examples share them.
+- **The "Map" screen** migrates to *Fullscreen menu*. "Add arrows from wireframes" is a button in the Screen flow toolbar.
+- **Known noise (app-wide rule, not changed here):** `consistency.orphan` lists seeded screens that no control references.

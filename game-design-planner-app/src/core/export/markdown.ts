@@ -19,6 +19,7 @@ import { comparedLevels, depletion, levelTable, PLAYER_DOC, treeAnalysis } from 
 import { coverage, finalValue, itemList, itemSources, lootOdds, rawCost, valueAdded } from '../items'
 import { biomeWeather, conditions, dayCoverage, eventCalendar, nightPhase, realMinutes, TIME_DOC, timeList, yearLength } from '../timeWeather'
 import { bossGates, COMBAT_DOC, damageFormula, damagePerHit, fighterOf, phaseCoverage, threatRamp, timeToDie, timeToKill } from '../combat'
+import { artboardOf, bindLabel, controlConflicts, flowAnalysis, hudScreen, kindDef, layoutIssues, layoutOf, layoutRules, layoutSvg, navEdges, screensOf, UI_DOC, type WireElement } from '../ui'
 import { actPacing, actsInOrder, decisionsOf, endingReachability, questDeps, rewardsByAct, STORY_DOC } from '../story'
 import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
 
@@ -339,6 +340,84 @@ function timeWeatherSummaryMd(project: Project, sec: Extract<SectionDef, { kind:
   return out
 }
 
+/** Where a screen's wireframe SVG goes in the export zip, relative to ui_ux.md. */
+export const wireframePath = (screen: Entity) => `ui_wireframes/${String(screen.id).replace(/[^\w-]/g, '_')}.svg`
+
+const REGION = (x: number, y: number, w: number, h: number, bw: number, bh: number) => {
+  const cx = (x + w / 2) / bw
+  const cy = (y + h / 2) / bh
+  const v = cy < 1 / 3 ? 'top' : cy > 2 / 3 ? 'bottom' : ''
+  const hz = cx < 1 / 3 ? 'left' : cx > 2 / 3 ? 'right' : ''
+  return v && hz ? `${v}-${hz}` : v || hz || 'centre'
+}
+const elementLine = (project: Project, screens: Entity[], el: WireElement, bw: number, bh: number) => {
+  const d = kindDef(el.kind)
+  const bits = [d.label, el.text ? `“${el.text}”` : '', REGION(el.x, el.y, el.w, el.h, bw, bh), el.bind ? `shows ${bindLabel(project, el.bind)}` : '', el.action ? (el.action.kind === 'opens' ? `opens ${screens.find((s) => s.id === el.action!.screen)?.name ?? '⚠ missing'}` : el.action.kind) : '', el.states?.length ? `only in ${el.states.join(', ')}` : '']
+  return bits.filter(Boolean).join(' · ')
+}
+
+/** Chapter 2: the flow as Mermaid (graph and wireframe buttons) with reachability. */
+function uiFlowMd(project: Project): string {
+  const screens = screensOf(project)
+  if (!screens.length) return ''
+  const f = flowAnalysis(project)
+  const id = (s: string) => `S_${s.replace(/\W/g, '_')}`
+  const seen = new Set<string>()
+  let out = '\n```mermaid\nflowchart LR\n'
+  for (const s of screens) out += `  ${id(s.id)}["${String(entityLabel(s)).replace(/"/g, "'")}"]\n`
+  for (const e of navEdges(project)) {
+    if (!e.to || seen.has(`${e.from}>${e.to}`)) continue
+    seen.add(`${e.from}>${e.to}`)
+    out += `  ${id(e.from)} ${e.source === 'wireframe' ? '-->' : '-.->'} ${id(e.to)}\n`
+  }
+  out += '```\n'
+  out += `\n_Entry: ${esc(entityLabel(f.entry ?? { id: '' }))}. Solid arrows are buttons in the wireframes, dashed ones only in the graph._\n`
+  if (f.unreachable.length) out += `\n_Unreachable: ${f.unreachable.map((s) => entityLabel(s)).join(', ')}._\n`
+  if (f.deadEnds.length) out += `\n_No way back: ${f.deadEnds.map((s) => entityLabel(s)).join(', ')}._\n`
+  return out
+}
+
+/** Chapter 3 (HUD widgets and their data) and chapter 6 (text fit) from the forms. */
+function uiFormMd(project: Project, sectionId: string): string {
+  if (sectionId === 'hud') {
+    const hud = hudScreen(project)
+    const els = layoutOf(hud)
+    if (!hud || !els.length) return ''
+    const { w, h } = artboardOf(project, hud)
+    return `\n**HUD widgets** (${esc(entityLabel(hud))}, ${w}×${h}; [wireframe](${wireframePath(hud)})):\n\n${els.map((e) => `* ${esc(elementLine(project, screensOf(project), e, w, h))}`).join('\n')}\n`
+  }
+  if (sectionId === 'accessibility') {
+    const rules = layoutRules(project)
+    const misfits = screensOf(project).flatMap((s) => layoutIssues(project, s).filter((i) => i.kind === 'textFit').map((i) => `${entityLabel(s)}: ${i.message}`))
+    return `\n_Text fit at +${rules.textExpansion} %: ${misfits.length ? misfits.map(esc).join('; ') : 'every label fits'}._\n`
+  }
+  return ''
+}
+
+/** Chapter 4: each screen's wireframe as a list of elements, its link, and annotations; chapter 5: control conflicts. */
+function uiSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  let out = ''
+  if (kinds.has('wireframe')) {
+    const screens = screensOf(project)
+    for (const s of data) {
+      const els = layoutOf(s)
+      if (!els.length) continue
+      const { w, h } = artboardOf(project, s)
+      out += `\n#### ${esc(entityLabel(s))}: wireframe\n\n![${esc(entityLabel(s))}](${wireframePath(s)})\n\n${els.map((e) => `* ${esc(elementLine(project, screens, e, w, h))}`).join('\n')}\n`
+      const notes = els.filter((e) => e.note?.trim())
+      if (notes.length) out += `\n**Notes:**\n\n${notes.map((e, i) => `${i + 1}. ${esc(e.text || kindDef(e.kind).label)}: ${esc(e.note)}`).join('\n')}\n`
+      const issues = layoutIssues(project, s).filter((i) => i.level !== 'info')
+      if (issues.length) out += `\n_Open issues: ${issues.map((i) => esc(i.message)).join('; ')}._\n`
+    }
+  }
+  if (kinds.has('bindingMap')) {
+    const c = controlConflicts(project)
+    if (c.length) out += `\n**Conflicts:** ${c.map((x) => `${esc(x.value)}: ${esc(entityLabel(x.a))} + ${esc(entityLabel(x.b))}`).join('; ')}\n`
+  }
+  return out
+}
+
 /** Story summaries: the chapter-2 act table, quest flow and main path, rewards per act, endings and the decision tree. */
 function storySummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
   const kinds = new Set(sec.views.map((v) => v.kind))
@@ -474,15 +553,15 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       // The section heading already names a single-field form, so a bullet repeating that title is dropped.
       if (sec.fields.length === 1 && filled.length === 1 && filled[0].f.label === sec.title) return filled[0].t + '\n'
       const lines = filled.map(({ f, t }) => `* **${f.label}:** ${t}`)
-      const extra = mod.id === TRADE_DOC ? tradeKindMd(project, sec.id) : ''
+      const extra = mod.id === TRADE_DOC ? tradeKindMd(project, sec.id) : mod.id === UI_DOC ? uiFormMd(project, sec.id) : ''
       return (lines.length ? lines.join('\n') + '\n' : extra ? '' : '_No data._\n') + extra
     }
     case 'collection':
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data)
     case 'graph':
-      return graphMd(project, mod.id, sec, data)
+      return graphMd(project, mod.id, sec, data) + (mod.id === UI_DOC && sec.id === 'flow' ? uiFlowMd(project) : '')
     case 'canvas': {
       if (!data.items.length) return '_Canvas is empty._\n'
       const entries = sec.zones ? resolveSource(project, mod.id, sec.zones.source) : []
@@ -535,11 +614,25 @@ export function moduleToMarkdown(project: Project, mod: PlannerModule): string {
 /** Path inside the exported docs folder, e.g. docs/01_design/x.md -> 01_design/x.md */
 export const exportPath = (mod: PlannerModule) => mod.docsPath.replace(/^docs\//, '')
 
+/** A file the export writes next to a document; `path` is relative to the document, as its Markdown links it. */
+export type ExportAsset = { path: string; mime: string; content: string }
+
+/**
+ * Files a document links to (today: UI wireframe SVGs). The single source for both the export zip and the Markdown
+ * preview, so whatever the preview shows is exactly what the zip contains.
+ */
+export function exportAssets(project: Project, mod: PlannerModule): ExportAsset[] {
+  if (mod.id === UI_DOC) return screensOf(project).filter((s) => layoutOf(s).length).map((s) => ({ path: wireframePath(s), mime: 'image/svg+xml', content: layoutSvg(project, s) }))
+  return []
+}
+
 export async function exportZip(project: Project): Promise<Blob> {
   const zip = new JSZip()
   for (const m of MODULES) {
     if (!project.documents[m.id]) continue
     zip.file(exportPath(m), moduleToMarkdown(project, m))
+    const dir = exportPath(m).replace(/[^/]+$/, '')
+    for (const a of exportAssets(project, m)) zip.file(dir + a.path, a.content)
   }
   return zip.generateAsync({ type: 'blob' })
 }

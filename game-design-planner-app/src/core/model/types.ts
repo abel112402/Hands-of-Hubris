@@ -84,6 +84,11 @@ export type CollectionView =
   | { kind: 'rewardBudget' }
   | { kind: 'endingPaths' }
   | { kind: 'castCoverage' }
+  /** UI / UX views; fields are fixed by the module (see core/ui.ts). The wireframe view edits each screen's `layout`. */
+  | { kind: 'wireframe' }
+  | { kind: 'screenMap' }
+  | { kind: 'screenReadiness' }
+  | { kind: 'bindingMap' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {

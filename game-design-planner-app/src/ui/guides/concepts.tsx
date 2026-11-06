@@ -366,6 +366,67 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="200" y="14" className="c-small">XP · money · reputation</text>
         </svg>
       )
+    case 'wireAnatomy':
+      return (
+        <svg viewBox="0 0 330 110" className="concept-svg" role="img" aria-label="A screen with its dashed safe area, a grid, an element inside and a too-small button flagged">
+          <rect x="10" y="8" width="200" height="94" className="c-box" />
+          {[30, 50, 70, 90, 110, 130, 150, 170, 190].map((x) => <line key={x} x1={x} y1="8" x2={x} y2="102" className="c-axis" opacity="0.25" />)}
+          <rect x="20" y="16" width="180" height="78" fill="none" stroke="#5b9cff" strokeDasharray="4 3" />
+          <rect x="28" y="70" width="70" height="16" rx="8" className="c-accent" />
+          <rect x="160" y="22" width="12" height="8" rx="2" fill="none" stroke="#e5b455" strokeWidth="2" />
+          <text x="176" y="20" className="c-small" fill="#e5b455">⚑</text>
+          <text x="220" y="24" className="c-small">dashed: safe area</text>
+          <text x="220" y="44" className="c-small">grid: snapping</text>
+          <text x="220" y="64" className="c-small">⚑: below the</text>
+          <text x="220" y="78" className="c-small">minimum size</text>
+        </svg>
+      )
+    case 'screenDepth':
+      return (
+        <svg viewBox="0 0 330 90" className="concept-svg" role="img" aria-label="Screens one and two clicks from the HUD, one with no way back">
+          {[
+            ['HUD', 10, 34, 'c-accent'],
+            ['Inventory', 120, 10, 'c-box'],
+            ['Pause', 120, 56, 'c-box'],
+            ['Settings', 230, 56, 'c-danger-band'],
+          ].map(([t, x, y, cls]) => (
+            <g key={t as string}>
+              <rect x={x as number} y={y as number} width="86" height="24" rx="5" className={cls as string} />
+              <text x={(x as number) + 43} y={(y as number) + 16} textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <line x1="96" y1="46" x2="120" y2="22" className="c-line" />
+          <line x1="96" y1="46" x2="120" y2="68" className="c-line" />
+          <line x1="206" y1="68" x2="230" y2="68" className="c-line" />
+          <text x="10" y="88" className="c-small">columns = clicks · red: no way back</text>
+        </svg>
+      )
+    case 'hudBinding':
+      return (
+        <svg viewBox="0 0 330 70" className="concept-svg" role="img" aria-label="A stat bar on the HUD linked to the Health survival stat">
+          <rect x="10" y="20" width="130" height="22" rx="11" className="c-box" />
+          <rect x="10" y="20" width="90" height="22" rx="11" className="c-accent" />
+          <text x="20" y="35" className="c-small">Health</text>
+          <line x1="140" y1="31" x2="200" y2="31" className="c-line" strokeDasharray="4 3" />
+          <rect x="200" y="14" width="120" height="34" rx="5" className="c-box" />
+          <text x="260" y="29" textAnchor="middle" className="c-small">Player › survival</text>
+          <text x="260" y="42" textAnchor="middle" className="c-small">Health, max 100</text>
+          <text x="10" y="64" className="c-small">the widget shows a live entry of the game data</text>
+        </svg>
+      )
+    case 'keyConflict':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="E bound to two actions in gameplay is a conflict; Esc in two contexts is fine">
+          <rect x="10" y="10" width="34" height="30" rx="5" fill="#e5586b55" stroke="#e5586b" />
+          <text x="27" y="30" textAnchor="middle" className="c-small">E</text>
+          <text x="54" y="22" className="c-small">Interact · gameplay</text>
+          <text x="54" y="36" className="c-small">Inventory · gameplay  → clash</text>
+          <rect x="10" y="46" width="34" height="30" rx="5" className="c-box" />
+          <text x="27" y="66" textAnchor="middle" className="c-small">Esc</text>
+          <text x="54" y="58" className="c-small">Pause · gameplay</text>
+          <text x="54" y="72" className="c-small">Close · Inventory  → fine</text>
+        </svg>
+      )
     case 'abilityTimeline':
       return (
         <svg viewBox="0 0 320 70" className="concept-svg" role="img" aria-label="Spend cost, cast time, effect, then cooldown">

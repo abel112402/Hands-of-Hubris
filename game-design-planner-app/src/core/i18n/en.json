@@ -655,6 +655,42 @@
     "storyGraphSync": {
       "title": "Sketch and quest data disagree",
       "body": "The dialog sketch connects these quests, but no requirement or option does: {{names}}."
+    },
+    "uiUnreachable": {
+      "title": "Screens nobody can open",
+      "body": "{{count}} screen(s) cannot be reached from {{entry}} through the flow graph or any button: {{names}}. See Screen map."
+    },
+    "uiDeadEnd": {
+      "title": "Screens without a way back",
+      "body": "{{count}} screen(s) have no back, close or navigation out: {{names}}."
+    },
+    "uiNavMismatch": {
+      "title": "Flow graph and buttons disagree",
+      "body": "{{count}} connection(s) exist only on one side: {{names}}. “Add arrows from wireframes” in Screen flow fixes the button-only ones."
+    },
+    "uiLayout": {
+      "title": "Layout problems",
+      "body": "Small text or targets, elements outside the safe area or the screen, overlapping controls or broken links: {{names}}. Turn on Checks in the Wireframe view."
+    },
+    "uiTextFit": {
+      "title": "Labels too long for translation",
+      "body": "{{count}} label(s) would not fit at the configured text expansion, e.g. {{names}}."
+    },
+    "uiHudCoverage": {
+      "title": "HUD and game data differ",
+      "body": "{{names}}."
+    },
+    "uiUnbound": {
+      "title": "HUD widgets without data",
+      "body": "{{count}} widget(s) show nothing yet: {{names}}. Pick what they show under Data in the properties."
+    },
+    "uiControlConflicts": {
+      "title": "Two actions on one input",
+      "body": "These actions share a binding in the same context: {{names}}. See Binding map."
+    },
+    "uiScreenBasics": {
+      "title": "Screens not ready",
+      "body": "{{count}} screen(s) lack a purpose, a wireframe or states: {{names}}. See Readiness."
     }
   },
   "ai": {

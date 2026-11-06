@@ -655,6 +655,42 @@
     "storyGraphSync": {
       "title": "A vázlat és a küldetésadatok eltérnek",
       "body": "A párbeszédvázlat összeköti ezeket a küldetéseket, de egyetlen feltétel vagy döntés sem: {{names}}."
+    },
+    "uiUnreachable": {
+      "title": "Elérhetetlen képernyők",
+      "body": "{{count}} képernyő sem a folyamatábrán, sem gombbal nem érhető el innen: {{entry}}: {{names}}. Lásd a Képernyőtérképet."
+    },
+    "uiDeadEnd": {
+      "title": "Képernyők visszaút nélkül",
+      "body": "{{count}} képernyőről nincs vissza, bezárás vagy továbblépés: {{names}}."
+    },
+    "uiNavMismatch": {
+      "title": "Eltér a folyamatábra és a gombok",
+      "body": "{{count}} kapcsolat csak az egyik oldalon létezik: {{names}}. A Képernyőfolyamban az „Add arrows from wireframes” pótolja a csak gombos kapcsolatokat."
+    },
+    "uiLayout": {
+      "title": "Elrendezési hibák",
+      "body": "Kicsi szöveg vagy célterület, biztonsági sávon vagy képernyőn kívüli elem, egymást takaró vezérlők vagy hibás hivatkozás: {{names}}. Kapcsold be az Ellenőrzéseket a Drótváz nézetben."
+    },
+    "uiTextFit": {
+      "title": "Fordításhoz túl hosszú feliratok",
+      "body": "{{count}} felirat nem férne el a beállított szövegnövekedéssel, például: {{names}}."
+    },
+    "uiHudCoverage": {
+      "title": "Eltér a HUD és a játékadat",
+      "body": "{{names}}."
+    },
+    "uiUnbound": {
+      "title": "Adat nélküli HUD-elemek",
+      "body": "{{count}} elem még nem mutat semmit: {{names}}. A tulajdonságoknál az Adat résznél válaszd ki, mit mutasson."
+    },
+    "uiControlConflicts": {
+      "title": "Két művelet egy bemeneten",
+      "body": "Ezek a műveletek ugyanabban a környezetben ugyanazt a gombot használják: {{names}}. Lásd a Gombkiosztás-térképet."
+    },
+    "uiScreenBasics": {
+      "title": "Nem kész képernyők",
+      "body": "{{count}} képernyőnél hiányzik a cél, a drótváz vagy az állapotok: {{names}}. Lásd a Készültség nézetet."
     }
   },
   "ai": {

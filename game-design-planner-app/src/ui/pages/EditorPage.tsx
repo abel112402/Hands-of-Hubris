@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getModule, getSections } from '../../core/modules/registry'
-import { moduleToMarkdown } from '../../core/export/markdown'
+import { exportAssets, exportPath, moduleToMarkdown } from '../../core/export/markdown'
 import { useStore } from '../../core/store/store'
 import { HintPanel } from '../hints/HintPanel'
 import { HelpPopup } from '../HelpPopup'
@@ -90,7 +90,7 @@ export function EditorPage() {
         </div>
         {guide && !preview && <SystemMapStrip docId={docId} guide={guide} current={sec?.id} />}
         {preview ? (
-          <MarkdownPreview text={moduleToMarkdown(project, mod)} />
+          <MarkdownPreview text={moduleToMarkdown(project, mod)} assets={exportAssets(project, mod)} fromPath={exportPath(mod)} />
         ) : sec ? (
           <div key={`${docId}/${sec.id}`}>
             <div className="section-head">

@@ -1,6 +1,7 @@
 import { EASIER, HARDER } from '../core/difficulty'
 import { DEFAULT_DAMAGE_FORMULA } from '../core/combatFormula'
 import type { GraphSource } from '../core/model/types'
+import { RESOLUTIONS, SCREEN_KINDS, UI_SYSTEMS } from '../core/ui'
 import { catalog, f, mod, s, section, v } from './helpers'
 
 const FACTIONS = section('factions', 'design.factions')
@@ -94,6 +95,58 @@ function migrateTimeWeather(data: Record<string, any>) {
     if (name.includes('blood moon')) Object.assign(e, { schedule: 'Moon cycle', interval: e.interval ?? 3 })
     else if (name.includes('full moon')) Object.assign(e, { schedule: 'Moon cycle', interval: e.interval ?? 1 })
   }
+}
+
+const UI_WINDOWS = ['inventory', 'crafting', 'character / skill tree', 'town overview', 'npc sheet', 'trade', 'diplomacy', 'quest log', 'settings']
+const CANVAS_KIND: Record<string, string> = { Frame: 'panel', Panel: 'panel', Button: 'button', Text: 'text', Icon: 'icon', List: 'list', Image: 'image', Input: 'input' }
+
+/**
+ * v1 kept input and accessibility notes in the principles form and drew every screen on one shared canvas.
+ * Notes move to their own forms; known screens get a kind; a canvas Frame whose label names a screen becomes that
+ * screen's wireframe: the items fully inside it move into the screen's layout with their ids, scaled from the frame to
+ * the default 1920×1080 artboard. Everything else stays on the sketch board.
+ */
+function migrateUi(data: Record<string, any>) {
+  const pr = data.principles
+  if (pr && typeof pr === 'object') {
+    for (const [from, section] of [['input', 'input'], ['a11y', 'accessibility']] as const) {
+      if (!(from in pr)) continue
+      if (typeof pr[from] === 'string' && pr[from].trim()) data[section] = { ...(data[section] ?? {}), notes: pr[from] }
+      delete pr[from]
+    }
+  }
+  const screens: any[] = Array.isArray(data.screens) ? data.screens : []
+  for (const sc of screens) {
+    if (sc.kind !== undefined) continue
+    const name = String(sc.name ?? '').trim().toLowerCase()
+    if (name === 'hud') Object.assign(sc, { kind: 'HUD', entry: true })
+    else if (name === 'map') sc.kind = 'Fullscreen menu'
+    else if (UI_WINDOWS.includes(name)) sc.kind = 'Window'
+  }
+  const canvas = data.wireframe
+  const items: any[] = Array.isArray(canvas?.items) ? canvas.items : []
+  const moved = new Set<string>()
+  for (const frame of items.filter((i) => i.kind === 'Frame')) {
+    const sc = screens.find((x) => String(x.name ?? '').trim().toLowerCase() === String(frame.label ?? '').trim().toLowerCase())
+    if (!sc || sc.layout?.elements?.length || !(frame.w > 0) || !(frame.h > 0)) continue
+    const sx = 1920 / frame.w
+    const sy = 1080 / frame.h
+    const inner = items.filter((i) => i !== frame && !moved.has(i.id) && i.x >= frame.x && i.y >= frame.y && i.x + i.w <= frame.x + frame.w && i.y + i.h <= frame.y + frame.h)
+    sc.layout = {
+      elements: inner.map((i) => ({
+        id: i.id,
+        kind: CANVAS_KIND[i.kind] ?? 'panel',
+        x: Math.round((i.x - frame.x) * sx),
+        y: Math.round((i.y - frame.y) * sy),
+        w: Math.round(i.w * sx),
+        h: Math.round(i.h * sy),
+        ...(i.label && i.label !== i.kind ? { text: i.label } : {}),
+      })),
+    }
+    moved.add(frame.id)
+    inner.forEach((i) => moved.add(i.id))
+  }
+  if (moved.size) canvas.items = items.filter((i) => !moved.has(i.id))
 }
 
 export const QUEST_TYPES = ['Main', 'Faction', 'Tavern random', 'Event']
@@ -1749,21 +1802,96 @@ export const designModules = [
     version: 2,
     migrate: migrateStory,
   },
-  mod('design', 'ui', 'UI / UX', 'docs/01_design/ui_ux.md', '🖥️', 'Screens, flows, wireframes.', [
-    s.form('principles', 'UX principles', [f.long('principles', 'Principles'), f.long('input', 'Input and controls'), f.long('a11y', 'Accessibility and localization')]),
-    s.collection(
-      'screens',
-      'Screens',
-      'screen',
-      [f.long('purpose', 'Purpose'), f.list('elements', 'Elements'), f.list('interactions', 'Interactions'), f.list('states', 'States')],
-      [v.cards(), v.table(['name', 'purpose'])],
-      {
-        seed: ['HUD', 'Inventory', 'Crafting', 'Character / skill tree', 'Map', 'Town overview', 'NPC sheet', 'Trade', 'Diplomacy', 'Quest log', 'Settings'].map((name) => ({ name })),
-      },
-    ),
-    s.graph('flow', 'Screen flow', ['Screen', 'Popup', 'Overlay'], { nodeSource: section('screens'), edgeKinds: ['opens', 'closes', 'navigates'] }),
-    s.canvas('wireframe', 'Wireframe', ['Frame', 'Panel', 'Button', 'Text', 'Icon', 'List', 'Image', 'Input']),
-  ]),
+  {
+    ...mod('design', 'ui', 'UI / UX', 'docs/01_design/ui_ux.md', '🖥️', 'Principles, screen flow, HUD, wireframes per screen, controls and accessibility.', [
+      s.form('principles', 'UX principles', [
+        f.long('principles', 'Principles', { placeholder: 'e.g. Readable at a glance; the HUD never hides the world; every window closes with the same key.' }),
+        f.list('pillars', 'UX pillars'),
+      ]),
+      s.form(
+        'layoutRules',
+        'Layout rules',
+        [
+          f.enm('resolution', 'Target resolution', Object.keys(RESOLUTIONS), { help: 'Wireframes are drawn at this size. Default 1920×1080.' }),
+          f.num('safeArea', 'Safe area inset (%)', { min: 0, max: 20, help: 'Keep HUD and controls this far from the edges. Default 5.' }),
+          f.num('grid', 'Grid (px)', { min: 0, help: 'Snap step in the wireframe editor. Default 8; 0 turns grid snapping off.' }),
+          f.num('minTextPx', 'Minimum text size (px)', { min: 1, help: 'At the target resolution. Default 18.' }),
+          f.num('minTargetPx', 'Minimum click target (px)', { min: 1, help: 'Default 32 for mouse; use 48 for gamepad or touch.' }),
+          f.enm('density', 'Information density', ['Sparse', 'Balanced', 'Dense']),
+        ],
+        'The wireframe editor and its checks read these.',
+      ),
+      s.graph('flow', 'Screen flow', ['Screen', 'Popup', 'Overlay'], {
+        nodeSource: section('screens'),
+        edgeKinds: ['opens', 'closes', 'navigates'],
+        description: 'The intended navigation. Screen map checks it against the buttons in the wireframes; “Add arrows from wireframes” fills in what is missing.',
+      }),
+      s.form('hud', 'HUD', [
+        f.ref('hudScreen', 'HUD screen', section('screens'), { help: 'Empty uses the first screen of kind HUD.' }),
+        f.long('placement', 'Placement', { placeholder: 'e.g. Survival bars bottom-left, minimap top-right, hotbar bottom-centre.' }),
+        f.long('feedback', 'Feedback', { placeholder: 'e.g. Bars pulse below 20 %; damage flashes the screen edge.' }),
+        f.bool('minimal', 'Minimal / diegetic HUD'),
+        f.long('autoHide', 'Auto-hide rules'),
+      ]),
+      s.collection(
+        'screens',
+        'Screens',
+        'screen',
+        [
+          f.enm('kind', 'Kind', SCREEN_KINDS, { group: 'Identity' }),
+          f.enm('system', 'Serves', UI_SYSTEMS, { group: 'Identity' }),
+          f.bool('entry', 'Entry screen (where play starts)', { group: 'Identity' }),
+          f.enm('priority', 'Priority', ['MVP', 'Later'], { group: 'Identity' }),
+          f.long('purpose', 'Purpose', { group: 'Template' }),
+          f.list('interactions', 'Interactions', { group: 'Template' }),
+          f.list('states', 'States', { group: 'Template', help: 'e.g. default, empty, full. The wireframe editor can show elements per state.' }),
+          f.list('elements', 'Element notes', { group: 'Template' }),
+          f.num('width', 'Width (px)', { min: 0, group: 'Size', help: 'Windows and popups. Empty = the full target resolution.' }),
+          f.num('height', 'Height (px)', { min: 0, group: 'Size' }),
+        ],
+        [v.wireframe(), v.screenMap(), v.screenReadiness(), v.cards(), v.table(['name', 'kind', 'system', 'priority', 'purpose'])],
+        {
+          description: 'One wireframe per screen. The template of doc chapter 4: purpose, elements, interactions, states and the wireframe.',
+          seed: [['HUD', 'HUD'], ['Inventory', 'Window'], ['Crafting', 'Window'], ['Character / skill tree', 'Window'], ['Map', 'Fullscreen menu'], ['Town overview', 'Window'], ['NPC sheet', 'Window'], ['Trade', 'Window'], ['Diplomacy', 'Window'], ['Quest log', 'Window'], ['Settings', 'Window']].map(([name, kind]) => ({ name, kind, ...(kind === 'HUD' ? { entry: true } : {}) })),
+        },
+      ),
+      s.form('input', 'Input', [
+        f.long('notes', 'Input and controls'),
+        f.list('devices', 'Devices', { placeholder: 'Keyboard & mouse, Gamepad' }),
+        f.bool('rebinding', 'All actions can be rebound'),
+        f.bool('holdToggle', 'Hold actions can be set to toggle'),
+      ]),
+      s.collection(
+        'controls',
+        'Controls',
+        'action',
+        [
+          f.enm('category', 'Category', ['Movement', 'Combat', 'Building', 'Menus', 'Camera', 'System']),
+          f.multi('contexts', 'Where', section('screens'), { help: 'Screens where it applies. Empty = during gameplay.' }),
+          f.text('key', 'Keyboard'),
+          f.text('mouse', 'Mouse'),
+          f.text('gamepad', 'Gamepad'),
+          f.enm('mode', 'Mode', ['Press', 'Hold', 'Double']),
+          f.bool('rebindable', 'Rebindable'),
+          f.long('notes', 'Notes'),
+        ],
+        [v.table(['name', 'category', 'key', 'mouse', 'gamepad', 'contexts']), v.bindingMap()],
+      ),
+      s.form('accessibility', 'Accessibility and localization', [
+        f.long('notes', 'Accessibility and localization'),
+        f.num('textScaleMin', 'Text scale from (%)', { min: 50, max: 200 }),
+        f.num('textScaleMax', 'Text scale to (%)', { min: 50, max: 300 }),
+        f.list('colorblind', 'Colour-blind modes'),
+        f.bool('subtitles', 'Subtitles'),
+        f.bool('reduceMotion', 'Reduce motion option'),
+        f.list('languages', 'Languages'),
+        f.num('textExpansion', 'Text expansion of the longest language (%)', { min: 0, max: 100, help: 'Labels must fit this much longer text. Default 30.' }),
+      ]),
+      s.canvas('wireframe', 'Sketch board (free)', ['Frame', 'Panel', 'Button', 'Text', 'Icon', 'List', 'Image', 'Input'], 'A free board for loose ideas. Each screen has its own wireframe under Screens › Wireframe.'),
+    ]),
+    version: 2,
+    migrate: migrateUi,
+  },
   mod('design', 'openQuestions', 'Open Questions', 'docs/01_design/open_questions.md', '❓', 'Design decisions to settle.', [
     s.collection(
       'questions',

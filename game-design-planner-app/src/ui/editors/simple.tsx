@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { ChecklistData, Entity, FormulaData, MatrixData, SectionDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
@@ -7,6 +7,7 @@ import { tryEvaluate, variablesOf } from '../../core/formula'
 import { ASYMMETRY_TOLERANCE } from '../../core/diplomacy'
 import { useSection, useProject } from '../hooks'
 import { FieldInput } from '../FieldInput'
+import type { ExportAsset } from '../../core/export/markdown'
 
 export function FormEditor({ docId, sec }: { docId: string; sec: Extract<SectionDef, { kind: 'form' }> }) {
   const { data, update } = useSection<Record<string, any>>(docId, sec.id)
@@ -214,23 +215,39 @@ export function ChecklistEditor({ docId, sec }: { docId: string; sec: Extract<Se
   )
 }
 
-/** Tiny safe Markdown renderer (headings, lists, bold, code); no raw HTML is ever injected. */
-function inline(text: string) {
-  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) =>
-    part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={i}>{part.slice(2, -2)}</strong> : part.startsWith('`') && part.endsWith('`') && part.length > 2 ? <code key={i}>{part.slice(1, -1)}</code> : <Fragment key={i}>{part}</Fragment>,
-  )
-}
-export function MarkdownPreview({ text }: { text: string }) {
-  const lines = text.split('\n')
+// The renderer (react-markdown, remark-gfm, Mermaid) loads only when a preview is opened.
+const MarkdownView = lazy(() => import('../markdown/MarkdownView'))
+
+/**
+ * What the exported .md file looks like when rendered (GitHub-flavoured, with Mermaid). `text` must be exactly the
+ * exported text, so the preview cannot drift from the file. Source shows that text verbatim.
+ */
+export function MarkdownPreview({ text, assets, fromPath }: { text: string; assets?: ExportAsset[]; fromPath?: string }) {
+  const [source, setSource] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const copy = () =>
+    void navigator.clipboard?.writeText(text).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    )
   return (
-    <div className="md">
-      {lines.map((l, i) => {
-        const h = /^(#{1,4})\s+(.*)$/.exec(l)
-        if (h) return h[1].length === 1 ? <h2 key={i}>{inline(h[2])}</h2> : h[1].length === 2 ? <h3 key={i}>{inline(h[2])}</h3> : <h4 key={i}>{inline(h[2])}</h4>
-        if (/^\s*[-*]\s+/.test(l)) return <li key={i}>{inline(l.replace(/^\s*[-*]\s+/, ''))}</li>
-        if (!l.trim()) return <br key={i} />
-        return <p key={i}>{inline(l)}</p>
-      })}
+    <div className="md-preview">
+      <div className="md-toolbar">
+        <div className="wf-seg" role="group" aria-label="Preview mode">
+          <button className={!source ? 'on' : ''} aria-pressed={!source} onClick={() => setSource(false)}>Rendered</button>
+          <button className={source ? 'on' : ''} aria-pressed={source} onClick={() => setSource(true)}>Source</button>
+        </div>
+        <span className="muted small">{text.split('\n').length} lines</span>
+        <span className="spacer" />
+        <button className="small" onClick={copy} onBlur={() => setCopied(false)}>{copied ? 'Copied ✓' : 'Copy Markdown'}</button>
+      </div>
+      {source ? (
+        <pre className="md-source" data-testid="md-source">{text}</pre>
+      ) : (
+        <Suspense fallback={<pre className="md-source">{text}</pre>}>
+          <MarkdownView text={text} assets={assets} fromPath={fromPath} />
+        </Suspense>
+      )}
     </div>
   )
 }

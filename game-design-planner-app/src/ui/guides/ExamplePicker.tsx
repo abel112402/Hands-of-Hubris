@@ -11,6 +11,7 @@ import { ClockDial } from '../editors/timeWeatherViews'
 import { moneyFlow, priceOf, reputationLevels, tradeList, wanderingOdds } from '../../core/trade'
 import { actPacing, endingReachability, storyList } from '../../core/story'
 import { QuestFlowCanvas } from '../editors/storyViews'
+import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, screensOf, uiList } from '../../core/ui'
 import { TreeCanvas } from '../editors/playerViews'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
@@ -29,6 +30,60 @@ export function applyExample(ex: GuideExample, param?: string) {
 }
 
 function Preview({ project, ex, param }: { project: Project; ex: GuideExample; param?: string }) {
+  const real = useProject()
+  if (ex.preview === 'wireframe') {
+    // The screens the example changes: their layout differs from the real project's.
+    const before = new Map(screensOf(real).map((s) => [s.id, JSON.stringify(s.layout ?? null)]))
+    const changed = screensOf(project).filter((s) => layoutOf(s).length && before.get(s.id) !== JSON.stringify(s.layout ?? null))
+    const shown = changed.length ? changed : screensOf(project).filter((s) => layoutOf(s).length).slice(0, 1)
+    return shown.length ? (
+      <div className="stack">
+        {shown.slice(0, 2).map((s) => (
+          <figure key={s.id} className="wf-preview">
+            <img alt={`Wireframe of ${s.name}`} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(layoutSvg(project, s))}`} />
+            <figcaption className="muted">{s.name} · {layoutOf(s).length} elements{layoutIssues(project, s).filter((i) => i.level !== 'info').length ? ` · ${layoutIssues(project, s).filter((i) => i.level !== 'info').length} issue(s)` : ''}</figcaption>
+          </figure>
+        ))}
+      </div>
+    ) : (
+      <p className="muted">These rules apply to every wireframe; nothing to draw yet.</p>
+    )
+  }
+  if (ex.preview === 'screenMap') {
+    const f = flowAnalysis(project)
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Screen</th><th>Clicks from {f.entry?.name ?? 'entry'}</th><th>Way back</th></tr>
+        </thead>
+        <tbody>
+          {screensOf(project).filter((s) => layoutOf(s).length).map((s) => (
+            <tr key={s.id}>
+              <td>{s.name}</td>
+              <td className="num">{f.depth.get(s.id) ?? 'unreachable'}</td>
+              <td>{f.deadEnds.some((d) => d.id === s.id) ? 'none' : s.id === f.entry?.id ? '—' : 'yes'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'bindings') {
+    const c = controlConflicts(project)
+    return (
+      <div>
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Action</th><th>Keyboard</th><th>Mouse</th><th>Gamepad</th></tr>
+          </thead>
+          <tbody>
+            {uiList(project, 'controls').slice(0, 14).map((a) => <tr key={a.id}><td>{a.name}</td><td>{a.key}</td><td>{a.mouse}</td><td>{a.gamepad}</td></tr>)}
+          </tbody>
+        </table>
+        <p className="muted">{c.length ? `Conflicts: ${c.map((x) => `${x.value}: ${x.a.name} + ${x.b.name}`).join('; ')}` : 'No conflicts.'}</p>
+      </div>
+    )
+  }
   if (ex.preview === 'xpCurve') {
     const t = levelTable(project)
     return (

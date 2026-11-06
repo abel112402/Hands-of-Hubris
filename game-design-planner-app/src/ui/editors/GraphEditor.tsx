@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { addMissingArrows, flowAnalysis, UI_DOC } from '../../core/ui'
 import {
   Background,
   Controls,
@@ -182,6 +183,14 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
         )}
         <button className="primary" onClick={addNode}>+ Add node</button>
         <button onClick={layout}>Auto layout</button>
+        {docId === UI_DOC && sec.id === 'flow' && (() => {
+          const missing = flowAnalysis(project).missingInGraph.length
+          return (
+            <button disabled={!missing} title="Add an arrow for every wireframe button that opens a screen the graph does not connect yet" onClick={() => mutate(addMissingArrows)}>
+              Add arrows from wireframes{missing ? ` (${missing})` : ''}
+            </button>
+          )
+        })()}
         {sec.links && (
           <select aria-label="Highlight" value={highlight} onChange={(e) => setHighlight(e.target.value)} title="Dim everything outside one entry">
             <option value="">Highlight: all</option>
