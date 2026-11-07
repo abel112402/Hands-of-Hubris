@@ -5,6 +5,8 @@ import type { Entity, Project } from '../../core/model/types'
 import { VISION_DOC } from '../../core/vision'
 import { ROADMAP_DOC, roadmapList } from '../../core/roadmap'
 import { formatMinutes, loopGraph, loopList, loopPacing } from '../../core/coreLoop'
+import { DIFFICULTY_DOC, levelPressure, levelSteps, paramsOf } from '../../core/difficulty'
+import { actionsOf, analyzeRanges, factionsOf, levelsOf as diplomacyLevels, relationPairs, scaleOf, simulateActions } from '../../core/diplomacy'
 import { comparedLevels, depletion, levelTable, playerList, treeAnalysis } from '../../core/player'
 import { useStore } from '../../core/store/store'
 import { itemList, lootOdds, multiplier, rawCost } from '../../core/items'
@@ -292,6 +294,105 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
         </thead>
         <tbody>
           {rows.map((e) => <tr key={e.id}><td>{e.name}</td><td className="muted">{detail(e)}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'difficultyPressure') {
+    const d = project.documents[DIFFICULTY_DOC]?.data
+    if (ex.section === 'presets') {
+      return (
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Preset</th><th>Intended experience</th></tr>
+          </thead>
+          <tbody>
+            {((d?.presets ?? []) as Entity[]).map((e) => <tr key={e.id}><td>{e.name}</td><td className="muted">{e.intent}</td></tr>)}
+          </tbody>
+        </table>
+      )
+    }
+    if (ex.section === 'custom') {
+      const names = new Map(paramsOf(project).map((x) => [x.id, x.name]))
+      return (
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Setting</th><th>Range</th><th>Changes</th></tr>
+          </thead>
+          <tbody>
+            {((d?.custom ?? []) as Entity[]).map((e) => (
+              <tr key={e.id}><td>{e.name}</td><td className="num">×{e.min ?? '–'}–×{e.max ?? '–'}</td><td className="muted">{((e.params ?? []) as string[]).map((id) => names.get(id)).join(', ') || 'no matching parameter'}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+    const steps = new Map(levelSteps(project).map((s) => [s.to.id, s]))
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Level</th><th>Pressure (0–100)</th><th>Step</th></tr>
+        </thead>
+        <tbody>
+          {levelPressure(project).map((r) => {
+            const s = steps.get(r.level.id)
+            return (
+              <tr key={r.level.id}>
+                <td>{r.level.label}</td>
+                <td className="num">{r.overall === null ? '—' : Math.round(r.overall * 100)}</td>
+                <td className="num">{s ? `${s.delta >= 0 ? '+' : ''}${Math.round(s.delta * 100)}` : ''}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'diplomacy') {
+    if (ex.section === 'factions')
+      return (
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Faction</th><th>Capital</th><th>Goals</th></tr>
+          </thead>
+          <tbody>
+            {factionsOf(project).map((f) => <tr key={f.id}><td><span className="tb-dot" style={{ background: f.color }} />{f.name}</td><td>{f.capital}</td><td className="muted">{f.goals}</td></tr>)}
+          </tbody>
+        </table>
+      )
+    if (ex.section === 'thresholds') {
+      const a = analyzeRanges(diplomacyLevels(project), scaleOf(project))
+      return (
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Level</th><th>Range</th><th>Consequences</th></tr>
+          </thead>
+          <tbody>
+            {a.rows.map((r) => <tr key={r.id}><td>{r.name}</td><td className="num">{r.from} to {r.to}{r.overlaps ? ' (overlaps)' : ''}</td><td className="muted">{diplomacyLevels(project).find((l) => l.id === r.id)?.consequences}</td></tr>)}
+          </tbody>
+        </table>
+      )
+    }
+    if (ex.section === 'actions') {
+      const rows = simulateActions(project, actionsOf(project).map((a) => a.id))
+      return (
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>Faction</th><th>After every action once</th><th>Level</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => <tr key={r.faction.id}><td>{r.faction.name}</td><td className="num">{r.start} → {r.end}</td><td className="muted">{r.endLevel?.name ?? 'no level'}</td></tr>)}
+          </tbody>
+        </table>
+      )
+    }
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Pair</th><th>Values</th><th>Standing</th></tr>
+        </thead>
+        <tbody>
+          {relationPairs(project).map((p) => <tr key={p.a.id + p.b.id}><td>{p.a.name} – {p.b.name}</td><td className="num">{p.ab ?? '–'} / {p.ba ?? '–'}</td><td className="muted">{p.standing === 'ally' ? 'allied' : p.standing === 'enemy' ? 'hostile' : p.standing ?? 'not set'}</td></tr>)}
         </tbody>
       </table>
     )

@@ -1,4 +1,5 @@
-import { analyzeDifficulty, DIFFICULTY_DOC as DOC, paramsOf } from '../../difficulty'
+import { analyzeDifficulty, baselineOutOfRange, DIFFICULTY_DOC as DOC, levelSteps, paramsOf } from '../../difficulty'
+import { paramUsage, unusedParams } from '../../difficultyImpact'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, hintId, isBlank, shortList } from '../util'
 
@@ -98,6 +99,34 @@ export const difficultyRules: HintRule[] = [
             params: { count: open.length, names: shortList(open.map((p) => p.name)) },
           }),
         ]
+      : []
+  }),
+  rule('difficulty.spacing', ({ project }) => {
+    const bad = levelSteps(project).filter((s) => s.inverted || s.tooClose)
+    return bad.length
+      ? [
+          hint({
+            key: 'difficultySpacing',
+            ruleId: 'difficulty.spacing',
+            severity: 'suggest',
+            sectionId: 'presets',
+            params: { names: shortList(bad.map((s) => `${s.from.label} → ${s.to.label} (${s.delta >= 0 ? '+' : ''}${Math.round(s.delta * 100)})`)) },
+          }),
+        ]
+      : []
+  }),
+  rule('difficulty.baseline', ({ project }) => {
+    const bad = baselineOutOfRange(project)
+    return bad.length
+      ? [hint({ key: 'difficultyBaseline', ruleId: 'difficulty.baseline', severity: 'info', sectionId: 'params', entityId: bad[0].id, params: { count: bad.length, names: shortList(bad.map((p) => p.name)) } })]
+      : []
+  }),
+  rule('difficulty.unused', ({ project }) => {
+    // Only once some system reads a parameter: before that, the Guide asks for the first link.
+    if (![...paramUsage(project).values()].some((u) => u.length)) return []
+    const bad = unusedParams(project)
+    return bad.length
+      ? [hint({ key: 'difficultyUnused', ruleId: 'difficulty.unused', severity: 'info', sectionId: 'params', entityId: bad[0].id, params: { count: bad.length, names: shortList(bad.map((p) => p.name)) } })]
       : []
   }),
 ]

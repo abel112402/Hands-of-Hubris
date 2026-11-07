@@ -27,6 +27,8 @@ import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
 import { PillarMatrixView, VisionReadinessView } from './visionViews'
 import { CutSavingsView, PhaseProgressView } from './roadmapViews'
 import { LoopPacingView } from './coreLoopViews'
+import { CustomSimulatorView, DifficultyImpactView, PressureOverviewView, TuningBoardView } from './difficultyViews'
+import { ActionSimulatorView, FactionFootprintView, RelationsWebView, ReputationScaleView } from './diplomacyViews'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   cards: 'Cards',
@@ -77,6 +79,14 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   phaseProgress: 'Progress',
   cutSavings: 'Savings',
   loopPacing: 'Pacing',
+  tuningBoard: 'Tuning board',
+  pressureOverview: 'Pressure',
+  difficultyImpact: 'Impact',
+  customSimulator: 'Simulator',
+  relationsWeb: 'Relations web',
+  factionFootprint: 'Footprint',
+  reputationScale: 'Scale',
+  actionSimulator: 'Simulator',
 }
 
 export type ViewProps = {
@@ -190,6 +200,14 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'phaseProgress' && <PhaseProgressView {...props} />}
           {view.kind === 'cutSavings' && <CutSavingsView {...props} />}
           {view.kind === 'loopPacing' && <LoopPacingView {...props} />}
+          {view.kind === 'tuningBoard' && <TuningBoardView {...props} />}
+          {view.kind === 'pressureOverview' && <PressureOverviewView {...props} />}
+          {view.kind === 'difficultyImpact' && <DifficultyImpactView />}
+          {view.kind === 'customSimulator' && <CustomSimulatorView {...props} />}
+          {view.kind === 'relationsWeb' && <RelationsWebView {...props} />}
+          {view.kind === 'factionFootprint' && <FactionFootprintView {...props} />}
+          {view.kind === 'reputationScale' && <ReputationScaleView {...props} />}
+          {view.kind === 'actionSimulator' && <ActionSimulatorView {...props} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}

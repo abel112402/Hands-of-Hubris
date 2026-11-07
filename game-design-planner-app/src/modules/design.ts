@@ -1,4 +1,4 @@
-import { EASIER, HARDER } from '../core/difficulty'
+import { CATEGORIES, EASIER, HARDER } from '../core/difficulty'
 import { DEFAULT_DAMAGE_FORMULA } from '../core/combatFormula'
 import type { GraphSource } from '../core/model/types'
 import { RESOLUTIONS, SCREEN_KINDS, UI_SYSTEMS } from '../core/ui'
@@ -377,7 +377,6 @@ function migrateNpc(data: Record<string, any>) {
   delete data.misc
 }
 
-const CATEGORIES = ['Combat', 'Survival', 'Economy', 'NPC', 'Other']
 const UNITS = ['×', '%', 'absolute', 'seconds', 'other']
 
 const PARAM_SEED = [
@@ -497,7 +496,7 @@ export const designModules = [
           f.long('intent', 'Intended experience', { help: 'What should this preset feel like?', placeholder: 'e.g. Relaxed; mistakes are forgiven and the story stays in focus.' }),
           f.long('targetPlayer', 'Target player', { help: 'Who is it for?', placeholder: 'e.g. Newcomers to survival games.' }),
         ],
-        [v.cards(), v.table()],
+        [v.cards(), v.pressureOverview(), v.difficultyImpact(), v.table()],
         {
           seed: [
             { name: 'Easy', level: 'easy' },
@@ -520,7 +519,7 @@ export const designModules = [
           f.bool('exception', 'Intentional exception', { help: 'Tick if this parameter is meant not to follow the harder-is-higher ordering.' }),
           f.long('notes', 'Notes'),
         ],
-        [v.table(['category', 'unit', 'direction', 'baseline', 'min', 'max']), v.cards(), v.compare('values', catalog('difficulties'))],
+        [v.tuningBoard(), v.table(['category', 'unit', 'direction', 'baseline', 'min', 'max']), v.cards(), v.compare('values', catalog('difficulties'))],
         { seed: PARAM_SEED },
       ),
       s.matrix(
@@ -541,11 +540,11 @@ export const designModules = [
         [
           f.text('pressure', 'Pressure the player adjusts', { placeholder: 'e.g. Hunger speed' }),
           f.multi('params', 'Parameters it changes', section('params')),
-          f.num('min', 'Lowest setting', { step: 0.01 }),
-          f.num('max', 'Highest setting', { step: 0.01 }),
+          f.num('min', 'Lowest setting (×)', { step: 0.01, help: 'As a multiplier on the chosen preset’s value, e.g. 0.5. The simulator uses ×0.5 when empty.' }),
+          f.num('max', 'Highest setting (×)', { step: 0.01, help: 'As a multiplier on the chosen preset’s value, e.g. 2. The simulator uses ×2 when empty.' }),
           f.long('notes', 'Notes', { help: 'Optional: lets players tune selected pressures without a new fixed preset.' }),
         ],
-        [v.table(), v.cards()],
+        [v.customSimulator(), v.table(), v.cards()],
         { description: 'Optional. Selected pressures players can adjust themselves, so you need fewer fixed presets.' },
       ),
       s.form('switching', 'Changing difficulty', [
@@ -593,7 +592,7 @@ export const designModules = [
           f.long('unlockConditions', 'Unlock conditions', { placeholder: 'e.g. Reputation 40+ and the “Border Patrol” quest done.' }),
           f.long('legacyNotes', 'Earlier notes', { help: 'Free text carried over from before characters and unlocks became links.' }),
         ],
-        [v.cards(), v.table(['name', 'capital', 'goals'])],
+        [v.relationsWeb(), v.cards(), v.factionFootprint(), v.table(['name', 'capital', 'goals'])],
       ),
       s.matrix('relations', 'Relationship matrix', section('factions'), section('factions'), { type: 'number', min: -100, max: 100 }, {
         diagonal: false,
@@ -619,7 +618,7 @@ export const designModules = [
           f.long('spilloverWhy', 'Why others react', { help: 'e.g. Supporting the guild antagonizes the crown.' }),
           f.long('description', 'Description'),
         ],
-        [v.table(), v.cards()],
+        [v.actionSimulator(), v.table(), v.cards()],
       ),
       s.collection(
         'thresholds',
@@ -630,7 +629,7 @@ export const designModules = [
           f.num('max', 'Max value', { min: -100, max: 100, help: 'Optional. Without it the level runs up to the next level’s minimum.' }),
           f.long('consequences', 'Trade, attacks, quests, biome access'),
         ],
-        [v.table(), v.ranges('min', 'max', { section: 'overview', minField: 'scaleMin', maxField: 'scaleMax', fallback: [-100, 100] })],
+        [v.reputationScale(), v.table(), v.ranges('min', 'max', { section: 'overview', minField: 'scaleMin', maxField: 'scaleMax', fallback: [-100, 100] })],
       ),
       s.collection(
         'endings',

@@ -1,4 +1,5 @@
-import { analyzeRanges, asymmetricPairs, DIPLOMACY_DOC as DOC, graphDisagreements, scaleOf } from '../../diplomacy'
+import { actionEffect, actionsOf, analyzeRanges, asymmetricPairs, DIPLOMACY_DOC as DOC, graphDisagreements, markProblems, scaleOf } from '../../diplomacy'
+import { unlinkedFactions } from '../../diplomacyFootprint'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, hintId, isBlank, shortList } from '../util'
 
@@ -114,6 +115,35 @@ export const diplomacyRules: HintRule[] = [
             params: { count: rows.length, names: shortList(rows.map((a) => String(a.name ?? ''))) },
           }),
         ]
+      : []
+  }),
+  active('diplomacy.marks', ({ project }) => {
+    const problems = markProblems(project)
+    return problems.length
+      ? [hint({ key: 'diplomacyMarks', ruleId: 'diplomacy.marks', severity: 'info', sectionId: 'overview', params: { names: shortList(problems, 4) } })]
+      : []
+  }),
+  active('diplomacy.unlinked', ({ project }) => {
+    const loose = unlinkedFactions(project)
+    return loose.length
+      ? [
+          hint({
+            key: 'diplomacyUnlinked',
+            ruleId: 'diplomacy.unlinked',
+            severity: 'info',
+            sectionId: 'factions',
+            entityId: loose[0].id,
+            params: { count: loose.length, names: shortList(loose.map((f) => String(f.name ?? ''))) },
+          }),
+        ]
+      : []
+  }),
+  active('diplomacy.untouched', ({ project }) => {
+    const actions = actionsOf(project).filter((a) => a.faction)
+    if (!actions.length) return []
+    const none = entitiesOf(project, DOC, 'factions').filter((f) => actions.every((a) => actionEffect(a, f.id) === 0))
+    return none.length
+      ? [hint({ key: 'diplomacyUntouched', ruleId: 'diplomacy.untouched', severity: 'info', sectionId: 'actions', params: { count: none.length, names: shortList(none.map((f) => String(f.name ?? ''))) } })]
       : []
   }),
 ]

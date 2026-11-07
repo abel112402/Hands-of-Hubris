@@ -97,6 +97,16 @@ export type CollectionView =
   | { kind: 'cutSavings' }
   /** Core Loop view; fields are fixed by the module (see core/coreLoop.ts). */
   | { kind: 'loopPacing' }
+  /** Difficulty views; fields are fixed by the module (see core/difficulty.ts, core/difficultyImpact.ts). */
+  | { kind: 'tuningBoard' }
+  | { kind: 'pressureOverview' }
+  | { kind: 'difficultyImpact' }
+  | { kind: 'customSimulator' }
+  /** Factions & Diplomacy views; fields are fixed by the module (see core/diplomacy.ts, core/diplomacyFootprint.ts). */
+  | { kind: 'relationsWeb' }
+  | { kind: 'factionFootprint' }
+  | { kind: 'reputationScale' }
+  | { kind: 'actionSimulator' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {
