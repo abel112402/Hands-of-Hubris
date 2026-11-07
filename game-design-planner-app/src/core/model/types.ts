@@ -60,6 +60,14 @@ export type CollectionView =
   | { kind: 'npcRoutine' }
   | { kind: 'npcBondLadder' }
   | { kind: 'npcEventOdds' }
+  | { kind: 'archLayerStack' }
+  | { kind: 'archLayers' }
+  | { kind: 'archMatrix' }
+  | { kind: 'archCoupling' }
+  | { kind: 'archMessages' }
+  | { kind: 'archExtensions' }
+  | { kind: 'archTicks' }
+  | { kind: 'archBoot' }
   | { kind: 'depletion' }
   | { kind: 'levelCurve' }
   | { kind: 'skillTree' }

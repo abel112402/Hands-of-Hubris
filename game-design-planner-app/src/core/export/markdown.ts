@@ -14,6 +14,7 @@ import { getSections, MODULES } from '../modules/registry'
 import { entityLabel, resolveSource } from '../references/refs'
 import { tryEvaluate } from '../formula'
 import { analyze, weekToDate, withBuffer } from '../schedule'
+import { ARCH_DOC, bootSequence, dependencies, dependencyCycles, extensionCoverage, layerOrder, messageFlow, nameOf, tickBudget } from '../architecture'
 import { bondLadder, eventOdds, lifespan, needChains, needsBalance, NPC_DOC, populationMix, workforceFlow } from '../npc'
 import { comparedLevels, depletion, levelTable, PLAYER_DOC, treeAnalysis } from '../player'
 import { coverage, finalValue, itemList, itemSources, lootOdds, rawCost, valueAdded } from '../items'
@@ -153,6 +154,49 @@ function needsBalanceMd(project: Project, sec: Extract<SectionDef, { kind: 'coll
     const b = needsBalance(project, s, view.populationField)
     const parts = b.rows.map((x) => `${x.label} ${r(x.demand)}/${x.supply === null ? '–' : r(x.supply)}${x.short ? ' (short)' : ''}`)
     out += `_Needs balance for ${entityLabel(s)} (population ${r(b.population)}; needed/supplied): ${parts.join(', ') || 'no needs set'}._\n`
+  }
+  return out
+}
+
+/** Summaries for the Technical Architecture views: layers with a Mermaid dependency graph, channels, coverage, tick budget and boot order. */
+function architectureSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!data.length) return ''
+  const r = (n: number) => Math.round(n * 100) / 100
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const node = (id: string, label: string) => `${id.replace(/[^A-Za-z0-9_]/g, '_')}["${label.replace(/["[\]]/g, '')}"]`
+  let out = ''
+  if (kinds.has('archLayers')) {
+    const layers = [...layerOrder(project)].reverse()
+    const deps = dependencies(project).filter((d) => d.to)
+    out += '\n```mermaid\nflowchart TB\n'
+    for (const l of layers) {
+      const mods = data.filter((m) => m.layer === l.id)
+      if (!mods.length) continue
+      out += `  subgraph ${node('L' + l.id, nameOf(l))}\n` + mods.map((m) => `    ${node(m.id, nameOf(m))}\n`).join('') + '  end\n'
+    }
+    for (const d of deps) out += `  ${node(d.from.id, nameOf(d.from))} ${d.issue === 'upward' ? '-.->|upward|' : '-->'} ${node(d.to!.id, nameOf(d.to))}\n`
+    out += '```\n'
+    const up = deps.filter((d) => d.issue === 'upward')
+    const cycles = dependencyCycles(project)
+    out += `\n_${deps.length} dependencies; ${up.length ? `upward: ${up.map((d) => `${nameOf(d.from)} → ${nameOf(d.to)}`).join(', ')}` : 'none upward'}; ${cycles.length ? `cycles: ${cycles.map((c) => c.map(nameOf).join(' ↔ ')).join('; ')}` : 'no cycles'}._\n`
+  }
+  if (kinds.has('archMessages')) {
+    out += '\n| Channel | Kind | Published by | Listened to by |\n|---|---|---|---|\n'
+    for (const c of messageFlow(project)) out += `| ${nameOf(c.channel)} | ${c.channel.kind ?? '–'} | ${c.publishers.map(nameOf).join(', ') || '–'} | ${c.subscribers.map(nameOf).join(', ') || '–'} |\n`
+  }
+  if (kinds.has('archExtensions')) {
+    const cov = extensionCoverage(project)
+    if (cov.rows.length) out += `\n_Extension coverage: ${cov.rows.map((x) => `${nameOf(x.schema)} → ${x.points.map(nameOf).join(', ') || 'none'}`).join('; ')}._\n`
+  }
+  if (kinds.has('archTicks')) {
+    const b = tickBudget(project)
+    out += `\n_Tick budget (planning estimate): ${r(b.tickRate)} ticks/s at ${r(b.fps)} fps; main-thread average ${r(b.avgFrameMs)} ms of a ${r(b.budgetMs)} ms simulation budget per frame; worst tick ${r(b.worstTickMs)} ms of a ${r(b.frameMs)} ms frame._\n`
+    out += '\n| System | Every N ticks | ms / s | Thread |\n|---|---|---|---|\n'
+    for (const x of b.rows) out += `| ${nameOf(x.system)} | ${x.every} | ${r(x.perSecond)} | ${x.system.thread ?? 'Main thread'} |\n`
+  }
+  if (kinds.has('archBoot')) {
+    const boot = bootSequence(project)
+    if (boot.steps.length) out += `\n_Boot order: ${boot.steps.map((s) => `${s.scenes.map(nameOf).join(' + ')} (${r(s.seconds)} s)`).join(' → ')}._\n`
   }
   return out
 }
@@ -776,7 +820,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
     }
     case 'collection':
       if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + (mod.id === ARCH_DOC ? architectureSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data) + (mod.id === DIFFICULTY_DOC && sec.id === 'values' ? difficultySummaryMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'relations' ? diplomacyRelationsMd(project) : '')
     case 'graph':

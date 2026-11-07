@@ -23,6 +23,7 @@ import { questionList } from '../../core/openQuestions'
 import { estimateTown, TOWN_DOC } from '../../core/town'
 import { bondLadder, eventOdds, lifespan, needChains, NPC_DOC, populationMix, statScale } from '../../core/npc'
 import { NPC_COLORS, RadarSvg } from '../editors/npcViews'
+import { ARCH_DOC, archList, bootSequence, dependencies, dependencyCycles, extensionCoverage, layerOrder, messageFlow, nameOf, tickBudget } from '../../core/architecture'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
 
@@ -575,6 +576,64 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
         <tbody>
           {rows.map((r) => <tr key={r.event.id}><td>{r.event.name}</td><td>{r.event.chance}% / {r.event.period}</td><td className="num">{r.perYear === null ? 'one-off' : `≈ ${fmt(r.perYear)}${r.capped ? ' (cooldown cap)' : ''}`}</td></tr>)}
         </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archStack') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Technology</th><th>Category</th><th>Version</th><th>Risk</th></tr></thead>
+        <tbody>{archList(project, 'stack').map((s) => <tr key={s.id}><td>{s.name}</td><td>{s.category}</td><td>{s.version ?? '–'}</td><td>{s.risk ?? '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archLayers') {
+    const mods = archList(project, 'modules')
+    const deps = dependencies(project)
+    const up = deps.filter((d) => d.issue === 'upward').length
+    const cycles = dependencyCycles(project).length
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Layer (top first)</th><th>Modules</th></tr></thead>
+        <tbody>{[...layerOrder(project)].reverse().map((l) => <tr key={l.id}><td>{l.name}</td><td>{mods.filter((m) => m.layer === l.id).map((m) => m.name).join(', ') || '–'}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={2} className="muted">{deps.length} dependencies · {up} upward · {cycles} cycle(s)</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'archMessages') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Publisher</th><th>Channel</th><th>Listeners</th></tr></thead>
+        <tbody>{messageFlow(project).map((r) => <tr key={r.channel.id}><td>{r.publishers.map(nameOf).join(', ') || '–'}</td><td>{r.channel.name} <span className="muted">({r.channel.kind})</span></td><td>{r.subscribers.map(nameOf).join(', ') || '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archCoverage') {
+    const cov = extensionCoverage(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Schema</th><th>Extension points</th></tr></thead>
+        <tbody>{cov.rows.map((r) => <tr key={r.schema.id}><td>{r.schema.name}</td><td>{r.points.map(nameOf).join(', ') || <span className="warn">no way in</span>}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archTicks') {
+    const b = tickBudget(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>System</th><th>Every</th><th>ms / s</th></tr></thead>
+        <tbody>{b.rows.map((r) => <tr key={r.system.id}><td>{r.system.name}</td><td className="num">{r.every}</td><td className="num">{fmt(r.perSecond)}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={3} className="muted">Average {fmt(b.avgFrameMs)} of {fmt(b.budgetMs)} ms per frame (main thread) · worst tick {fmt(b.worstTickMs)} ms</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'archBoot') {
+    const boot = bootSequence(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Step</th><th>Scenes</th><th>Initialises</th><th>Seconds</th></tr></thead>
+        <tbody>{boot.steps.map((s, i) => <tr key={s.order}><td className="num">{i + 1}</td><td>{s.scenes.map(nameOf).join(', ')}</td><td>{s.modules.map(nameOf).join(', ') || '–'}</td><td className="num">{fmt(s.seconds)}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={4} className="muted">{project.documents[ARCH_DOC] ? `≈ ${fmt(boot.totalSeconds)} s to the last step` : ''}</td></tr></tfoot>
       </table>
     )
   }

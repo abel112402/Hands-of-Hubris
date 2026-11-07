@@ -24,6 +24,7 @@ import { MerchantStockView, MoneyFlowView, PriceLadderView, WanderingCalendarVie
 import { TownNetworkView, TownResourceFlowView } from './townViews'
 import { ActPacingView, CastCoverageView, EndingPathsView, QuestFlowView, RewardBudgetView } from './storyViews'
 import { WireframeView } from './wireframe/WireframeView'
+import { BootSequenceView, CouplingView, DependencyMatrixView, ExtensionCoverageView, LayerDiagramView, LayerStackView, MessageFlowView, TickScheduleView } from './architectureViews'
 import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
 import { PillarMatrixView, VisionReadinessView } from './visionViews'
 import { CutSavingsView, PhaseProgressView } from './roadmapViews'
@@ -55,6 +56,14 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   npcRoutine: 'Day plan',
   npcBondLadder: 'Bond ladder',
   npcEventOdds: 'Event odds',
+  archLayerStack: 'Layer stack',
+  archLayers: 'Layer diagram',
+  archMatrix: 'Dependency matrix',
+  archCoupling: 'Coupling',
+  archMessages: 'Message flow',
+  archExtensions: 'Coverage',
+  archTicks: 'Tick schedule',
+  archBoot: 'Boot sequence',
   depletion: 'Depletion',
   levelCurve: 'Level curve',
   skillTree: 'Skill tree',
@@ -188,6 +197,14 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'npcRoutine' && <RoutineView {...props} />}
           {view.kind === 'npcBondLadder' && <BondLadderView {...props} />}
           {view.kind === 'npcEventOdds' && <EventOddsView {...props} />}
+          {view.kind === 'archLayerStack' && <LayerStackView {...props} />}
+          {view.kind === 'archLayers' && <LayerDiagramView {...props} />}
+          {view.kind === 'archMatrix' && <DependencyMatrixView {...props} />}
+          {view.kind === 'archCoupling' && <CouplingView {...props} />}
+          {view.kind === 'archMessages' && <MessageFlowView {...props} />}
+          {view.kind === 'archExtensions' && <ExtensionCoverageView {...props} />}
+          {view.kind === 'archTicks' && <TickScheduleView {...props} />}
+          {view.kind === 'archBoot' && <BootSequenceView {...props} />}
           {view.kind === 'depletion' && <DepletionView {...props} />}
           {view.kind === 'levelCurve' && <LevelCurveView />}
           {view.kind === 'skillTree' && <SkillTreeView {...props} />}

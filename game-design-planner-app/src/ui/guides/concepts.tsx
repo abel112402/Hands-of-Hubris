@@ -733,6 +733,97 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           ))}
         </svg>
       )
+    case 'layerRule':
+      return (
+        <svg viewBox="0 0 330 104" className="concept-svg" role="img" aria-label="Three layers stacked UI, Gameplay, Core; green arrows point down, a red crossed arrow points up from Core to UI">
+          {[['UI', 8], ['Gameplay', 40], ['Core', 72]].map(([t, y]) => (
+            <g key={t as string}>
+              <rect x="10" y={y as number} width="200" height="24" rx="5" className="c-box" />
+              <text x="20" y={(y as number) + 16} className="c-small">{t}</text>
+            </g>
+          ))}
+          <path d="M110,32 L110,40" className="c-arrow" />
+          <path d="M140,64 L140,72" className="c-arrow" />
+          <path d="M185,72 C230,60 230,30 205,22" fill="none" stroke="rgb(229,112,126)" strokeWidth="2" />
+          <text x="232" y="50" className="c-small">✗ upward</text>
+          <text x="232" y="94" className="c-small">✓ down only</text>
+        </svg>
+      )
+    case 'dsmGrid':
+      return (
+        <svg viewBox="0 0 330 104" className="concept-svg" role="img" aria-label="A 3 by 3 grid: UI uses Gameplay and Core, Gameplay uses Core, and one red cell where Core uses UI">
+          {['UI', 'Game', 'Core'].map((t, i) => (
+            <g key={t}>
+              <text x={60 + i * 40} y="12" textAnchor="middle" className="c-small">{t}</text>
+              <text x="10" y={34 + i * 26} className="c-small">{t}</text>
+            </g>
+          ))}
+          {[0, 1, 2].flatMap((r) =>
+            [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={42 + c * 40} y={18 + r * 26} width="36" height="22" className={r === c ? 'c-danger-band' : 'c-box'} opacity={r === c ? 0.3 : 1} />),
+          )}
+          {[[0, 1], [0, 2], [1, 2]].map(([r, c]) => <text key={`${r}${c}`} x={60 + c * 40} y={34 + r * 26} textAnchor="middle" className="c-small">●</text>)}
+          <rect x="42" y="70" width="36" height="22" fill="rgb(229,112,126)" />
+          <text x="60" y="86" textAnchor="middle" className="c-small">●</text>
+          <text x="180" y="40" className="c-small">row uses column</text>
+          <text x="180" y="86" className="c-small">red: Core → UI is upward</text>
+        </svg>
+      )
+    case 'pubSub':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="Npc publishes NeedChanged on a channel; HUD and Town listen">
+          <rect x="10" y="30" width="70" height="24" rx="5" className="c-box" /><text x="45" y="46" textAnchor="middle" className="c-small">Npc</text>
+          <rect x="120" y="30" width="96" height="24" rx="12" className="c-accent" /><text x="168" y="46" textAnchor="middle" className="c-small">NeedChanged</text>
+          <rect x="250" y="10" width="70" height="24" rx="5" className="c-box" /><text x="285" y="26" textAnchor="middle" className="c-small">HUD</text>
+          <rect x="250" y="50" width="70" height="24" rx="5" className="c-box" /><text x="285" y="66" textAnchor="middle" className="c-small">Town</text>
+          <path d="M80,42 L120,42" className="c-arrow" />
+          <path d="M216,42 L250,22" className="c-arrow" />
+          <path d="M216,42 L250,62" className="c-arrow" />
+          <text x="100" y="80" className="c-small">publisher and listeners never reference each other</text>
+        </svg>
+      )
+    case 'extensionPlug':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="New item assets plug into the content registry in Core.Data without code changes">
+          {['Sword.asset', 'Bread.asset', 'Mill.asset'].map((t, i) => (
+            <g key={t}>
+              <rect x="10" y={6 + i * 24} width="80" height="20" rx="4" className="c-box" />
+              <text x="50" y={20 + i * 24} textAnchor="middle" className="c-small">{t}</text>
+              <path d={`M90,${16 + i * 24} L150,40`} className="c-arrow" />
+            </g>
+          ))}
+          <rect x="150" y="26" width="96" height="28" rx="6" className="c-accent" />
+          <text x="198" y="44" textAnchor="middle" className="c-small">registry</text>
+          <path d="M246,40 L270,40" className="c-arrow" />
+          <text x="274" y="44" className="c-small">game</text>
+          <text x="150" y="72" className="c-small">no code change</text>
+        </svg>
+      )
+    case 'tickBudget':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Ten tick bars; the first bar is tall because every system runs on it and it crosses the dashed budget line; the others stay under">
+          {Array.from({ length: 10 }, (_, i) => {
+            const h = i === 0 ? 62 : i % 5 === 0 ? 40 : i % 2 === 0 ? 30 : 18
+            return <rect key={i} x={20 + i * 28} y={80 - h} width="20" height={h} className={i === 0 ? 'c-danger-band' : 'c-accent'} />
+          })}
+          <line x1="14" y1="34" x2="300" y2="34" stroke="rgb(229,112,126)" strokeDasharray="4 3" />
+          <text x="230" y="28" className="c-small">budget / frame</text>
+          <text x="20" y="94" className="c-small">tick 0: everything at once</text>
+        </svg>
+      )
+    case 'bootChain':
+      return (
+        <svg viewBox="0 0 340 74" className="concept-svg" role="img" aria-label="Bootstrap, then Persistent, then Main menu, then World with an additive HUD on top">
+          {[['Bootstrap', 'c-accent'], ['Persistent', 'c-box'], ['Main menu', 'c-box'], ['World', 'c-box']].map(([t, cls], i) => (
+            <g key={t} transform={`translate(${i * 84},30)`}>
+              <rect width="72" height="26" rx="5" className={cls} />
+              <text x="36" y="17" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M72,13 L84,13" className="c-arrow" />}
+            </g>
+          ))}
+          <rect x="252" y="4" width="72" height="20" rx="5" className="c-box" strokeDasharray="3 2" />
+          <text x="288" y="18" textAnchor="middle" className="c-small">+ HUD</text>
+        </svg>
+      )
     case 'abilityTimeline':
       return (
         <svg viewBox="0 0 320 70" className="concept-svg" role="img" aria-label="Spend cost, cast time, effect, then cooldown">

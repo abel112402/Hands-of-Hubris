@@ -488,6 +488,38 @@
       "title": "Munkaidő nélküli foglalkozások",
       "body": "{{count}} munkával rendelkező foglalkozásnak nincs „Munka” idősávja a napirendben: {{names}}."
     },
+    "archUpward": {
+      "title": "Felfelé mutató függőségek",
+      "body": "{{count}} függőség alacsonyabb rétegből magasabba mutat: {{names}}. Használj csatornát, vidd lejjebb a kódot, vagy engedélyezd a réteg „Használhatja még” mezőjében."
+    },
+    "archCycle": {
+      "title": "Körkörösen függő modulok",
+      "body": "{{count}} kör: {{names}}. Törj meg egy kapcsolatot eseménycsatornával vagy alacsonyabb rétegbeli interfésszel."
+    },
+    "archNoLayer": {
+      "title": "Réteg nélküli modulok",
+      "body": "{{count}} modulnak nincs rétege, így a rétegszabály nem ellenőrzi őket: {{names}}."
+    },
+    "archChannel": {
+      "title": "Félig üres csatornák",
+      "body": "{{count}} csatornának nincs küldője vagy hallgatója: {{names}}."
+    },
+    "archUncovered": {
+      "title": "Bővíthetetlen tartalom",
+      "body": "{{count}} adatséma nem bővíthető egyetlen bővítési ponton sem: {{names}}. Ezekhez kódmódosítás kell."
+    },
+    "archTickBudget": {
+      "title": "A szimuláció túllépi a képkocka-keretet",
+      "body": "Átlagosan {{average}} ms képkockánként {{budget}} ms keretből; a legrosszabb tick {{worst}} ms egy {{frame}} ms-os képkockából. Oszd szét a rendszereket, csökkentsd a tickrátát, vagy vidd le a fő szálról."
+    },
+    "archBoot": {
+      "title": "Hiányos jelenetfolyam",
+      "body": "Jelenetek: {{names}}."
+    },
+    "archLegacy": {
+      "title": "Jegyzetek a korábbi verzióból",
+      "body": "A frissítés a szabad szöveges stack-, kommunikációs, szimulációs és jelenetjegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket bejegyzésekké, majd ürítsd a mezőt."
+    },
     "npcBalance": {
       "title": "A város nem fedezi a lakosság igényeit",
       "body": "{{count}} forgatókönyvben hiány van: {{names}}. Hasonlítsd össze őket az Igénymérleg nézetben."
