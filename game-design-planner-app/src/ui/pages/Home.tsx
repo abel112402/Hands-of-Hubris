@@ -29,6 +29,9 @@ export function Home() {
     refresh()
   }, [])
   const { visible: nextSteps } = useHints()
+  // One next step by default, so the planner grid stays above the fold; the rest on request.
+  const [allSteps, setAllSteps] = useState(false)
+  const shownSteps = allSteps ? nextSteps : nextSteps.slice(0, 1)
   const match = (s: string) => s.toLowerCase().includes(q.toLowerCase())
 
   return (
@@ -36,17 +39,27 @@ export function Home() {
       <h1>{t('home.title')}</h1>
       <p className="muted">{t('home.subtitle')}</p>
       {auto && (
-        <div className="banner">
-          {t('home.restoreBanner', { date: auto })} <button onClick={() => void restoreAutosave()}>{t('actions.restore')}</button>
+        <div className="banner" role="status">
+          <span>{t('home.restoreBanner', { date: auto })}</span>
+          <button onClick={() => void restoreAutosave()}>{t('actions.restore')}</button>
+          <span className="spacer" />
+          <button className="banner-close" aria-label={t('home.closeBanner')} title={t('home.closeBanner')} onClick={() => setAuto(null)}>×</button>
         </div>
       )}
+      <div className="home-tools">
+        <input className="search" aria-label={t('home.filter')} placeholder={t('home.filter')} value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
       {nextSteps.length > 0 && (
-        <section>
+        <section className="next-steps">
           <h2>💡 {t('hints.nextSteps')}</h2>
-          <ul className="list">{nextSteps.map((h) => <HintCard key={h.id} hint={h} />)}</ul>
+          <ul className="list">{shownSteps.map((h) => <HintCard key={h.id} hint={h} />)}</ul>
+          {nextSteps.length > 1 && (
+            <button className="small" aria-expanded={allSteps} onClick={() => setAllSteps(!allSteps)}>
+              {allSteps ? t('hints.showLess') : t('hints.showMore', { count: nextSteps.length - 1 })}
+            </button>
+          )}
         </section>
       )}
-      <input className="search" placeholder={t('home.filter')} value={q} onChange={(e) => setQ(e.target.value)} />
       {GROUPS.map((g) => {
         const mods = MODULES.filter((m) => m.group === g.id && (match(m.title) || match(m.summary)))
         if (!mods.length) return null

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ruleOf } from '../../core/hints/engine'
+import { MAX_ACTIVE_HINTS, ruleOf, splitByScope } from '../../core/hints/engine'
 import type { Hint } from '../../core/hints/types'
 import { makeId } from '../../core/model/project'
 import { getModule, getSection } from '../../core/modules/registry'
@@ -12,9 +12,30 @@ import { useAiUi } from '../ai/aiStore'
 import { useAiSession, useAiSettings } from '../../core/ai/session'
 import { guideOf } from '../../modules/guides'
 import { GuidePanel } from '../guides/GuidePanel'
+import { Icon } from '../Icon'
 
 const WIDTH_KEY = 'hohplan:hintWidth'
-const ICON = { info: '💡', suggest: '💡', important: '❗' } as const
+const MIN_WIDTH = 220
+const KEY_STEP = 16
+/** Whether the "Other planners" group is expanded; collapsed by default. */
+const ELSEWHERE_KEY = 'hohplan:hintsElsewhereOpen'
+
+const readFlag = (key: string) => {
+  try {
+    return localStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+const writeFlag = (key: string, on: boolean) => {
+  try {
+    localStorage.setItem(key, on ? '1' : '0')
+  } catch {
+    /* not remembered */
+  }
+}
+export const SEVERITY_ICON = { info: 'ℹ️', suggest: '💡', important: '❗' } as const
+const ICON = SEVERITY_ICON
 
 export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint) => void }) {
   const { t } = useTranslation()
@@ -53,15 +74,21 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
         </div>
       ) : (
         <div className="hint-actions">
-          {a?.kind === 'goto' && <button onClick={run}>{t('hints.go')}</button>}
-          {a?.kind === 'addEntity' && <button onClick={() => setConfirming(true)}>{t('hints.create')}</button>}
-          {onExplain && <button onClick={() => onExplain(hint)}>🤖 {t('ai.explain')}</button>}
-          <button onClick={() => snooze(hint.id)}>{t('hints.snooze')}</button>
-          <button onClick={() => useStore.getState().updateHintPrefs((h) => void (h.dismissed[hint.id] = true))}>{t('hints.dismiss')}</button>
-          <button title={t('hints.mute')} onClick={() => useStore.getState().updateHintPrefs((h) => {
-            const r = ruleOf(hint.ruleId)
-            if (!h.mutedRules.includes(r)) h.mutedRules.push(r)
-          })}>🔕</button>
+          {a?.kind === 'goto' && <button className="primary" onClick={run}>{t('hints.go')}</button>}
+          {a?.kind === 'addEntity' && <button className="primary" onClick={() => setConfirming(true)}>{t('hints.create')}</button>}
+          {onExplain && <button onClick={() => onExplain(hint)}><Icon name="sparkle" /> {t('ai.explain')}</button>}
+          {/* Secondary actions live in a labelled menu, so each card has one obvious next step. */}
+          <details className="menu hint-more">
+            <summary title={t('hints.moreActions')} aria-label={t('hints.moreActions')}><Icon name="more" /></summary>
+            <div>
+              <button onClick={() => snooze(hint.id)}>{t('hints.snooze')}</button>
+              <button onClick={() => useStore.getState().updateHintPrefs((h) => void (h.dismissed[hint.id] = true))}>{t('hints.dismiss')}</button>
+              <button onClick={() => useStore.getState().updateHintPrefs((h) => {
+                const r = ruleOf(hint.ruleId)
+                if (!h.mutedRules.includes(r)) h.mutedRules.push(r)
+              })}>{t('hints.mute')}</button>
+            </div>
+          </details>
         </div>
       )}
     </li>
@@ -71,7 +98,15 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
 export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: string }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(true)
-  const { visible, total } = useHints(docId, sectionId)
+  const { all } = useHints(docId, sectionId)
+  const { here, elsewhere } = splitByScope(all, { docId })
+  const [showAll, setShowAll] = useState(false)
+  const shownHere = showAll ? here : here.slice(0, MAX_ACTIVE_HINTS)
+  const [elsewhereOpen, setElsewhereOpen] = useState(() => readFlag(ELSEWHERE_KEY))
+  const rememberElsewhere = (o: boolean) => {
+    setElsewhereOpen(o)
+    writeFlag(ELSEWHERE_KEY, o)
+  }
   const { tab, setTab, explain } = useAiUi()
   const provider = useAiSettings((s) => s.settings.provider)
   const aiReady = useAiSession((s) => s.hasKey[provider])
@@ -85,7 +120,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
     const startW = width
     let last = startW
     const move = (ev: PointerEvent) => {
-      last = Math.min(Math.max(startW + startX - ev.clientX, 220), Math.round(window.innerWidth * 0.5))
+      last = Math.min(Math.max(startW + startX - ev.clientX, MIN_WIDTH), Math.round(window.innerWidth * 0.5))
       setWidth(last)
     }
     const up = () => {
@@ -96,24 +131,76 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
   }, [width])
+  const maxWidth = Math.max(MIN_WIDTH, Math.round(window.innerWidth * 0.5))
+  const resizeByKey = (e: React.KeyboardEvent) => {
+    // The panel sits on the right, so ArrowLeft widens it, like dragging the handle left.
+    const next =
+      e.key === 'ArrowLeft' ? width + KEY_STEP
+      : e.key === 'ArrowRight' ? width - KEY_STEP
+      : e.key === 'Home' ? MIN_WIDTH
+      : e.key === 'End' ? maxWidth
+      : null
+    if (next === null) return
+    e.preventDefault()
+    const w = Math.min(Math.max(next, MIN_WIDTH), maxWidth)
+    setWidth(w)
+    localStorage.setItem(WIDTH_KEY, String(w))
+  }
   return (
-    <aside className="hint-panel" style={{ width }} aria-live="polite" aria-label={t('hints.panel')}>
-      <div className="hint-resize" role="separator" aria-orientation="vertical" onPointerDown={startResize} />
+    <aside className="hint-panel" style={{ width }} aria-label={t('hints.panel')}>
+      <div
+        className="hint-resize"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={t('hints.resize')}
+        aria-valuenow={width}
+        aria-valuemin={MIN_WIDTH}
+        aria-valuemax={maxWidth}
+        tabIndex={0}
+        onPointerDown={startResize}
+        onKeyDown={resizeByKey}
+      />
+      <span className="sr-only" role="status">{t('hints.thisPageCount', { count: here.length })}</span>
       <div className="hint-head">
         <div className="tabs">
-          <button className={!showAi && !showGuide ? 'active' : ''} onClick={() => setTab('hints')}>💡 {t('hints.panel')}{total > 0 && <span className="badge">{total}</span>}</button>
-          {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}>🧭 Guide</button>}
-          <button className={showAi ? 'active' : ''} onClick={() => setTab('ai')}>🤖 AI</button>
+          <button
+            className={!showAi && !showGuide ? 'active' : ''}
+            title={t('hints.thisPageCount', { count: here.length })}
+            onClick={() => setTab('hints')}
+          >
+            <Icon name="bulb" /> {t('hints.panel')}{here.length > 0 && <span className="badge" aria-hidden="true">{here.length}</span>}
+          </button>
+          {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}><Icon name="compass" /> Guide</button>}
+          <button className={showAi ? 'active' : ''} onClick={() => setTab('ai')}><Icon name="sparkle" /> AI</button>
         </div>
-        <button onClick={() => setOpen(!open)}>{open ? t('hints.hide') : t('hints.show')}</button>
+        <button
+          className="hint-toggle"
+          aria-expanded={open}
+          aria-label={open ? t('hints.hide') : t('hints.show')}
+          title={open ? t('hints.hide') : t('hints.show')}
+          onClick={() => setOpen(!open)}
+        >
+          <Icon name={open ? 'chevronRight' : 'chevronLeft'} />
+        </button>
       </div>
       {open && showAi && <AiPanel docId={docId} sectionId={sectionId} />}
       {open && showGuide && <GuidePanel docId={docId} guide={guide} />}
       {open && !showAi && !showGuide && (
         <>
-          {visible.length === 0 && <p className="muted">{t('hints.none')}</p>}
-          <ul className="list">{visible.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
-          {total > visible.length && <p className="muted">{t('hints.more', { count: total - visible.length })}</p>}
+          <h4 className="hint-group">{t('hints.thisPage')}</h4>
+          {here.length === 0 && <p className="muted">{t('hints.allClear')}</p>}
+          <ul className="list">{shownHere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
+          {here.length > MAX_ACTIVE_HINTS && (
+            <button className="small" onClick={() => setShowAll(!showAll)}>
+              {showAll ? t('hints.showLess') : t('hints.showMore', { count: here.length - MAX_ACTIVE_HINTS })}
+            </button>
+          )}
+          {elsewhere.length > 0 && (
+            <details className="hint-elsewhere" open={elsewhereOpen} onToggle={(e) => rememberElsewhere((e.target as HTMLDetailsElement).open)}>
+              <summary>{t('hints.otherPlanners', { count: elsewhere.length })}</summary>
+              <ul className="list">{elsewhere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
+            </details>
+          )}
         </>
       )}
     </aside>

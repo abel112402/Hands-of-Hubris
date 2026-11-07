@@ -80,9 +80,34 @@ export function evaluateHints(
   ctx: HintContext,
   snoozed: Record<string, number> = {},
   rules: HintRule[] = RULES,
-): { visible: Hint[]; total: number } {
+): { visible: Hint[]; total: number; all: Hint[] } {
   const prefs = ctx.project.meta.hints ?? defaultHintPrefs()
-  if (!prefs.enabled) return { visible: [], total: 0 }
-  const all = rankHints(filterHints(collectHints(ctx, rules), prefs, snoozed, ctx.now), ctx)
-  return { visible: all.slice(0, MAX_ACTIVE_HINTS), total: all.length }
+  if (!prefs.enabled) return { visible: [], total: 0, all: [] }
+  const all = dedupeHints(rankHints(filterHints(collectHints(ctx, rules), prefs, snoozed, ctx.now), ctx))
+  return { visible: all.slice(0, MAX_ACTIVE_HINTS), total: all.length, all }
+}
+
+/**
+ * Project-wide hints that send the user to the same place say the same thing twice
+ * (e.g. "Write the vision first" and "Next: Vision & Concept"). Keep the first one,
+ * which after ranking is the most severe. Page-level hints are never merged: two
+ * different problems in one section are both worth showing.
+ */
+export function dedupeHints(ranked: Hint[]): Hint[] {
+  const seen = new Set<string>()
+  return ranked.filter((h) => {
+    if (h.scope !== 'project' || !h.action) return true
+    const key = `${h.action.kind}:${h.action.docId}:${h.action.sectionId ?? ''}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/** Hints about the open page (or pointing at it) vs. project-wide hints about other planners. */
+export function splitByScope(hints: Hint[], ctx: Pick<HintContext, 'docId'>): { here: Hint[]; elsewhere: Hint[] } {
+  const here: Hint[] = []
+  const elsewhere: Hint[] = []
+  for (const h of hints) (h.scope === 'project' && h.target.docId !== ctx.docId ? elsewhere : here).push(h)
+  return { here, elsewhere }
 }

@@ -1,12 +1,15 @@
 {
   "app": {
-    "title": "Game Design Planner"
+    "title": "Game Design Planner",
+    "projectName": "Project name"
   },
   "nav": {
     "home": "Menu",
     "definitions": "Definitions",
     "issues": "Issues",
-    "hints": "Hints"
+    "hints": "Hints",
+    "ai": "AI",
+    "main": "Main"
   },
   "actions": {
     "new": "New",
@@ -19,19 +22,27 @@
     "exportJson": "Download project JSON",
     "search": "Search (Ctrl+K)",
     "snapshot": "Create snapshot",
-    "restore": "Restore last session"
+    "restore": "Restore last session",
+    "more": "File and project actions",
+    "searchBox": "Search…",
+    "saveMenu": "More save options"
   },
   "home": {
     "title": "What do you want to plan?",
     "subtitle": "Pick a planner. Everything is stored in one project file you can save and load.",
     "filter": "Filter planners…",
-    "restoreBanner": "An autosaved session from {{date}} was found."
+    "restoreBanner": "An autosaved session from {{date}} was found.",
+    "closeBanner": "Close"
   },
   "editor": {
     "visual": "Visual editor",
     "markdown": "Markdown preview",
-    "exportDoc": "Export document",
-    "importDoc": "Import document"
+    "exportDoc": "Export as JSON",
+    "importDoc": "Import from JSON…",
+    "document": "Document",
+    "docMenu": "Document actions: download, export, import",
+    "downloadMd": "Download Markdown (.md)",
+    "help": "Help"
   },
   "status": {
     "unsaved": "Unsaved changes",
@@ -42,9 +53,24 @@
     "panel": "Hints",
     "none": "No hints right now.",
     "more": "{{count}} more hidden",
-    "dismiss": "Dismiss",
-    "snooze": "Later",
-    "mute": "Mute rule",
+    "dismiss": "Dismiss this hint",
+    "snooze": "Remind me later (30 min)",
+    "mute": "Never show this kind of hint",
+    "moreActions": "More actions for this hint",
+    "showMore": "Show {{count}} more",
+    "showLess": "Show fewer",
+    "thisPage": "This page",
+    "otherPlanners": "Other planners ({{count}})",
+    "allClear": "Nothing to fix on this page.",
+    "projectWide_one": "{{count}} project-wide hint",
+    "projectWide_other": "{{count}} project-wide hints",
+    "thisPageCount_one": "{{count}} hint on this page",
+    "thisPageCount_other": "{{count}} hints on this page",
+    "legend": "Colours:",
+    "sevImportant": "important",
+    "sevSuggest": "suggestion",
+    "sevInfo": "info",
+    "resize": "Resize hints panel",
     "go": "Go",
     "create": "Create",
     "confirm": "Create it now?",
@@ -94,19 +120,27 @@
     },
     "sparse": {
       "title": "Incomplete entries in {{section}}",
-      "body": "{{count}} entries have most fields empty: {{names}}."
+      "body": "{{count}} entries have most fields empty: {{names}}.",
+      "body_one": "{{count}} entry has most fields empty: {{names}}.",
+      "body_other": "{{count}} entries have most fields empty: {{names}}."
     },
     "orphan": {
       "title": "Unused in {{section}}",
-      "body": "{{count}} entries are not referenced anywhere: {{names}}."
+      "body": "{{count}} entries are not referenced anywhere: {{names}}.",
+      "body_one": "{{count}} entry is not referenced anywhere: {{names}}.",
+      "body_other": "{{count}} entries are not referenced anywhere: {{names}}."
     },
     "graphIsolated": {
       "title": "Unconnected graph nodes",
-      "body": "{{count}} nodes have no connections: {{names}}."
+      "body": "{{count}} nodes have no connections: {{names}}.",
+      "body_one": "{{count}} node has no connections: {{names}}.",
+      "body_other": "{{count}} nodes have no connections: {{names}}."
     },
     "kanban": {
       "title": "Too many items in one column",
-      "body": "“{{column}}” has {{count}} items (limit {{limit}}). Consider finishing or splitting some."
+      "body": "“{{column}}” has {{count}} items (limit {{limit}}). Consider finishing or splitting some.",
+      "body_one": "“{{column}}” has {{count}} item (limit {{limit}}). Consider finishing or splitting it.",
+      "body_other": "“{{column}}” has {{count}} items (limit {{limit}}). Consider finishing or splitting some."
     },
     "timeline": {
       "title": "Overlapping timeline items",
@@ -114,7 +148,9 @@
     },
     "outlier": {
       "title": "Unusual “{{field}}” values",
-      "body": "{{count}} values are far outside the typical range: {{names}}. Check balance."
+      "body": "{{count}} values are far outside the typical range: {{names}}. Check balance.",
+      "body_one": "{{count}} value is far outside the typical range: {{names}}. Check balance.",
+      "body_other": "{{count}} values are far outside the typical range: {{names}}. Check balance."
     },
     "unusedCategory": {
       "title": "No entries for some “{{field}}” values",
@@ -134,19 +170,27 @@
     },
     "backlog": {
       "title": "Backlog items lack estimate or milestone",
-      "body": "{{count}} open features need planning: {{names}}."
+      "body": "{{count}} open features need planning: {{names}}.",
+      "body_one": "{{count}} open feature needs planning: {{names}}.",
+      "body_other": "{{count}} open features need planning: {{names}}."
     },
     "oqDecidedNoText": {
       "title": "A decided question has no decision text",
-      "body": "{{count}} question(s) are marked Decided but the Decision field is empty: {{names}}. Write down what was chosen and why."
+      "body": "{{count}} questions are marked Decided but the Decision field is empty: {{names}}. Write down what was chosen and why.",
+      "body_one": "{{count}} question is marked Decided but the Decision field is empty: {{names}}. Write down what was chosen and why.",
+      "body_other": "{{count}} questions are marked Decided but the Decision field is empty: {{names}}. Write down what was chosen and why."
     },
     "oqNotWrittenBack": {
       "title": "Decision not written back to a doc",
-      "body": "{{count}} decided question(s) list no doc under “Updated in docs”: {{names}}. Carry the decision into the affected design doc and note it here."
+      "body": "{{count}} decided questions list no doc under “Updated in docs”: {{names}}. Carry the decision into the affected design doc and note it here.",
+      "body_one": "{{count}} decided question lists no doc under “Updated in docs”: {{names}}. Carry the decision into the affected design doc and note it here.",
+      "body_other": "{{count}} decided questions list no doc under “Updated in docs”: {{names}}. Carry the decision into the affected design doc and note it here."
     },
     "oqOverdue": {
       "title": "Question past its due date",
-      "body": "{{count}} open question(s) are past their due date: {{names}}. Decide, or move the date if it is still being discussed."
+      "body": "{{count}} open questions are past their due date: {{names}}. Decide, or move the date if it is still being discussed.",
+      "body_one": "{{count}} open question is past its due date: {{names}}. Decide, or move the date if it is still being discussed.",
+      "body_other": "{{count}} open questions are past their due date: {{names}}. Decide, or move the date if it is still being discussed."
     },
     "visionPitch": {
       "title": "The pitch is still empty",
@@ -158,19 +202,27 @@
     },
     "visionPillarCount": {
       "title": "{{count}} design pillars",
-      "body": "The suggested range is {{min}}–{{max}} pillars. Too few is vague, too many stops guiding decisions."
+      "body": "The suggested range is {{min}}–{{max}} pillars. Too few is vague, too many stops guiding decisions.",
+      "title_one": "{{count}} design pillar",
+      "title_other": "{{count}} design pillars"
     },
     "visionPillarTest": {
       "title": "Pillars without a decision test",
-      "body": "{{count}} pillar(s) have no “how it guides a decision”: {{names}}."
+      "body": "{{count}} pillars have no “how it guides a decision”: {{names}}.",
+      "body_one": "{{count}} pillar has no “how it guides a decision”: {{names}}.",
+      "body_other": "{{count}} pillars have no “how it guides a decision”: {{names}}."
     },
     "visionUspBenefit": {
       "title": "USPs without a player benefit",
-      "body": "{{count}} USP(s) do not say what the player gains: {{names}}."
+      "body": "{{count}} USPs do not say what the player gains: {{names}}.",
+      "body_one": "{{count}} USP does not say what the player gains: {{names}}.",
+      "body_other": "{{count}} USPs do not say what the player gains: {{names}}."
     },
     "visionScopeBucket": {
       "title": "Scope items without a decision",
-      "body": "{{count}} scope item(s) have no bucket (MVP / Later / Out of scope): {{names}}."
+      "body": "{{count}} scope items have no bucket (MVP / Later / Out of scope): {{names}}.",
+      "body_one": "{{count}} scope item has no bucket (MVP / Later / Out of scope): {{names}}.",
+      "body_other": "{{count}} scope items have no bucket (MVP / Later / Out of scope): {{names}}."
     },
     "visionScopeMvp": {
       "title": "Nothing is in the MVP yet",
@@ -182,23 +234,33 @@
     },
     "visionScopeNoPillar": {
       "title": "MVP items that serve no pillar",
-      "body": "{{count}} MVP scope item(s) are not tied to any design pillar: {{names}}. If none fits, the item may not belong in the MVP."
+      "body": "{{count}} MVP scope items are not tied to any design pillar: {{names}}. If none fits, the item may not belong in the MVP.",
+      "body_one": "{{count}} MVP scope item is not tied to any design pillar: {{names}}. If none fits, the item may not belong in the MVP.",
+      "body_other": "{{count}} MVP scope items are not tied to any design pillar: {{names}}. If none fits, the item may not belong in the MVP."
     },
     "visionUspPillar": {
       "title": "USPs not backed by a pillar",
-      "body": "{{count}} USP(s) name no supporting pillar: {{names}}."
+      "body": "{{count}} USPs name no supporting pillar: {{names}}.",
+      "body_one": "{{count}} USP names no supporting pillar: {{names}}.",
+      "body_other": "{{count}} USPs name no supporting pillar: {{names}}."
     },
     "visionPillarUnused": {
       "title": "Pillars nothing points at",
-      "body": "{{count}} pillar(s) have no scope item or USP linked: {{names}}. Link the features that carry them, or reconsider the pillar."
+      "body": "{{count}} pillars have no scope item or USP linked: {{names}}. Link the features that carry them, or reconsider the pillar.",
+      "body_one": "{{count}} pillar has no scope item or USP linked: {{names}}. Link the features that carry it, or reconsider the pillar.",
+      "body_other": "{{count}} pillars have no scope item or USP linked: {{names}}. Link the features that carry them, or reconsider the pillar."
     },
     "visionPillarNotInMvp": {
       "title": "Pillars missing from the MVP",
-      "body": "{{count}} pillar(s) have no “In MVP” scope item: {{names}}. The first release would not show them."
+      "body": "{{count}} pillars have no “In MVP” scope item: {{names}}. The first release would not show them.",
+      "body_one": "{{count}} pillar has no “In MVP” scope item: {{names}}. The first release would not show it.",
+      "body_other": "{{count}} pillars have no “In MVP” scope item: {{names}}. The first release would not show them."
     },
     "roadmapConflict": {
       "title": "Dependencies start too early in {{section}}",
-      "body": "{{count}} item(s) start before a predecessor ends: {{names}}. Move them or adjust the dependency."
+      "body": "{{count}} items start before a predecessor ends: {{names}}. Move them or adjust the dependency.",
+      "body_one": "{{count}} item starts before a predecessor ends: {{names}}. Move it or adjust the dependency.",
+      "body_other": "{{count}} items start before a predecessor ends: {{names}}. Move them or adjust the dependency."
     },
     "roadmapCycle": {
       "title": "Circular dependencies in {{section}}",
@@ -206,15 +268,21 @@
     },
     "roadmapMissing": {
       "title": "Schedule gaps in {{section}}",
-      "body": "{{count}} item(s) have no start or duration, so they are left out of the totals."
+      "body": "{{count}} items have no start or duration, so they are left out of the totals.",
+      "body_one": "{{count}} item has no start or duration, so it is left out of the totals.",
+      "body_other": "{{count}} items have no start or duration, so they are left out of the totals."
     },
     "roadmapExit": {
       "title": "Phases without exit criteria",
-      "body": "{{count}} phase(s) have no measurable exit criteria: {{names}}."
+      "body": "{{count}} phases have no measurable exit criteria: {{names}}.",
+      "body_one": "{{count}} phase has no measurable exit criteria: {{names}}.",
+      "body_other": "{{count}} phases have no measurable exit criteria: {{names}}."
     },
     "roadmapGate": {
       "title": "Phases without a gate review",
-      "body": "{{count}} phase(s) have no gate review: {{names}}."
+      "body": "{{count}} phases have no gate review: {{names}}.",
+      "body_one": "{{count}} phase has no gate review: {{names}}.",
+      "body_other": "{{count}} phases have no gate review: {{names}}."
     },
     "roadmapOverload": {
       "title": "Phases over capacity",
@@ -222,15 +290,19 @@
     },
     "roadmapConfidence": {
       "title": "Low-confidence estimates",
-      "body": "{{count}} unfinished task(s) have a low-confidence estimate: {{names}}."
+      "body": "{{count}} unfinished tasks have a low-confidence estimate: {{names}}.",
+      "body_one": "{{count}} unfinished task has a low-confidence estimate: {{names}}.",
+      "body_other": "{{count}} unfinished tasks have a low-confidence estimate: {{names}}."
     },
     "roadmapDecision": {
       "title": "Gate decisions are due",
-      "body": "{{count}} gate(s) belong to phases that should have ended but have no decision: {{names}}."
+      "body": "{{count}} gates belong to phases that should have ended but have no decision: {{names}}.",
+      "body_one": "{{count}} gate belongs to a phase that should have ended but has no decision: {{names}}.",
+      "body_other": "{{count}} gates belong to phases that should have ended but have no decision: {{names}}."
     },
     "roadmapLate": {
       "title": "Phases past their end with open tasks",
-      "body": "{{count}} phase(s) should have ended but still have open tasks: {{names}} ({{open}} open in the first). Close the tasks, move them, or replan the phase."
+      "body": "{{count}} phases should have ended but still have open tasks: {{names}} ({{open}} open in the first). Close the tasks, move them, or replan the phase."
     },
     "roadmapCutsShort": {
       "title": "The cut plan does not cover the overload",
@@ -238,7 +310,9 @@
     },
     "roadmapCutProtected": {
       "title": "Cuts touching protected pillars",
-      "body": "{{count}} cut(s) drop Vision scope items that serve a protected pillar ({{pillars}}): {{names}}."
+      "body": "{{count}} cuts drop Vision scope items that serve a protected pillar ({{pillars}}): {{names}}.",
+      "body_one": "{{count}} cut drops Vision scope items that serve a protected pillar ({{pillars}}): {{names}}.",
+      "body_other": "{{count}} cuts drop Vision scope items that serve a protected pillar ({{pillars}}): {{names}}."
     },
     "coreLoopScales": {
       "title": "Time scales not covered yet",
@@ -246,19 +320,27 @@
     },
     "coreLoopReward": {
       "title": "Loops without a reward",
-      "body": "{{count}} loop(s) have no reward: {{names}}. What does the player get for completing them?"
+      "body": "{{count}} loops have no reward: {{names}}. What does the player get for completing them?",
+      "body_one": "{{count}} loop has no reward: {{names}}. What does the player get for completing it?",
+      "body_other": "{{count}} loops have no reward: {{names}}. What does the player get for completing them?"
     },
     "coreLoopDecision": {
       "title": "Loops without a next decision",
-      "body": "{{count}} loop(s) don’t say what the player decides next: {{names}}. A meaningful choice is what makes a loop repeat."
+      "body": "{{count}} loops don’t say what the player decides next: {{names}}. A meaningful choice is what makes a loop repeat.",
+      "body_one": "{{count}} loop doesn’t say what the player decides next: {{names}}. A meaningful choice is what makes a loop repeat.",
+      "body_other": "{{count}} loops don’t say what the player decides next: {{names}}. A meaningful choice is what makes a loop repeat."
     },
     "coreLoopProgression": {
       "title": "Loops that don’t build toward a longer loop",
-      "body": "{{count}} loop(s) don’t link to a longer loop: {{names}}."
+      "body": "{{count}} loops don’t link to a longer loop: {{names}}.",
+      "body_one": "{{count}} loop doesn’t link to a longer loop: {{names}}.",
+      "body_other": "{{count}} loops don’t link to a longer loop: {{names}}."
     },
     "coreLoopUnlinked": {
       "title": "Loops not linked to the diagram",
-      "body": "{{count}} loop(s) have no nodes in the loop diagram: {{names}}."
+      "body": "{{count}} loops have no nodes in the loop diagram: {{names}}.",
+      "body_one": "{{count}} loop has no nodes in the loop diagram: {{names}}.",
+      "body_other": "{{count}} loops have no nodes in the loop diagram: {{names}}."
     },
     "coreLoopIsolated": {
       "title": "Isolated nodes in the loop diagram",
@@ -270,19 +352,27 @@
     },
     "coreLoopDirection": {
       "title": "“Builds toward” points to a shorter loop",
-      "body": "{{count}} link(s) go to a loop on the same or a shorter time scale: {{names}}. “Builds toward” should only point to longer loops."
+      "body": "{{count}} links go to a loop on the same or a shorter time scale: {{names}}. “Builds toward” should only point to longer loops.",
+      "body_one": "{{count}} link goes to a loop on the same or a shorter time scale: {{names}}. “Builds toward” should only point to longer loops.",
+      "body_other": "{{count}} links go to a loop on the same or a shorter time scale: {{names}}. “Builds toward” should only point to longer loops."
     },
     "coreLoopPacing": {
       "title": "A loop builds toward one that is not longer",
-      "body": "By the cycle lengths, {{count}} link(s) point to a loop that takes no longer than the loop itself: {{names}}. Check the lengths or the link."
+      "body": "By the cycle lengths, {{count}} links point to a loop that takes no longer than the loop itself: {{names}}. Check the lengths or the link.",
+      "body_one": "By the cycle lengths, {{count}} link points to a loop that takes no longer than the loop itself: {{names}}. Check the lengths or the link.",
+      "body_other": "By the cycle lengths, {{count}} links point to a loop that takes no longer than the loop itself: {{names}}. Check the lengths or the link."
     },
     "coreLoopPillars": {
       "title": "Pillars with no loop behind them",
-      "body": "{{count}} Vision pillar(s) are not served by any loop: {{names}}. A pillar the player never repeats is easy to lose."
+      "body": "{{count}} Vision pillars are not served by any loop: {{names}}. A pillar the player never repeats is easy to lose.",
+      "body_one": "{{count}} Vision pillar is not served by any loop: {{names}}. A pillar the player never repeats is easy to lose.",
+      "body_other": "{{count}} Vision pillars are not served by any loop: {{names}}. A pillar the player never repeats is easy to lose."
     },
     "coreLoopRewardRefs": {
       "title": "Rewards not linked to game content",
-      "body": "{{count}} loop(s) describe a reward but do not name the resource, item or building it is: {{names}}."
+      "body": "{{count}} loops describe a reward but do not name the resource, item or building it is: {{names}}.",
+      "body_one": "{{count}} loop describes a reward but does not name the resource, item or building it is: {{names}}.",
+      "body_other": "{{count}} loops describe a reward but do not name the resource, item or building it is: {{names}}."
     },
     "difficultyMissing": {
       "title": "Difficulty values still missing",
@@ -290,7 +380,9 @@
     },
     "difficultyRange": {
       "title": "Values outside the intended range",
-      "body": "{{count}} value(s) fall outside the parameter’s range: {{names}}. Adjust the value or the range."
+      "body": "{{count}} values fall outside the parameter’s range: {{names}}. Adjust the value or the range.",
+      "body_one": "{{count}} value falls outside the parameter’s range: {{names}}. Adjust the value or the range.",
+      "body_other": "{{count}} values fall outside the parameter’s range: {{names}}. Adjust the value or the range."
     },
     "difficultyReversal": {
       "title": "Parameters that move against their direction",
@@ -298,11 +390,15 @@
     },
     "difficultyContext": {
       "title": "Parameters without tuning context",
-      "body": "{{count}} parameter(s) lack a direction or range: {{names}}. These make reversals and out-of-range values detectable."
+      "body": "{{count}} parameters lack a direction or range: {{names}}. These make reversals and out-of-range values detectable.",
+      "body_one": "{{count}} parameter lacks a direction or range: {{names}}. This makes reversals and out-of-range values detectable.",
+      "body_other": "{{count}} parameters lack a direction or range: {{names}}. These make reversals and out-of-range values detectable."
     },
     "difficultyIntent": {
       "title": "Presets without an intent",
-      "body": "{{count}} preset(s) don’t say what they should feel like: {{names}}."
+      "body": "{{count}} presets don’t say what they should feel like: {{names}}.",
+      "body_one": "{{count}} preset doesn’t say what it should feel like: {{names}}.",
+      "body_other": "{{count}} presets don’t say what they should feel like: {{names}}."
     },
     "difficultySpacing": {
       "title": "Levels that are too close or out of order",
@@ -310,11 +406,15 @@
     },
     "difficultyBaseline": {
       "title": "Baselines outside their range",
-      "body": "{{count}} parameter(s) have a baseline outside Range min–max: {{names}}."
+      "body": "{{count}} parameters have a baseline outside Range min–max: {{names}}.",
+      "body_one": "{{count}} parameter has a baseline outside Range min–max: {{names}}.",
+      "body_other": "{{count}} parameters have a baseline outside Range min–max: {{names}}."
     },
     "difficultyUnused": {
       "title": "Parameters no system reads",
-      "body": "{{count}} parameter(s) are not linked from Player, Combat or Trade, so they only change numbers in this document: {{names}}."
+      "body": "{{count}} parameters are not linked from Player, Combat or Trade, so they only change numbers in this document: {{names}}.",
+      "body_one": "{{count}} parameter is not linked from Player, Combat or Trade, so it only changes numbers in this document: {{names}}.",
+      "body_other": "{{count}} parameters are not linked from Player, Combat or Trade, so they only change numbers in this document: {{names}}."
     },
     "difficultyNoPresets": {
       "title": "No difficulty presets described",
@@ -322,7 +422,9 @@
     },
     "diplomacyProfile": {
       "title": "Faction profiles are incomplete",
-      "body": "{{count}} faction(s) lack goals, a capital or key characters: {{names}}."
+      "body": "{{count}} factions lack goals, a capital or key characters: {{names}}.",
+      "body_one": "{{count}} faction lacks goals, a capital or key characters: {{names}}.",
+      "body_other": "{{count}} factions lack goals, a capital or key characters: {{names}}."
     },
     "diplomacyNoThresholds": {
       "title": "No relationship levels yet",
@@ -334,15 +436,21 @@
     },
     "diplomacyAsymmetry": {
       "title": "Asymmetric relations to review",
-      "body": "{{count}} pair(s) differ between directions: {{names}}. Fine if intended; otherwise mirror them."
+      "body": "{{count}} pairs differ between directions: {{names}}. Fine if intended; otherwise mirror them.",
+      "body_one": "{{count}} pair differs between directions: {{names}}. Fine if intended; otherwise mirror it.",
+      "body_other": "{{count}} pairs differ between directions: {{names}}. Fine if intended; otherwise mirror them."
     },
     "diplomacyGraph": {
       "title": "Graph and matrix disagree",
-      "body": "{{count}} graph relation(s) contradict the matrix: {{names}}. The matrix is the reputation model; update whichever is out of date."
+      "body": "{{count}} graph relations contradict the matrix: {{names}}. The matrix is the reputation model; update whichever is out of date.",
+      "body_one": "{{count}} graph relation contradicts the matrix: {{names}}. The matrix is the reputation model; update whichever is out of date.",
+      "body_other": "{{count}} graph relations contradict the matrix: {{names}}. The matrix is the reputation model; update whichever is out of date."
     },
     "diplomacyMatrix": {
       "title": "Relationship matrix has empty cells",
-      "body": "{{count}} relation(s) between factions are not set yet."
+      "body": "{{count}} relations between factions are not set yet.",
+      "body_one": "{{count}} relation between factions is not set yet.",
+      "body_other": "{{count}} relations between factions are not set yet."
     },
     "townNoSource": {
       "title": "Resources with no source",
@@ -358,7 +466,9 @@
     },
     "townWorkforce": {
       "title": "Not enough workers",
-      "body": "Buildings need {{count}} more workers than the population available."
+      "body": "Buildings need {{count}} more workers than the population available.",
+      "body_one": "Buildings need {{count}} more worker than the population available.",
+      "body_other": "Buildings need {{count}} more workers than the population available."
     },
     "townRoutes": {
       "title": "Route problems",
@@ -370,7 +480,9 @@
     },
     "diplomacySpillover": {
       "title": "Actions without spillover",
-      "body": "{{count}} action(s) involve a faction with hostile rivals but record no spillover: {{names}}."
+      "body": "{{count}} actions involve a faction with hostile rivals but record no spillover: {{names}}.",
+      "body_one": "{{count}} action involves a faction with hostile rivals but records no spillover: {{names}}.",
+      "body_other": "{{count}} actions involve a faction with hostile rivals but record no spillover: {{names}}."
     },
     "diplomacyMarks": {
       "title": "Scale markers to check",
@@ -378,31 +490,45 @@
     },
     "diplomacyUnlinked": {
       "title": "Factions no other module uses",
-      "body": "{{count}} faction(s) are not referenced by quests, characters, merchants, biomes or other modules yet: {{names}}. The Footprint view shows where each faction appears."
+      "body": "{{count}} factions are not referenced by quests, characters, merchants, biomes or other modules yet: {{names}}. The Footprint view shows where each faction appears.",
+      "body_one": "{{count}} faction is not referenced by quests, characters, merchants, biomes or other modules yet: {{names}}. The Footprint view shows where each faction appears.",
+      "body_other": "{{count}} factions are not referenced by quests, characters, merchants, biomes or other modules yet: {{names}}. The Footprint view shows where each faction appears."
     },
     "diplomacyUntouched": {
       "title": "Reputation no action changes",
-      "body": "No action changes the player’s reputation with {{count}} faction(s), directly or by spillover: {{names}}. Try them in the Simulator view."
+      "body": "No action changes the player’s reputation with {{count}} factions, directly or by spillover: {{names}}. Try them in the Simulator view.",
+      "body_one": "No action changes the player’s reputation with {{count}} faction, directly or by spillover: {{names}}. Try it in the Simulator view.",
+      "body_other": "No action changes the player’s reputation with {{count}} factions, directly or by spillover: {{names}}. Try them in the Simulator view."
     },
     "worldReach": {
       "title": "Biomes nothing unlocks",
-      "body": "{{count}} biome(s) have no gate met in another biome and no incoming arrow in the progression graph: {{names}}. Link a boss or quest under Entry, or mark them optional if that is intended."
+      "body": "{{count}} biomes have no gate met in another biome and no incoming arrow in the progression graph: {{names}}. Link a boss or quest under Entry, or mark them optional if that is intended.",
+      "body_one": "{{count}} biome has no gate met in another biome and no incoming arrow in the progression graph: {{names}}. Link a boss or quest under Entry, or mark it optional if that is intended.",
+      "body_other": "{{count}} biomes have no gate met in another biome and no incoming arrow in the progression graph: {{names}}. Link a boss or quest under Entry, or mark them optional if that is intended."
     },
     "worldEntry": {
       "title": "Biomes without an entry condition",
-      "body": "{{count}} biome(s) have no entry condition: {{names}}."
+      "body": "{{count}} biomes have no entry condition: {{names}}.",
+      "body_one": "{{count}} biome has no entry condition: {{names}}.",
+      "body_other": "{{count}} biomes have no entry condition: {{names}}."
     },
     "worldZones": {
       "title": "Biomes missing on the map",
-      "body": "{{count}} biome(s) have no zone on the map sketch: {{names}}."
+      "body": "{{count}} biomes have no zone on the map sketch: {{names}}.",
+      "body_one": "{{count}} biome has no zone on the map sketch: {{names}}.",
+      "body_other": "{{count}} biomes have no zone on the map sketch: {{names}}."
     },
     "worldZoneLinks": {
       "title": "Map zones not linked to a biome",
-      "body": "{{count}} zone(s) are unlinked or point to a deleted biome: {{names}}."
+      "body": "{{count}} zones are unlinked or point to a deleted biome: {{names}}.",
+      "body_one": "{{count}} zone is unlinked or points to a deleted biome: {{names}}.",
+      "body_other": "{{count}} zones are unlinked or point to a deleted biome: {{names}}."
     },
     "worldOutposts": {
       "title": "Outposts are incomplete",
-      "body": "{{count}} outpost(s) lack defenders or rewards: {{names}}."
+      "body": "{{count}} outposts lack defenders or rewards: {{names}}.",
+      "body_one": "{{count}} outpost lacks defenders or rewards: {{names}}.",
+      "body_other": "{{count}} outposts lack defenders or rewards: {{names}}."
     },
     "worldGraph": {
       "title": "Entry condition and graph disagree",
@@ -410,39 +536,57 @@
     },
     "worldEnemies": {
       "title": "Biomes without enemies",
-      "body": "{{count}} biome(s) list no enemies or bosses: {{names}}."
+      "body": "{{count}} biomes list no enemies or bosses: {{names}}.",
+      "body_one": "{{count}} biome lists no enemies or bosses: {{names}}.",
+      "body_other": "{{count}} biomes list no enemies or bosses: {{names}}."
     },
     "worldLocked": {
       "title": "Biomes that can never open",
-      "body": "{{count}} biome(s) need a quest or boss that is only met inside a biome the player can’t reach yet (or inside the biome itself): {{names}}. See the Unlock path view."
+      "body": "{{count}} biomes need a quest or boss that is only met inside a biome the player can’t reach yet (or inside the biome itself): {{names}}. See the Unlock path view.",
+      "body_one": "{{count}} biome needs a quest or boss that is only met inside a biome the player can’t reach yet (or inside the biome itself): {{names}}. See the Unlock path view.",
+      "body_other": "{{count}} biomes need a quest or boss that is only met inside a biome the player can’t reach yet (or inside the biome itself): {{names}}. See the Unlock path view."
     },
     "worldLevels": {
       "title": "Level ranges run backwards",
-      "body": "{{count}} biome(s) start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view."
+      "body": "{{count}} biomes start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view.",
+      "body_one": "{{count}} biome starts at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view.",
+      "body_other": "{{count}} biomes start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view."
     },
     "npcStatCoverage": {
       "title": "Stats without a rule",
-      "body": "{{count}} stat(s) have no entry under Stats yet: {{names}}. Describe what each one does."
+      "body": "{{count}} stats have no entry under Stats yet: {{names}}. Describe what each one does.",
+      "body_one": "{{count}} stat has no entry under Stats yet: {{names}}. Describe what each one does.",
+      "body_other": "{{count}} stats have no entry under Stats yet: {{names}}. Describe what each one does."
     },
     "npcNeedCoverage": {
       "title": "Needs without a rule",
-      "body": "{{count}} need(s) have no entry under Needs: {{names}}. Say what satisfies them and what happens when they are unmet."
+      "body": "{{count}} needs have no entry under Needs: {{names}}. Say what satisfies them and what happens when they are unmet.",
+      "body_one": "{{count}} need has no entry under Needs: {{names}}. Say what satisfies it and what happens when it is unmet.",
+      "body_other": "{{count}} needs have no entry under Needs: {{names}}. Say what satisfies them and what happens when they are unmet."
     },
     "npcNeedConsequence": {
       "title": "Needs with no consequence",
-      "body": "{{count}} need rule(s) do not say what happens when the need goes unmet: {{names}}."
+      "body": "{{count}} need rules do not say what happens when the need goes unmet: {{names}}.",
+      "body_one": "{{count}} need rule does not say what happens when the need goes unmet: {{names}}.",
+      "body_other": "{{count}} need rules do not say what happens when the need goes unmet: {{names}}."
     },
     "npcNeedSupply": {
       "title": "Needs with no supply",
-      "body": "{{count}} need rule(s) name no resource or building that satisfies them: {{names}}. The needs balance cannot check them."
+      "body": "{{count}} need rules name no resource or building that satisfies them: {{names}}. The needs balance cannot check them.",
+      "body_one": "{{count}} need rule names no resource or building that satisfies it: {{names}}. The needs balance cannot check it.",
+      "body_other": "{{count}} need rules name no resource or building that satisfies them: {{names}}. The needs balance cannot check them."
     },
     "npcStatRange": {
       "title": "Stats outside the scale",
-      "body": "{{count}} archetype(s) have stats outside {{min}}–{{max}}: {{names}}. Fix the values or widen the scale in Overview."
+      "body": "{{count}} archetypes have stats outside {{min}}–{{max}}: {{names}}. Fix the values or widen the scale in Overview.",
+      "body_one": "{{count}} archetype has stats outside {{min}}–{{max}}: {{names}}. Fix the values or widen the scale in Overview.",
+      "body_other": "{{count}} archetypes have stats outside {{min}}–{{max}}: {{names}}. Fix the values or widen the scale in Overview."
     },
     "npcFormula": {
       "title": "Formulas that do not evaluate",
-      "body": "{{count}} formula(s) fail with the stat variables: {{names}}."
+      "body": "{{count}} formulas fail with the stat variables: {{names}}.",
+      "body_one": "{{count}} formula fails with the stat variables: {{names}}.",
+      "body_other": "{{count}} formulas fail with the stat variables: {{names}}."
     },
     "npcStages": {
       "title": "Life stages have gaps or overlaps",
@@ -458,7 +602,9 @@
     },
     "npcProfessionJob": {
       "title": "Professions without a job description",
-      "body": "{{count}} profession(s) used by archetypes have no entry under Work and professions: {{names}}."
+      "body": "{{count}} professions used by archetypes have no entry under Work and professions: {{names}}.",
+      "body_one": "{{count}} profession used by archetypes has no entry under Work and professions: {{names}}.",
+      "body_other": "{{count}} professions used by archetypes have no entry under Work and professions: {{names}}."
     },
     "npcJobBuilding": {
       "title": "Job and building disagree",
@@ -470,43 +616,63 @@
     },
     "npcEvents": {
       "title": "Events are incomplete",
-      "body": "{{count}} event(s) lack a chance or any effect: {{names}}."
+      "body": "{{count}} events lack a chance or any effect: {{names}}.",
+      "body_one": "{{count}} event lacks a chance or any effect: {{names}}.",
+      "body_other": "{{count}} events lack a chance or any effect: {{names}}."
     },
     "npcNoWorkStage": {
       "title": "No life stage can work",
-      "body": "None of the {{count}} life stage(s) is marked “Can work”, so no NPC ever joins the workforce. Check the Lifespan view."
+      "body": "None of the {{count}} life stages is marked “Can work”, so no NPC ever joins the workforce. Check the Lifespan view.",
+      "body_one": "The only life stage is not marked “Can work”, so no NPC ever joins the workforce. Check the Lifespan view.",
+      "body_other": "None of the {{count}} life stages is marked “Can work”, so no NPC ever joins the workforce. Check the Lifespan view."
     },
     "npcBondLevel": {
       "title": "Bonds without a required level",
-      "body": "{{count}} bond(s) can form at any affinity: {{names}}. Pin them to a relationship level in the Bond ladder."
+      "body": "{{count}} bonds can form at any affinity: {{names}}. Pin them to a relationship level in the Bond ladder.",
+      "body_one": "{{count}} bond can form at any affinity: {{names}}. Pin it to a relationship level in the Bond ladder.",
+      "body_other": "{{count}} bonds can form at any affinity: {{names}}. Pin them to a relationship level in the Bond ladder."
     },
     "npcEventFrequent": {
       "title": "Very frequent events",
-      "body": "{{count}} event(s) fire more than once a week per eligible NPC: {{names}}. Lower the chance or add a cooldown."
+      "body": "{{count}} events fire more than once a week per eligible NPC: {{names}}. Lower the chance or add a cooldown.",
+      "body_one": "{{count}} event fires more than once a week per eligible NPC: {{names}}. Lower the chance or add a cooldown.",
+      "body_other": "{{count}} events fire more than once a week per eligible NPC: {{names}}. Lower the chance or add a cooldown."
     },
     "npcRoutineWork": {
       "title": "Professions with no work time",
-      "body": "{{count}} profession(s) with a job have no “Work” slot in the daily routine: {{names}}."
+      "body": "{{count}} professions with a job have no “Work” slot in the daily routine: {{names}}.",
+      "body_one": "{{count}} profession with a job has no “Work” slot in the daily routine: {{names}}.",
+      "body_other": "{{count}} professions with a job have no “Work” slot in the daily routine: {{names}}."
     },
     "archUpward": {
       "title": "Dependencies point up a layer",
-      "body": "{{count}} dependency(ies) go from a lower layer to a higher one: {{names}}. Use a channel, move the code down, or allow it under the layer’s “May also use”."
+      "body": "{{count}} dependencies go from a lower layer to a higher one: {{names}}. Use a channel, move the code down, or allow it under the layer’s “May also use”.",
+      "body_one": "{{count}} dependency goes from a lower layer to a higher one: {{names}}. Use a channel, move the code down, or allow it under the layer’s “May also use”.",
+      "body_other": "{{count}} dependencies go from a lower layer to a higher one: {{names}}. Use a channel, move the code down, or allow it under the layer’s “May also use”."
     },
     "archCycle": {
       "title": "Modules depend on each other in a loop",
-      "body": "{{count}} cycle(s): {{names}}. Break one link with an event channel or an interface in a lower layer."
+      "body": "{{count}} cycles: {{names}}. Break one link with an event channel or an interface in a lower layer.",
+      "body_one": "{{count}} cycle: {{names}}. Break one link with an event channel or an interface in a lower layer.",
+      "body_other": "{{count}} cycles: {{names}}. Break one link with an event channel or an interface in a lower layer."
     },
     "archNoLayer": {
       "title": "Modules without a layer",
-      "body": "{{count}} module(s) have no layer, so the layer rule cannot check them: {{names}}."
+      "body": "{{count}} modules have no layer, so the layer rule cannot check them: {{names}}.",
+      "body_one": "{{count}} module has no layer, so the layer rule cannot check it: {{names}}.",
+      "body_other": "{{count}} modules have no layer, so the layer rule cannot check them: {{names}}."
     },
     "archChannel": {
       "title": "Channels with nobody on one side",
-      "body": "{{count}} channel(s) have no publisher or no listener: {{names}}."
+      "body": "{{count}} channels have no publisher or no listener: {{names}}.",
+      "body_one": "{{count}} channel has no publisher or no listener: {{names}}.",
+      "body_other": "{{count}} channels have no publisher or no listener: {{names}}."
     },
     "archUncovered": {
       "title": "Content with no way in",
-      "body": "{{count}} Data-driven schema(s) have no extension point: {{names}}. Adding them needs a code change."
+      "body": "{{count}} Data-driven schemas have no extension point: {{names}}. Adding them needs a code change.",
+      "body_one": "{{count}} Data-driven schema has no extension point: {{names}}. Adding it needs a code change.",
+      "body_other": "{{count}} Data-driven schemas have no extension point: {{names}}. Adding them needs a code change."
     },
     "archTickBudget": {
       "title": "Simulation over its frame budget",
@@ -522,11 +688,15 @@
     },
     "npcBalance": {
       "title": "Town cannot meet the population's needs",
-      "body": "{{count}} scenario(s) fall short: {{names}}. Compare them in the Needs balance view."
+      "body": "{{count}} scenarios fall short: {{names}}. Compare them in the Needs balance view.",
+      "body_one": "{{count}} scenario falls short: {{names}}. Compare it in the Needs balance view.",
+      "body_other": "{{count}} scenarios fall short: {{names}}. Compare them in the Needs balance view."
     },
     "playerSurvivalRestore": {
       "title": "Survival stats nothing restores",
-      "body": "{{count}} survival stat(s) name no way to restore them: {{names}}."
+      "body": "{{count}} survival stats name no way to restore them: {{names}}.",
+      "body_one": "{{count}} survival stat names no way to restore it: {{names}}.",
+      "body_other": "{{count}} survival stats name no way to restore them: {{names}}."
     },
     "playerSurvivalPace": {
       "title": "Unusual survival pacing",
@@ -534,7 +704,9 @@
     },
     "playerSurvivalDifficulty": {
       "title": "Survival not linked to difficulty",
-      "body": "{{count}} survival stat(s) ignore the Difficulty parameters: {{names}}. Link one to scale decay per level."
+      "body": "{{count}} survival stats ignore the Difficulty parameters: {{names}}. Link one to scale decay per level.",
+      "body_one": "{{count}} survival stat ignores the Difficulty parameters: {{names}}. Link one to scale decay per level.",
+      "body_other": "{{count}} survival stats ignore the Difficulty parameters: {{names}}. Link one to scale decay per level."
     },
     "playerCurveMissing": {
       "title": "No levelling curve yet",
@@ -554,11 +726,15 @@
     },
     "playerCastEntry": {
       "title": "Casts without an entry",
-      "body": "{{count}} cast(s) from the catalog have no entry under Casts: {{names}}."
+      "body": "{{count}} casts from the catalog have no entry under Casts: {{names}}.",
+      "body_one": "{{count}} cast from the catalog has no entry under Casts: {{names}}.",
+      "body_other": "{{count}} casts from the catalog have no entry under Casts: {{names}}."
     },
     "playerCastContent": {
       "title": "Casts without skills or abilities",
-      "body": "{{count}} cast(s) are missing content: {{names}}."
+      "body": "{{count}} casts are missing content: {{names}}.",
+      "body_one": "{{count}} cast is missing content: {{names}}.",
+      "body_other": "{{count}} casts are missing content: {{names}}."
     },
     "playerTreeOver": {
       "title": "Skill trees cost more than the budget",
@@ -574,11 +750,15 @@
     },
     "playerSkillAbility": {
       "title": "Active skills without an ability",
-      "body": "{{count}} active skill(s) or spell(s) grant no ability: {{names}}."
+      "body": "{{count}} active skills or spells grant no ability: {{names}}.",
+      "body_one": "{{count}} active skill or spell grants no ability: {{names}}.",
+      "body_other": "{{count}} active skills or spells grant no ability: {{names}}."
     },
     "playerAbilityCost": {
       "title": "Abilities without cost or cooldown",
-      "body": "{{count}} ability(ies) lack a resource cost or a cooldown: {{names}}."
+      "body": "{{count}} abilities lack a resource cost or a cooldown: {{names}}.",
+      "body_one": "{{count}} ability lacks a resource cost or a cooldown: {{names}}.",
+      "body_other": "{{count}} abilities lack a resource cost or a cooldown: {{names}}."
     },
     "playerAbilityCast": {
       "title": "Skill grants another cast's ability",
@@ -586,15 +766,21 @@
     },
     "playerStartGear": {
       "title": "Casts start empty-handed",
-      "body": "{{count}} cast(s) have no starting abilities or gear: {{names}}."
+      "body": "{{count}} casts have no starting abilities or gear: {{names}}.",
+      "body_one": "{{count}} cast has no starting abilities or gear: {{names}}.",
+      "body_other": "{{count}} casts have no starting abilities or gear: {{names}}."
     },
     "itemsNoSource": {
       "title": "Items nobody can obtain",
-      "body": "{{count}} item(s) have no recipe, loot table, merchant, reward, starting gear or Town output: {{names}}."
+      "body": "{{count}} items have no recipe, loot table, merchant, reward, starting gear or Town output: {{names}}.",
+      "body_one": "{{count}} item has no recipe, loot table, merchant, reward, starting gear or Town output: {{names}}.",
+      "body_other": "{{count}} items have no recipe, loot table, merchant, reward, starting gear or Town output: {{names}}."
     },
     "itemsUnused": {
       "title": "Items nothing uses",
-      "body": "{{count}} item(s) are never an ingredient, never restore anything and are not traded: {{names}}."
+      "body": "{{count}} items are never an ingredient, never restore anything and are not traded: {{names}}.",
+      "body_one": "{{count}} item is never an ingredient, never restores anything and is not traded: {{names}}.",
+      "body_other": "{{count}} items are never an ingredient, never restore anything and are not traded: {{names}}."
     },
     "itemsRecipeShape": {
       "title": "Recipe problems",
@@ -606,7 +792,9 @@
     },
     "itemsCoverage": {
       "title": "Gaps in rarity coverage",
-      "body": "{{count}} type and rarity pair(s) have no item between rarities the type already uses: {{names}}."
+      "body": "{{count}} type and rarity pairs have no item between rarities the type already uses: {{names}}.",
+      "body_one": "{{count}} type and rarity pair has no item between rarities the type already uses: {{names}}.",
+      "body_other": "{{count}} type and rarity pairs have no item between rarities the type already uses: {{names}}."
     },
     "itemsTiers": {
       "title": "Rarity or quality tiers out of order",
@@ -614,7 +802,9 @@
     },
     "itemsLoot": {
       "title": "Loot tables need attention",
-      "body": "{{count}} table(s) lack a source or weights, roll zero times, or guarantee a deleted item: {{names}}."
+      "body": "{{count}} tables lack a source or weights, roll zero times, or guarantee a deleted item: {{names}}.",
+      "body_one": "{{count}} table lacks a source or weights, rolls zero times, or guarantees a deleted item: {{names}}.",
+      "body_other": "{{count}} tables lack a source or weights, roll zero times, or guarantee a deleted item: {{names}}."
     },
     "itemsTypeFields": {
       "title": "Fields that do not fit the item type",
@@ -622,11 +812,15 @@
     },
     "itemsBasics": {
       "title": "Items missing basics",
-      "body": "{{count}} item(s) lack a stack size (resources) or weight and durability (gear and tools): {{names}}."
+      "body": "{{count}} items lack a stack size (resources) or weight and durability (gear and tools): {{names}}.",
+      "body_one": "{{count}} item lacks a stack size (resources) or weight and durability (gear and tools): {{names}}.",
+      "body_other": "{{count}} items lack a stack size (resources) or weight and durability (gear and tools): {{names}}."
     },
     "combatEnemyBasics": {
       "title": "Enemies missing basics",
-      "body": "{{count}} enemy(ies) lack a biome, HP, damage or attacks per second: {{names}}."
+      "body": "{{count}} enemies lack a biome, HP, damage or attacks per second: {{names}}.",
+      "body_one": "{{count}} enemy lacks a biome, HP, damage or attacks per second: {{names}}.",
+      "body_other": "{{count}} enemies lack a biome, HP, damage or attacks per second: {{names}}."
     },
     "combatTtk": {
       "title": "Unusual fight lengths",
@@ -642,7 +836,9 @@
     },
     "combatNoLoot": {
       "title": "Enemies that drop nothing",
-      "body": "{{count}} enemy(ies) or boss(es) are not a source in any Items loot table: {{names}}."
+      "body": "{{count}} enemies or bosses are not a source in any Items loot table: {{names}}.",
+      "body_one": "{{count}} enemy or boss is not a source in any Items loot table: {{names}}.",
+      "body_other": "{{count}} enemies or bosses are not a source in any Items loot table: {{names}}."
     },
     "combatPhases": {
       "title": "Boss phases need attention",
@@ -654,11 +850,15 @@
     },
     "combatVariants": {
       "title": "Incomplete variants",
-      "body": "{{count}} variant(s) lack a base enemy, a time or event, or a multiplier: {{names}}."
+      "body": "{{count}} variants lack a base enemy, a time or event, or a multiplier: {{names}}.",
+      "body_one": "{{count}} variant lacks a base enemy, a time or event, or a multiplier: {{names}}.",
+      "body_other": "{{count}} variants lack a base enemy, a time or event, or a multiplier: {{names}}."
     },
     "combatStatus": {
       "title": "Incomplete status effects",
-      "body": "{{count}} status effect(s) lack a duration, or tick damage without an interval: {{names}}."
+      "body": "{{count}} status effects lack a duration, or tick damage without an interval: {{names}}.",
+      "body_one": "{{count}} status effect lacks a duration, or tick damage without an interval: {{names}}.",
+      "body_other": "{{count}} status effects lack a duration, or tick damage without an interval: {{names}}."
     },
     "combatFormula": {
       "title": "Damage formula does not work",
@@ -674,7 +874,9 @@
     },
     "timePhaseBasics": {
       "title": "Incomplete day phases",
-      "body": "{{count}} phase(s) lack a start, a duration or a time-of-day link (used by NPC routines and music): {{names}}."
+      "body": "{{count}} phases lack a start, a duration or a time-of-day link (used by NPC routines and music): {{names}}.",
+      "body_one": "{{count}} phase lacks a start, a duration or a time-of-day link (used by NPC routines and music): {{names}}.",
+      "body_other": "{{count}} phases lack a start, a duration or a time-of-day link (used by NPC routines and music): {{names}}."
     },
     "timeNightHarder": {
       "title": "Night is not more dangerous",
@@ -686,11 +888,15 @@
     },
     "timeWeatherNone": {
       "title": "Biomes without weather",
-      "body": "{{count}} biome(s) have no weather at all: {{names}}."
+      "body": "{{count}} biomes have no weather at all: {{names}}.",
+      "body_one": "{{count}} biome has no weather at all: {{names}}.",
+      "body_other": "{{count}} biomes have no weather at all: {{names}}."
     },
     "timeEvents": {
       "title": "Incomplete events",
-      "body": "{{count}} event(s) lack a usable schedule, a duration or any effect: {{names}}."
+      "body": "{{count}} events lack a usable schedule, a duration or any effect: {{names}}.",
+      "body_one": "{{count}} event lacks a usable schedule, a duration or any effect: {{names}}.",
+      "body_other": "{{count}} events lack a usable schedule, a duration or any effect: {{names}}."
     },
     "timeCoincide": {
       "title": "Events can coincide without a rule",
@@ -706,7 +912,9 @@
     },
     "tradeArbitrage": {
       "title": "Money loops",
-      "body": "{{count}} way(s) to make money from nothing: {{names}}. See the Price ladder."
+      "body": "{{count}} ways to make money from nothing: {{names}}. See the Price ladder.",
+      "body_one": "{{count}} way to make money from nothing: {{names}}. See the Price ladder.",
+      "body_other": "{{count}} ways to make money from nothing: {{names}}. See the Price ladder."
     },
     "tradeMarginConflict": {
       "title": "Two sets of margins",
@@ -714,7 +922,9 @@
     },
     "tradeRuleScope": {
       "title": "Price rules without a scope",
-      "body": "{{count}} rule(s) have a factor but nothing they apply to, so they are not used: {{names}}."
+      "body": "{{count}} rules have a factor but nothing they apply to, so they are not used: {{names}}.",
+      "body_one": "{{count}} rule has a factor but nothing it applies to, so it is not used: {{names}}.",
+      "body_other": "{{count}} rules have a factor but nothing they apply to, so they are not used: {{names}}."
     },
     "tradeFormulaVars": {
       "title": "Unknown formula variables",
@@ -722,11 +932,15 @@
     },
     "tradeWanderingRule": {
       "title": "Wandering merchants never come",
-      "body": "{{count}} wandering merchant(s) have no roll interval or chance, here or in the Wandering merchant rules: {{names}}."
+      "body": "{{count}} wandering merchants have no roll interval or chance, here or in the Wandering merchant rules: {{names}}.",
+      "body_one": "{{count}} wandering merchant has no roll interval or chance, here or in the Wandering merchant rules: {{names}}.",
+      "body_other": "{{count}} wandering merchants have no roll interval or chance, here or in the Wandering merchant rules: {{names}}."
     },
     "tradeCapitalGate": {
       "title": "Capital merchants without a gate",
-      "body": "{{count}} faction capital merchant(s) lack a faction or a required relationship level: {{names}}."
+      "body": "{{count}} faction capital merchants lack a faction or a required relationship level: {{names}}.",
+      "body_one": "{{count}} faction capital merchant lacks a faction or a required relationship level: {{names}}.",
+      "body_other": "{{count}} faction capital merchants lack a faction or a required relationship level: {{names}}."
     },
     "tradeRarityCap": {
       "title": "Goods above the rarity limit",
@@ -738,7 +952,9 @@
     },
     "tradeUnsold": {
       "title": "Valuable items nobody trades",
-      "body": "{{count}} item(s) with a value have no merchant that sells or buys them: {{names}}."
+      "body": "{{count}} items with a value have no merchant that sells or buys them: {{names}}.",
+      "body_one": "{{count}} item with a value has no merchant that sells or buys it: {{names}}.",
+      "body_other": "{{count}} items with a value have no merchant that sells or buys them: {{names}}."
     },
     "tradeNoSinks": {
       "title": "Money only comes in",
@@ -750,7 +966,9 @@
     },
     "tradeRepCoverage": {
       "title": "Relationship levels without a price factor",
-      "body": "{{count}} relationship level(s) have no buy price factor and count as ×1: {{names}}."
+      "body": "{{count}} relationship levels have no buy price factor and count as ×1: {{names}}.",
+      "body_one": "{{count}} relationship level has no buy price factor and counts as ×1: {{names}}.",
+      "body_other": "{{count}} relationship levels have no buy price factor and count as ×1: {{names}}."
     },
     "storyQuestCycle": {
       "title": "Quests require each other in a loop",
@@ -758,11 +976,15 @@
     },
     "storyUnreachable": {
       "title": "Quests that can never start",
-      "body": "{{count}} quest(s) can never start: {{names}}."
+      "body": "{{count}} quests can never start: {{names}}.",
+      "body_one": "{{count}} quest can never start: {{names}}.",
+      "body_other": "{{count}} quests can never start: {{names}}."
     },
     "storyActOrder": {
       "title": "Needs something from a later act",
-      "body": "{{count}} requirement(s) point forward in the story: {{names}}."
+      "body": "{{count}} requirements point forward in the story: {{names}}.",
+      "body_one": "{{count}} requirement points forward in the story: {{names}}.",
+      "body_other": "{{count}} requirements point forward in the story: {{names}}."
     },
     "storyEndings": {
       "title": "Unreachable endings",
@@ -770,7 +992,9 @@
     },
     "storyEndingsEmpty": {
       "title": "Endings without requirements",
-      "body": "{{count}} ending(s) need no quest, option or reputation yet: {{names}}."
+      "body": "{{count}} endings need no quest, option or reputation yet: {{names}}.",
+      "body_one": "{{count}} ending needs no quest, option or reputation yet: {{names}}.",
+      "body_other": "{{count}} endings need no quest, option or reputation yet: {{names}}."
     },
     "storyPacing": {
       "title": "Act pacing is off",
@@ -778,15 +1002,21 @@
     },
     "storyQuestBasics": {
       "title": "Incomplete main and faction quests",
-      "body": "{{count}} quest(s) lack a giver, objectives, an act or any reward: {{names}}."
+      "body": "{{count}} quests lack a giver, objectives, an act or any reward: {{names}}.",
+      "body_one": "{{count}} quest lacks a giver, objectives, an act or any reward: {{names}}.",
+      "body_other": "{{count}} quests lack a giver, objectives, an act or any reward: {{names}}."
     },
     "storyCastIdle": {
       "title": "Main characters without quests",
-      "body": "{{count}} main character(s) give no quests: {{names}}."
+      "body": "{{count}} main characters give no quests: {{names}}.",
+      "body_one": "{{count}} main character gives no quests: {{names}}.",
+      "body_other": "{{count}} main characters give no quests: {{names}}."
     },
     "storyFactionQuests": {
       "title": "Factions without quests",
-      "body": "{{count}} faction(s) have no Faction quest: {{names}}."
+      "body": "{{count}} factions have no Faction quest: {{names}}.",
+      "body_one": "{{count}} faction has no Faction quest: {{names}}.",
+      "body_other": "{{count}} factions have no Faction quest: {{names}}."
     },
     "storyReputation": {
       "title": "Reputation out of reach",
@@ -798,15 +1028,21 @@
     },
     "uiUnreachable": {
       "title": "Screens nobody can open",
-      "body": "{{count}} screen(s) cannot be reached from {{entry}} through the flow graph or any button: {{names}}. See Screen map."
+      "body": "{{count}} screens cannot be reached from {{entry}} through the flow graph or any button: {{names}}. See Screen map.",
+      "body_one": "{{count}} screen cannot be reached from {{entry}} through the flow graph or any button: {{names}}. See Screen map.",
+      "body_other": "{{count}} screens cannot be reached from {{entry}} through the flow graph or any button: {{names}}. See Screen map."
     },
     "uiDeadEnd": {
       "title": "Screens without a way back",
-      "body": "{{count}} screen(s) have no back, close or navigation out: {{names}}."
+      "body": "{{count}} screens have no back, close or navigation out: {{names}}.",
+      "body_one": "{{count}} screen has no back, close or navigation out: {{names}}.",
+      "body_other": "{{count}} screens have no back, close or navigation out: {{names}}."
     },
     "uiNavMismatch": {
       "title": "Flow graph and buttons disagree",
-      "body": "{{count}} connection(s) exist only on one side: {{names}}. “Add arrows from wireframes” in Screen flow fixes the button-only ones."
+      "body": "{{count}} connections exist only on one side: {{names}}. “Add arrows from wireframes” in Screen flow fixes the button-only ones.",
+      "body_one": "{{count}} connection exists only on one side: {{names}}. “Add arrows from wireframes” in Screen flow fixes the button-only ones.",
+      "body_other": "{{count}} connections exist only on one side: {{names}}. “Add arrows from wireframes” in Screen flow fixes the button-only ones."
     },
     "uiLayout": {
       "title": "Layout problems",
@@ -814,7 +1050,9 @@
     },
     "uiTextFit": {
       "title": "Labels too long for translation",
-      "body": "{{count}} label(s) would not fit at the configured text expansion, e.g. {{names}}."
+      "body": "{{count}} labels would not fit at the configured text expansion, e.g. {{names}}.",
+      "body_one": "{{count}} label would not fit at the configured text expansion, e.g. {{names}}.",
+      "body_other": "{{count}} labels would not fit at the configured text expansion, e.g. {{names}}."
     },
     "uiHudCoverage": {
       "title": "HUD and game data differ",
@@ -822,7 +1060,9 @@
     },
     "uiUnbound": {
       "title": "HUD widgets without data",
-      "body": "{{count}} widget(s) show nothing yet: {{names}}. Pick what they show under Data in the properties."
+      "body": "{{count}} widgets show nothing yet: {{names}}. Pick what they show under Data in the properties.",
+      "body_one": "{{count}} widget shows nothing yet: {{names}}. Pick what it shows under Data in the properties.",
+      "body_other": "{{count}} widgets show nothing yet: {{names}}. Pick what they show under Data in the properties."
     },
     "uiControlConflicts": {
       "title": "Two actions on one input",
@@ -830,8 +1070,12 @@
     },
     "uiScreenBasics": {
       "title": "Screens not ready",
-      "body": "{{count}} screen(s) lack a purpose, a wireframe or states: {{names}}. See Readiness."
-    }
+      "body": "{{count}} screens lack a purpose, a wireframe or states: {{names}}. See Readiness.",
+      "body_one": "{{count}} screen lacks a purpose, a wireframe or states: {{names}}. See Readiness.",
+      "body_other": "{{count}} screens lack a purpose, a wireframe or states: {{names}}. See Readiness."
+    },
+    "more_one": "{{count}} more hidden",
+    "more_other": "{{count}} more hidden"
   },
   "ai": {
     "badgeTitle": "Created or changed by AI ({{model}}) {{date}}",
@@ -863,7 +1107,7 @@
     "proposal": "AI proposal",
     "apply": "Apply selected ({{n}})",
     "discard": "Discard",
-    "applied": "Applied {{n}} change(s), skipped {{skipped}}. Ctrl+Z undoes all at once.",
+    "applied": "Applied {{count}} changes, skipped {{skipped}}. Ctrl+Z undoes all at once.",
     "stale": "Some entries changed since the proposal; they were skipped.",
     "noFindings": "No findings.",
     "invalidAnswer": "The AI answer could not be used:",
@@ -934,7 +1178,7 @@
     "model": "Model",
     "modelName": "Model name",
     "refreshModels": "Load models from API",
-    "modelsLoaded": "{{n}} models loaded.",
+    "modelsLoaded": "{{count}} models loaded.",
     "params": "Parameters",
     "maxOutput": "Max output tokens",
     "timeout": "Timeout (s)",
@@ -956,6 +1200,19 @@
     "docsFolder": "Documentation folder",
     "docsFolderHelp": "Optional: pick a docs/ folder with Markdown files for the documentation Q&A. Files are read locally and kept in memory.",
     "docsLoaded": "{{count}} files loaded",
-    "clearDocs": "Clear"
+    "clearDocs": "Clear",
+    "srcFolder_one": "Opened folder ({{count}} file)",
+    "srcFolder_other": "Opened folder ({{count}} files)",
+    "applied_one": "Applied {{count}} change, skipped {{skipped}}. Ctrl+Z undoes it.",
+    "applied_other": "Applied {{count}} changes, skipped {{skipped}}. Ctrl+Z undoes all at once.",
+    "docsLoaded_one": "{{count}} file loaded",
+    "docsLoaded_other": "{{count}} files loaded",
+    "modelsLoaded_one": "{{count}} model loaded.",
+    "modelsLoaded_other": "{{count}} models loaded."
+  },
+  "map": {
+    "title": "System map",
+    "hint": "how the sections feed each other; click a box to open it",
+    "summary": "{{empty}} empty · {{started}} with open tips"
   }
 }

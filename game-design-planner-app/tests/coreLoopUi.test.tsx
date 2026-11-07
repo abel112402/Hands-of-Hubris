@@ -32,7 +32,7 @@ describe('core loop editor', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Pacing' }))
     expect(await screen.findByRole('img', { name: 'One cycle takes 15 min' })).toBeTruthy()
     expect(screen.getByText('Grow the town: ×16 cycles')).toBeTruthy()
-    expect(screen.getByText(/· 8 in-game day\(s\)/)).toBeTruthy()
+    expect(screen.getByText(/· 8 in-game days/)).toBeTruthy()
   })
 
   it('opens a loop with grouped fields from the pacing view', async () => {

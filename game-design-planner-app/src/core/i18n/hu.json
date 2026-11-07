@@ -1,12 +1,15 @@
 {
   "app": {
-    "title": "Játéktervező"
+    "title": "Játéktervező",
+    "projectName": "Projekt neve"
   },
   "nav": {
     "home": "Menü",
     "definitions": "Definíciók",
     "issues": "Problémák",
-    "hints": "Tippek"
+    "hints": "Tippek",
+    "ai": "AI",
+    "main": "Fő"
   },
   "actions": {
     "new": "Új",
@@ -19,19 +22,27 @@
     "exportJson": "Projekt JSON letöltése",
     "search": "Keresés (Ctrl+K)",
     "snapshot": "Pillanatkép készítése",
-    "restore": "Utolsó munkamenet visszaállítása"
+    "restore": "Utolsó munkamenet visszaállítása",
+    "more": "Fájl- és projektműveletek",
+    "searchBox": "Keresés…",
+    "saveMenu": "További mentési lehetőségek"
   },
   "home": {
     "title": "Mit szeretnél megtervezni?",
     "subtitle": "Válassz egy tervezőt. Minden egyetlen projektfájlban tárolódik, amit menthetsz és betölthetsz.",
     "filter": "Tervezők szűrése…",
-    "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}})."
+    "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}}).",
+    "closeBanner": "Bezárás"
   },
   "editor": {
     "visual": "Vizuális szerkesztő",
     "markdown": "Markdown előnézet",
-    "exportDoc": "Dokumentum exportálása",
-    "importDoc": "Dokumentum importálása"
+    "exportDoc": "Exportálás JSON-ként",
+    "importDoc": "Importálás JSON-ból…",
+    "document": "Dokumentum",
+    "docMenu": "Dokumentum-műveletek: letöltés, export, import",
+    "downloadMd": "Markdown letöltése (.md)",
+    "help": "Súgó"
   },
   "status": {
     "unsaved": "Nem mentett változások",
@@ -42,9 +53,24 @@
     "panel": "Tippek",
     "none": "Jelenleg nincs tipp.",
     "more": "{{count}} további rejtve",
-    "dismiss": "Elvet",
-    "snooze": "Később",
-    "mute": "Szabály némítása",
+    "dismiss": "Tipp elvetése",
+    "snooze": "Emlékeztess később (30 perc)",
+    "mute": "Ilyen tippet ne mutass többé",
+    "moreActions": "További műveletek ehhez a tipphez",
+    "showMore": "{{count}} további mutatása",
+    "showLess": "Kevesebb mutatása",
+    "thisPage": "Ez az oldal",
+    "otherPlanners": "Más tervezők ({{count}})",
+    "allClear": "Ezen az oldalon nincs teendő.",
+    "projectWide_one": "{{count}} projektszintű tipp",
+    "projectWide_other": "{{count}} projektszintű tipp",
+    "thisPageCount_one": "{{count}} tipp ezen az oldalon",
+    "thisPageCount_other": "{{count}} tipp ezen az oldalon",
+    "legend": "Színek:",
+    "sevImportant": "fontos",
+    "sevSuggest": "javaslat",
+    "sevInfo": "infó",
+    "resize": "A tipp-panel átméretezése",
     "go": "Ugrás",
     "create": "Létrehozás",
     "confirm": "Létrehozzam most?",
@@ -863,7 +889,7 @@
     "proposal": "AI javaslat",
     "apply": "Kijelöltek alkalmazása ({{n}})",
     "discard": "Elvetés",
-    "applied": "{{n}} módosítás alkalmazva, {{skipped}} kihagyva. A Ctrl+Z egyszerre visszavonja.",
+    "applied": "{{count}} módosítás alkalmazva, {{skipped}} kihagyva. A Ctrl+Z egyszerre visszavonja.",
     "stale": "Néhány elem megváltozott a javaslat óta; ezeket kihagytuk.",
     "noFindings": "Nincs találat.",
     "invalidAnswer": "Az AI válasza nem használható:",
@@ -934,7 +960,7 @@
     "model": "Modell",
     "modelName": "Modell neve",
     "refreshModels": "Modellek betöltése az API-ból",
-    "modelsLoaded": "{{n}} modell betöltve.",
+    "modelsLoaded": "{{count}} modell betöltve.",
     "params": "Paraméterek",
     "maxOutput": "Max. kimeneti token",
     "timeout": "Időtúllépés (mp)",
@@ -957,5 +983,10 @@
     "docsFolderHelp": "Opcionális: válassz egy Markdown fájlokat tartalmazó docs/ mappát a dokumentáció-kérdezéshez. A fájlok helyben olvasódnak, memóriában maradnak.",
     "docsLoaded": "{{count}} fájl betöltve",
     "clearDocs": "Törlés"
+  },
+  "map": {
+    "title": "Rendszertérkép",
+    "hint": "hogyan táplálják egymást a szakaszok; kattints egy dobozra a megnyitáshoz",
+    "summary": "{{empty}} üres · {{started}} nyitott tippel"
   }
 }

@@ -1,3 +1,4 @@
+import { countOf } from '../../core/text'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts'
 import type { CollectionView, Entity, RangeFrom, Source } from '../../core/model/types'
@@ -214,9 +215,9 @@ export function TimelineView({ docId, items, onSelect, selected, patch, view }: 
       </div>
       <div className="muted tl-summary">
         {summary}
-        {analysis.conflicts.length > 0 && <span className="error-text"> {analysis.conflicts.length} dependency conflict(s).</span>}
+        {analysis.conflicts.length > 0 && <span className="error-text"> {countOf(analysis.conflicts.length, 'dependency conflict')}.</span>}
         {analysis.cycles.length > 0 && <span className="error-text"> Dependency cycle detected.</span>}
-        {analysis.missing.length > 0 && <span> {analysis.missing.length} item(s) without start or duration.</span>}
+        {analysis.missing.length > 0 && <span> {countOf(analysis.missing.length, 'item')} without start or duration.</span>}
       </div>
       <div className="tl-scroll">
         <div className="tl-canvas" style={{ width: LABEL_W + total * px, height }}>

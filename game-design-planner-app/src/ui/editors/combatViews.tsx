@@ -20,6 +20,7 @@ import {
 import { comparedLevels } from '../../core/player'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 const STAGE_COLORS = ['#53c28b', '#4f9cf9', '#f2c94c', '#f97b4f', '#e5707e', '#8b93a5']
 const fmt = (n: number) => (n >= 100 ? Math.round(n).toString() : (Math.round(n * 10) / 10).toString())
@@ -237,7 +238,7 @@ export function PhaseBarsView({ sec, selected, onSelect }: ViewProps) {
               ))}
             </div>
             <span className="muted">
-              {cov.phases.length} phase(s){isNum(b.hp) ? ` · ${b.hp} HP` : ''}
+              {countOf(cov.phases.length, 'phase')}{isNum(b.hp) ? ` · ${b.hp} HP` : ''}
               {cov.unset.length ? ` · ${cov.unset.length} without HP range` : ''}
             </span>
           </div>

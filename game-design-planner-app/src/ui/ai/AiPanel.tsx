@@ -170,7 +170,7 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
   const apply = () => {
     if (!diff) return
     const r = applyDiff(diff, picked, { provider: cfg.provider, model: cfg.model })
-    setApplied(t('ai.applied', { n: r.applied, skipped: r.skipped.length }) + (r.skipped.some((s) => s.reason === 'stale') ? ` ${t('ai.stale')}` : ''))
+    setApplied(t('ai.applied', { count: r.applied, skipped: r.skipped.length }) + (r.skipped.some((s) => s.reason === 'stale') ? ` ${t('ai.stale')}` : ''))
     setDiff(null)
   }
 

@@ -44,7 +44,7 @@ export function AiSettings() {
     setBusy(true)
     try {
       const list = await fetchModels(p)
-      setMsg(t('ai.modelsLoaded', { n: list.length }))
+      setMsg(t('ai.modelsLoaded', { count: list.length }))
     } catch (e) {
       setMsg(e instanceof AiError ? `${t(`ai.errors.${e.code}`)} ${e.message}` : String(e))
     } finally {

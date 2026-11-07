@@ -76,7 +76,7 @@ describe('factions editor', () => {
     window.location.hash = '#/doc/design.factions?s=factions'
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'Footprint' }))
-    expect(await screen.findByRole('img', { name: 'Guild: 1 link(s)' })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: 'Guild: 1 link' })).toBeTruthy()
     expect(screen.getAllByText('none yet')).toHaveLength(2)
   })
 })

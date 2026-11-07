@@ -26,6 +26,7 @@ import { NPC_COLORS, RadarSvg } from '../editors/npcViews'
 import { ARCH_DOC, archList, bootSequence, dependencies, dependencyCycles, extensionCoverage, layerOrder, messageFlow, nameOf, tickBudget } from '../../core/architecture'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
+import { countOf } from '../../core/text'
 
 const fmt = (n: number) => (Math.round(n * 10) / 10).toString()
 
@@ -596,7 +597,7 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
       <table className="grid npc-preview">
         <thead><tr><th>Layer (top first)</th><th>Modules</th></tr></thead>
         <tbody>{[...layerOrder(project)].reverse().map((l) => <tr key={l.id}><td>{l.name}</td><td>{mods.filter((m) => m.layer === l.id).map((m) => m.name).join(', ') || '–'}</td></tr>)}</tbody>
-        <tfoot><tr><td colSpan={2} className="muted">{deps.length} dependencies · {up} upward · {cycles} cycle(s)</td></tr></tfoot>
+        <tfoot><tr><td colSpan={2} className="muted">{deps.length} dependencies · {up} upward · {countOf(cycles, 'cycle')}</td></tr></tfoot>
       </table>
     )
   }
@@ -777,7 +778,7 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
             })}
           </tbody>
         </table>
-        <p className="muted">{cal.coincidences.length ? `${cal.coincidences.length} coincidence(s), e.g. day ${cal.coincidences[0].day}: ${cal.coincidences[0].a.event.name} + ${cal.coincidences[0].b.event.name}` : 'No events coincide.'}</p>
+        <p className="muted">{cal.coincidences.length ? `${countOf(cal.coincidences.length, 'coincidence')}, e.g. day ${cal.coincidences[0].day}: ${cal.coincidences[0].a.event.name} + ${cal.coincidences[0].b.event.name}` : 'No events coincide.'}</p>
       </div>
     )
   }

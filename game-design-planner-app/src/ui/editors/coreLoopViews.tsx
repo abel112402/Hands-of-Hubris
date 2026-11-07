@@ -1,6 +1,7 @@
 import { dayLength, formatMinutes, loopPacing } from '../../core/coreLoop'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 const r1 = (n: number) => (n >= 10 ? Math.round(n) : Math.round(n * 10) / 10).toString()
 
@@ -48,7 +49,7 @@ export function LoopPacingView({ items, selected, onSelect }: ViewProps) {
                         <div className="bar-fill" style={{ width: `${Math.max(3, (100 * (Math.log10(r.minutes) - lo)) / (hi - lo))}%` }} />
                       </div>
                       {formatMinutes(r.minutes)}
-                      {r.days !== undefined && <span className="muted"> · {r1(r.days)} in-game day(s)</span>}
+                      {r.days !== undefined && <span className="muted"> · {countOf(r1(r.days), 'in-game day')}</span>}
                     </>
                   )}
                 </td>

@@ -69,7 +69,7 @@ describe('time & weather module v2', () => {
     expect([...pos].sort((a, b) => a - b)).toEqual(pos)
     expect(md).toContain('| Night | 21:00 – 06:00 | 18 |')
     expect(md).toContain('* **Marsh:** Rain 30%, Storm 10%, clear 60%')
-    expect(md).toContain('* **Blood moon:** 4 time(s): day 84, 168, 252, 336')
+    expect(md).toContain('* **Blood moon:** 4 times: day 84, 168, 252, 336')
   })
 
   it('covers the day across midnight and finds gaps and overlaps', () => {

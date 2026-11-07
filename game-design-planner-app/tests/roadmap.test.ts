@@ -109,7 +109,7 @@ describe('roadmap schema', () => {
     expect(md).toContain('| Prep | 1/2 | 3 / 5 | 6 |')
     expect(md).toContain('| Proto | 0/2 | 0 / 7 | 4 (over) |')
     expect(md).toContain('| 1 | First | 5 | 5 |')
-    expect(md).toContain('the first 1 cut(s) recover it')
+    expect(md).toContain('the first cut recovers it')
   })
 })
 

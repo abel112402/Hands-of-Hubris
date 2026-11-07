@@ -32,6 +32,7 @@ import { DIPLOMACY_DOC, factionStandings, relationPairs, startValue, levelAt } f
 import { biomeCoverage, biomesInOrder, biomeThreat, COVERAGE_COLUMNS, unlockPath, WORLD_DOC } from '../world'
 import { factionFootprints } from '../diplomacyFootprint'
 import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
+import { countOf } from '../text'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
 
@@ -140,7 +141,7 @@ function scheduleSummaryMd(project: Project, docId: string, sec: Extract<Section
   let out = `\n_Planned end: week ${a.end}${at(a.end)}`
   if (buffer) out += `; with ${buffer}% buffer: week ${buffered}${at(buffered)}`
   out += '._\n'
-  if (a.conflicts.length) out += `\n_${a.conflicts.length} dependency conflict(s): an item starts before its predecessor ends._\n`
+  if (a.conflicts.length) out += `\n_${countOf(a.conflicts.length, 'dependency conflict')}: an item starts before its predecessor ends._\n`
   return out
 }
 
@@ -412,7 +413,7 @@ function timeWeatherSummaryMd(project: Project, sec: Extract<SectionDef, { kind:
     for (const e of data) {
       const days = cal.occurrences.filter((o) => o.event.id === e.id)
       const exp = cal.expected.get(e.id)
-      out += `* **${esc(entityLabel(e))}:** ${exp === null || exp === undefined ? 'not scheduled' : e.schedule === 'Random chance' ? `about ${r(exp)} times` : `${days.length} time(s): day ${days.map((o) => r(o.day)).join(', ')}`}\n`
+      out += `* **${esc(entityLabel(e))}:** ${exp === null || exp === undefined ? 'not scheduled' : e.schedule === 'Random chance' ? `about ${r(exp)} times` : `${countOf(days.length, 'time')}: day ${days.map((o) => r(o.day)).join(', ')}`}\n`
     }
     if (cal.coincidences.length) out += `\n_Coinciding: ${cal.coincidences.slice(0, 8).map((c) => `day ${r(c.day)} ${entityLabel(c.a.event)} + ${entityLabel(c.b.event)}`).join('; ')}._\n`
   }
@@ -778,7 +779,7 @@ function roadmapSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'co
     const enough = cutsToRecover(project)
     out += '\n**Savings (person-weeks)**\n\n| # | Cut | Saves | Cumulative |\n|---|---|---|---|\n'
     for (const c of rows) out += `| ${c.cut.order ?? ''} | ${esc(entityLabel(c.cut))} | ${c.source === 'none' ? '' : r(c.saving) + (c.source === 'manual' ? ' (estimate)' : '')} | ${r(c.cumulative)} |\n`
-    if (need > 0) out += `\n_Overload to recover: ${r(need)} person-weeks; ${enough ? `the first ${enough} cut(s) recover it` : 'the cuts do not recover it'}._\n`
+    if (need > 0) out += `\n_Overload to recover: ${r(need)} person-weeks; ${enough ? (enough === 1 ? 'the first cut recovers it' : `the first ${enough} cuts recover it`) : 'the cuts do not recover it'}._\n`
   }
   return out
 }

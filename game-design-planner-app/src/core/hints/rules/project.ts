@@ -26,10 +26,11 @@ export const projectRules: HintRule[] = [
     evaluate: ({ project }) =>
       ONBOARDING_ORDER.filter((d) => getModule(d) && isDocEmpty(project, d))
         .slice(0, 3)
-        .map((docId, i) => ({
+        // All onboarding steps share one severity, so their colour does not depend on their position.
+        .map((docId) => ({
           id: hintId('onboarding.next', docId),
           ruleId: 'onboarding.next',
-          severity: i === 0 ? 'suggest' : 'info',
+          severity: 'info',
           scope: 'project',
           target: { docId },
           titleKey: 'hints.onboarding.next.title',
