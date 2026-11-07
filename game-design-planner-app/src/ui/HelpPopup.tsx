@@ -4,6 +4,7 @@ import { getHelp } from './help'
 import { guideOf } from '../modules/guides'
 import { GuideMap } from './guides/GuideMap'
 import { ConceptCard } from './guides/concepts'
+import { Icon } from './Icon'
 
 export function HelpPopup({ docId, title, sec, onClose }: { docId: string; title: string; sec?: SectionDef; onClose: () => void }) {
   const { module, kind } = getHelp(docId, sec)
@@ -16,7 +17,7 @@ export function HelpPopup({ docId, title, sec, onClose }: { docId: string; title
   return (
     <div className="overlay" onClick={onClose}>
       <div className="help-popup" role="dialog" aria-label="Help" onClick={(e) => e.stopPropagation()}>
-        <div className="inspector-head"><h2>{title}</h2><span className="spacer" /><button onClick={onClose}>✕</button></div>
+        <div className="inspector-head"><h2>{title}</h2><span className="spacer" /><button className="icon-btn" aria-label="Close" title="Close" onClick={onClose}><Icon name="close" /></button></div>
         <h3>Why this plan matters</h3>
         <p>{module.purpose}</p>
         {guide && (

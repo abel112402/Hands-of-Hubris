@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Entity } from '../../../core/model/types'
 import { bindOptions, kindDef, layoutOf, layoutSvg, reorder, screenReadiness, TEXT_SIZES, type BindSource, type WireElement } from '../../../core/ui'
 import type { Editor } from './WireframeView'
+import { countOf } from '../../../core/text'
 
 const KIND_ICON: Record<string, string> = { HUD: '◎', 'Fullscreen menu': '▣', Window: '▢', Popup: '▫', Overlay: '◌' }
 const svgSrc = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
@@ -45,7 +46,7 @@ export function ScreenRail({ ed, screens, onPick, onAdd, onRename }: { ed: Edito
                     <span>{s.name || '(unnamed)'}</span>
                   )}
                   {r?.ready && <span className="ok" title="Purpose, wireframe, states and flow are done">✓</span>}
-                  {!!r?.issues && <span className="warn" title={`${r.issues} issue(s)`}>⚑{r.issues}</span>}
+                  {!!r?.issues && <span className="warn" title={countOf(r.issues, 'issue')}>⚑{r.issues}</span>}
                 </span>
               </button>
             </li>

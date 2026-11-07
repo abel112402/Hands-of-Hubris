@@ -5,6 +5,7 @@ import { makeId } from '../../core/model/project'
 import { MODULES } from '../../core/modules/registry'
 import { sectionsOf } from '../../core/hints/util'
 import { useStore } from '../../core/store/store'
+import { SEVERITY_ICON } from './HintPanel'
 
 const SEVERITIES: HintSeverity[] = ['info', 'suggest', 'important']
 const THRESHOLD_KEYS: (keyof HintThresholds)[] = ['outlierIqr', 'kanbanWip', 'sparseRatio', 'minSamples']
@@ -91,6 +92,12 @@ export function HintsPage() {
           {SEVERITIES.map((s) => <option key={s}>{s}</option>)}
         </select>
       </label>
+      <div className="hint-legend">
+        <span className="muted">{t('hints.legend')}</span>
+        <span className="sev important">{SEVERITY_ICON.important} {t('hints.sevImportant')}</span>
+        <span className="sev suggest">{SEVERITY_ICON.suggest} {t('hints.sevSuggest')}</span>
+        <span className="sev info">{SEVERITY_ICON.info} {t('hints.sevInfo')}</span>
+      </div>
       <h2>{t('hints.settings.thresholds')}</h2>
       {THRESHOLD_KEYS.map((k) => (
         <label className="row" key={k}>

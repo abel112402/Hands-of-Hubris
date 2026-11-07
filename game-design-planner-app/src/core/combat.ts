@@ -2,6 +2,7 @@ import { DEFAULT_DAMAGE_FORMULA } from './combatFormula'
 import { tryEvaluate } from './formula'
 import type { CatalogItem, Entity, Project } from './model/types'
 import { difficultyMultiplier } from './player'
+import { countOf } from './text'
 
 export const COMBAT_DOC = 'design.combat'
 export { DEFAULT_DAMAGE_FORMULA }
@@ -284,7 +285,7 @@ export function phaseProblems(project: Project) {
         ...(c.phases.length === 0 && c.unset.length === 0 ? ['no phases'] : []),
         ...c.gaps.map(([a, z]) => `gap ${a}–${z}%`),
         ...c.overlaps.map(([a, z]) => `overlap ${z}–${a}%`),
-        ...(c.unset.length ? [`${c.unset.length} phase(s) without HP range`] : []),
+        ...(c.unset.length ? [`${countOf(c.unset.length, 'phase')} without HP range`] : []),
         ...(c.phases.some((p) => !String(p.mechanics ?? '').trim()) ? ['a phase without mechanics'] : []),
       ]
       return { boss: b, problems }

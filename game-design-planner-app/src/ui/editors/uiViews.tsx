@@ -3,6 +3,7 @@ import type { Entity } from '../../core/model/types'
 import { controlConflicts, flowAnalysis, layoutSvg, navEdges, screenReadiness, screensOf, uiList } from '../../core/ui'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 const svgSrc = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 const nameOf = (e?: Entity) => (e ? String(e.name ?? '') || '(unnamed)' : '—')
@@ -186,7 +187,7 @@ export function BindingMapView({ items, selected, onSelect }: ViewProps) {
           <option value="gameplay">Gameplay</option>
           {screens.map((s) => <option key={s.id} value={s.id}>{nameOf(s)}</option>)}
         </select>
-        <span className="muted">{active.length} action(s){conflicts.length ? ` · ${conflicts.length} conflict(s)` : ''}</span>
+        <span className="muted">{countOf(active.length, 'action')}{conflicts.length ? ` · ${countOf(conflicts.length, 'conflict')}` : ''}</span>
       </label>
       <div className="bm-keyboard" role="group" aria-label="Keyboard">
         {KEY_ROWS.map((row, i) => (

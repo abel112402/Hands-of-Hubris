@@ -1,3 +1,4 @@
+import { countOf } from '../../core/text'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -277,7 +278,7 @@ export function WorldAtlasView({ selected, onSelect }: ViewProps) {
         ))}
         <span className="spacer" />
         {m.unplaced.length > 0 && <button onClick={() => mutate((p) => placeUnplaced(p, makeId))} title="Adds a zone for each biome without one, in role columns">Place {m.unplaced.length} unplaced</button>}
-        {touching.length > 0 && <button onClick={() => mutate((p) => addBorders(p, touching))} title={touching.map(([a, b]) => `${nameOf(project.documents['design.world']?.data.biomes.find((x: Entity) => x.id === a))} – ${nameOf(project.documents['design.world']?.data.biomes.find((x: Entity) => x.id === b))}`).join('\n')}>Record {touching.length} touching border(s)</button>}
+        {touching.length > 0 && <button onClick={() => mutate((p) => addBorders(p, touching))} title={touching.map(([a, b]) => `${nameOf(project.documents['design.world']?.data.biomes.find((x: Entity) => x.id === a))} – ${nameOf(project.documents['design.world']?.data.biomes.find((x: Entity) => x.id === b))}`).join('\n')}>Record {countOf(touching.length, 'touching border')}</button>}
         <Link to="/doc/design.world?s=map">Edit shapes in Map sketch</Link>
       </div>
       {!m.zones.length ? (

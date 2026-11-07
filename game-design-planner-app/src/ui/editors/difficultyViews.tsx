@@ -25,6 +25,7 @@ import type { Entity } from '../../core/model/types'
 import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 /** One colour per difficulty level (catalog order) and per parameter category; the only hard-coded colours. */
 export const LEVEL_COLORS = ['#53c28b', '#4f9cf9', '#f97b4f', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e']
@@ -222,7 +223,7 @@ function StackedBar({ profile, label }: { profile: PressureProfile; label: strin
           key={c.category}
           className="pr-seg"
           style={{ width: `${c.share * 100}%`, background: CATEGORY_COLORS[c.category] ?? CATEGORY_COLORS.Other }}
-          title={`${c.category}: ${c.count} parameter(s), average pressure ${pct(c.mean)}`}
+          title={`${c.category}: ${countOf(c.count, 'parameter')}, average pressure ${pct(c.mean)}`}
         />
       ))}
     </div>

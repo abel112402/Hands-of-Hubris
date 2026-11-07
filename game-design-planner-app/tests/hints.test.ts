@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { collectHints, evaluateHints, makeContext } from '../src/core/hints/engine'
+import { collectHints, dedupeHints, evaluateHints, makeContext, splitByScope } from '../src/core/hints/engine'
 import { createProject, makeId } from '../src/core/model/project'
 import { defaultHintPrefs } from '../src/core/model/types'
 import { deserializeProject, serializeProject } from '../src/core/persistence/serialize'
@@ -317,5 +317,39 @@ describe('world advisory checks', () => {
     })
     expect(r).toContain('world.graph')
     expect(r).not.toContain('world.reach')
+  })
+})
+
+describe('hint de-duplication and scope', () => {
+  const withCoreLoop = () => {
+    const p = empty()
+    p.documents['design.coreLoop'] = { moduleVersion: 1, data: { loops: [{ id: 'a', name: 'Loop' }] } }
+    return p
+  }
+
+  it('shows one Vision hint when the vision-first and onboarding hints point at the same doc', () => {
+    const { all } = evaluateHints(makeContext(withCoreLoop()))
+    const toVision = all.filter((h) => h.action?.kind === 'goto' && h.action.docId === 'overview.vision')
+    expect(toVision.map((h) => h.ruleId)).toEqual(['dependency.visionFirst'])
+  })
+
+  it('never merges page-level hints that share a target', () => {
+    const h = (id: string) => ({ id, ruleId: id, severity: 'suggest' as const, scope: 'section' as const, target: { docId: 'd', sectionId: 's' }, action: { kind: 'goto' as const, docId: 'd', sectionId: 's' } })
+    expect(dedupeHints([h('a'), h('b')])).toHaveLength(2)
+  })
+
+  it('gives every onboarding step the same severity', () => {
+    const steps = collectHints(makeContext(empty())).filter((h) => h.ruleId === 'onboarding.next')
+    expect(new Set(steps.map((h) => h.severity))).toEqual(new Set(['info']))
+  })
+
+  it('splits hints into this page and other planners', () => {
+    const p = withCoreLoop()
+    const { all } = evaluateHints(makeContext(p, { docId: 'design.coreLoop' }))
+    const { here, elsewhere } = splitByScope(all, { docId: 'design.coreLoop' })
+    expect(here.length + elsewhere.length).toBe(all.length)
+    expect(elsewhere.every((h) => h.scope === 'project' && h.target.docId !== 'design.coreLoop')).toBe(true)
+    expect(here.some((h) => h.target.docId === 'design.coreLoop')).toBe(true)
+    expect(elsewhere.some((h) => h.ruleId === 'dependency.visionFirst')).toBe(true)
   })
 })

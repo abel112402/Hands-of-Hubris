@@ -7,7 +7,9 @@ Stack rules from `CLAUDE.md` apply: plain CSS, project data edited only through 
 
 ---
 
-## Phase 1 — Accessibility and contrast (CSS only, low risk)
+## Phase 1 — Accessibility and contrast (CSS only, low risk) ✅ done 2026-11-07
+
+Measured after the change: primary 4.81:1, active 5.37:1, badge 5.24:1, help 5.62:1, timeline bar 5.24:1. No visible button under 24×24px. Covered by `tests/hintPanel.test.tsx`.
 
 ### 1.1 Accent contrast on filled controls
 **Problem:** White text on `--accent #5b9cff` is about 2.75:1. Affects `button.primary`, `button.active`, `.chip.chosen`, `.tl-bar`, `.g2-item`.
@@ -49,7 +51,9 @@ Stack rules from `CLAUDE.md` apply: plain CSS, project data edited only through 
 
 ---
 
-## Phase 2 — Hint system accuracy and noise (highest usability impact)
+## Phase 2 — Hint system accuracy and noise (highest usability impact) ✅ done 2026-11-07
+
+Notes from implementation: duplicate removal only merges project-wide hints (`dedupeHints` in `engine.ts`); page-level hints with the same target are kept. The panel groups hints as "This page" / "Other planners" (`splitByScope`). A project-wide hint about the open page shows under "This page", so the top bar's project-wide count and the panel's numbers are labelled separately instead of adding up. `/hints` has no hint list (it's the settings page), so the home page's "+N more" opens the remaining steps in place instead of linking there. Onboarding hints are now all `info`: anyone who set minimum severity to "suggest" will no longer see them. Tests: `tests/hints.test.ts` (de-duplication, scope split, severity), `tests/hintPanel.test.tsx`, `tests/render.test.tsx`.
 
 ### 2.1 One consistent hint count
 **Problem:** The top bar (`src/ui/AppShell.tsx:46`) calls `evaluateHints(makeContext(project))` with no snooze map and no document context. The panel (`HintPanel.tsx:74`) uses `useHints(docId, sectionId)`, which includes snooze and doc-scoped rules. The result is "Hints 4" next to a panel showing 8–9.
@@ -105,7 +109,9 @@ Stack rules from `CLAUDE.md` apply: plain CSS, project data edited only through 
 
 ---
 
-## Phase 3 — Editor header, top bar and System map
+## Phase 3 — Editor header, top bar and System map ✅ done 2026-11-07
+
+Notes from implementation: new shared `src/ui/Menu.tsx` (a `<details>` dropdown that closes on item click, on Escape and on an outside click) and `src/ui/Icon.tsx` (inline SVG icons). The top bar is one row at 1024px and above. Below 1100px the brand text and the search label are hidden. Below 900px the nav links and save status move into the Save menu. The Help button is now a normal button, and `--secondary-strong` is no longer used for it. The System map summary uses `mapStates` from `GuideMap.tsx`. `scrollbar-gutter:stable` is on `.shell-body`, `.content`, `.sidebar` and `.hint-panel`; the toolbar stays at the same x position across all Roadmap sections. Emoji remain in planner cards and inside planner-specific views, which is out of scope. Tests: `tests/shell.test.tsx`.
 
 ### 3.1 Combine document actions into one menu
 **Problem:** Visual editor | Markdown preview | ? | .md | Export document | Import document wraps onto two rows (`src/ui/pages/EditorPage.tsx:82-90`).
@@ -152,7 +158,9 @@ Stack rules from `CLAUDE.md` apply: plain CSS, project data edited only through 
 
 ---
 
-## Phase 4 — Wording and empty states
+## Phase 4 — Wording and empty states ✅ done 2026-11-07
+
+Notes from implementation: 113 English strings now have `_one` / `_other` forms; the bare key is kept and holds the plural text, as a fallback. Hungarian is unchanged, because it uses the singular after numbers. `ai.applied` and `ai.modelsLoaded` now take `count` instead of `n`. Text outside i18n (module labels, Markdown export, view captions) uses the new `countOf` / `pluralize` helpers in `src/core/text.ts`, and collection sections accept an optional `plural`. The Markdown export wording changed ("4 times: day …", "the first cut recovers it"), and 4 existing tests were updated to match. For empty collections, `GuideEmpty` owns the single Add and example buttons and carries the `data-guide` targets for the spotlight. Guard tests are in `tests/wording.test.tsx`.
 
 ### 4.1 Proper plurals
 **Problem:** "1 entries", "7 phase(s)", "0 loop(s)", "referenced 2 time(s)".
@@ -177,7 +185,9 @@ Stack rules from `CLAUDE.md` apply: plain CSS, project data edited only through 
 
 ---
 
-## Phase 5 — Consistency pass and documentation
+## Phase 5 — Consistency pass and documentation ✅ done 2026-11-07
+
+Notes from implementation: `--space-1…5` (4/8/12/16/24px) and `--fs-xs…xl` (11/12/13/14/16/18px; `--fs-md-sm` covers the 13px hint tabs) are defined in `:root`. They are used in the 24 rules added in phases 1–4; older rules are unchanged. Screenshots are in `plans/design-critique/` (`before-*.png` = commit 24b0f16, `after-*.png` = this work). They were taken with headless Chrome at 1280×800 on a fresh profile, for the home page, Core Loop, Roadmap → Phases and Hints settings. The README now documents the Save/Document menus, hint scopes and legend, accessibility tokens, icons, menus and wording rules. `tests/wording.test.tsx` also checks that `en.json` and `hu.json` have the same keys and that Hungarian placeholders exist in English. Final checks: typecheck, lint, 521 tests and `npm run build` pass; the production CSP is still emitted.
 
 ### 5.1 Spacing and type tokens
 Add `--space-1..5` (4/8/12/16/24) and `--fs-xs/sm/md/lg` (11/12/14/18) to `:root`. Use them for the rules touched in phases 1–4 only. A full migration of `styles.css` is out of scope; record it in the "Out of scope" section below.

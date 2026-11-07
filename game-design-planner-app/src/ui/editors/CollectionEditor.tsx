@@ -32,6 +32,8 @@ import { LoopPacingView } from './coreLoopViews'
 import { CustomSimulatorView, DifficultyImpactView, PressureOverviewView, TuningBoardView } from './difficultyViews'
 import { ActionSimulatorView, FactionFootprintView, RelationsWebView, ReputationScaleView } from './diplomacyViews'
 import { BiomeCoverageView, BiomeDossierView, BiomeThreatView, UnlockPathView, WorldAtlasView } from './worldViews'
+import { Icon } from '../Icon'
+import { countOf } from '../../core/text'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   cards: 'Cards',
@@ -168,7 +170,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           ))}
         </div>
         <input className="search" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        <span className="muted">{items.length} {sec.singular}(s)</span>
+        <span className="muted">{countOf(items.length, sec.singular, sec.plural)}</span>
         <span className="spacer" />
         <button
           className="small"
@@ -180,7 +182,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
         >
           CSV
         </button>
-        <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>
+        {items.length > 0 && <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>}
       </div>
       <div className={'collection-body' + (sel && view.kind !== 'wireframe' ? ' with-inspector' : '')}>
         <div className="view-area">
@@ -293,7 +295,7 @@ function Inspector({
 
   const remove = () => {
     const msg = usages.length
-      ? `“${entity.name}” is referenced ${usages.length} time(s). Delete anyway? (references will show as missing)`
+      ? `“${entity.name}” is referenced ${countOf(usages.length, 'time')}. Delete anyway? (references will show as missing)`
       : `Delete “${entity.name}”?`
     if (!confirm(msg)) return
     update((d) => {
@@ -328,7 +330,7 @@ function Inspector({
         <button className="icon" title="Move down" onClick={() => move(1)}>↓</button>
         <button className="small" onClick={duplicate}>Duplicate</button>
         <button className="small danger" onClick={remove}>Delete</button>
-        <button className="icon" onClick={onClose}>✕</button>
+        <button className="icon icon-btn" aria-label="Close" title="Close" onClick={onClose}><Icon name="close" /></button>
       </div>
       <div className="form">
         {[...groups.filter((g) => !g.group || !hidden.has(g.group)), ...groups.filter((g) => g.group && hidden.has(g.group))].map(({ group, fields }) => {

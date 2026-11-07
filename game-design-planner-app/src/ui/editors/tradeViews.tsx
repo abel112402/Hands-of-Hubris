@@ -19,6 +19,7 @@ import {
 } from '../../core/trade'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 const fmt = (n: number) => (Math.abs(n) >= 100 ? Math.round(n).toString() : (Math.round(n * 100) / 100).toString())
 const pct = (p: number) => `${Math.round(p * 1000) / 10}%`
@@ -222,7 +223,7 @@ function VisitStrip({ odds, seed }: { odds: WanderOdds; seed: number }) {
       ))}
       {visits.map((d) => (
         <rect key={d} x={x(d)} y="8" width={Math.max(3, x(Math.max(odds.stayDays, 0.5)))} height="14" className="visit-on" data-testid="visit">
-          <title>{`Day ${d}: visit for ${odds.stayDays} day(s)`}</title>
+          <title>{`Day ${d}: visit for ${countOf(odds.stayDays, 'day')}`}</title>
         </rect>
       ))}
     </svg>

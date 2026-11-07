@@ -81,7 +81,7 @@ export function CutSavingsView({ selected, onSelect }: ViewProps) {
       <p className="muted">
         {need > 0
           ? enough
-            ? `Tasks exceed phase capacity by ${r1(need)} person-weeks; the first ${enough} cut(s) recover it.`
+            ? `Tasks exceed phase capacity by ${r1(need)} person-weeks; ${enough === 1 ? 'the first cut recovers it' : `the first ${enough} cuts recover it`}.`
             : `Tasks exceed phase capacity by ${r1(need)} person-weeks; all cuts together save ${r1(rows.at(-1)!.cumulative)}.`
           : 'No phase is over capacity. Savings show what each cut would free up.'}{' '}
         Savings come from the effort of affected open tasks unless a cut has its own estimate.

@@ -25,6 +25,7 @@ import {
 import { seasonYear, yearLength } from '../../timeWeather'
 import type { Hint, HintRule } from '../types'
 import { hintId, isDocEmpty, shortList } from '../util'
+import { countOf } from '../../text'
 
 type Draft = Omit<Hint, 'id' | 'scope' | 'target' | 'titleKey' | 'bodyKey'> & { key: string; sectionId: string; entityId?: string }
 
@@ -101,7 +102,7 @@ export const npcRules: HintRule[] = [
       ...(l.noEnd ? ['no End node'] : []),
       ...(l.unreachable.length ? [`unreachable from Start: ${names(l.unreachable)}`] : []),
       ...(l.deadEnds.length ? [`dead ends: ${names(l.deadEnds)}`] : []),
-      ...(l.eventEdgesWithoutEvent ? [`${l.eventEdgesWithoutEvent} “on event” connection(s) without an event`] : []),
+      ...(l.eventEdgesWithoutEvent ? [`${countOf(l.eventEdgesWithoutEvent, '“on event” connection')} without an event`] : []),
       ...(l.stagesMissing.length ? [`stages not in the diagram: ${names(l.stagesMissing)}`] : []),
     ]
     return problems.length ? [hint({ key: 'npcLifecycle', ruleId: 'npc.lifecycle', severity: 'suggest', sectionId: 'lifecycle', params: { names: problems.join('; ') } })] : []

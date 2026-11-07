@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../core/store/store'
 import { validateProject } from '../core/references/refs'
-import { evaluateHints, makeContext } from '../core/hints/engine'
+import { useHints } from './hints/useHints'
 import { MODULES } from '../core/modules/registry'
 import { setLanguage } from '../core/i18n'
 import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
+import { Icon } from './Icon'
+import { Menu } from './Menu'
 
 function Palette({ onClose }: { onClose: () => void }) {
   const nav = useNavigate()
@@ -43,7 +45,18 @@ export function AppShell() {
   const canRedo = useStore((s) => s.future.length > 0)
   const [palette, setPalette] = useState(false)
   const issues = validateProject(project).length
-  const hintCount = useMemo(() => evaluateHints(makeContext(project)).total, [project])
+  // Same hook as the panel and home page, so snoozing and the edit debounce apply everywhere.
+  const hintCount = useHints().total
+  const navLinks = (
+    <>
+      <NavLink to="/definitions" className="nav-link">{t('nav.definitions')}</NavLink>
+      <NavLink to="/issues" className="nav-link">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</NavLink>
+      <NavLink to="/hints" className="nav-link" title={t('hints.projectWide', { count: hintCount })} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`}>
+        {t('nav.hints')}{hintCount > 0 && <span className="badge" aria-hidden="true">{hintCount}</span>}
+      </NavLink>
+      <NavLink to="/ai" className="nav-link"><Icon name="sparkle" /> {t('nav.ai')}</NavLink>
+    </>
+  )
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
@@ -78,32 +91,37 @@ export function AppShell() {
     <div className="shell">
       <header className="topbar">
         <div className="topbar-left">
-          <input className="title-input" value={project.meta.name}
+          <Link to="/" className="brand" title={t('nav.home')}>{t('app.title')}</Link>
+          <input className="title-input" aria-label={t('app.projectName')} value={project.meta.name}
             onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
           <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>
         </div>
-        <Link to="/" className="brand">{t('app.title')}</Link>
+        <nav className="topnav" aria-label={t('nav.main')}>{navLinks}</nav>
         <div className="topbar-right">
-        <button onClick={newProject}>{t('actions.new')}</button>
-        <button onClick={() => void openProject()}>{t('actions.open')}</button>
-        <button className="primary" onClick={() => void saveProject()}>{t('actions.save')}</button>
-        <button onClick={() => void saveProject(true)}>{t('actions.saveAs')}</button>
-        <button disabled={!canUndo} onClick={() => useStore.getState().undo()}>↶</button>
-        <button disabled={!canRedo} onClick={() => useStore.getState().redo()}>↷</button>
-        <details className="menu">
-          <summary>⋯</summary>
-          <div>
-            <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
-            <button onClick={downloadJson}>{t('actions.exportJson')}</button>
-            <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
-            <button onClick={() => setLanguage(i18n.language === 'hu' ? 'en' : 'hu')}>Language: {i18n.language === 'hu' ? 'Magyar → English' : 'English → Magyar'}</button>
+          <button className="search-btn" onClick={() => setPalette(true)} title={t('actions.search')}>
+            <Icon name="search" /> <span>{t('actions.searchBox')}</span> <kbd>Ctrl K</kbd>
+          </button>
+          <button className="icon-btn" disabled={!canUndo} aria-label={t('actions.undo')} title={`${t('actions.undo')} (Ctrl+Z)`} onClick={() => useStore.getState().undo()}><Icon name="undo" /></button>
+          <button className="icon-btn" disabled={!canRedo} aria-label={t('actions.redo')} title={`${t('actions.redo')} (Ctrl+Y)`} onClick={() => useStore.getState().redo()}><Icon name="redo" /></button>
+          {/* Save is the one filled action; everything else about files lives in its menu. */}
+          <div className="split">
+            <button className="primary" title={`${t('actions.save')} (Ctrl+S)`} onClick={() => void saveProject()}>{t('actions.save')}</button>
+            <Menu className="split-menu" label={t('actions.more')} summary={<Icon name="chevronDown" />}>
+              <button onClick={newProject}>{t('actions.new')}</button>
+              <button onClick={() => void openProject()}>{t('actions.open')}</button>
+              <button onClick={() => void saveProject(true)}>{t('actions.saveAs')}</button>
+              <hr />
+              <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
+              <button onClick={downloadJson}>{t('actions.exportJson')}</button>
+              <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
+              <button onClick={() => setLanguage(i18n.language === 'hu' ? 'en' : 'hu')}>Language: {i18n.language === 'hu' ? 'Magyar → English' : 'English → Magyar'}</button>
+              {/* On narrow screens the nav row is hidden and its links appear here instead. */}
+              <div className="menu-nav">
+                <hr />
+                {navLinks}
+              </div>
+            </Menu>
           </div>
-        </details>
-        <Link to="/definitions">{t('nav.definitions')}</Link>
-        <Link to="/issues">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</Link>
-        <Link to="/hints">{t('nav.hints')}{hintCount > 0 && <span className="badge">{hintCount}</span>}</Link>
-        <Link to="/ai">🤖 AI</Link>
-        <button onClick={() => setPalette(true)} title={t('actions.search')}>🔍</button>
         </div>
       </header>
       <div className="shell-body"><Outlet /></div>

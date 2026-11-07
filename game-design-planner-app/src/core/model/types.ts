@@ -172,6 +172,8 @@ export type SectionDef = SectionBase &
     | {
         kind: 'collection'
         singular: string
+        /** Plural label for counts ("7 phases"); defaults to an English plural of `singular`. */
+        plural?: string
         fields: FieldDef[]
         views: CollectionView[]
         seed?: Record<string, unknown>[]

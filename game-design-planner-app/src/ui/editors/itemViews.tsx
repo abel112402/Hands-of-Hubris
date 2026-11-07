@@ -4,6 +4,7 @@ import type { Entity, Project } from '../../core/model/types'
 import { coverage, craftTree, finalValue, itemList, itemUses, lootOdds, rawCost, recipesFor, simulateLoot, valueAdded, valueGrid, type CraftNode } from '../../core/items'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 const PALETTE = ['#8b93a5', '#53c28b', '#4f9cf9', '#d86be0', '#f2c94c', '#f97b4f', '#5ad1d1']
 const fmt = (n: number) => (Math.abs(n) >= 100 ? Math.round(n).toString() : (Math.round(n * 100) / 100).toString())
@@ -62,7 +63,7 @@ export function CoverageView({ items, onSelect, selected }: ViewProps) {
           </tbody>
         </table>
       </div>
-      {c.untyped > 0 && <p className="muted">{c.untyped} item(s) have no type or rarity yet and are not counted.</p>}
+      {c.untyped > 0 && <p className="muted">{countOf(c.untyped, 'item')} {c.untyped === 1 ? 'has no type or rarity yet and is' : 'have no type or rarity yet and are'} not counted.</p>}
       {cell && (
         <div className="chips">
           {listed.length === 0 && <span className="muted">No items here.</span>}

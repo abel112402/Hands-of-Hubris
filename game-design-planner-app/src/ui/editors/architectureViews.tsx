@@ -17,6 +17,7 @@ import type { Entity, Project } from '../../core/model/types'
 import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 /** Series palette (the only hard-coded colours, as in the other planners). */
 export const ARCH_COLORS = ['#4f9cf9', '#53c28b', '#f2c94c', '#f97b4f', '#d86be0', '#5ad1d1', '#e5707e', '#a3a8ff']
@@ -57,7 +58,7 @@ export function LayerStackView({ items, selected, onSelect }: ViewProps) {
             >
               <div className="arch-band-head">
                 <strong>{nameOf(l)}</strong>
-                <span className="muted">{mods.length} module(s)</span>
+                <span className="muted">{countOf(mods.length, 'module')}</span>
                 {ids(l.mayUse).length > 0 && <span className="pill">also uses {ids(l.mayUse).map((x) => nameOf(byId.get(x))).join(', ')}</span>}
               </div>
               {l.description && <small className="muted">{String(l.description)}</small>}

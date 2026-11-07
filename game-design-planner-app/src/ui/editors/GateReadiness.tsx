@@ -1,3 +1,4 @@
+import { countOf } from '../../core/text'
 import type { Entity } from '../../core/model/types'
 import { useProject } from '../hooks'
 
@@ -25,7 +26,7 @@ export function GateReadiness({ entity }: { entity: Entity }) {
           <ul>{openExit.map((c) => <li key={c.id}>{c.text || '(empty)'}</li>)}</ul>
         </>
       )}
-      {openTasks.length > 0 && <div>{openTasks.length} task(s) in this phase are not done.</div>}
+      {openTasks.length > 0 && <div>{countOf(openTasks.length, 'task')} in this phase {openTasks.length === 1 ? 'is' : 'are'} not done.</div>}
     </div>
   )
 }

@@ -24,6 +24,7 @@ import type { Entity } from '../../core/model/types'
 import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
+import { countOf } from '../../core/text'
 
 /** Fallback faction colours (when a faction has none) and the hostile → neutral → allied ramp; the only fixed colours. */
 const FACTION_COLORS = ['#4f9cf9', '#f97b4f', '#53c28b', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e', '#a3a8ff']
@@ -410,7 +411,7 @@ function FootprintBars({ rows }: { rows: { name: string; color: string; parts: n
         return (
           <div key={r.name} className="dw-bar-row">
             <span>{r.name}</span>
-            <div className="dw-bar" role="img" aria-label={`${r.name}: ${total} link(s)`}>
+            <div className="dw-bar" role="img" aria-label={`${r.name}: ${countOf(total, 'link')}`}>
               {r.parts.map((n, i) =>
                 n > 0 ? <span key={i} style={{ width: `${(n / max) * 100}%`, background: `color-mix(in srgb, ${r.color} ${PART_ALPHA[i]}%, transparent)` }} title={`${PART_LABELS[i]}: ${n}`} /> : null,
               )}
@@ -684,7 +685,7 @@ export function ActionSimulatorView({ items, selected, onSelect }: ViewProps) {
           </button>
         )}
       </div>
-      <svg className="as-chart" viewBox={`0 0 ${CW} ${CH}`} role="img" aria-label={`Reputation over ${steps} step(s)`}>
+      <svg className="as-chart" viewBox={`0 0 ${CW} ${CH}`} role="img" aria-label={`Reputation over ${countOf(steps, 'step')}`}>
         {levels.map((l, i) => (
           <g key={l.id}>
             <rect x={PAD.l} width={CW - PAD.l - PAD.r} y={y(Math.min(hi, l.to + 1))} height={Math.max(0, y(Math.max(lo, l.from)) - y(Math.min(hi, l.to + 1)))} fill={relationColor((l.from + l.to) / 2, scale)} opacity={i % 2 ? 0.1 : 0.16} />
