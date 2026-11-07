@@ -1,9 +1,9 @@
 import type { Entity, GraphData } from '../../model/types'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, entityName, hintId, isBlank, shortList } from '../util'
+import { hasFeedback, loopPacing, pillarLoops, SCALES, wrongDirection } from '../../coreLoop'
 
 const DOC = 'design.coreLoop'
-const SCALES = ['Moment-to-moment', 'Short (minutes)', 'Medium (hours / days)', 'Long (campaign)']
 
 type Draft = Omit<Hint, 'id' | 'scope' | 'target' | 'titleKey' | 'bodyKey'> & { key: string; sectionId: string; entityId?: string }
 
@@ -22,22 +22,6 @@ const hint = (d: Draft): Hint => ({
 const loopsOf = (project: Parameters<typeof entitiesOf>[0]) => entitiesOf(project, DOC, 'loops')
 const graphOf = (project: Parameters<typeof entitiesOf>[0]): GraphData => project.documents[DOC]?.data.loopGraph ?? { nodes: [], edges: [] }
 const names = (list: Entity[]) => shortList(list.map(entityName))
-
-/** True when following the edges from some node leads back to it, i.e. the diagram contains a feedback loop. */
-export function hasFeedback(g: GraphData): boolean {
-  const next = new Map<string, string[]>()
-  for (const e of g.edges) next.set(e.source, [...(next.get(e.source) ?? []), e.target])
-  const state = new Map<string, 1 | 2>()
-  const visit = (id: string): boolean => {
-    if (state.get(id) === 1) return true
-    if (state.get(id) === 2) return false
-    state.set(id, 1)
-    const found = (next.get(id) ?? []).some(visit)
-    state.set(id, 2)
-    return found
-  }
-  return g.nodes.some((n) => visit(n.id))
-}
 
 const loopRule = (
   id: string,
@@ -141,6 +125,74 @@ export const coreLoopRules: HintRule[] = [
       const g = graphOf(project)
       return g.nodes.length >= 3 && g.edges.length > 0 && !hasFeedback(g)
         ? [hint({ key: 'coreLoopFeedback', ruleId: 'coreLoop.feedback', severity: 'suggest', sectionId: 'loopGraph' })]
+        : []
+    },
+  },
+  {
+    id: 'coreLoop.direction',
+    scope: 'entity',
+    appliesTo: ({ docId }) => docId === DOC,
+    evaluate: ({ project }) => {
+      const bad = wrongDirection(project)
+      if (!bad.length) return []
+      const from = [...new Map(bad.map((b) => [b.from.id, b.from])).values()]
+      return [
+        hint({
+          key: 'coreLoopDirection',
+          ruleId: 'coreLoop.direction',
+          severity: 'suggest',
+          sectionId: 'loops',
+          entityId: from[0].id,
+          params: { count: bad.length, names: shortList(bad.map((b) => `${entityName(b.from)} → ${entityName(b.to)}`)) },
+        }),
+      ]
+    },
+  },
+  {
+    id: 'coreLoop.pacing',
+    scope: 'entity',
+    appliesTo: ({ docId }) => docId === DOC,
+    evaluate: ({ project }) => {
+      const bad = loopPacing(project).flatMap((r) => r.links.filter((l) => l.inverted).map((l) => ({ from: r.loop, to: l.to })))
+      return bad.length
+        ? [
+            hint({
+              key: 'coreLoopPacing',
+              ruleId: 'coreLoop.pacing',
+              severity: 'info',
+              sectionId: 'loops',
+              entityId: bad[0].from.id,
+              params: { count: bad.length, names: shortList(bad.map((b) => `${entityName(b.from)} → ${entityName(b.to)}`)) },
+            }),
+          ]
+        : []
+    },
+  },
+  {
+    id: 'coreLoop.pillars',
+    scope: 'section',
+    appliesTo: ({ docId }) => docId === DOC,
+    evaluate: ({ project }) => {
+      // Only once loops exist and at least one is tagged; before that the guide asks for the tagging.
+      const loops = loopsOf(project)
+      if (!loops.some((l) => (l.pillars ?? []).length)) return []
+      const open = pillarLoops(project).filter((c) => !c.loops.length).map((c) => c.pillar)
+      return open.length
+        ? [hint({ key: 'coreLoopPillars', ruleId: 'coreLoop.pillars', severity: 'suggest', sectionId: 'loops', params: { count: open.length, names: names(open) } })]
+        : []
+    },
+  },
+  {
+    id: 'coreLoop.rewardRefs',
+    scope: 'entity',
+    appliesTo: ({ docId }) => docId === DOC,
+    evaluate: ({ project }) => {
+      // Same gate as diagram links: once one loop names what its reward is, flag the others.
+      const loops = loopsOf(project)
+      if (!loops.some((l) => (l.rewardRefs ?? []).length)) return []
+      const open = loops.filter((l) => !isBlank(l.reward) && !(l.rewardRefs ?? []).length)
+      return open.length
+        ? [hint({ key: 'coreLoopRewardRefs', ruleId: 'coreLoop.rewardRefs', severity: 'info', sectionId: 'loops', entityId: open[0].id, params: { count: open.length, names: names(open) } })]
         : []
     },
   },

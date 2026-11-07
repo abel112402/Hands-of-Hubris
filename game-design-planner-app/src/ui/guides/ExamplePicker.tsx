@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { GuideExample, ModuleGuide } from '../../core/guides/types'
-import type { Project } from '../../core/model/types'
+import type { Entity, Project } from '../../core/model/types'
+import { VISION_DOC } from '../../core/vision'
+import { ROADMAP_DOC, roadmapList } from '../../core/roadmap'
+import { formatMinutes, loopGraph, loopList, loopPacing } from '../../core/coreLoop'
 import { comparedLevels, depletion, levelTable, playerList, treeAnalysis } from '../../core/player'
 import { useStore } from '../../core/store/store'
 import { itemList, lootOdds, multiplier, rawCost } from '../../core/items'
@@ -13,6 +16,7 @@ import { actPacing, endingReachability, storyList } from '../../core/story'
 import { QuestFlowCanvas } from '../editors/storyViews'
 import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, screensOf, uiList } from '../../core/ui'
 import { TreeCanvas } from '../editors/playerViews'
+import { questionList } from '../../core/openQuestions'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
 
@@ -263,6 +267,89 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
           </div>
         ))}
       </div>
+    )
+  }
+  if (ex.preview === 'questions') {
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Question</th><th>Area</th><th>Options</th></tr>
+        </thead>
+        <tbody>
+          {questionList(project).map((q) => <tr key={q.id}><td>{q.name}</td><td>{q.area}</td><td className="muted">{q.options}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'visionList') {
+    const d = project.documents[VISION_DOC]?.data[ex.section]
+    const rows: Entity[] = Array.isArray(d) ? d : []
+    const detail = (e: Entity) => String(e.bucket ?? e.decisionTest ?? e.playerBenefit ?? '')
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Name</th><th>{ex.section === 'scope' ? 'Bucket' : ex.section === 'pillars' ? 'Decision test' : 'Player benefit'}</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((e) => <tr key={e.id}><td>{e.name}</td><td className="muted">{detail(e)}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'coreLoopList') {
+    if (ex.section === 'loopGraph') {
+      const g = loopGraph(project)
+      const label = (id: string) => g.nodes.find((n) => n.id === id)?.label ?? id
+      return (
+        <table className="grid npc-preview">
+          <thead>
+            <tr><th>From</th><th>Edge</th><th>To</th></tr>
+          </thead>
+          <tbody>
+            {g.edges.map((e) => <tr key={e.id}><td>{label(e.source)}</td><td className="muted">{e.kind ?? e.label}</td><td>{label(e.target)}</td></tr>)}
+          </tbody>
+        </table>
+      )
+    }
+    const byId = new Map(loopList(project).map((l) => [l.id, l]))
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Loop</th><th>Scale</th><th>One cycle</th><th>Builds toward</th></tr>
+        </thead>
+        <tbody>
+          {loopPacing(project).map((r) => (
+            <tr key={r.loop.id}>
+              <td>{r.loop.name}</td>
+              <td className="muted">{r.loop.scale}</td>
+              <td className="num">{r.minutes !== undefined ? formatMinutes(r.minutes) : '—'}</td>
+              <td className="muted">{((r.loop.leadsTo ?? []) as string[]).map((id) => byId.get(id)?.name ?? '').join(', ')}{r.links[0] ? ` (×${fmt(r.links[0].ratio)})` : ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'roadmapList') {
+    const d = project.documents[ROADMAP_DOC]?.data[ex.section]
+    const rows: Entity[] = Array.isArray(d) ? d : []
+    const phaseName = (id: unknown) => roadmapList(project, 'phases').find((x) => x.id === id)?.name ?? ''
+    const COLS: Record<string, [string, (e: Entity) => string]> = {
+      tasks: ['Phase · weeks · effort', (e) => `${phaseName(e.phase)} · wk ${e.start}–${(e.start ?? 0) + (e.duration ?? 0)} · ${e.effort ?? '–'} pw`],
+      gates: ['Phase · question', (e) => `${phaseName(e.phase)} · ${e.question ?? ''}`],
+      cuts: ['Order', (e) => String(e.order ?? '')],
+      dependencies: ['Blocks', (e) => String(e.blocksNote ?? '')],
+    }
+    const [head, cell] = COLS[ex.section] ?? ['', () => '']
+    return (
+      <table className="grid npc-preview">
+        <thead>
+          <tr><th>Name</th><th>{head}</th></tr>
+        </thead>
+        <tbody>
+          {rows.map((e) => <tr key={e.id}><td>{e.name}</td><td className="muted">{cell(e)}</td></tr>)}
+        </tbody>
+      </table>
     )
   }
   if (ex.preview === 'cast') {

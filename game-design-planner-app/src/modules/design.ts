@@ -2,6 +2,7 @@ import { EASIER, HARDER } from '../core/difficulty'
 import { DEFAULT_DAMAGE_FORMULA } from '../core/combatFormula'
 import type { GraphSource } from '../core/model/types'
 import { RESOLUTIONS, SCREEN_KINDS, UI_SYSTEMS } from '../core/ui'
+import { QUESTION_AREAS, QUESTION_STATUSES } from '../core/openQuestions'
 import { catalog, f, mod, s, section, v } from './helpers'
 
 const FACTIONS = section('factions', 'design.factions')
@@ -36,6 +37,34 @@ function migrateFactions(data: Record<string, any>) {
   for (const a of Array.isArray(data.actions) ? data.actions : []) {
     if (a.effectOnOthers !== undefined && a.spilloverDefault === undefined) a.spilloverDefault = a.effectOnOthers
     delete a.effectOnOthers
+  }
+}
+
+/**
+ * v1 kept area, owner and due as free text. Areas that match the list keep their value (else "Other");
+ * owners and unparseable dates move into `legacyNotes`, since migrate only sees this document's data.
+ */
+function migrateOpenQuestions(data: Record<string, any>) {
+  for (const q of Array.isArray(data.questions) ? data.questions : []) {
+    const notes: string[] = []
+    const area = typeof q.area === 'string' ? q.area.trim() : ''
+    if (area) {
+      const hit = QUESTION_AREAS.find((a) => a.toLowerCase() === area.toLowerCase())
+      if (hit) q.area = hit
+      else {
+        q.area = 'Other'
+        notes.push(`Area: ${area}`)
+      }
+    } else delete q.area
+    if (typeof q.owner === 'string') {
+      if (q.owner.trim()) notes.push(`Owner: ${q.owner.trim()}`)
+      delete q.owner
+    }
+    if (typeof q.due === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(q.due.trim())) {
+      if (q.due.trim()) notes.push(`Due: ${q.due.trim()}`)
+      delete q.due
+    }
+    if (notes.length) q.legacyNotes = [q.legacyNotes, ...notes].filter(Boolean).join('\n')
   }
 }
 
@@ -400,21 +429,33 @@ export const designModules = [
         [
           f.enm('scale', 'Time scale', SCALES, {
             help: 'Moment-to-moment: seconds (aim, dodge, gather). Short: minutes (gather → craft → survive). Medium: hours / days (base upgrades, expeditions). Long: the whole campaign (factions, bosses, endings).',
+            group: 'The loop',
           }),
-          f.long('action', 'Player action', { help: 'What does the player actively do in this loop?', placeholder: 'e.g. Gather wood and stone from the surrounding area.' }),
-          f.long('reward', 'Reward', { help: 'What does the player get, and why does it matter to them?', placeholder: 'e.g. Materials to craft a better axe.' }),
+          // Additive optional fields (cycleMinutes, rewardRefs, pillars): v2 data stays valid, so no version bump or migration.
+          f.num('cycleMinutes', 'One cycle takes (real minutes)', {
+            min: 0,
+            step: 0.1,
+            help: 'Rough real play time for one repetition, e.g. 0.1 for a swing, 10 for a gather run, 600 for a campaign arc. The Pacing view compares loops with it.',
+            group: 'The loop',
+          }),
+          f.long('action', 'Player action', { help: 'What does the player actively do in this loop?', placeholder: 'e.g. Gather wood and stone from the surrounding area.', group: 'The loop' }),
+          f.long('reward', 'Reward', { help: 'What does the player get, and why does it matter to them?', placeholder: 'e.g. Materials to craft a better axe.', group: 'The loop' }),
+          f.multi('rewardRefs', 'Reward is', { any: [catalog('resources'), section('buildings', 'design.town'), ITEMS] }, { help: 'The resources, items or buildings the reward actually is.', group: 'The loop' }),
           f.long('nextDecision', 'Next decision or action', {
             help: 'What new choice does the reward open up? This is what makes the loop repeat.',
             placeholder: 'e.g. Craft the axe now, or save materials for a wall.',
+            group: 'The loop',
           }),
-          f.long('choiceShift', 'How choices change over time', { help: 'As this loop repeats, what changes about the options or trade-offs the player faces?' }),
+          f.long('choiceShift', 'How choices change over time', { help: 'As this loop repeats, what changes about the options or trade-offs the player faces?', group: 'The loop' }),
           f.multi('leadsTo', 'Builds toward (longer loops)', section('loops'), {
             help: 'Which longer loops does repeating this one progress? Only link to a longer time scale.',
+            group: 'Links',
           }),
-          f.multi('nodes', 'Diagram nodes', section('loopGraph'), { help: 'The actions, systems and rewards in the loop diagram that make up this loop.' }),
+          f.multi('pillars', 'Serves pillars', section('pillars', 'overview.vision'), { help: 'The Vision pillars this loop delivers.', group: 'Links' }),
+          f.multi('nodes', 'Diagram nodes', section('loopGraph'), { help: 'The actions, systems and rewards in the loop diagram that make up this loop.', group: 'Links' }),
           f.long('description', 'Notes'),
         ],
-        [v.cards(), v.progression('scale', 'leadsTo'), v.kanban('scale'), v.table()],
+        [v.cards(), v.progression('scale', 'leadsTo'), v.loopPacing(), v.kanban('scale'), v.table()],
         {
           exportSplit: {
             field: 'scale',
@@ -1892,20 +1933,23 @@ export const designModules = [
     version: 2,
     migrate: migrateUi,
   },
-  mod('design', 'openQuestions', 'Open Questions', 'docs/01_design/open_questions.md', '❓', 'Design decisions to settle.', [
+  {
+    ...mod('design', 'openQuestions', 'Open Questions', 'docs/01_design/open_questions.md', '❓', 'Design decisions to settle.', [
     s.collection(
       'questions',
       'Questions',
       'question',
       [
-        f.text('area', 'Area'),
-        f.long('options', 'Options'),
-        f.long('decision', 'Decision'),
-        f.enm('status', 'Status', ['Open', 'Discussion', 'Decided']),
-        f.text('owner', 'Owner'),
-        f.text('due', 'Due'),
+        f.enm('area', 'Area', QUESTION_AREAS),
+        f.long('options', 'Options', { placeholder: 'A: … / B: …', help: 'The alternatives being weighed, with their main trade-off.' }),
+        f.long('decision', 'Decision', { help: 'Fill in when the status is Decided: what was chosen and why.' }),
+        f.enm('status', 'Status', QUESTION_STATUSES),
+        f.ref('owner', 'Owner', section('members', 'production.team'), { help: 'A role from Team & Workflow who drives the decision.' }),
+        f.date('due', 'Due'),
+        f.list('affects', 'Updated in docs', { help: 'Docs or modules where the decision was written back, e.g. “NPC System”.' }),
+        f.long('legacyNotes', 'Earlier notes', { help: 'Free text carried over from before Area, Owner and Due became fixed fields.' }),
       ],
-      [v.kanban('status'), v.table()],
+      [v.kanban('status'), v.table(['name', 'area', 'status', 'owner', 'due'])],
       {
         seed: [
           { name: 'Where do NPCs get money to buy their needs?', area: 'Economy', status: 'Open' },
@@ -1916,5 +1960,8 @@ export const designModules = [
         ],
       },
     ),
-  ]),
+    ]),
+    version: 2,
+    migrate: migrateOpenQuestions,
+  },
 ]

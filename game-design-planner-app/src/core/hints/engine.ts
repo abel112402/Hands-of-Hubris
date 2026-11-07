@@ -17,11 +17,12 @@ import { storyRules } from './rules/story'
 import { uiRules } from './rules/ui'
 import { roadmapRules } from './rules/roadmap'
 import { visionRules } from './rules/vision'
+import { openQuestionRules } from './rules/openQuestions'
 import { SEVERITY_RANK, type Hint, type HintContext, type HintRule } from './types'
 
 export const MAX_ACTIVE_HINTS = 5
 
-export const RULES: HintRule[] = [...projectRules, ...documentRules, ...visionRules, ...roadmapRules, ...coreLoopRules, ...difficultyRules, ...diplomacyRules, ...worldRules, ...townRules, ...npcRules, ...playerRules, ...itemRules, ...combatRules, ...timeWeatherRules, ...tradeRules, ...storyRules, ...uiRules, declarativeRule]
+export const RULES: HintRule[] = [...projectRules, ...documentRules, ...visionRules, ...roadmapRules, ...coreLoopRules, ...difficultyRules, ...diplomacyRules, ...worldRules, ...townRules, ...npcRules, ...playerRules, ...itemRules, ...combatRules, ...timeWeatherRules, ...tradeRules, ...storyRules, ...uiRules, ...openQuestionRules, declarativeRule]
 
 export const ruleOf = (hintRuleId: string) => (hintRuleId.startsWith('user:') ? 'user.declarative' : hintRuleId)
 

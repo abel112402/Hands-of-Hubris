@@ -21,9 +21,9 @@ const DEFAULT: ModuleHelp = {
 }
 
 export const MODULE_HELP: Record<string, ModuleHelp> = {
-  'overview.vision': { purpose: 'Defines what the game is and is not: pitch, pillars, audience and scope. Every later decision is checked against it.', tips: ['Keep pillars to 3–5 and phrase them so they can reject a feature; the decision test says how.', 'The one-sentence pitch is a draft you refine last, once the rest is clear.', 'Describe the player fantasy and main activity, and say what you take from references and what you do differently.', 'For each USP, state the player benefit and how it differs from a reference.', 'Give scope items a bucket; a rationale or acceptance test is optional. Readiness tips are suggestions, never errors.'] },
+  'overview.vision': { purpose: 'Defines what the game is and is not: pitch, pillars, audience and scope. Every later decision is checked against it.', tips: ['Keep pillars to 3–5 and phrase them so they can reject a feature; the decision test says how.', 'The one-sentence pitch is a draft you refine last, once the rest is clear. The Readiness view on Design pillars checks its shape.', 'Describe the player fantasy and main activity, and say what you take from references and what you do differently.', 'For each USP, state the player benefit, how it differs from a reference, and which pillars back it.', 'Give scope items a bucket and tag each with the pillars it serves; the Pillar matrix on Scope shows items with no pillar and pillars with nothing in the MVP.', 'A rationale or acceptance test on a scope item is optional. Readiness tips are suggestions, never errors.', 'The Guide tab on the right walks through a first setup and offers starter pillars and scope.'] },
   'overview.glossary': { purpose: 'One shared vocabulary so design, code and content use the same terms.', tips: ['Add a term the first time two people disagree on its meaning.', 'Match code identifiers to glossary terms.'] },
-  'overview.roadmap': { purpose: 'Orders the whole production into phases with exit criteria, gates and a scope-cut plan. All schedule numbers are in weeks from the project start.', tips: ['Give every phase measurable, yes/no exit criteria, e.g. "30 FPS on min-spec for 10 minutes".', 'Set a start date and buffer in Assumptions to see calendar dates and a buffered end on the timelines.', 'Red dependency links start before their predecessor ends; the critical path is the chain with no slack.', 'Use the Milestone type for zero-duration events. Owner, effort and confidence are optional.', 'A gate question should be answerable from the exit criteria; record the decision and review date.', 'Number cuts in the order you would make them (1 first) and link what they affect.'], links: [L.mermaid] },
+  'overview.roadmap': { purpose: 'Orders the whole production into phases with exit criteria, gates and a scope-cut plan. All schedule numbers are in weeks from the project start.', tips: ['Give every phase measurable, yes/no exit criteria, e.g. "30 FPS on min-spec for 10 minutes".', 'Set a start date and buffer in Assumptions to see calendar dates and a buffered end on the timelines.', 'Red dependency links start before their predecessor ends; the critical path is the chain with no slack.', 'Use the Milestone type for zero-duration events. Owner, effort and confidence are optional.', 'A gate question should be answerable from the exit criteria; record the decision and review date.', 'Number cuts in the order you would make them (1 first) and link the tasks they drop; Savings shows whether they recover the effort above phase capacity.', 'Progress on Phases shows tasks done and effort against capacity; mark the Vision pillars no cut may touch under Not cuttable.', 'The Guide tab on the right walks through a first setup and offers the doc’s gates and cut order as examples.'], links: [L.mermaid] },
   'design.coreLoop': {
     purpose: 'Describes what the player repeats at second, minute, session and campaign scale. If the loop is not fun, nothing else saves the game.',
     tips: [
@@ -32,7 +32,10 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Use “Builds toward” to show how short loops feed longer ones; the Progression view lays them out by scale.',
       'In the diagram: Action = what the player does, System = a game system that reacts, Resource = gathered or spent, Reward = what is gained, Goal = a target. Use “feeds” for repeated actions, “rewards” / “leads to” back to an earlier node for feedback, “unlocks” for gates.',
       'Link diagram nodes to real systems (buildings, items, enemies, quests, factions, biomes) instead of retyping their names, and tick which loops use each node.',
-      'Export follows the design doc: one heading per time scale, then rewards and progression, then diagrams.',
+      'Set “One cycle takes” on each loop; the Pacing view shows how many short cycles fit in each longer loop, and in-game days if Time & Weather has a day length.',
+      'Tag loops with the Vision pillars they serve and name what the reward actually is (resources, items, buildings); hints show pillars no loop delivers.',
+      'Export follows the design doc: one heading per time scale, then rewards and progression (with pacing and pillar coverage), then diagrams.',
+      'The Guide tab on the right walks through a first setup and offers a starter loop set and a feedback diagram.',
     ],
   },
   'design.difficulty': {
@@ -161,7 +164,17 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Controls: give each action its keys and the screens it applies to; Binding map shows conflicts.',
     ],
   },
-  'design.openQuestions': { purpose: 'Tracks unresolved design decisions so none are forgotten.', tips: ['Move items to the done column with the decision recorded.', 'Review at every gate.'] },
+  'design.openQuestions': {
+    purpose: 'A decision log: every unresolved design question, who drives it, and where the answer was written back.',
+    tips: [
+      'One question per row, phrased so it can be answered (“Do NPCs age and die?”), with an Area so the board groups it.',
+      'List the alternatives under Options before deciding, so the trade-off is recorded too.',
+      'Give each question an Owner (a role from Team & Workflow) and a Due date; overdue open questions get a hint.',
+      'When decided, fill in Decision and move the card to Decided on the board.',
+      'Write the decision into the affected design doc and name that doc under “Updated in docs”.',
+      'Review the board at every roadmap gate. The Guide tab on the right walks through a first setup.',
+    ],
+  },
   'technical.architecture': { purpose: 'Describes code modules, dependencies and extension points so the game stays extensible.', tips: ['Draw dependencies one-way; cycles are a design smell.', 'Mark extension points explicitly.'], links: [L.patterns] },
   'technical.coding': { purpose: 'Naming, structure and Git rules the whole team follows.', tips: ['Keep it short enough to be read.', 'Automate rules with linters where possible.'] },
   'technical.dataDriven': { purpose: 'Defines the data schemas that content is authored in, keeping content out of code.', tips: ['Version every schema.', 'Prefer ScriptableObjects or JSON with validation.'], links: [L.so] },

@@ -21,6 +21,10 @@ import { biomeWeather, conditions, dayCoverage, eventCalendar, nightPhase, realM
 import { bossGates, COMBAT_DOC, damageFormula, damagePerHit, fighterOf, phaseCoverage, threatRamp, timeToDie, timeToKill } from '../combat'
 import { artboardOf, bindLabel, controlConflicts, flowAnalysis, hudScreen, kindDef, layoutIssues, layoutOf, layoutRules, layoutSvg, navEdges, screensOf, UI_DOC, type WireElement } from '../ui'
 import { actPacing, actsInOrder, decisionsOf, endingReachability, questDeps, rewardsByAct, STORY_DOC } from '../story'
+import { OPEN_QUESTIONS_DOC, questionStats } from '../openQuestions'
+import { pillarCoverage, scopeWithoutPillar, VISION_DOC } from '../vision'
+import { cutSavings, cutsToRecover, overload, phaseProgress, ROADMAP_DOC } from '../roadmap'
+import { CORE_LOOP_DOC, formatMinutes, loopList, loopPacing, pillarLoops } from '../coreLoop'
 import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
@@ -542,6 +546,79 @@ function tradeSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'coll
   return out
 }
 
+/** The doc's own table: # · Question · Area · Options · Decision · Status · Owner · Due, plus where it was written back. */
+function openQuestionsMd(project: Project, docId: string, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!data.length) return '_No entries yet._\n'
+  const st = questionStats(project, Date.now())
+  const cols = ['area', 'options', 'decision', 'status', 'owner', 'due', 'affects'].map((k) => sec.fields.find((f) => f.key === k)!).filter(Boolean)
+  let out = `Open: ${st.open + st.discussion} (${st.discussion} in discussion) · Decided: ${st.decided} · Overdue: ${st.overdue}\n\n`
+  out += `| # | Question | ${cols.map((f) => f.label).join(' | ')} |\n`
+  out += `|${'---|'.repeat(cols.length + 2)}\n`
+  data.forEach((q, i) => {
+    out += `| ${[String(i + 1), entityLabel(q), ...cols.map((f) => valueToText(project, docId, f, q[f.key]))].map(esc).join(' | ')} |\n`
+  })
+  const notes = data.filter((q) => String(q.legacyNotes ?? '').trim())
+  if (notes.length) out += '\n' + notes.map((q) => `* **${esc(entityLabel(q))}**, earlier notes: ${esc(q.legacyNotes)}`).join('\n') + '\n'
+  return out
+}
+
+/** Loop pacing and pillar coverage, written under the Core Loop's "Rewards and progression" chapter (doc ch. 5). */
+function coreLoopSummaryMd(project: Project): string {
+  let out = ''
+  const rows = loopPacing(project).filter((r) => r.minutes !== undefined)
+  if (rows.length) {
+    out += '\n**Loop pacing**\n\n| Loop | Time scale | One cycle | Builds toward |\n|---|---|---|---|\n'
+    for (const r of rows) {
+      const links = r.links.map((l) => `${entityLabel(l.to)} ${l.inverted ? '(not longer)' : `×${Math.round(l.ratio * 10) / 10}`}`).join(', ')
+      out += `| ${esc(entityLabel(r.loop))} | ${esc(r.loop.scale ?? '')} | ${formatMinutes(r.minutes!)}${r.days !== undefined ? ` (${Math.round(r.days * 10) / 10} in-game days)` : ''} | ${esc(links)} |\n`
+    }
+  }
+  const cov = pillarLoops(project)
+  if (cov.length && loopList(project).some((l) => Array.isArray(l.pillars) && l.pillars.length)) {
+    out += `\n**Pillars served by loops:** ${cov.map((c) => `${esc(entityLabel(c.pillar))} (${c.loops.length ? c.loops.map((l) => esc(entityLabel(l))).join(', ') : 'none'})`).join('; ')}\n`
+  }
+  return out
+}
+
+/** Progress per phase (views: phaseProgress) and the savings of the cut order (views: cutSavings). */
+function roadmapSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!data.length) return ''
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const r = (n: number) => Math.round(n * 10) / 10
+  let out = ''
+  if (kinds.has('phaseProgress')) {
+    const rows = phaseProgress(project, Date.now()).filter((x) => x.tasks > 0 || x.capacity !== undefined)
+    if (rows.length) {
+      out += '\n**Progress**\n\n| Phase | Tasks done | Effort done / planned | Capacity | Ends |\n|---|---|---|---|---|\n'
+      for (const x of rows)
+        out += `| ${esc(entityLabel(x.phase))} | ${x.done}/${x.tasks} | ${r(x.effortDone)} / ${r(x.effort)} | ${x.capacity === undefined ? '' : r(x.capacity) + (x.over ? ' (over)' : '')} | ${x.endDate ?? ''}${x.late ? ' (late)' : ''} |\n`
+    }
+  }
+  if (kinds.has('cutSavings')) {
+    const rows = cutSavings(project)
+    const need = overload(project)
+    const enough = cutsToRecover(project)
+    out += '\n**Savings (person-weeks)**\n\n| # | Cut | Saves | Cumulative |\n|---|---|---|---|\n'
+    for (const c of rows) out += `| ${c.cut.order ?? ''} | ${esc(entityLabel(c.cut))} | ${c.source === 'none' ? '' : r(c.saving) + (c.source === 'manual' ? ' (estimate)' : '')} | ${r(c.cumulative)} |\n`
+    if (need > 0) out += `\n_Overload to recover: ${r(need)} person-weeks; ${enough ? `the first ${enough} cut(s) recover it` : 'the cuts do not recover it'}._\n`
+  }
+  return out
+}
+
+/** Pillar x scope table for the Vision's scope section (views: pillarMatrix). */
+function visionSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!sec.views.some((v) => v.kind === 'pillarMatrix') || !data.length) return ''
+  const cov = pillarCoverage(project)
+  if (!cov.length) return ''
+  const mark = (e: Entity, id: string) => (Array.isArray(e.pillars) && e.pillars.includes(id) ? 'x' : '')
+  let out = `\n**Pillar coverage**\n\n| Scope item | Bucket | ${cov.map((c) => esc(entityLabel(c.pillar))).join(' | ')} |\n|${'---|'.repeat(cov.length + 2)}\n`
+  for (const e of data) out += `| ${esc(entityLabel(e))} | ${esc(e.bucket ?? '')} | ${cov.map((c) => mark(e, c.pillar.id)).join(' | ')} |\n`
+  out += `| **Items / in MVP** | | ${cov.map((c) => `${c.scope.length} / ${c.mvp.length}`).join(' | ')} |\n`
+  const loose = scopeWithoutPillar(project)
+  if (loose.length) out += `\n_Serving no pillar yet: ${loose.map((e) => esc(entityLabel(e))).join(', ')}._\n`
+  return out
+}
+
 export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef): string {
   const data = project.documents[mod.id]?.data[sec.id]
   if (data === undefined) return '_No data._\n'
@@ -550,14 +627,22 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
       const filled = sec.fields
         .map((f) => ({ f, t: valueToText(project, mod.id, f, data[f.key]) }))
         .filter((x) => x.t)
+      const extra =
+        mod.id === TRADE_DOC
+          ? tradeKindMd(project, sec.id)
+          : mod.id === UI_DOC
+            ? uiFormMd(project, sec.id)
+            : mod.id === CORE_LOOP_DOC && sec.id === 'rewardsProgression'
+              ? coreLoopSummaryMd(project)
+              : ''
       // The section heading already names a single-field form, so a bullet repeating that title is dropped.
-      if (sec.fields.length === 1 && filled.length === 1 && filled[0].f.label === sec.title) return filled[0].t + '\n'
+      if (sec.fields.length === 1 && filled.length === 1 && filled[0].f.label === sec.title) return filled[0].t + '\n' + extra
       const lines = filled.map(({ f, t }) => `* **${f.label}:** ${t}`)
-      const extra = mod.id === TRADE_DOC ? tradeKindMd(project, sec.id) : mod.id === UI_DOC ? uiFormMd(project, sec.id) : ''
       return (lines.length ? lines.join('\n') + '\n' : extra ? '' : '_No data._\n') + extra
     }
     case 'collection':
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '')
+      if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data)
     case 'graph':

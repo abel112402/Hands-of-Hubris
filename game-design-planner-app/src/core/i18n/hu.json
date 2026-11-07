@@ -136,6 +136,18 @@
       "title": "Backlog elemeknél hiányzik a becslés vagy mérföldkő",
       "body": "{{count}} nyitott feature tervezésre vár: {{names}}."
     },
+    "oqDecidedNoText": {
+      "title": "Eldöntött kérdés döntés nélkül",
+      "body": "{{count}} kérdés Eldöntött státuszú, de a Döntés mező üres: {{names}}. Írd le, mit választottatok és miért."
+    },
+    "oqNotWrittenBack": {
+      "title": "A döntés nincs átvezetve",
+      "body": "{{count}} eldöntött kérdésnél nincs megadva dokumentum az „Updated in docs” mezőben: {{names}}. Vezesd át a döntést az érintett design dokumentumba, és jelöld itt."
+    },
+    "oqOverdue": {
+      "title": "Lejárt határidejű kérdés",
+      "body": "{{count}} nyitott kérdés határideje lejárt: {{names}}. Dönts, vagy told el a határidőt, ha még vita tárgya."
+    },
     "visionPitch": {
       "title": "A pitch még üres",
       "body": "Írj egy vázlatos egymondatos pitchet; később, a vízió tisztulásával finomíthatod."
@@ -163,6 +175,26 @@
     "visionScopeMvp": {
       "title": "Még semmi sincs az MVP-ben",
       "body": "Vannak hatókör-elemek, de egyik sincs „In MVP” kategóriában."
+    },
+    "visionPitchShape": {
+      "title": "A pitch lehet, hogy nem egy mondat",
+      "body": "A pitch {{words}} szavas, és lehet: {{problems}}. Egy kb. 10–30 szavas mondat a cél: ki játszik, mit csinál, és miért."
+    },
+    "visionScopeNoPillar": {
+      "title": "Pillér nélküli MVP-elemek",
+      "body": "{{count}} MVP hatókör-elem egyetlen tervezési pillérhez sem kapcsolódik: {{names}}. Ha egyik sem illik, az elem talán nem való az MVP-be."
+    },
+    "visionUspPillar": {
+      "title": "Pillér által nem támogatott USP-k",
+      "body": "{{count}} USP-nél nincs megadva támogató pillér: {{names}}."
+    },
+    "visionPillarUnused": {
+      "title": "Pillérek, amikre semmi nem mutat",
+      "body": "{{count}} pillérhez nincs hatókör-elem vagy USP kötve: {{names}}. Kösd hozzá a megvalósító funkciókat, vagy gondold át a pillért."
+    },
+    "visionPillarNotInMvp": {
+      "title": "Az MVP-ből hiányzó pillérek",
+      "body": "{{count}} pillérhez nincs „In MVP” hatókör-elem: {{names}}. Az első kiadás nem mutatná meg őket."
     },
     "roadmapConflict": {
       "title": "Túl korán induló függőségek: {{section}}",
@@ -196,6 +228,18 @@
       "title": "Esedékes kapudöntések",
       "body": "{{count}} kapu fázisa már véget érhetett, de nincs döntés: {{names}}."
     },
+    "roadmapLate": {
+      "title": "Lejárt fázisok nyitott feladatokkal",
+      "body": "{{count}} fázisnak már véget kellett volna érnie, de vannak nyitott feladatai: {{names}} (az elsőben {{open}} nyitott). Zárd le vagy helyezd át a feladatokat, vagy tervezd újra a fázist."
+    },
+    "roadmapCutsShort": {
+      "title": "A hatókörcsökkentési terv nem fedezi a túlterhelést",
+      "body": "A feladatok {{over}} emberhéttel lépik túl a fázisok kapacitását, de az összes csökkentés együtt csak {{saved}} emberhetet takarít meg. Adj hozzá csökkentést, kösd feladatokhoz, vagy adj megtakarítási becslést."
+    },
+    "roadmapCutProtected": {
+      "title": "Védett pillért érintő csökkentések",
+      "body": "{{count}} csökkentés olyan Vízió-hatókörelemet hagy el, amely védett pillért szolgál ({{pillars}}): {{names}}."
+    },
     "coreLoopScales": {
       "title": "Még le nem fedett időskálák",
       "body": "Érdemes lehet ciklust leírni ezekhez: {{names}}. Nem minden játéknak kell mind a négy."
@@ -223,6 +267,22 @@
     "coreLoopFeedback": {
       "title": "Az ábrán nincs visszacsatolás",
       "body": "Egyetlen kapcsolat sem vezet vissza egy korábbi csomóponthoz, így az ábra vonal, nem ciklus. Kösd vissza a jutalmat vagy az eredményt egy cselekvéshez."
+    },
+    "coreLoopDirection": {
+      "title": "A „Mire épít” rövidebb ciklusra mutat",
+      "body": "{{count}} kapcsolat azonos vagy rövidebb időtávú ciklusra mutat: {{names}}. A „Mire épít” csak hosszabb ciklusra mutasson."
+    },
+    "coreLoopPacing": {
+      "title": "Egy ciklus nem hosszabb ciklusra épít",
+      "body": "A ciklushosszak alapján {{count}} kapcsolat olyan ciklusra mutat, amely nem tart tovább, mint maga a ciklus: {{names}}. Ellenőrizd a hosszakat vagy a kapcsolatot."
+    },
+    "coreLoopPillars": {
+      "title": "Pillérek ciklus nélkül",
+      "body": "{{count}} Vízió-pillért egyetlen ciklus sem szolgál: {{names}}. Amit a játékos sosem ismétel, az könnyen elvész."
+    },
+    "coreLoopRewardRefs": {
+      "title": "Játéktartalomhoz nem kötött jutalmak",
+      "body": "{{count}} ciklus leír egy jutalmat, de nem nevezi meg, melyik nyersanyag, tárgy vagy épület az: {{names}}."
     },
     "difficultyMissing": {
       "title": "Hiányzó nehézségi értékek",

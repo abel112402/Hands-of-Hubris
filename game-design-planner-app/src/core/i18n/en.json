@@ -136,6 +136,18 @@
       "title": "Backlog items lack estimate or milestone",
       "body": "{{count}} open features need planning: {{names}}."
     },
+    "oqDecidedNoText": {
+      "title": "A decided question has no decision text",
+      "body": "{{count}} question(s) are marked Decided but the Decision field is empty: {{names}}. Write down what was chosen and why."
+    },
+    "oqNotWrittenBack": {
+      "title": "Decision not written back to a doc",
+      "body": "{{count}} decided question(s) list no doc under “Updated in docs”: {{names}}. Carry the decision into the affected design doc and note it here."
+    },
+    "oqOverdue": {
+      "title": "Question past its due date",
+      "body": "{{count}} open question(s) are past their due date: {{names}}. Decide, or move the date if it is still being discussed."
+    },
     "visionPitch": {
       "title": "The pitch is still empty",
       "body": "Write a draft one-sentence pitch; you can refine it once the rest of the vision is clear."
@@ -163,6 +175,26 @@
     "visionScopeMvp": {
       "title": "Nothing is in the MVP yet",
       "body": "Scope items exist, but none are marked “In MVP”."
+    },
+    "visionPitchShape": {
+      "title": "The pitch may not read as one sentence",
+      "body": "The pitch has {{words}} words and may be: {{problems}}. Aim for one sentence of about 10–30 words: who plays, what they do, and why."
+    },
+    "visionScopeNoPillar": {
+      "title": "MVP items that serve no pillar",
+      "body": "{{count}} MVP scope item(s) are not tied to any design pillar: {{names}}. If none fits, the item may not belong in the MVP."
+    },
+    "visionUspPillar": {
+      "title": "USPs not backed by a pillar",
+      "body": "{{count}} USP(s) name no supporting pillar: {{names}}."
+    },
+    "visionPillarUnused": {
+      "title": "Pillars nothing points at",
+      "body": "{{count}} pillar(s) have no scope item or USP linked: {{names}}. Link the features that carry them, or reconsider the pillar."
+    },
+    "visionPillarNotInMvp": {
+      "title": "Pillars missing from the MVP",
+      "body": "{{count}} pillar(s) have no “In MVP” scope item: {{names}}. The first release would not show them."
     },
     "roadmapConflict": {
       "title": "Dependencies start too early in {{section}}",
@@ -196,6 +228,18 @@
       "title": "Gate decisions are due",
       "body": "{{count}} gate(s) belong to phases that should have ended but have no decision: {{names}}."
     },
+    "roadmapLate": {
+      "title": "Phases past their end with open tasks",
+      "body": "{{count}} phase(s) should have ended but still have open tasks: {{names}} ({{open}} open in the first). Close the tasks, move them, or replan the phase."
+    },
+    "roadmapCutsShort": {
+      "title": "The cut plan does not cover the overload",
+      "body": "Tasks exceed phase capacity by {{over}} person-weeks, but all cuts together save {{saved}}. Add cuts, link them to tasks, or give them a saving estimate."
+    },
+    "roadmapCutProtected": {
+      "title": "Cuts touching protected pillars",
+      "body": "{{count}} cut(s) drop Vision scope items that serve a protected pillar ({{pillars}}): {{names}}."
+    },
     "coreLoopScales": {
       "title": "Time scales not covered yet",
       "body": "Consider describing a loop for: {{names}}. Not every game needs all four."
@@ -223,6 +267,22 @@
     "coreLoopFeedback": {
       "title": "The loop diagram has no feedback path",
       "body": "No connection leads back to an earlier node, so the diagram reads as a line, not a loop. Add an edge from a reward or outcome back to an action."
+    },
+    "coreLoopDirection": {
+      "title": "“Builds toward” points to a shorter loop",
+      "body": "{{count}} link(s) go to a loop on the same or a shorter time scale: {{names}}. “Builds toward” should only point to longer loops."
+    },
+    "coreLoopPacing": {
+      "title": "A loop builds toward one that is not longer",
+      "body": "By the cycle lengths, {{count}} link(s) point to a loop that takes no longer than the loop itself: {{names}}. Check the lengths or the link."
+    },
+    "coreLoopPillars": {
+      "title": "Pillars with no loop behind them",
+      "body": "{{count}} Vision pillar(s) are not served by any loop: {{names}}. A pillar the player never repeats is easy to lose."
+    },
+    "coreLoopRewardRefs": {
+      "title": "Rewards not linked to game content",
+      "body": "{{count}} loop(s) describe a reward but do not name the resource, item or building it is: {{names}}."
     },
     "difficultyMissing": {
       "title": "Difficulty values still missing",
