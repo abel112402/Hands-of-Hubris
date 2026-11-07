@@ -304,6 +304,18 @@
       "title": "Presets without an intent",
       "body": "{{count}} preset(s) don’t say what they should feel like: {{names}}."
     },
+    "difficultySpacing": {
+      "title": "Levels that are too close or out of order",
+      "body": "By overall pressure, these neighbouring levels barely differ or the harder one is easier: {{names}}. See the Pressure view on Presets."
+    },
+    "difficultyBaseline": {
+      "title": "Baselines outside their range",
+      "body": "{{count}} parameter(s) have a baseline outside Range min–max: {{names}}."
+    },
+    "difficultyUnused": {
+      "title": "Parameters no system reads",
+      "body": "{{count}} parameter(s) are not linked from Player, Combat or Trade, so they only change numbers in this document: {{names}}."
+    },
     "difficultyNoPresets": {
       "title": "No difficulty presets described",
       "body": "Describe what each preset should feel like and who it is for."
@@ -359,6 +371,18 @@
     "diplomacySpillover": {
       "title": "Actions without spillover",
       "body": "{{count}} action(s) involve a faction with hostile rivals but record no spillover: {{names}}."
+    },
+    "diplomacyMarks": {
+      "title": "Scale markers to check",
+      "body": "The overview markers do not fit the scale: {{names}}. The Scale view under Relationship levels shows them on the bar."
+    },
+    "diplomacyUnlinked": {
+      "title": "Factions no other module uses",
+      "body": "{{count}} faction(s) are not referenced by quests, characters, merchants, biomes or other modules yet: {{names}}. The Footprint view shows where each faction appears."
+    },
+    "diplomacyUntouched": {
+      "title": "Reputation no action changes",
+      "body": "No action changes the player’s reputation with {{count}} faction(s), directly or by spillover: {{names}}. Try them in the Simulator view."
     },
     "worldReach": {
       "title": "Biomes nothing unlocks",

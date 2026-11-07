@@ -304,6 +304,18 @@
       "title": "Szándék nélküli fokozatok",
       "body": "{{count}} fokozatnál nincs leírva, milyen érzést kell adnia: {{names}}."
     },
+    "difficultySpacing": {
+      "title": "Túl közeli vagy rossz sorrendű fokozatok",
+      "body": "Az összesített nyomás alapján ezek a szomszédos fokozatok alig különböznek, vagy a nehezebb a könnyebb: {{names}}. Lásd a Fokozatok Nyomás nézetét."
+    },
+    "difficultyBaseline": {
+      "title": "Tartományon kívüli alapértékek",
+      "body": "{{count}} paraméter alapértéke kívül esik a min–max tartományon: {{names}}."
+    },
+    "difficultyUnused": {
+      "title": "Paraméterek, amelyeket egy rendszer sem olvas",
+      "body": "{{count}} paraméterre nem hivatkozik a Játékos, a Harc vagy a Kereskedelem modul, így csak ebben a dokumentumban változtatnak számokat: {{names}}."
+    },
     "difficultyNoPresets": {
       "title": "Nincsenek leírt nehézségi fokozatok",
       "body": "Írd le, milyen érzést adjon az egyes fokozat, és kinek szól."
@@ -359,6 +371,18 @@
     "diplomacySpillover": {
       "title": "Átgyűrűzés nélküli tettek",
       "body": "{{count}} tett olyan frakciót érint, amelynek ellenségei vannak, de nincs átgyűrűzés rögzítve: {{names}}."
+    },
+    "diplomacyMarks": {
+      "title": "Ellenőrizendő skálajelölők",
+      "body": "Az áttekintés jelölői nem illenek a skálához: {{names}}. A Kapcsolati szintek Skála nézete mutatja őket a sávon."
+    },
+    "diplomacyUnlinked": {
+      "title": "Frakciók, amelyeket más modul nem használ",
+      "body": "{{count}} frakcióra még nem hivatkozik küldetés, karakter, kereskedő, biom vagy más modul: {{names}}. A Lábnyom nézet mutatja, hol jelenik meg az egyes frakció."
+    },
+    "diplomacyUntouched": {
+      "title": "Hírnév, amelyet egy tett sem változtat",
+      "body": "Egy tett sem változtatja a játékos hírnevét {{count}} frakciónál, se közvetlenül, se átgyűrűzéssel: {{names}}. Próbáld ki őket a Szimulátor nézetben."
     },
     "worldReach": {
       "title": "Biómok, amiket semmi nem old fel",

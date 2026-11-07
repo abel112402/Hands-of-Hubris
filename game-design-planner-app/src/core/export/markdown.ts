@@ -25,6 +25,10 @@ import { OPEN_QUESTIONS_DOC, questionStats } from '../openQuestions'
 import { pillarCoverage, scopeWithoutPillar, VISION_DOC } from '../vision'
 import { cutSavings, cutsToRecover, overload, phaseProgress, ROADMAP_DOC } from '../roadmap'
 import { CORE_LOOP_DOC, formatMinutes, loopList, loopPacing, pillarLoops } from '../coreLoop'
+import { CATEGORIES as DIFFICULTY_CATEGORIES, DIFFICULTY_DOC, levelPressure, levelsOf, levelSteps } from '../difficulty'
+import { difficultyImpact } from '../difficultyImpact'
+import { DIPLOMACY_DOC, factionStandings, relationPairs, startValue, levelAt } from '../diplomacy'
+import { factionFootprints } from '../diplomacyFootprint'
 import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
 
 const esc = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
@@ -562,6 +566,69 @@ function openQuestionsMd(project: Project, docId: string, sec: Extract<SectionDe
   return out
 }
 
+/** Pressure per level (by category, with the step from the previous level) and the cross-module impact, after the values. */
+function difficultySummaryMd(project: Project): string {
+  const rows = levelPressure(project)
+  const p = (n: number | null | undefined) => (n === null || n === undefined ? '' : String(Math.round(n * 100)))
+  let out = ''
+  if (rows.some((r) => r.overall !== null)) {
+    const cats = DIFFICULTY_CATEGORIES.filter((c) => rows.some((r) => r.categories.some((x) => x.category === c)))
+    const steps = new Map(levelSteps(project).map((s) => [s.to.id, s]))
+    out += `\n**Pressure per level** (0 = easiest end of every range, 100 = hardest; planning summary)\n\n| Level | Overall | Step | ${cats.join(' | ')} |\n|${'---|'.repeat(cats.length + 3)}\n`
+    for (const r of rows) {
+      const s = steps.get(r.level.id)
+      const step = s ? `${s.delta >= 0 ? '+' : ''}${Math.round(s.delta * 100)}${s.inverted ? ' (easier)' : s.tooClose ? ' (too close)' : ''}` : ''
+      out += `| ${esc(r.level.label)} | ${p(r.overall)} | ${step} | ${cats.map((c) => p(r.categories.find((x) => x.category === c)?.mean)).join(' | ')} |\n`
+    }
+  }
+  const impact = difficultyImpact(project)
+  if (impact.length) {
+    const levels = levelsOf(project)
+    const r = (n: number) => Math.round(n * 100) / 100
+    out += `\n**Impact on other systems**\n\n| System | Effect | ${levels.map((l) => esc(l.label)).join(' | ')} |\n|${'---|'.repeat(levels.length + 2)}\n`
+    for (const row of impact) {
+      const cell = (v: number | null) => (v === null ? '' : row.kind === 'mult' ? `×${r(v)}` : `${r(v)} ${row.unit}(s)`)
+      out += `| ${row.group} | ${esc(row.label)} | ${levels.map((l) => cell(row.values[l.id])).join(' | ')} |\n`
+    }
+  }
+  return out
+}
+
+/** Named standings from the matrix (allied / hostile pairs, one-sided pairs), after the relationship matrix. */
+function diplomacyRelationsMd(project: Project): string {
+  const pairs = relationPairs(project).filter((p) => p.mean !== undefined)
+  if (!pairs.length) return ''
+  const name = (p: (typeof pairs)[number]) => `${esc(entityLabel(p.a))} – ${esc(entityLabel(p.b))}`
+  const by = (k: string) => pairs.filter((p) => p.standing === k).map(name)
+  const allied = by('ally')
+  const hostile = by('enemy')
+  let out = `\n* **Allied:** ${allied.length ? allied.join(', ') : 'none'}\n* **Hostile:** ${hostile.length ? hostile.join(', ') : 'none'}\n`
+  const one = pairs.filter((p) => p.asymmetric)
+  if (one.length) out += `* **One-sided:** ${one.map((p) => `${esc(entityLabel(p.a))} → ${esc(entityLabel(p.b))} ${p.ab}, back ${p.ba}`).join('; ')}\n`
+  return out
+}
+
+/** Where each faction appears (views: factionFootprint), after the faction sheets. */
+function diplomacyFootprintMd(project: Project): string {
+  const rows = factionFootprints(project)
+  if (!rows.length) return ''
+  const standing = new Map(factionStandings(project).map((s) => [s.faction.id, s]))
+  let out = '\n**Faction footprint**\n\n| Faction | Allies | Hostile | Characters | Unlocks | Actions | Endings | Used in other modules |\n|---|---|---|---|---|---|---|---|\n'
+  for (const r of rows) {
+    const s = standing.get(r.faction.id)
+    const other = r.elsewhere.map((g) => `${esc(g.docTitle)} (${g.usages.length})`).join(', ') || 'none yet'
+    out += `| ${esc(entityLabel(r.faction))} | ${s?.allies.length ?? 0} | ${s?.enemies.length ?? 0} | ${r.characters} | ${r.unlocks} | ${r.actions} | ${r.endings} | ${other} |\n`
+  }
+  return out
+}
+
+/** The level a new game starts in, under the relationship levels. */
+function diplomacyStartMd(project: Project): string {
+  const v = startValue(project)
+  const l = levelAt(project, v)
+  return `\n_A new game starts at ${v}${l ? ` (${esc(l.name)})` : ', outside every level'}._\n`
+}
+
 /** Loop pacing and pillar coverage, written under the Core Loop's "Rewards and progression" chapter (doc ch. 5). */
 function coreLoopSummaryMd(project: Project): string {
   let out = ''
@@ -642,9 +709,9 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
     }
     case 'collection':
       if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
     case 'matrix':
-      return matrixMd(project, mod.id, sec, data)
+      return matrixMd(project, mod.id, sec, data) + (mod.id === DIFFICULTY_DOC && sec.id === 'values' ? difficultySummaryMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'relations' ? diplomacyRelationsMd(project) : '')
     case 'graph':
       return graphMd(project, mod.id, sec, data) + (mod.id === UI_DOC && sec.id === 'flow' ? uiFlowMd(project) : '')
     case 'canvas': {

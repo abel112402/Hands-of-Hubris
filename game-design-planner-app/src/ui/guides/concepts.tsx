@@ -526,6 +526,83 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="110" y="78" className="c-small">feedback: the reward makes the next action better</text>
         </svg>
       )
+    case 'tuningTrack':
+      return (
+        <svg viewBox="0 0 330 92" className="concept-svg" role="img" aria-label="Two tracks from easy on the left to hard on the right; the morale track is drawn flipped because higher is easier there">
+          <text x="10" y="12" className="c-small">Enemy HP ×   (higher = harder)</text>
+          <rect x="10" y="18" width="300" height="12" rx="6" className="c-box" />
+          <line x1="130" y1="14" x2="130" y2="34" className="c-line" />
+          {[
+            [70, '#53c28b'],
+            [130, '#4f9cf9'],
+            [230, '#f97b4f'],
+          ].map(([x, c]) => <circle key={`a${x}`} cx={x as number} cy="24" r="7" fill={c as string} />)}
+          <text x="10" y="54" className="c-small">Morale threshold %   (higher = easier: flipped)</text>
+          <rect x="10" y="60" width="300" height="12" rx="6" className="c-box" />
+          {[
+            [90, '#53c28b'],
+            [160, '#4f9cf9'],
+            [250, '#f97b4f'],
+          ].map(([x, c]) => <circle key={`b${x}`} cx={x as number} cy="66" r="7" fill={c as string} />)}
+          <text x="10" y="88" className="c-small">easy</text>
+          <text x="285" y="88" className="c-small">hard</text>
+        </svg>
+      )
+    case 'relationWeb':
+      return (
+        <svg viewBox="0 0 330 110" className="concept-svg" role="img" aria-label="Four factions on a circle: a thick green line between allies, a red line between enemies, a grey neutral line, and two arrows where the directions differ">
+          <line x1="60" y1="25" x2="270" y2="25" stroke="rgb(83,194,139)" strokeWidth="5" />
+          <line x1="60" y1="25" x2="60" y2="85" stroke="rgb(229,112,126)" strokeWidth="4" />
+          <line x1="270" y1="25" x2="270" y2="85" stroke="rgb(139,147,165)" strokeWidth="1.5" />
+          <path d="M60,85 Q165,65 245,85" fill="none" stroke="rgb(83,194,139)" strokeWidth="2" />
+          <path d="M270,85 Q165,110 85,87" fill="none" stroke="rgb(229,112,126)" strokeWidth="3" />
+          {[[60, 25, '#4f9cf9'], [270, 25, '#f2c94c'], [60, 85, '#f97b4f'], [270, 85, '#d86be0']].map(([x, y, c]) => <circle key={`${x}${y}`} cx={x as number} cy={y as number} r="11" fill={c as string} />)}
+          <text x="165" y="18" textAnchor="middle" className="c-small">allied</text>
+          <text x="20" y="58" className="c-small">hostile</text>
+          <text x="278" y="58" className="c-small">neutral</text>
+          <text x="165" y="80" textAnchor="middle" className="c-small">one-sided</text>
+        </svg>
+      )
+    case 'repScale':
+      return (
+        <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="A scale from -100 to 100 split into Hostile, Neutral and Allied, with the start marker at 0 and an action pushing the value across a boundary">
+          <rect x="10" y="14" width="100" height="22" fill="rgb(229,112,126)" />
+          <rect x="110" y="14" width="110" height="22" fill="rgb(139,147,165)" />
+          <rect x="220" y="14" width="100" height="22" fill="rgb(83,194,139)" />
+          <text x="60" y="29" textAnchor="middle" className="c-small">Hostile</text>
+          <text x="165" y="29" textAnchor="middle" className="c-small">Neutral</text>
+          <text x="270" y="29" textAnchor="middle" className="c-small">Allied</text>
+          <line x1="165" y1="40" x2="165" y2="50" className="c-line" />
+          <text x="165" y="62" textAnchor="middle" className="c-small">start</text>
+          <path d="M175 46 Q 205 56 235 44" fill="none" className="c-line" strokeDasharray="3 2" />
+          <text x="245" y="62" className="c-small">+ action</text>
+          <text x="10" y="10" className="c-small">-100</text>
+          <text x="300" y="10" className="c-small">100</text>
+        </svg>
+      )
+    case 'pressureBars':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="Three stacked bars growing from Easy to Hard, split into combat, survival and economy">
+          {[
+            ['Easy', [40, 30, 20], '28'],
+            ['Medium', [70, 55, 35], '51'],
+            ['Hard', [95, 80, 50], '74'],
+          ].map(([label, parts, score], i) => {
+            let x = 60
+            return (
+              <g key={label as string}>
+                <text x="10" y={20 + i * 24} className="c-small">{label}</text>
+                {(parts as number[]).map((w, k) => {
+                  const r = <rect key={k} x={x} y={10 + i * 24} width={w} height="14" fill={['#f97b4f', '#53c28b', '#f2c94c'][k]} />
+                  x += w
+                  return r
+                })}
+                <text x="300" y={21 + i * 24} className="c-small">{score}</text>
+              </g>
+            )
+          })}
+        </svg>
+      )
     case 'abilityTimeline':
       return (
         <svg viewBox="0 0 320 70" className="concept-svg" role="img" aria-label="Spend cost, cast time, effect, then cooldown">

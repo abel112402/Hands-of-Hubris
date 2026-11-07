@@ -10,12 +10,16 @@ import { OPEN_QUESTIONS_GUIDE } from './openQuestions'
 import { VISION_GUIDE } from './vision'
 import { ROADMAP_GUIDE } from './roadmap'
 import { CORE_LOOP_GUIDE } from './coreLoop'
+import { DIFFICULTY_GUIDE } from './difficulty'
+import { DIPLOMACY_GUIDE } from './diplomacy'
 
 /** Guides per module. A module without an entry shows no Guide tab, map or examples. */
 export const GUIDES: Record<string, ModuleGuide> = {
   'overview.vision': VISION_GUIDE,
   'overview.roadmap': ROADMAP_GUIDE,
   'design.coreLoop': CORE_LOOP_GUIDE,
+  'design.difficulty': DIFFICULTY_GUIDE,
+  'design.factions': DIPLOMACY_GUIDE,
   'design.player': PLAYER_GUIDE,
   'design.items': ITEMS_GUIDE,
   'design.combat': COMBAT_GUIDE,
