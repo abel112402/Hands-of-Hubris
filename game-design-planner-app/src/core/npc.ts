@@ -233,3 +233,181 @@ export function scenarioShortfalls(project: Project) {
     .map((s) => ({ scenario: s, short: needsBalance(project, s).rows.filter((r) => r.short) }))
     .filter((x) => x.short.length > 0)
 }
+
+// ---- Visual-editor helpers (planning estimates, not simulations) ----
+
+export type ShareRow = { archetype: Entity; share: number }
+/** Archetypes with a population share, plus what is left to 100% (negative when over). */
+export function populationMix(project: Project): { rows: ShareRow[]; unset: Entity[]; total: number; remainder: number } {
+  const all = npcList(project, 'archetypes')
+  const rows = all.filter((a) => isNum(a.share) && a.share > 0).map((a) => ({ archetype: a, share: a.share as number }))
+  const total = rows.reduce((s, r) => s + r.share, 0)
+  return { rows, unset: all.filter((a) => !isNum(a.share)), total, remainder: 100 - total }
+}
+
+export type LifespanRow = {
+  stage: Entity
+  from: number
+  to: number
+  canWork: boolean
+  needModifier: number
+  statModifiers: Record<string, number>
+  overlaps: boolean
+  gapBefore: boolean
+}
+
+/** Life stages along the age axis with their modifiers, and how much of a lifetime is working age. */
+export function lifespan(project: Project) {
+  const scale = ageScale(project)
+  const a = stageAnalysis(project)
+  const byId = new Map(npcList(project, 'lifeStages').map((s) => [s.id, s]))
+  const rows: LifespanRow[] = a.rows.map((r) => {
+    const stage = byId.get(r.id)!
+    return {
+      stage,
+      from: r.from,
+      to: Math.min(r.to, scale[1]),
+      canWork: stage.canWork === true,
+      needModifier: isNum(stage.needModifier) ? stage.needModifier : 0,
+      statModifiers: Object.fromEntries(Object.entries(asMap(stage.statModifiers)).filter(([, v]) => isNum(v))),
+      overlaps: r.overlaps,
+      gapBefore: r.gapBefore,
+    }
+  })
+  const span = scale[1] - scale[0]
+  const workSpan = rows.filter((r) => r.canWork).reduce((s, r) => s + Math.max(0, r.to - r.from + 1), 0)
+  return { scale, rows, unset: a.unset, problems: rangeProblems(a), workShare: span > 0 ? Math.min(1, workSpan / (span + 1)) : 0 }
+}
+
+export type NeedChainRow = {
+  needId: string
+  label: string
+  rule?: Entity
+  /** Units (or places) per day for 100 NPCs of the share-weighted population mix; null without shares. */
+  per100: number | null
+  supply: string[]
+  supplyKind: 'resource' | 'buildings' | 'none'
+  graceDays: number | null
+  consequence: string
+  moraleImpact: number | null
+  status: 'ok' | 'noRule' | 'noSupply' | 'noConsequence'
+}
+
+/** Each need from demand through supply to the consequence when it goes unmet. */
+export function needChains(project: Project): NeedChainRow[] {
+  const rules = npcList(project, 'needRules')
+  const mix = populationMix(project)
+  const resources = new Map(catalogItems(project, 'resources').map((r) => [r.id, r.label]))
+  const buildings = new Map(townBuildings(project).map((b) => [b.id, String(b.name ?? b.id)]))
+  const needs = catalogItems(project, 'needs')
+  const ids = [...new Set([...needs.map((n) => n.id), ...rules.map((r) => r.need).filter(Boolean)])]
+  return ids.map((needId): NeedChainRow => {
+    const rule = rules.find((r) => r.need === needId)
+    const per100 =
+      mix.total > 0
+        ? mix.rows.reduce((s, r) => {
+            const q = asMap(r.archetype.needs)[needId]
+            return s + (r.share / mix.total) * 100 * (isNum(q) ? q : 0)
+          }, 0)
+        : null
+    const resource = rule && !blank(rule.resource) ? [resources.get(rule.resource) ?? String(rule.resource)] : []
+    const blds: string[] = rule && Array.isArray(rule.buildings) ? rule.buildings.map((id: string) => buildings.get(id) ?? id) : []
+    const supplyKind = resource.length ? 'resource' : blds.length ? 'buildings' : 'none'
+    const consequence = rule && !blank(rule.consequence) ? String(rule.consequence) : ''
+    return {
+      needId,
+      label: needs.find((n) => n.id === needId)?.label ?? needId,
+      rule,
+      per100,
+      supply: resource.length ? resource : blds,
+      supplyKind,
+      graceDays: rule && isNum(rule.graceDays) ? rule.graceDays : null,
+      consequence,
+      moraleImpact: rule && isNum(rule.moraleImpact) ? rule.moraleImpact : null,
+      status: !rule ? 'noRule' : supplyKind === 'none' ? 'noSupply' : !consequence ? 'noConsequence' : 'ok',
+    }
+  })
+}
+
+export type FlowNode = { id: string; label: string; column: 0 | 1 | 2 | 3; entityId?: string; missing?: boolean }
+export type FlowLink = { from: string; to: string; mismatch?: boolean }
+
+/** Archetype → profession → job → Town building; links to a building that does not employ the job’s profession are marked. */
+export function workforceFlow(project: Project): { nodes: FlowNode[]; links: FlowLink[]; jobless: CatalogItem[]; unplaced: Entity[] } {
+  const archetypes = npcList(project, 'archetypes')
+  const jobs = npcList(project, 'jobs')
+  const profs = new Map(catalogItems(project, 'professions').map((p) => [p.id, p.label]))
+  const buildings = new Map(townBuildings(project).map((b) => [b.id, b]))
+  const mismatch = new Set(jobBuildingMismatches(project).map((m) => `${m.job.id}|${m.building.id}`))
+  const nodes = new Map<string, FlowNode>()
+  const links: FlowLink[] = []
+  const add = (n: FlowNode) => {
+    if (!nodes.has(n.id)) nodes.set(n.id, n)
+  }
+  const prof = (id: string) => add({ id: `p:${id}`, label: profs.get(id) ?? id, column: 1, missing: !profs.has(id) })
+  for (const a of archetypes) {
+    add({ id: `a:${a.id}`, label: String(a.name || '(unnamed)'), column: 0, entityId: a.id })
+    if (a.profession) {
+      prof(a.profession)
+      links.push({ from: `a:${a.id}`, to: `p:${a.profession}` })
+    }
+  }
+  for (const j of jobs) {
+    add({ id: `j:${j.id}`, label: String(j.name || '(unnamed)'), column: 2, entityId: j.id })
+    if (j.profession) {
+      prof(j.profession)
+      links.push({ from: `p:${j.profession}`, to: `j:${j.id}` })
+    }
+    for (const bid of Array.isArray(j.buildings) ? (j.buildings as string[]) : []) {
+      add({ id: `b:${bid}`, label: String(buildings.get(bid)?.name ?? bid), column: 3, missing: !buildings.has(bid) })
+      links.push({ from: `j:${j.id}`, to: `b:${bid}`, mismatch: mismatch.has(`${j.id}|${bid}`) })
+    }
+  }
+  return { nodes: [...nodes.values()], links, jobless: professionsWithoutJob(project), unplaced: jobs.filter((j) => !(Array.isArray(j.buildings) && j.buildings.length)) }
+}
+
+/** The routine matrix as one strip per profession: the activity at each time of day. */
+export function routineStrips(project: Project) {
+  const cells: Record<string, unknown> = data(project).routine?.cells ?? {}
+  const times = catalogItems(project, 'timeOfDay')
+  return {
+    times,
+    rows: catalogItems(project, 'professions').map((p) => ({
+      profession: p,
+      slots: times.map((t) => {
+        const v = cells[`${p.id}|${t.id}`]
+        return typeof v === 'string' ? v : ''
+      }),
+    })),
+  }
+}
+
+/** Relationship levels on the affinity scale with the bonds they unlock. */
+export function bondLadder(project: Project) {
+  const scale = relationScale(project)
+  const a = relationLevelAnalysis(project)
+  const rel = data(project).relationships ?? {}
+  const bonds = npcList(project, 'bonds')
+  const levels = a.rows.map((r) => ({ ...r, to: Math.min(r.to, scale[1]), bonds: bonds.filter((b) => b.requiresLevel === r.id) }))
+  const placed = new Set(levels.flatMap((l) => l.bonds.map((b) => b.id)))
+  return { scale, start: isNum(rel.start) ? (rel.start as number) : null, levels, loose: bonds.filter((b) => !placed.has(b.id)), problems: rangeProblems(a) }
+}
+
+const PERIOD_DAYS: Record<string, number> = { day: 1, week: 7 }
+export type EventOddsRow = { event: Entity; perYear: number | null; capped: boolean; category: string }
+
+/**
+ * Expected occurrences per in-game year for one eligible roll: chance × rolls per year, capped by the cooldown.
+ * Season rolls use the given season count; “once” events have no yearly rate.
+ */
+export function eventOdds(project: Project, daysPerYear: number, seasons: number): EventOddsRow[] {
+  return npcList(project, 'events').map((event) => {
+    const category = String(event.category || 'Other')
+    if (!isNum(event.chance) || event.period === 'once') return { event, perYear: null, capped: false, category }
+    const period = String(event.period || 'day')
+    const rolls = period === 'year' ? 1 : period === 'season' ? seasons : daysPerYear / (PERIOD_DAYS[period] ?? 1)
+    const raw = (event.chance / 100) * rolls
+    const cap = isNum(event.cooldown) && event.cooldown > 0 ? daysPerYear / event.cooldown : Infinity
+    return { event, perYear: Math.min(raw, cap), capped: raw > cap, category }
+  })
+}

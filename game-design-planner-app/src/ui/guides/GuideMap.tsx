@@ -50,9 +50,22 @@ export function GuideMap({ docId, map, current, onNavigate }: { docId: string; m
     onNavigate?.()
     nav(n.section ? `/doc/${docId}?s=${n.section}` : `/doc/${n.doc}`)
   }
+  // Tight bounding box of the nodes (plus room for badges), so the layout is centred whatever the stored canvas size.
+  const PAD = 16
+  const minX = Math.min(...map.nodes.map((n) => n.x)) - PAD
+  const minY = Math.min(...map.nodes.map((n) => n.y)) - PAD
+  const boxW = Math.max(...map.nodes.map((n) => n.x + W)) + PAD - minX
+  const boxH = Math.max(...map.nodes.map((n) => n.y + H)) + PAD - minY
+  // Roughly constant on-screen scale: small maps are enlarged (up to 1.6x), big ones stay at 1x; max-width:100% shrinks to fit.
+  const scale = Math.min(1.6, Math.max(1, 560 / boxW))
   return (
     <div className="guide-map">
-      <svg viewBox={`0 0 ${map.width} ${map.height}`} role="group" aria-label="System map">
+      <svg
+        viewBox={`${minX} ${minY} ${boxW} ${boxH}`}
+        style={{ width: Math.round(boxW * scale) }}
+        role="group"
+        aria-label="System map"
+      >
         <defs>
           <marker id="gm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" className="gm-arrowhead" />

@@ -68,10 +68,17 @@ function migrateOpenQuestions(data: Record<string, any>) {
   }
 }
 
-/** v1 had a free-text entry requirement (kept as notes) and its exploration "map" text (now navigation). */
+const BIOME_ROLES = ['Starter', 'Early', 'Mid', 'Late', 'Final']
+
+/**
+ * v1 had a free-text entry requirement (kept as notes) and its exploration "map" text (now navigation).
+ * v3 only adds optional biome fields (level range, borders), so this idempotent pass serves v1 and v2 data alike;
+ * a border written as a single id is wrapped into a list.
+ */
 function migrateWorld(data: Record<string, any>) {
   for (const b of Array.isArray(data.biomes) ? data.biomes : []) {
     if (b.entryType === undefined && b.role === 'Starter') b.entryType = 'None'
+    if (typeof b.neighbors === 'string') b.neighbors = b.neighbors ? [b.neighbors] : []
   }
   const ex = data.exploration
   if (ex && typeof ex === 'object' && ex.navigation === undefined && ex.map) {
@@ -660,23 +667,27 @@ export const designModules = [
         'Biomes',
         'biome',
         [
-          f.enm('role', 'Role', ['Starter', 'Early', 'Mid', 'Late', 'Final']),
-          f.color('color', 'Color'),
-          f.long('atmosphere', 'Atmosphere and visuals'),
-          f.multi('resources', 'Resources', catalog('resources')),
-          f.long('hazards', 'Environmental hazards / corruption'),
-          f.enm('entryType', 'Entry condition', ['None', 'Story', 'Faction', 'Boss', 'Item']),
-          f.multi('entryQuests', 'Required quests', section('quests', 'design.story')),
-          f.multi('entryFactions', 'Required factions', FACTIONS),
-          f.multi('entryBosses', 'Required bosses', section('bosses', 'design.combat')),
-          f.long('entry', 'Entry notes'),
-          f.bool('optional', 'Optional / intentionally isolated'),
-          f.multi('enemies', 'Enemies', section('enemies', 'design.combat')),
-          f.multi('bosses', 'Bosses', section('bosses', 'design.combat')),
-          f.multi('garrisons', 'Outposts / garrisons', section('outposts')),
-          f.list('pois', 'Points of interest'),
+          f.enm('role', 'Role', BIOME_ROLES, { group: 'Identity', help: 'Where the biome sits in the campaign. The unlock path and threat curve order biomes by it.' }),
+          f.color('color', 'Color', { group: 'Identity', help: 'Fills the biome on the World atlas.' }),
+          f.num('levelMin', 'Player level from', { min: 1, group: 'Identity', help: 'Intended player level range on arrival; drawn as a band on the Threat curve.' }),
+          f.num('levelMax', 'Player level to', { min: 1, group: 'Identity' }),
+          f.multi('neighbors', 'Borders', BIOMES, { group: 'Identity', help: 'Biomes it touches on the map. The World atlas draws these links; setting one side is enough.' }),
+          f.long('atmosphere', 'Atmosphere and visuals', { group: 'Identity' }),
+          f.multi('resources', 'Resources', catalog('resources'), { group: 'Content' }),
+          f.long('hazards', 'Environmental hazards / corruption', { group: 'Content' }),
+          f.multi('enemies', 'Enemies', section('enemies', 'design.combat'), { group: 'Content', help: 'Combat enemies whose own Biome field points here count too.' }),
+          f.multi('bosses', 'Bosses', section('bosses', 'design.combat'), { group: 'Content' }),
+          f.multi('garrisons', 'Outposts / garrisons', section('outposts'), { group: 'Content' }),
+          f.list('pois', 'Points of interest', { group: 'Content' }),
+          f.enm('entryType', 'Entry condition', ['None', 'Story', 'Faction', 'Boss', 'Item'], { group: 'Entry' }),
+          f.multi('entryQuests', 'Required quests', section('quests', 'design.story'), { group: 'Entry', help: 'The unlock path draws an arrow from the biome where the quest takes place.' }),
+          f.multi('entryFactions', 'Required factions', FACTIONS, { group: 'Entry' }),
+          f.multi('entryBosses', 'Required bosses', section('bosses', 'design.combat'), { group: 'Entry', help: 'The unlock path draws an arrow from the biome where this boss lives.' }),
+          f.long('entry', 'Entry notes', { group: 'Entry' }),
+          f.bool('optional', 'Optional / intentionally isolated', { group: 'Entry' }),
         ],
-        [v.cards(), v.kanban('role'), v.table(['name', 'role', 'entryType', 'resources'])],
+        [v.biomeDossier(), v.worldAtlas(), v.unlockPath(), v.biomeThreat(), v.biomeCoverage(), v.cards(), v.kanban('role'), v.table(['name', 'role', 'levelMin', 'levelMax', 'entryType', 'resources'])],
+        { description: 'One sheet per biome (doc chapter 2). Start in the Dossier, then use Atlas, Unlock path, Threat and Coverage to see the world as a whole.' },
       ),
       s.graph('progression', 'Progression graph', ['Biome', 'Boss', 'Story event', 'Faction gate'], {
         nodeSource: BIOMES,
@@ -704,7 +715,7 @@ export const designModules = [
         [v.table(['name', 'biome', 'method', 'rewardRefs']), v.cards()],
       ),
     ]),
-    version: 2,
+    version: 3,
     migrate: migrateWorld,
   },
   {
@@ -736,7 +747,7 @@ export const designModules = [
         f.long('upgrades', 'Upgrade path (notes)'),
         f.long('unlockedBy', 'Unlocked by'),
       ],
-      [v.cards(), v.table(['name', 'category', 'status', 'function', 'count', 'capacity', 'workersRequired', 'inputs', 'outputs', 'cost']), v.economy()],
+      [v.cards(), v.table(['name', 'category', 'status', 'function', 'count', 'capacity', 'workersRequired', 'inputs', 'outputs', 'cost']), v.townFlow(), v.economy()],
       {
         seed: [
           { name: 'House', function: 'Housing for NPCs', capacity: 4, category: 'Housing' },
@@ -761,7 +772,7 @@ export const designModules = [
         f.enm('resupply', 'Resupply', ['Automatic', 'Manual', 'None']),
         f.long('rules', 'Storage rules'),
       ],
-      [v.table(['name', 'type', 'capacity', 'resupply']), v.cards()],
+      [v.table(['name', 'type', 'capacity', 'resupply']), v.cards(), v.townNetwork()],
       { description: 'Places that hold stock and that routes connect. Use them for settlements, depots, outposts or shops, whatever fits the game.' },
     ),
     s.graph('flow', 'Resource flow', ['Building', 'Resource', 'NPC role', 'Market', 'Player'], {
@@ -814,7 +825,7 @@ export const designModules = [
         f.long('restrictions', 'Restrictions (region, faction, event…)'),
         f.long('risks', 'Risks'),
       ],
-      [v.table(['name', 'fromBase', 'toBase', 'cargo', 'capacity', 'frequency', 'travelTime', 'risk']), v.cards()],
+      [v.table(['name', 'fromBase', 'toBase', 'cargo', 'capacity', 'frequency', 'travelTime', 'risk']), v.cards(), v.townNetwork()],
     ),
     s.collection(
       'morale',
@@ -890,7 +901,7 @@ export const designModules = [
           f.num('moraleImpact', 'Morale change per day unmet', { min: -100, max: 100, group: 'When unmet' }),
           f.long('notes', 'Notes'),
         ],
-        [v.table(['name', 'need', 'kind', 'resource', 'buildings', 'consequence']), v.cards()],
+        [v.npcNeedChain(), v.table(['name', 'need', 'kind', 'resource', 'buildings', 'consequence']), v.cards()],
       ),
       s.collection(
         'archetypes',
@@ -907,7 +918,7 @@ export const designModules = [
           f.multi('workplaces', 'Works in', section('buildings', 'design.town'), { group: 'Town' }),
           f.long('notes', 'Notes'),
         ],
-        [v.cards(), v.radar('stats', { section: 'overview', minField: 'statMin', maxField: 'statMax' }), v.table(['name', 'profession', 'share', 'faction', 'home'])],
+        [v.npcPopulation(), v.cards(), v.radar('stats', { section: 'overview', minField: 'statMin', maxField: 'statMax' }), v.table(['name', 'profession', 'share', 'faction', 'home'])],
         { description: 'Stats and needs come from catalogs: add a new stat in Definitions and it appears here, in the radar and in the stat preview.' },
       ),
       s.collection(
@@ -922,7 +933,7 @@ export const designModules = [
           f.num('needModifier', 'Need modifier (%)', { min: -100 }),
           f.long('notes', 'Notes'),
         ],
-        [v.table(['name', 'ageFrom', 'ageTo', 'canWork', 'needModifier']), v.ranges('ageFrom', 'ageTo', { section: 'overview', minField: 'ageMin', maxField: 'maxAge', fallback: [0, 100] })],
+        [v.npcLifespan(), v.table(['name', 'ageFrom', 'ageTo', 'canWork', 'needModifier']), v.ranges('ageFrom', 'ageTo', { section: 'overview', minField: 'ageMin', maxField: 'maxAge', fallback: [0, 100] })],
       ),
       s.graph('lifecycle', 'Life cycle state machine', ['Start', 'State', 'Event', 'End'], {
         nodeSource: section('lifeStages'),
@@ -944,7 +955,7 @@ export const designModules = [
           f.long('training', 'Training (school, apprenticeship)'),
           f.long('assignment', 'How NPCs get assigned'),
         ],
-        [v.table(['name', 'profession', 'buildings', 'keyStats', 'efficiency', 'wage']), v.cards()],
+        [v.npcWorkforce(), v.npcRoutine(), v.table(['name', 'profession', 'buildings', 'keyStats', 'efficiency', 'wage']), v.cards()],
       ),
       s.matrix('routine', 'Daily routine', catalog('professions'), catalog('timeOfDay'), { type: 'enum', options: ['Sleep', 'Work', 'Eat', 'Leisure', 'Socialize', 'Patrol', 'Travel', 'Train'] }, {
         description: 'What each profession does at each time of day. Rows and columns come from the “NPC professions” and “Times of day” catalogs.',
@@ -973,7 +984,7 @@ export const designModules = [
           f.bool('exclusive', 'Exclusive (only one at a time)'),
           f.long('effects', 'Effects'),
         ],
-        [v.table(), v.cards()],
+        [v.npcBondLadder(), v.table(), v.cards()],
         { description: 'Named relationships between two NPCs and what forming them requires.' },
       ),
       s.collection(
@@ -992,7 +1003,7 @@ export const designModules = [
           f.num('moraleEffect', 'Morale change', { min: -100, max: 100, group: 'Effect' }),
           f.long('effect', 'Other effects', { group: 'Effect' }),
         ],
-        [v.kanban('category'), v.table(['name', 'category', 'chance', 'period', 'cooldown', 'moraleEffect'])],
+        [v.npcEventOdds(), v.kanban('category'), v.table(['name', 'category', 'chance', 'period', 'cooldown', 'moraleEffect'])],
       ),
       s.form('equipmentRules', 'Equipment', [f.long('notes', 'Equipment rules', { help: 'Who equips NPCs, durability, upgrades.' })]),
       s.collection(

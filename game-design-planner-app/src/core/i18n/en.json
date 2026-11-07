@@ -386,7 +386,7 @@
     },
     "worldReach": {
       "title": "Biomes nothing unlocks",
-      "body": "{{count}} biome(s) are missing from the progression graph or have no incoming connection: {{names}}. Mark them optional if that is intended."
+      "body": "{{count}} biome(s) have no gate met in another biome and no incoming arrow in the progression graph: {{names}}. Link a boss or quest under Entry, or mark them optional if that is intended."
     },
     "worldEntry": {
       "title": "Biomes without an entry condition",
@@ -411,6 +411,14 @@
     "worldEnemies": {
       "title": "Biomes without enemies",
       "body": "{{count}} biome(s) list no enemies or bosses: {{names}}."
+    },
+    "worldLocked": {
+      "title": "Biomes that can never open",
+      "body": "{{count}} biome(s) need a quest or boss that is only met inside a biome the player can’t reach yet (or inside the biome itself): {{names}}. See the Unlock path view."
+    },
+    "worldLevels": {
+      "title": "Level ranges run backwards",
+      "body": "{{count}} biome(s) start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view."
     },
     "npcStatCoverage": {
       "title": "Stats without a rule",
@@ -463,6 +471,54 @@
     "npcEvents": {
       "title": "Events are incomplete",
       "body": "{{count}} event(s) lack a chance or any effect: {{names}}."
+    },
+    "npcNoWorkStage": {
+      "title": "No life stage can work",
+      "body": "None of the {{count}} life stage(s) is marked “Can work”, so no NPC ever joins the workforce. Check the Lifespan view."
+    },
+    "npcBondLevel": {
+      "title": "Bonds without a required level",
+      "body": "{{count}} bond(s) can form at any affinity: {{names}}. Pin them to a relationship level in the Bond ladder."
+    },
+    "npcEventFrequent": {
+      "title": "Very frequent events",
+      "body": "{{count}} event(s) fire more than once a week per eligible NPC: {{names}}. Lower the chance or add a cooldown."
+    },
+    "npcRoutineWork": {
+      "title": "Professions with no work time",
+      "body": "{{count}} profession(s) with a job have no “Work” slot in the daily routine: {{names}}."
+    },
+    "archUpward": {
+      "title": "Dependencies point up a layer",
+      "body": "{{count}} dependency(ies) go from a lower layer to a higher one: {{names}}. Use a channel, move the code down, or allow it under the layer’s “May also use”."
+    },
+    "archCycle": {
+      "title": "Modules depend on each other in a loop",
+      "body": "{{count}} cycle(s): {{names}}. Break one link with an event channel or an interface in a lower layer."
+    },
+    "archNoLayer": {
+      "title": "Modules without a layer",
+      "body": "{{count}} module(s) have no layer, so the layer rule cannot check them: {{names}}."
+    },
+    "archChannel": {
+      "title": "Channels with nobody on one side",
+      "body": "{{count}} channel(s) have no publisher or no listener: {{names}}."
+    },
+    "archUncovered": {
+      "title": "Content with no way in",
+      "body": "{{count}} Data-driven schema(s) have no extension point: {{names}}. Adding them needs a code change."
+    },
+    "archTickBudget": {
+      "title": "Simulation over its frame budget",
+      "body": "Average {{average}} ms per frame against a {{budget}} ms budget; the worst tick costs {{worst}} ms of a {{frame}} ms frame. Stagger systems, lower the tick rate or move work off the main thread."
+    },
+    "archBoot": {
+      "title": "Scene flow has gaps",
+      "body": "Scenes: {{names}}."
+    },
+    "archLegacy": {
+      "title": "Notes from the earlier version",
+      "body": "The upgrade moved free-text stack, communication, simulation and scene notes into “Notes from the earlier version”. Turn them into entries, then clear the field."
     },
     "npcBalance": {
       "title": "Town cannot meet the population's needs",

@@ -4,9 +4,11 @@ import { useStore } from '../src/core/store/store'
 import { PLAYER_DOC, levelCap, treeAnalysis } from '../src/core/player'
 import { GUIDES } from '../src/modules/guides'
 import { PLAYER_GUIDE } from '../src/modules/guides/player'
+import { TOWN_GUIDE } from '../src/modules/guides/town'
 import { applyExample, previewProject } from '../src/ui/guides/ExamplePicker'
 import { mapStates } from '../src/ui/guides/GuideMap'
 import { getModule, getSection } from '../src/core/modules/registry'
+import { estimateTown, TOWN_DOC } from '../src/core/town'
 
 const step = (id: string) => PLAYER_GUIDE.steps.find((s) => s.id === id)!
 const example = (id: string) => PLAYER_GUIDE.examples.find((e) => e.id === id)!
@@ -78,5 +80,34 @@ describe('guide content', () => {
     p.documents[PLAYER_DOC].data.survival[0].restore = 'Food'
     p.documents[PLAYER_DOC].data.survival[0].difficultyParam = p.documents['design.difficulty'].data.params.find((x: any) => x.category === 'Survival')?.id
     expect(mapStates(p, PLAYER_DOC, PLAYER_GUIDE.map).survival.state).toBe('done')
+  })
+
+  it('wires Town setup steps, visual example previews and links', () => {
+    const p = createProject('Town')
+    const mod = getModule(TOWN_DOC)!
+    const ids = [
+      ...TOWN_GUIDE.steps.map((s) => s.section),
+      ...TOWN_GUIDE.map.nodes.flatMap((n) => (n.section ? [n.section] : [])),
+      ...TOWN_GUIDE.examples.map((e) => e.section),
+      ...Object.keys(TOWN_GUIDE.concepts),
+      ...Object.keys(TOWN_GUIDE.empty),
+    ]
+    for (const id of ids) expect(getSection(mod, p.registry, id), id).toBeTruthy()
+    for (const node of TOWN_GUIDE.map.nodes) if (node.doc) expect(getModule(node.doc), node.doc).toBeTruthy()
+    for (const edge of TOWN_GUIDE.map.edges)
+      expect(TOWN_GUIDE.map.nodes.some((n) => n.id === edge.from) && TOWN_GUIDE.map.nodes.some((n) => n.id === edge.to)).toBe(true)
+    expect(Object.keys(GUIDES)).toContain(TOWN_DOC)
+
+    const buildings = TOWN_GUIDE.examples.find((e) => e.id === 'town-production-chain')!
+    const originalBuildingCount = p.documents[TOWN_DOC].data.buildings.length
+    const flowPreview = previewProject(p, buildings)
+    expect(p.documents[TOWN_DOC].data.buildings).toHaveLength(originalBuildingCount)
+    expect(flowPreview.documents[TOWN_DOC].data.buildings).toHaveLength(originalBuildingCount + 3)
+    expect(estimateTown(flowPreview).resources.some((r) => r.label === 'Planks')).toBe(true)
+
+    const route = TOWN_GUIDE.examples.find((e) => e.id === 'town-supply-route')!
+    const routePreview = previewProject(p, route)
+    expect(routePreview.documents[TOWN_DOC].data.bases).toHaveLength(2)
+    expect(estimateTown(routePreview).routes).toHaveLength(1)
   })
 })

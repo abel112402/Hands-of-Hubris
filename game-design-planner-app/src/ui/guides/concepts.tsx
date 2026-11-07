@@ -563,6 +563,34 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="165" y="80" textAnchor="middle" className="c-small">one-sided</text>
         </svg>
       )
+    case 'unlockWaves':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Three columns: a starter biome open at the start, two biomes opened in wave 1 by a boss and a quest in the starter, and a final biome opened in wave 2">
+          {[['start', 10], ['wave 1', 120], ['wave 2', 230]].map(([t, x]) => <text key={t} x={Number(x) + 45} y="10" textAnchor="middle" className="c-small">{t}</text>)}
+          <rect x="10" y="38" width="90" height="24" rx="5" className="c-box" /><text x="55" y="54" textAnchor="middle" className="c-small">Meadow</text>
+          <rect x="120" y="18" width="90" height="24" rx="5" className="c-box" /><text x="165" y="34" textAnchor="middle" className="c-small">Swamp</text>
+          <rect x="120" y="62" width="90" height="24" rx="5" className="c-box" /><text x="165" y="78" textAnchor="middle" className="c-small">Hills</text>
+          <rect x="230" y="38" width="90" height="24" rx="5" className="c-accent" /><text x="275" y="54" textAnchor="middle" className="c-small">Spire</text>
+          <path d="M100 46 C110 46 110 30 120 30" className="c-arrow" /><text x="104" y="26" className="c-small">boss</text>
+          <path d="M100 54 C110 54 110 74 120 74" className="c-arrow" /><text x="102" y="92" className="c-small">quest</text>
+          <path d="M210 30 C220 30 220 46 230 46" className="c-arrow" />
+          <path d="M210 74 C220 74 220 54 230 54" className="c-arrow" />
+        </svg>
+      )
+    case 'atlasLayers':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Three map layers stacked: biome zones, then borders and unlock arrows, then capitals and outposts">
+          <rect x="10" y="12" width="96" height="70" rx="8" className="c-box" />
+          <rect x="18" y="20" width="44" height="54" rx="6" className="c-accent" /><rect x="64" y="20" width="34" height="54" rx="6" className="c-danger-band" />
+          <text x="58" y="94" textAnchor="middle" className="c-small">zones</text>
+          <rect x="117" y="12" width="96" height="70" rx="8" className="c-box" />
+          <line x1="145" y1="47" x2="190" y2="47" className="c-arrow" strokeDasharray="2 4" /><path d="M140 70 Q165 25 195 40" className="c-line" />
+          <text x="165" y="94" textAnchor="middle" className="c-small">borders + unlocks</text>
+          <rect x="224" y="12" width="96" height="70" rx="8" className="c-box" />
+          <text x="250" y="45" className="c-small">★ capital</text><text x="250" y="65" className="c-small">⚑ outpost</text>
+          <text x="272" y="94" textAnchor="middle" className="c-small">markers</text>
+        </svg>
+      )
     case 'repScale':
       return (
         <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="A scale from -100 to 100 split into Hostile, Neutral and Allied, with the start marker at 0 and an action pushing the value across a boundary">
@@ -601,6 +629,199 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
               </g>
             )
           })}
+        </svg>
+      )
+    case 'shareMix':
+      return (
+        <svg viewBox="0 0 330 70" className="concept-svg" role="img" aria-label="A bar split into Farmer 40%, Builder 30%, Innkeeper 15% and Merchant 15%, adding up to 100%">
+          {[
+            ['Farmer 40%', 0, 132, '#4f9cf9'],
+            ['Builder 30%', 132, 99, '#53c28b'],
+            ['Inn 15%', 231, 49.5, '#f2c94c'],
+            ['Trade 15%', 280.5, 49.5, '#f97b4f'],
+          ].map(([t, x, w, c]) => (
+            <g key={t as string}>
+              <rect x={x as number} y="14" width={w as number} height="24" fill={c as string} />
+              <text x={(x as number) + (w as number) / 2} y="30" textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <text x="0" y="56" className="c-small">0%</text>
+          <text x="305" y="56" className="c-small">100%</text>
+          <text x="165" y="56" textAnchor="middle" className="c-small">shares = spawn weights</text>
+        </svg>
+      )
+    case 'needChain':
+      return (
+        <svg viewBox="0 0 340 70" className="concept-svg" role="img" aria-label="Demand per day, then supply from a resource or building, then a grace period, then the consequence">
+          {[
+            ['demand / day', 'c-box'],
+            ['supply', 'c-box'],
+            ['grace days', 'c-danger-band'],
+            ['consequence', 'c-accent'],
+          ].map(([t, cls], i) => (
+            <g key={t} transform={`translate(${i * 84},18)`}>
+              <rect width="74" height="30" rx="5" className={cls} />
+              <text x="37" y="19" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M74,15 L84,15" className="c-arrow" />}
+            </g>
+          ))}
+          <text x="126" y="64" textAnchor="middle" className="c-small">📦 stock or 🏠 places</text>
+        </svg>
+      )
+    case 'lifespanBands':
+      return (
+        <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="An age axis from 0 to the maximum age covered by Child, Adult and Elder bands; only Adult is marked as working age">
+          <rect x="10" y="12" width="60" height="24" fill="#4f9cf9" /><text x="40" y="28" textAnchor="middle" className="c-small">Child</text>
+          <rect x="70" y="12" width="160" height="24" fill="#53c28b" /><text x="150" y="28" textAnchor="middle" className="c-small">Adult</text>
+          <rect x="230" y="12" width="90" height="24" fill="#f2c94c" /><text x="275" y="28" textAnchor="middle" className="c-small">Elder</text>
+          <rect x="70" y="40" width="160" height="10" className="c-accent" />
+          <text x="150" y="64" textAnchor="middle" className="c-small">working age</text>
+          <text x="10" y="64" className="c-small">0</text>
+          <text x="300" y="64" className="c-small">max</text>
+        </svg>
+      )
+    case 'workforceFlow':
+      return (
+        <svg viewBox="0 0 340 84" className="concept-svg" role="img" aria-label="Archetype to profession to job to building, with one link to a wrong building shown dashed red">
+          {['Archetype', 'Profession', 'Job', 'Building'].map((t, i) => (
+            <g key={t} transform={`translate(${i * 86},14)`}>
+              <rect width="70" height="24" rx="5" className="c-box" />
+              <text x="35" y="16" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M70,12 L86,12" className="c-arrow" />}
+            </g>
+          ))}
+          <rect x="258" y="50" width="70" height="24" rx="5" className="c-box" />
+          <text x="293" y="66" textAnchor="middle" className="c-small">Wrong shop</text>
+          <path d="M242,26 C252,26 248,62 258,62" fill="none" stroke="rgb(229,112,126)" strokeDasharray="4 3" strokeWidth="2" />
+        </svg>
+      )
+    case 'affinityLadder':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="An affinity scale with bands from Enemy to Close; Friendship sits on Friend and Marriage on Close">
+          {[
+            ['Enemy', 10, 70, 'rgb(229,112,126)'],
+            ['Neutral', 80, 110, 'rgb(139,147,165)'],
+            ['Friend', 190, 70, 'rgb(120,200,150)'],
+            ['Close', 260, 60, 'rgb(83,194,139)'],
+          ].map(([t, x, w, c]) => (
+            <g key={t as string}>
+              <rect x={x as number} y="10" width={w as number} height="22" fill={c as string} />
+              <text x={(x as number) + (w as number) / 2} y="25" textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <line x1="198" y1="32" x2="198" y2="48" className="c-line" />
+          <rect x="190" y="48" width="66" height="18" rx="9" className="c-box" /><text x="223" y="61" textAnchor="middle" className="c-small">Friendship</text>
+          <line x1="268" y1="32" x2="268" y2="48" className="c-line" />
+          <rect x="262" y="48" width="62" height="18" rx="9" className="c-accent" /><text x="293" y="61" textAnchor="middle" className="c-small">♥ Marriage</text>
+          <text x="10" y="80" className="c-small">−100</text>
+          <text x="300" y="80" className="c-small">100</text>
+        </svg>
+      )
+    case 'eventOdds':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="Bars of events per year: a daily 2% chance about 7 per year, capped at 12 by a 30-day cooldown for a 5% chance, and a seasonal 25% chance once a year">
+          {[
+            ['2% / day', 7, false],
+            ['5% / day, 30d cd', 12, true],
+            ['25% / season', 1, false],
+          ].map(([t, n, cap], i) => (
+            <g key={t as string}>
+              <text x="10" y={20 + i * 22} className="c-small">{t}</text>
+              <rect x="120" y={10 + i * 22} width={(n as number) * 14} height="14" className={cap ? 'c-danger-band' : 'c-accent'} />
+              <text x={126 + (n as number) * 14} y={21 + i * 22} className="c-small">≈ {n as number}/yr{cap ? ' (capped)' : ''}</text>
+            </g>
+          ))}
+        </svg>
+      )
+    case 'layerRule':
+      return (
+        <svg viewBox="0 0 330 104" className="concept-svg" role="img" aria-label="Three layers stacked UI, Gameplay, Core; green arrows point down, a red crossed arrow points up from Core to UI">
+          {[['UI', 8], ['Gameplay', 40], ['Core', 72]].map(([t, y]) => (
+            <g key={t as string}>
+              <rect x="10" y={y as number} width="200" height="24" rx="5" className="c-box" />
+              <text x="20" y={(y as number) + 16} className="c-small">{t}</text>
+            </g>
+          ))}
+          <path d="M110,32 L110,40" className="c-arrow" />
+          <path d="M140,64 L140,72" className="c-arrow" />
+          <path d="M185,72 C230,60 230,30 205,22" fill="none" stroke="rgb(229,112,126)" strokeWidth="2" />
+          <text x="232" y="50" className="c-small">✗ upward</text>
+          <text x="232" y="94" className="c-small">✓ down only</text>
+        </svg>
+      )
+    case 'dsmGrid':
+      return (
+        <svg viewBox="0 0 330 104" className="concept-svg" role="img" aria-label="A 3 by 3 grid: UI uses Gameplay and Core, Gameplay uses Core, and one red cell where Core uses UI">
+          {['UI', 'Game', 'Core'].map((t, i) => (
+            <g key={t}>
+              <text x={60 + i * 40} y="12" textAnchor="middle" className="c-small">{t}</text>
+              <text x="10" y={34 + i * 26} className="c-small">{t}</text>
+            </g>
+          ))}
+          {[0, 1, 2].flatMap((r) =>
+            [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={42 + c * 40} y={18 + r * 26} width="36" height="22" className={r === c ? 'c-danger-band' : 'c-box'} opacity={r === c ? 0.3 : 1} />),
+          )}
+          {[[0, 1], [0, 2], [1, 2]].map(([r, c]) => <text key={`${r}${c}`} x={60 + c * 40} y={34 + r * 26} textAnchor="middle" className="c-small">●</text>)}
+          <rect x="42" y="70" width="36" height="22" fill="rgb(229,112,126)" />
+          <text x="60" y="86" textAnchor="middle" className="c-small">●</text>
+          <text x="180" y="40" className="c-small">row uses column</text>
+          <text x="180" y="86" className="c-small">red: Core → UI is upward</text>
+        </svg>
+      )
+    case 'pubSub':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="Npc publishes NeedChanged on a channel; HUD and Town listen">
+          <rect x="10" y="30" width="70" height="24" rx="5" className="c-box" /><text x="45" y="46" textAnchor="middle" className="c-small">Npc</text>
+          <rect x="120" y="30" width="96" height="24" rx="12" className="c-accent" /><text x="168" y="46" textAnchor="middle" className="c-small">NeedChanged</text>
+          <rect x="250" y="10" width="70" height="24" rx="5" className="c-box" /><text x="285" y="26" textAnchor="middle" className="c-small">HUD</text>
+          <rect x="250" y="50" width="70" height="24" rx="5" className="c-box" /><text x="285" y="66" textAnchor="middle" className="c-small">Town</text>
+          <path d="M80,42 L120,42" className="c-arrow" />
+          <path d="M216,42 L250,22" className="c-arrow" />
+          <path d="M216,42 L250,62" className="c-arrow" />
+          <text x="100" y="80" className="c-small">publisher and listeners never reference each other</text>
+        </svg>
+      )
+    case 'extensionPlug':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="New item assets plug into the content registry in Core.Data without code changes">
+          {['Sword.asset', 'Bread.asset', 'Mill.asset'].map((t, i) => (
+            <g key={t}>
+              <rect x="10" y={6 + i * 24} width="80" height="20" rx="4" className="c-box" />
+              <text x="50" y={20 + i * 24} textAnchor="middle" className="c-small">{t}</text>
+              <path d={`M90,${16 + i * 24} L150,40`} className="c-arrow" />
+            </g>
+          ))}
+          <rect x="150" y="26" width="96" height="28" rx="6" className="c-accent" />
+          <text x="198" y="44" textAnchor="middle" className="c-small">registry</text>
+          <path d="M246,40 L270,40" className="c-arrow" />
+          <text x="274" y="44" className="c-small">game</text>
+          <text x="150" y="72" className="c-small">no code change</text>
+        </svg>
+      )
+    case 'tickBudget':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Ten tick bars; the first bar is tall because every system runs on it and it crosses the dashed budget line; the others stay under">
+          {Array.from({ length: 10 }, (_, i) => {
+            const h = i === 0 ? 62 : i % 5 === 0 ? 40 : i % 2 === 0 ? 30 : 18
+            return <rect key={i} x={20 + i * 28} y={80 - h} width="20" height={h} className={i === 0 ? 'c-danger-band' : 'c-accent'} />
+          })}
+          <line x1="14" y1="34" x2="300" y2="34" stroke="rgb(229,112,126)" strokeDasharray="4 3" />
+          <text x="230" y="28" className="c-small">budget / frame</text>
+          <text x="20" y="94" className="c-small">tick 0: everything at once</text>
+        </svg>
+      )
+    case 'bootChain':
+      return (
+        <svg viewBox="0 0 340 74" className="concept-svg" role="img" aria-label="Bootstrap, then Persistent, then Main menu, then World with an additive HUD on top">
+          {[['Bootstrap', 'c-accent'], ['Persistent', 'c-box'], ['Main menu', 'c-box'], ['World', 'c-box']].map(([t, cls], i) => (
+            <g key={t} transform={`translate(${i * 84},30)`}>
+              <rect width="72" height="26" rx="5" className={cls} />
+              <text x="36" y="17" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M72,13 L84,13" className="c-arrow" />}
+            </g>
+          ))}
+          <rect x="252" y="4" width="72" height="20" rx="5" className="c-box" strokeDasharray="3 2" />
+          <text x="288" y="18" textAnchor="middle" className="c-small">+ HUD</text>
         </svg>
       )
     case 'abilityTimeline':

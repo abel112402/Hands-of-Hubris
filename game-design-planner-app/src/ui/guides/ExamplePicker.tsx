@@ -11,14 +11,19 @@ import { comparedLevels, depletion, levelTable, playerList, treeAnalysis } from 
 import { useStore } from '../../core/store/store'
 import { itemList, lootOdds, multiplier, rawCost } from '../../core/items'
 import { combatList, damageFormula, damagePerHit, phaseCoverage, threat } from '../../core/combat'
-import { biomeWeather, dayCoverage, eventCalendar, seasonYear, timeList } from '../../core/timeWeather'
+import { biomeWeather, dayCoverage, eventCalendar, seasonYear, timeList, yearLength } from '../../core/timeWeather'
 import { ClockDial } from '../editors/timeWeatherViews'
 import { moneyFlow, priceOf, reputationLevels, tradeList, wanderingOdds } from '../../core/trade'
 import { actPacing, endingReachability, storyList } from '../../core/story'
 import { QuestFlowCanvas } from '../editors/storyViews'
+import { AtlasPreview } from '../editors/worldViews'
 import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, screensOf, uiList } from '../../core/ui'
 import { TreeCanvas } from '../editors/playerViews'
 import { questionList } from '../../core/openQuestions'
+import { estimateTown, TOWN_DOC } from '../../core/town'
+import { bondLadder, eventOdds, lifespan, needChains, NPC_DOC, populationMix, statScale } from '../../core/npc'
+import { NPC_COLORS, RadarSvg } from '../editors/npcViews'
+import { ARCH_DOC, archList, bootSequence, dependencies, dependencyCycles, extensionCoverage, layerOrder, messageFlow, nameOf, tickBudget } from '../../core/architecture'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
 
@@ -466,6 +471,172 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
     )
   }
   if (ex.preview === 'questFlow') return <QuestFlowCanvas project={project} />
+  if (ex.preview === 'worldAtlas') return <AtlasPreview project={project} />
+  if (ex.preview === 'townFlow') {
+    const estimate = estimateTown(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Resource</th><th>Produced / {estimate.timeUnit}</th><th>Consumed / {estimate.timeUnit}</th><th>Net</th></tr></thead>
+        <tbody>
+          {estimate.resources.map((resource) => (
+            <tr key={resource.id}><td>{resource.label}</td><td className="num">{fmt(resource.produced)}</td><td className="num">{fmt(resource.consumed)}</td><td className="num">{fmt(resource.net)}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'townNetwork') {
+    const estimate = estimateTown(project)
+    const bases = (project.documents[TOWN_DOC]?.data.bases ?? []) as Entity[]
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Route</th><th>From → to</th><th>Requested / capacity</th><th>Status</th></tr></thead>
+        <tbody>
+          {estimate.routes.map((route) => {
+            const source = bases.find((base) => base.id === project.documents[TOWN_DOC]?.data.routes?.find((item: Entity) => item.id === route.id)?.fromBase)
+            const target = bases.find((base) => base.id === project.documents[TOWN_DOC]?.data.routes?.find((item: Entity) => item.id === route.id)?.toBase)
+            return <tr key={route.id}><td>{route.name}</td><td>{source?.name ?? 'Missing base'} → {target?.name ?? 'Missing base'}</td><td className="num">{fmt(route.demand)} / {fmt(route.throughput)}</td><td>{route.overloaded ? 'Overloaded' : 'Within capacity'}</td></tr>
+          })}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcPopulation') {
+    const mix = populationMix(project)
+    const stats = project.registry.catalogs.npcStats?.items ?? []
+    const [lo, hi] = statScale(project)
+    return (
+      <div className="stack">
+        <div className="npc-sharebar">
+          {mix.rows.map((r, i) => <span key={r.archetype.id} className="npc-share" style={{ width: `${(r.share / Math.max(100, mix.total)) * 100}%`, background: NPC_COLORS[i % NPC_COLORS.length] }}>{r.archetype.name} {fmt(r.share)}%</span>)}
+        </div>
+        <div className="row">
+          {mix.rows.slice(-4).map((r, i) => (
+            <figure key={r.archetype.id} className="stack" style={{ margin: 0, alignItems: 'center' }}>
+              <RadarSvg axes={stats.map((s) => s.label)} series={[{ values: stats.map((s) => r.archetype.stats?.[s.id] ?? lo), color: NPC_COLORS[i % NPC_COLORS.length] }]} lo={lo} hi={hi} size={70} />
+              <figcaption className="muted">{r.archetype.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (ex.preview === 'npcLifespan') {
+    const l = lifespan(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Stage</th><th>Ages</th><th>Works</th><th>Needs</th></tr></thead>
+        <tbody>
+          {l.rows.map((r) => <tr key={r.stage.id}><td>{r.stage.name}</td><td className="num">{r.from}–{r.to}</td><td>{r.canWork ? 'yes' : 'no'}</td><td className="num">{r.needModifier > 0 ? '+' : ''}{r.needModifier}%</td></tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={4} className="muted">Working age {Math.round(l.workShare * 100)}% of a lifetime{l.problems.length ? ` · ${l.problems.join('; ')}` : ''}</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcNeeds') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Need</th><th>Satisfied by</th><th>Grace</th><th>When unmet</th></tr></thead>
+        <tbody>
+          {needChains(project).filter((r) => r.rule).map((r) => <tr key={r.needId}><td>{r.label}</td><td>{r.supply.join(', ') || '–'}</td><td className="num">{r.graceDays ?? '–'} d</td><td>{r.consequence || '–'}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcWorkforce') {
+    const jobs = (project.documents[NPC_DOC]?.data.jobs ?? []) as Entity[]
+    const profs = project.registry.catalogs.professions?.items ?? []
+    const buildings = (project.documents[TOWN_DOC]?.data.buildings ?? []) as Entity[]
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Job</th><th>Profession</th><th>Works in</th><th>Efficiency</th></tr></thead>
+        <tbody>
+          {jobs.map((j) => <tr key={j.id}><td>{j.name}</td><td>{profs.find((p) => p.id === j.profession)?.label ?? '–'}</td><td>{(j.buildings ?? []).map((id: string) => buildings.find((b) => b.id === id)?.name ?? id).join(', ') || 'no Town building yet'}</td><td><code>{j.efficiency}</code></td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcRelations') {
+    const b = bondLadder(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Level</th><th>Affinity</th><th>Bonds</th></tr></thead>
+        <tbody>
+          {b.levels.map((l) => <tr key={l.id}><td>{l.name}</td><td className="num">{l.from} … {l.to}</td><td>{l.bonds.map((x) => x.name).join(', ') || '–'}</td></tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={3} className="muted">Start {b.start ?? '–'}{b.problems.length ? ` · ${b.problems.join('; ')}` : ' · no gaps or overlaps'}</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcEvents') {
+    const rows = eventOdds(project, yearLength(project), seasonYear(project).ranges.length || 4)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Event</th><th>Chance</th><th>Per year</th></tr></thead>
+        <tbody>
+          {rows.map((r) => <tr key={r.event.id}><td>{r.event.name}</td><td>{r.event.chance}% / {r.event.period}</td><td className="num">{r.perYear === null ? 'one-off' : `≈ ${fmt(r.perYear)}${r.capped ? ' (cooldown cap)' : ''}`}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archStack') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Technology</th><th>Category</th><th>Version</th><th>Risk</th></tr></thead>
+        <tbody>{archList(project, 'stack').map((s) => <tr key={s.id}><td>{s.name}</td><td>{s.category}</td><td>{s.version ?? '–'}</td><td>{s.risk ?? '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archLayers') {
+    const mods = archList(project, 'modules')
+    const deps = dependencies(project)
+    const up = deps.filter((d) => d.issue === 'upward').length
+    const cycles = dependencyCycles(project).length
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Layer (top first)</th><th>Modules</th></tr></thead>
+        <tbody>{[...layerOrder(project)].reverse().map((l) => <tr key={l.id}><td>{l.name}</td><td>{mods.filter((m) => m.layer === l.id).map((m) => m.name).join(', ') || '–'}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={2} className="muted">{deps.length} dependencies · {up} upward · {cycles} cycle(s)</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'archMessages') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Publisher</th><th>Channel</th><th>Listeners</th></tr></thead>
+        <tbody>{messageFlow(project).map((r) => <tr key={r.channel.id}><td>{r.publishers.map(nameOf).join(', ') || '–'}</td><td>{r.channel.name} <span className="muted">({r.channel.kind})</span></td><td>{r.subscribers.map(nameOf).join(', ') || '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archCoverage') {
+    const cov = extensionCoverage(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Schema</th><th>Extension points</th></tr></thead>
+        <tbody>{cov.rows.map((r) => <tr key={r.schema.id}><td>{r.schema.name}</td><td>{r.points.map(nameOf).join(', ') || <span className="warn">no way in</span>}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'archTicks') {
+    const b = tickBudget(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>System</th><th>Every</th><th>ms / s</th></tr></thead>
+        <tbody>{b.rows.map((r) => <tr key={r.system.id}><td>{r.system.name}</td><td className="num">{r.every}</td><td className="num">{fmt(r.perSecond)}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={3} className="muted">Average {fmt(b.avgFrameMs)} of {fmt(b.budgetMs)} ms per frame (main thread) · worst tick {fmt(b.worstTickMs)} ms</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'archBoot') {
+    const boot = bootSequence(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Step</th><th>Scenes</th><th>Initialises</th><th>Seconds</th></tr></thead>
+        <tbody>{boot.steps.map((s, i) => <tr key={s.order}><td className="num">{i + 1}</td><td>{s.scenes.map(nameOf).join(', ')}</td><td>{s.modules.map(nameOf).join(', ') || '–'}</td><td className="num">{fmt(s.seconds)}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={4} className="muted">{project.documents[ARCH_DOC] ? `≈ ${fmt(boot.totalSeconds)} s to the last step` : ''}</td></tr></tfoot>
+      </table>
+    )
+  }
   if (ex.preview === 'endingPaths') {
     return (
       <table className="grid npc-preview">

@@ -348,7 +348,8 @@ describe('world & biomes v2', () => {
     const p = createProject('t')
     p.documents['design.world'] = { moduleVersion: 1, data: { biomes: [{ id: 'b', name: 'Home', role: 'Starter', entry: 'none' }], exploration: { map: 'fast travel', generation: 'hand' } } }
     const doc = ensureDocument(p, world, makeId)
-    expect(doc.moduleVersion).toBe(2)
+    // v3 (level range and borders) reuses the same migration, so v1 data lands straight on the current version.
+    expect(doc.moduleVersion).toBe(3)
     expect(doc.data.exploration.navigation).toBe('fast travel')
     expect(doc.data.biomes[0].entryType).toBe('None')
     expect(doc.data.biomes[0].entry).toBe('none')

@@ -386,7 +386,7 @@
     },
     "worldReach": {
       "title": "Biómok, amiket semmi nem old fel",
-      "body": "{{count}} biom hiányzik a haladási gráfból, vagy nincs bejövő kapcsolata: {{names}}. Jelöld választhatónak, ha ez szándékos."
+      "body": "{{count}} biomhoz nem vezet másik biomban teljesíthető feltétel, és a haladási gráfban sincs bejövő nyila: {{names}}. Köss be egy bosst vagy küldetést a Belépésnél, vagy jelöld választhatónak, ha ez szándékos."
     },
     "worldEntry": {
       "title": "Belépési feltétel nélküli biómok",
@@ -411,6 +411,14 @@
     "worldEnemies": {
       "title": "Ellenség nélküli biómok",
       "body": "{{count}} biomnál nincs ellenség vagy főellenség: {{names}}."
+    },
+    "worldLocked": {
+      "title": "Biómok, amelyek sosem nyílnak meg",
+      "body": "{{count}} biomhoz olyan küldetés vagy boss kell, amely csak egy még elérhetetlen biomban (vagy magában a biomban) található: {{names}}. Nézd meg a Feloldási út nézetet."
+    },
+    "worldLevels": {
+      "title": "Visszafelé haladó szintsávok",
+      "body": "{{count}} biom alacsonyabb játékosszinten kezdődik, mint egy korábbi szerepű biom: {{names}}. Nézd meg a Fenyegetés nézetet."
     },
     "npcStatCoverage": {
       "title": "Szabály nélküli statok",
@@ -463,6 +471,54 @@
     "npcEvents": {
       "title": "Hiányos események",
       "body": "{{count}} eseménynél hiányzik az esély vagy bármilyen hatás: {{names}}."
+    },
+    "npcNoWorkStage": {
+      "title": "Egyik életszakasz sem dolgozhat",
+      "body": "A(z) {{count}} életszakasz egyike sincs „Dolgozhat” jelöléssel, így egy NPC sem kerül a munkaerőbe. Nézd meg az Élettartam nézetet."
+    },
+    "npcBondLevel": {
+      "title": "Szint nélküli kötődések",
+      "body": "{{count}} kötődés bármilyen rokonszenvnél kialakulhat: {{names}}. Rendeld őket kapcsolati szinthez a Kötődési létrán."
+    },
+    "npcEventFrequent": {
+      "title": "Nagyon gyakori események",
+      "body": "{{count}} esemény hetente többször is bekövetkezik egy érintett NPC-nél: {{names}}. Csökkentsd az esélyt, vagy adj meg várakozási időt."
+    },
+    "npcRoutineWork": {
+      "title": "Munkaidő nélküli foglalkozások",
+      "body": "{{count}} munkával rendelkező foglalkozásnak nincs „Munka” idősávja a napirendben: {{names}}."
+    },
+    "archUpward": {
+      "title": "Felfelé mutató függőségek",
+      "body": "{{count}} függőség alacsonyabb rétegből magasabba mutat: {{names}}. Használj csatornát, vidd lejjebb a kódot, vagy engedélyezd a réteg „Használhatja még” mezőjében."
+    },
+    "archCycle": {
+      "title": "Körkörösen függő modulok",
+      "body": "{{count}} kör: {{names}}. Törj meg egy kapcsolatot eseménycsatornával vagy alacsonyabb rétegbeli interfésszel."
+    },
+    "archNoLayer": {
+      "title": "Réteg nélküli modulok",
+      "body": "{{count}} modulnak nincs rétege, így a rétegszabály nem ellenőrzi őket: {{names}}."
+    },
+    "archChannel": {
+      "title": "Félig üres csatornák",
+      "body": "{{count}} csatornának nincs küldője vagy hallgatója: {{names}}."
+    },
+    "archUncovered": {
+      "title": "Bővíthetetlen tartalom",
+      "body": "{{count}} adatséma nem bővíthető egyetlen bővítési ponton sem: {{names}}. Ezekhez kódmódosítás kell."
+    },
+    "archTickBudget": {
+      "title": "A szimuláció túllépi a képkocka-keretet",
+      "body": "Átlagosan {{average}} ms képkockánként {{budget}} ms keretből; a legrosszabb tick {{worst}} ms egy {{frame}} ms-os képkockából. Oszd szét a rendszereket, csökkentsd a tickrátát, vagy vidd le a fő szálról."
+    },
+    "archBoot": {
+      "title": "Hiányos jelenetfolyam",
+      "body": "Jelenetek: {{names}}."
+    },
+    "archLegacy": {
+      "title": "Jegyzetek a korábbi verzióból",
+      "body": "A frissítés a szabad szöveges stack-, kommunikációs, szimulációs és jelenetjegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket bejegyzésekké, majd ürítsd a mezőt."
     },
     "npcBalance": {
       "title": "A város nem fedezi a lakosság igényeit",

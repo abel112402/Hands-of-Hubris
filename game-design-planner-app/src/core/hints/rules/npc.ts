@@ -1,5 +1,9 @@
 import {
+  bondLadder,
+  eventOdds,
   formulaProblems,
+  lifespan,
+  routineStrips,
   incompleteEvents,
   jobBuildingMismatches,
   lifecycleIssues,
@@ -18,6 +22,7 @@ import {
   statsOutOfRange,
   statsWithoutRule,
 } from '../../npc'
+import { seasonYear, yearLength } from '../../timeWeather'
 import type { Hint, HintRule } from '../types'
 import { hintId, isDocEmpty, shortList } from '../util'
 
@@ -118,6 +123,27 @@ export const npcRules: HintRule[] = [
   active('npc.events', ({ project }) => {
     const rows = incompleteEvents(project)
     return rows.length ? [hint({ key: 'npcEvents', ruleId: 'npc.events', severity: 'info', sectionId: 'events', entityId: rows[0].id, params: { count: rows.length, names: names(rows) } })] : []
+  }),
+  active('npc.noWorkStage', ({ project }) => {
+    const l = lifespan(project)
+    return l.rows.length && !l.rows.some((r) => r.canWork) ? [hint({ key: 'npcNoWorkStage', ruleId: 'npc.noWorkStage', severity: 'suggest', sectionId: 'lifeStages', params: { count: l.rows.length } })] : []
+  }),
+  active('npc.bondLevel', ({ project }) => {
+    if (!npcList(project, 'relationLevels').length) return []
+    const loose = bondLadder(project).loose
+    return loose.length ? [hint({ key: 'npcBondLevel', ruleId: 'npc.bondLevel', severity: 'info', sectionId: 'bonds', entityId: loose[0].id, params: { count: loose.length, names: names(loose) } })] : []
+  }),
+  active('npc.eventFrequent', ({ project }) => {
+    const days = yearLength(project)
+    const rows = eventOdds(project, days, seasonYear(project).ranges.length || 4).filter((r) => r.perYear !== null && r.perYear > days / 7)
+    return rows.length ? [hint({ key: 'npcEventFrequent', ruleId: 'npc.eventFrequent', severity: 'info', sectionId: 'events', entityId: rows[0].event.id, params: { count: rows.length, names: names(rows.map((r) => r.event)) } })] : []
+  }),
+  active('npc.routineWork', ({ project }) => {
+    const strips = routineStrips(project)
+    if (!strips.rows.some((r) => r.slots.some(Boolean))) return []
+    const withJob = new Set(npcList(project, 'jobs').map((j) => j.profession).filter(Boolean))
+    const idle = strips.rows.filter((r) => withJob.has(r.profession.id) && !r.slots.includes('Work')).map((r) => r.profession)
+    return idle.length ? [hint({ key: 'npcRoutineWork', ruleId: 'npc.routineWork', severity: 'info', sectionId: 'routine', params: { count: idle.length, names: names(idle) } })] : []
   }),
   active('npc.balance', ({ project }) => {
     const short = scenarioShortfalls(project)
