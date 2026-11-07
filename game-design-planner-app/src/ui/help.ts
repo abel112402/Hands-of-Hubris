@@ -101,6 +101,8 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'For each need, say what satisfies it: a resource from the town stock or buildings that provide places. Population scenarios then compare daily needs with the Town estimate.',
       'The life cycle diagram needs a Start and an End. Tag states with life stages and link “on event” connections to the event that causes them.',
       'Archetype shares should add up to 100%; they also act as spawn weights for generation.',
+      'Visual tabs: Population (share bar and roster radars), Need chain, Lifespan, Workforce map and Day plan (under Work), Bond ladder and Event odds. Click a shape to open it in the inspector.',
+      'Open the Guide tab for a 10-step setup, the system map and ready-made examples (village cast, basic needs, lifespan, jobs, affinity ladder, bonds, events).',
       'All tips are advisory: an isolated state or an unused profession can be intentional.',
     ],
     links: [L.balance, L.patterns],

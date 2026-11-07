@@ -472,6 +472,22 @@
       "title": "Hiányos események",
       "body": "{{count}} eseménynél hiányzik az esély vagy bármilyen hatás: {{names}}."
     },
+    "npcNoWorkStage": {
+      "title": "Egyik életszakasz sem dolgozhat",
+      "body": "A(z) {{count}} életszakasz egyike sincs „Dolgozhat” jelöléssel, így egy NPC sem kerül a munkaerőbe. Nézd meg az Élettartam nézetet."
+    },
+    "npcBondLevel": {
+      "title": "Szint nélküli kötődések",
+      "body": "{{count}} kötődés bármilyen rokonszenvnél kialakulhat: {{names}}. Rendeld őket kapcsolati szinthez a Kötődési létrán."
+    },
+    "npcEventFrequent": {
+      "title": "Nagyon gyakori események",
+      "body": "{{count}} esemény hetente többször is bekövetkezik egy érintett NPC-nél: {{names}}. Csökkentsd az esélyt, vagy adj meg várakozási időt."
+    },
+    "npcRoutineWork": {
+      "title": "Munkaidő nélküli foglalkozások",
+      "body": "{{count}} munkával rendelkező foglalkozásnak nincs „Munka” idősávja a napirendben: {{names}}."
+    },
     "npcBalance": {
       "title": "A város nem fedezi a lakosság igényeit",
       "body": "{{count}} forgatókönyvben hiány van: {{names}}. Hasonlítsd össze őket az Igénymérleg nézetben."

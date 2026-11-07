@@ -901,7 +901,7 @@ export const designModules = [
           f.num('moraleImpact', 'Morale change per day unmet', { min: -100, max: 100, group: 'When unmet' }),
           f.long('notes', 'Notes'),
         ],
-        [v.table(['name', 'need', 'kind', 'resource', 'buildings', 'consequence']), v.cards()],
+        [v.npcNeedChain(), v.table(['name', 'need', 'kind', 'resource', 'buildings', 'consequence']), v.cards()],
       ),
       s.collection(
         'archetypes',
@@ -918,7 +918,7 @@ export const designModules = [
           f.multi('workplaces', 'Works in', section('buildings', 'design.town'), { group: 'Town' }),
           f.long('notes', 'Notes'),
         ],
-        [v.cards(), v.radar('stats', { section: 'overview', minField: 'statMin', maxField: 'statMax' }), v.table(['name', 'profession', 'share', 'faction', 'home'])],
+        [v.npcPopulation(), v.cards(), v.radar('stats', { section: 'overview', minField: 'statMin', maxField: 'statMax' }), v.table(['name', 'profession', 'share', 'faction', 'home'])],
         { description: 'Stats and needs come from catalogs: add a new stat in Definitions and it appears here, in the radar and in the stat preview.' },
       ),
       s.collection(
@@ -933,7 +933,7 @@ export const designModules = [
           f.num('needModifier', 'Need modifier (%)', { min: -100 }),
           f.long('notes', 'Notes'),
         ],
-        [v.table(['name', 'ageFrom', 'ageTo', 'canWork', 'needModifier']), v.ranges('ageFrom', 'ageTo', { section: 'overview', minField: 'ageMin', maxField: 'maxAge', fallback: [0, 100] })],
+        [v.npcLifespan(), v.table(['name', 'ageFrom', 'ageTo', 'canWork', 'needModifier']), v.ranges('ageFrom', 'ageTo', { section: 'overview', minField: 'ageMin', maxField: 'maxAge', fallback: [0, 100] })],
       ),
       s.graph('lifecycle', 'Life cycle state machine', ['Start', 'State', 'Event', 'End'], {
         nodeSource: section('lifeStages'),
@@ -955,7 +955,7 @@ export const designModules = [
           f.long('training', 'Training (school, apprenticeship)'),
           f.long('assignment', 'How NPCs get assigned'),
         ],
-        [v.table(['name', 'profession', 'buildings', 'keyStats', 'efficiency', 'wage']), v.cards()],
+        [v.npcWorkforce(), v.npcRoutine(), v.table(['name', 'profession', 'buildings', 'keyStats', 'efficiency', 'wage']), v.cards()],
       ),
       s.matrix('routine', 'Daily routine', catalog('professions'), catalog('timeOfDay'), { type: 'enum', options: ['Sleep', 'Work', 'Eat', 'Leisure', 'Socialize', 'Patrol', 'Travel', 'Train'] }, {
         description: 'What each profession does at each time of day. Rows and columns come from the “NPC professions” and “Times of day” catalogs.',
@@ -984,7 +984,7 @@ export const designModules = [
           f.bool('exclusive', 'Exclusive (only one at a time)'),
           f.long('effects', 'Effects'),
         ],
-        [v.table(), v.cards()],
+        [v.npcBondLadder(), v.table(), v.cards()],
         { description: 'Named relationships between two NPCs and what forming them requires.' },
       ),
       s.collection(
@@ -1003,7 +1003,7 @@ export const designModules = [
           f.num('moraleEffect', 'Morale change', { min: -100, max: 100, group: 'Effect' }),
           f.long('effect', 'Other effects', { group: 'Effect' }),
         ],
-        [v.kanban('category'), v.table(['name', 'category', 'chance', 'period', 'cooldown', 'moraleEffect'])],
+        [v.npcEventOdds(), v.kanban('category'), v.table(['name', 'category', 'chance', 'period', 'cooldown', 'moraleEffect'])],
       ),
       s.form('equipmentRules', 'Equipment', [f.long('notes', 'Equipment rules', { help: 'Who equips NPCs, durability, upgrades.' })]),
       s.collection(

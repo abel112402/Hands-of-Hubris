@@ -56,6 +56,12 @@ export type PreviewKind =
   | 'worldAtlas'
   | 'townFlow'
   | 'townNetwork'
+  | 'npcPopulation'
+  | 'npcLifespan'
+  | 'npcNeeds'
+  | 'npcWorkforce'
+  | 'npcRelations'
+  | 'npcEvents'
 
 export type GuideExample = {
   id: string
@@ -71,7 +77,7 @@ export type GuideExample = {
 }
 
 /** Explainer card under a section title. `diagram` picks an inline SVG from ui/guides/concepts. */
-export type GuideConcept = { title: string; body: string; diagram: 'decay' | 'pipeline' | 'tree' | 'abilityTimeline' | 'value' | 'craftChain' | 'lootRoll' | 'typeProfile' | 'damageFlow' | 'ttk' | 'threatRamp' | 'phaseBar' | 'dayClock' | 'modifierStack' | 'weatherMix' | 'eventCalendar' | 'priceChain' | 'spread' | 'wanderOdds' | 'sourceSink' | 'actPacing' | 'questChain' | 'choiceBranch' | 'rewardBudget' | 'wireAnatomy' | 'screenDepth' | 'hudBinding' | 'keyConflict' | 'pillarTest' | 'scopeBuckets' | 'criticalPath' | 'cutLadder' | 'nestedLoops' | 'feedbackLoop' | 'tuningTrack' | 'pressureBars' | 'relationWeb' | 'repScale' | 'unlockWaves' | 'atlasLayers' }
+export type GuideConcept = { title: string; body: string; diagram: 'decay' | 'pipeline' | 'tree' | 'abilityTimeline' | 'value' | 'craftChain' | 'lootRoll' | 'typeProfile' | 'damageFlow' | 'ttk' | 'threatRamp' | 'phaseBar' | 'dayClock' | 'modifierStack' | 'weatherMix' | 'eventCalendar' | 'priceChain' | 'spread' | 'wanderOdds' | 'sourceSink' | 'actPacing' | 'questChain' | 'choiceBranch' | 'rewardBudget' | 'wireAnatomy' | 'screenDepth' | 'hudBinding' | 'keyConflict' | 'pillarTest' | 'scopeBuckets' | 'criticalPath' | 'cutLadder' | 'nestedLoops' | 'feedbackLoop' | 'tuningTrack' | 'pressureBars' | 'relationWeb' | 'repScale' | 'unlockWaves' | 'atlasLayers' | 'shareMix' | 'needChain' | 'lifespanBands' | 'workforceFlow' | 'affinityLadder' | 'eventOdds' }
 
 export type ModuleGuide = {
   map: GuideMap

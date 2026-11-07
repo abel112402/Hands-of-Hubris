@@ -472,6 +472,22 @@
       "title": "Events are incomplete",
       "body": "{{count}} event(s) lack a chance or any effect: {{names}}."
     },
+    "npcNoWorkStage": {
+      "title": "No life stage can work",
+      "body": "None of the {{count}} life stage(s) is marked “Can work”, so no NPC ever joins the workforce. Check the Lifespan view."
+    },
+    "npcBondLevel": {
+      "title": "Bonds without a required level",
+      "body": "{{count}} bond(s) can form at any affinity: {{names}}. Pin them to a relationship level in the Bond ladder."
+    },
+    "npcEventFrequent": {
+      "title": "Very frequent events",
+      "body": "{{count}} event(s) fire more than once a week per eligible NPC: {{names}}. Lower the chance or add a cooldown."
+    },
+    "npcRoutineWork": {
+      "title": "Professions with no work time",
+      "body": "{{count}} profession(s) with a job have no “Work” slot in the daily routine: {{names}}."
+    },
     "npcBalance": {
       "title": "Town cannot meet the population's needs",
       "body": "{{count}} scenario(s) fall short: {{names}}. Compare them in the Needs balance view."

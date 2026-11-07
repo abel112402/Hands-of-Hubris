@@ -66,7 +66,8 @@ describe('npc module v2', () => {
 
   it('shows life stages on a ranges view instead of the timeline', () => {
     const sec = getSections(npc, createProject('t').registry).find((s) => s.id === 'lifeStages')!
-    expect(sec.kind === 'collection' && sec.views.map((v) => v.kind)).toEqual(['table', 'ranges'])
+    // The visual Lifespan view was added in front of the table (NPC visual-editor upgrade).
+    expect(sec.kind === 'collection' && sec.views.map((v) => v.kind)).toEqual(['npcLifespan', 'table', 'ranges'])
   })
 
   it('evaluates formulas with kebab-case stat ids, level and age', () => {
@@ -165,7 +166,7 @@ describe('npc design checks', () => {
       { id: 'n2', need: 'housing', buildings: ['house'], consequence: 'Leaves town' },
     ]
     d.jobs = [{ id: 'j1', profession: 'farmer', buildings: ['farm'] }, { id: 'j2', profession: 'miner' }]
-    d.lifeStages = [{ id: 'child', name: 'Child', ageFrom: 0, ageTo: 17 }, { id: 'adult', name: 'Adult', ageFrom: 18 }]
+    d.lifeStages = [{ id: 'child', name: 'Child', ageFrom: 0, ageTo: 17 }, { id: 'adult', name: 'Adult', ageFrom: 18, canWork: true }] // canWork: a stage that never works now gets a tip
     d.lifecycle = {
       nodes: [
         { id: 's', kind: 'Start', label: 'Born', x: 0, y: 0 },

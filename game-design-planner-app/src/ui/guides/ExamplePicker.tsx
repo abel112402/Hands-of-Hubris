@@ -11,7 +11,7 @@ import { comparedLevels, depletion, levelTable, playerList, treeAnalysis } from 
 import { useStore } from '../../core/store/store'
 import { itemList, lootOdds, multiplier, rawCost } from '../../core/items'
 import { combatList, damageFormula, damagePerHit, phaseCoverage, threat } from '../../core/combat'
-import { biomeWeather, dayCoverage, eventCalendar, seasonYear, timeList } from '../../core/timeWeather'
+import { biomeWeather, dayCoverage, eventCalendar, seasonYear, timeList, yearLength } from '../../core/timeWeather'
 import { ClockDial } from '../editors/timeWeatherViews'
 import { moneyFlow, priceOf, reputationLevels, tradeList, wanderingOdds } from '../../core/trade'
 import { actPacing, endingReachability, storyList } from '../../core/story'
@@ -21,6 +21,8 @@ import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, scre
 import { TreeCanvas } from '../editors/playerViews'
 import { questionList } from '../../core/openQuestions'
 import { estimateTown, TOWN_DOC } from '../../core/town'
+import { bondLadder, eventOdds, lifespan, needChains, NPC_DOC, populationMix, statScale } from '../../core/npc'
+import { NPC_COLORS, RadarSvg } from '../editors/npcViews'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
 
@@ -494,6 +496,84 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
             const target = bases.find((base) => base.id === project.documents[TOWN_DOC]?.data.routes?.find((item: Entity) => item.id === route.id)?.toBase)
             return <tr key={route.id}><td>{route.name}</td><td>{source?.name ?? 'Missing base'} → {target?.name ?? 'Missing base'}</td><td className="num">{fmt(route.demand)} / {fmt(route.throughput)}</td><td>{route.overloaded ? 'Overloaded' : 'Within capacity'}</td></tr>
           })}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcPopulation') {
+    const mix = populationMix(project)
+    const stats = project.registry.catalogs.npcStats?.items ?? []
+    const [lo, hi] = statScale(project)
+    return (
+      <div className="stack">
+        <div className="npc-sharebar">
+          {mix.rows.map((r, i) => <span key={r.archetype.id} className="npc-share" style={{ width: `${(r.share / Math.max(100, mix.total)) * 100}%`, background: NPC_COLORS[i % NPC_COLORS.length] }}>{r.archetype.name} {fmt(r.share)}%</span>)}
+        </div>
+        <div className="row">
+          {mix.rows.slice(-4).map((r, i) => (
+            <figure key={r.archetype.id} className="stack" style={{ margin: 0, alignItems: 'center' }}>
+              <RadarSvg axes={stats.map((s) => s.label)} series={[{ values: stats.map((s) => r.archetype.stats?.[s.id] ?? lo), color: NPC_COLORS[i % NPC_COLORS.length] }]} lo={lo} hi={hi} size={70} />
+              <figcaption className="muted">{r.archetype.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (ex.preview === 'npcLifespan') {
+    const l = lifespan(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Stage</th><th>Ages</th><th>Works</th><th>Needs</th></tr></thead>
+        <tbody>
+          {l.rows.map((r) => <tr key={r.stage.id}><td>{r.stage.name}</td><td className="num">{r.from}–{r.to}</td><td>{r.canWork ? 'yes' : 'no'}</td><td className="num">{r.needModifier > 0 ? '+' : ''}{r.needModifier}%</td></tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={4} className="muted">Working age {Math.round(l.workShare * 100)}% of a lifetime{l.problems.length ? ` · ${l.problems.join('; ')}` : ''}</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcNeeds') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Need</th><th>Satisfied by</th><th>Grace</th><th>When unmet</th></tr></thead>
+        <tbody>
+          {needChains(project).filter((r) => r.rule).map((r) => <tr key={r.needId}><td>{r.label}</td><td>{r.supply.join(', ') || '–'}</td><td className="num">{r.graceDays ?? '–'} d</td><td>{r.consequence || '–'}</td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcWorkforce') {
+    const jobs = (project.documents[NPC_DOC]?.data.jobs ?? []) as Entity[]
+    const profs = project.registry.catalogs.professions?.items ?? []
+    const buildings = (project.documents[TOWN_DOC]?.data.buildings ?? []) as Entity[]
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Job</th><th>Profession</th><th>Works in</th><th>Efficiency</th></tr></thead>
+        <tbody>
+          {jobs.map((j) => <tr key={j.id}><td>{j.name}</td><td>{profs.find((p) => p.id === j.profession)?.label ?? '–'}</td><td>{(j.buildings ?? []).map((id: string) => buildings.find((b) => b.id === id)?.name ?? id).join(', ') || 'no Town building yet'}</td><td><code>{j.efficiency}</code></td></tr>)}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcRelations') {
+    const b = bondLadder(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Level</th><th>Affinity</th><th>Bonds</th></tr></thead>
+        <tbody>
+          {b.levels.map((l) => <tr key={l.id}><td>{l.name}</td><td className="num">{l.from} … {l.to}</td><td>{l.bonds.map((x) => x.name).join(', ') || '–'}</td></tr>)}
+        </tbody>
+        <tfoot><tr><td colSpan={3} className="muted">Start {b.start ?? '–'}{b.problems.length ? ` · ${b.problems.join('; ')}` : ' · no gaps or overlaps'}</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'npcEvents') {
+    const rows = eventOdds(project, yearLength(project), seasonYear(project).ranges.length || 4)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Event</th><th>Chance</th><th>Per year</th></tr></thead>
+        <tbody>
+          {rows.map((r) => <tr key={r.event.id}><td>{r.event.name}</td><td>{r.event.chance}% / {r.event.period}</td><td className="num">{r.perYear === null ? 'one-off' : `≈ ${fmt(r.perYear)}${r.capped ? ' (cooldown cap)' : ''}`}</td></tr>)}
         </tbody>
       </table>
     )

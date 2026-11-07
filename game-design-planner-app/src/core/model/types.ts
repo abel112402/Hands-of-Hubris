@@ -53,6 +53,13 @@ export type CollectionView =
       populationField: string
     }
   /** Player Character views; the fields they read are fixed by the module (see core/player.ts). */
+  | { kind: 'npcPopulation' }
+  | { kind: 'npcLifespan' }
+  | { kind: 'npcNeedChain' }
+  | { kind: 'npcWorkforce' }
+  | { kind: 'npcRoutine' }
+  | { kind: 'npcBondLadder' }
+  | { kind: 'npcEventOdds' }
   | { kind: 'depletion' }
   | { kind: 'levelCurve' }
   | { kind: 'skillTree' }

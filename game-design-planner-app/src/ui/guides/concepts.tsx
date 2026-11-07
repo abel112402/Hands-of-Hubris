@@ -631,6 +631,108 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           })}
         </svg>
       )
+    case 'shareMix':
+      return (
+        <svg viewBox="0 0 330 70" className="concept-svg" role="img" aria-label="A bar split into Farmer 40%, Builder 30%, Innkeeper 15% and Merchant 15%, adding up to 100%">
+          {[
+            ['Farmer 40%', 0, 132, '#4f9cf9'],
+            ['Builder 30%', 132, 99, '#53c28b'],
+            ['Inn 15%', 231, 49.5, '#f2c94c'],
+            ['Trade 15%', 280.5, 49.5, '#f97b4f'],
+          ].map(([t, x, w, c]) => (
+            <g key={t as string}>
+              <rect x={x as number} y="14" width={w as number} height="24" fill={c as string} />
+              <text x={(x as number) + (w as number) / 2} y="30" textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <text x="0" y="56" className="c-small">0%</text>
+          <text x="305" y="56" className="c-small">100%</text>
+          <text x="165" y="56" textAnchor="middle" className="c-small">shares = spawn weights</text>
+        </svg>
+      )
+    case 'needChain':
+      return (
+        <svg viewBox="0 0 340 70" className="concept-svg" role="img" aria-label="Demand per day, then supply from a resource or building, then a grace period, then the consequence">
+          {[
+            ['demand / day', 'c-box'],
+            ['supply', 'c-box'],
+            ['grace days', 'c-danger-band'],
+            ['consequence', 'c-accent'],
+          ].map(([t, cls], i) => (
+            <g key={t} transform={`translate(${i * 84},18)`}>
+              <rect width="74" height="30" rx="5" className={cls} />
+              <text x="37" y="19" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M74,15 L84,15" className="c-arrow" />}
+            </g>
+          ))}
+          <text x="126" y="64" textAnchor="middle" className="c-small">📦 stock or 🏠 places</text>
+        </svg>
+      )
+    case 'lifespanBands':
+      return (
+        <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="An age axis from 0 to the maximum age covered by Child, Adult and Elder bands; only Adult is marked as working age">
+          <rect x="10" y="12" width="60" height="24" fill="#4f9cf9" /><text x="40" y="28" textAnchor="middle" className="c-small">Child</text>
+          <rect x="70" y="12" width="160" height="24" fill="#53c28b" /><text x="150" y="28" textAnchor="middle" className="c-small">Adult</text>
+          <rect x="230" y="12" width="90" height="24" fill="#f2c94c" /><text x="275" y="28" textAnchor="middle" className="c-small">Elder</text>
+          <rect x="70" y="40" width="160" height="10" className="c-accent" />
+          <text x="150" y="64" textAnchor="middle" className="c-small">working age</text>
+          <text x="10" y="64" className="c-small">0</text>
+          <text x="300" y="64" className="c-small">max</text>
+        </svg>
+      )
+    case 'workforceFlow':
+      return (
+        <svg viewBox="0 0 340 84" className="concept-svg" role="img" aria-label="Archetype to profession to job to building, with one link to a wrong building shown dashed red">
+          {['Archetype', 'Profession', 'Job', 'Building'].map((t, i) => (
+            <g key={t} transform={`translate(${i * 86},14)`}>
+              <rect width="70" height="24" rx="5" className="c-box" />
+              <text x="35" y="16" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M70,12 L86,12" className="c-arrow" />}
+            </g>
+          ))}
+          <rect x="258" y="50" width="70" height="24" rx="5" className="c-box" />
+          <text x="293" y="66" textAnchor="middle" className="c-small">Wrong shop</text>
+          <path d="M242,26 C252,26 248,62 258,62" fill="none" stroke="rgb(229,112,126)" strokeDasharray="4 3" strokeWidth="2" />
+        </svg>
+      )
+    case 'affinityLadder':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="An affinity scale with bands from Enemy to Close; Friendship sits on Friend and Marriage on Close">
+          {[
+            ['Enemy', 10, 70, 'rgb(229,112,126)'],
+            ['Neutral', 80, 110, 'rgb(139,147,165)'],
+            ['Friend', 190, 70, 'rgb(120,200,150)'],
+            ['Close', 260, 60, 'rgb(83,194,139)'],
+          ].map(([t, x, w, c]) => (
+            <g key={t as string}>
+              <rect x={x as number} y="10" width={w as number} height="22" fill={c as string} />
+              <text x={(x as number) + (w as number) / 2} y="25" textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <line x1="198" y1="32" x2="198" y2="48" className="c-line" />
+          <rect x="190" y="48" width="66" height="18" rx="9" className="c-box" /><text x="223" y="61" textAnchor="middle" className="c-small">Friendship</text>
+          <line x1="268" y1="32" x2="268" y2="48" className="c-line" />
+          <rect x="262" y="48" width="62" height="18" rx="9" className="c-accent" /><text x="293" y="61" textAnchor="middle" className="c-small">♥ Marriage</text>
+          <text x="10" y="80" className="c-small">−100</text>
+          <text x="300" y="80" className="c-small">100</text>
+        </svg>
+      )
+    case 'eventOdds':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="Bars of events per year: a daily 2% chance about 7 per year, capped at 12 by a 30-day cooldown for a 5% chance, and a seasonal 25% chance once a year">
+          {[
+            ['2% / day', 7, false],
+            ['5% / day, 30d cd', 12, true],
+            ['25% / season', 1, false],
+          ].map(([t, n, cap], i) => (
+            <g key={t as string}>
+              <text x="10" y={20 + i * 22} className="c-small">{t}</text>
+              <rect x="120" y={10 + i * 22} width={(n as number) * 14} height="14" className={cap ? 'c-danger-band' : 'c-accent'} />
+              <text x={126 + (n as number) * 14} y={21 + i * 22} className="c-small">≈ {n as number}/yr{cap ? ' (capped)' : ''}</text>
+            </g>
+          ))}
+        </svg>
+      )
     case 'abilityTimeline':
       return (
         <svg viewBox="0 0 320 70" className="concept-svg" role="img" aria-label="Spend cost, cast time, effect, then cooldown">

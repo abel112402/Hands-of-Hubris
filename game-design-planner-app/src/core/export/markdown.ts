@@ -14,10 +14,10 @@ import { getSections, MODULES } from '../modules/registry'
 import { entityLabel, resolveSource } from '../references/refs'
 import { tryEvaluate } from '../formula'
 import { analyze, weekToDate, withBuffer } from '../schedule'
-import { needsBalance } from '../npc'
+import { bondLadder, eventOdds, lifespan, needChains, needsBalance, NPC_DOC, populationMix, workforceFlow } from '../npc'
 import { comparedLevels, depletion, levelTable, PLAYER_DOC, treeAnalysis } from '../player'
 import { coverage, finalValue, itemList, itemSources, lootOdds, rawCost, valueAdded } from '../items'
-import { biomeWeather, conditions, dayCoverage, eventCalendar, nightPhase, realMinutes, TIME_DOC, timeList, yearLength } from '../timeWeather'
+import { biomeWeather, conditions, dayCoverage, eventCalendar, nightPhase, realMinutes, seasonYear, TIME_DOC, timeList, yearLength } from '../timeWeather'
 import { bossGates, COMBAT_DOC, damageFormula, damagePerHit, fighterOf, phaseCoverage, threatRamp, timeToDie, timeToKill } from '../combat'
 import { artboardOf, bindLabel, controlConflicts, flowAnalysis, hudScreen, kindDef, layoutIssues, layoutOf, layoutRules, layoutSvg, navEdges, screensOf, UI_DOC, type WireElement } from '../ui'
 import { actPacing, actsInOrder, decisionsOf, endingReachability, questDeps, rewardsByAct, STORY_DOC } from '../story'
@@ -153,6 +153,42 @@ function needsBalanceMd(project: Project, sec: Extract<SectionDef, { kind: 'coll
     const b = needsBalance(project, s, view.populationField)
     const parts = b.rows.map((x) => `${x.label} ${r(x.demand)}/${x.supply === null ? '–' : r(x.supply)}${x.short ? ' (short)' : ''}`)
     out += `_Needs balance for ${entityLabel(s)} (population ${r(b.population)}; needed/supplied): ${parts.join(', ') || 'no needs set'}._\n`
+  }
+  return out
+}
+
+/** Summaries for the NPC System visual views: mix, need chains, lifespan, workforce, bond ladder and event odds. */
+function npcSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!data.length) return ''
+  const r = (n: number) => Math.round(n * 100) / 100
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  let out = ''
+  if (kinds.has('npcPopulation')) {
+    const mix = populationMix(project)
+    if (mix.rows.length) out += `\n_Population mix: ${mix.rows.map((x) => `${entityLabel(x.archetype)} ${r(x.share)}%`).join(', ')} (total ${r(mix.total)}%)._\n`
+  }
+  if (kinds.has('npcNeedChain')) {
+    out += '\n| Need | Per 100 NPCs / day | Satisfied by | Grace (days) | When unmet |\n|---|---|---|---|---|\n'
+    for (const c of needChains(project)) out += `| ${c.label} | ${c.per100 === null ? '–' : r(c.per100)} | ${c.supply.join(', ') || '–'} | ${c.graceDays ?? '–'} | ${c.consequence || (c.rule ? '–' : 'no rule')} |\n`
+  }
+  if (kinds.has('npcLifespan')) {
+    const l = lifespan(project)
+    if (l.rows.length) out += `\n_Lifespan ${l.scale[0]}–${l.scale[1]}: ${l.rows.map((x) => `${entityLabel(x.stage)} ${x.from}–${x.to}${x.canWork ? ' (works)' : ''}`).join(', ')}; working age ${Math.round(l.workShare * 100)}% of a lifetime._\n`
+  }
+  if (kinds.has('npcWorkforce')) {
+    const f = workforceFlow(project)
+    const label = new Map(f.nodes.map((n) => [n.id, n.label]))
+    const node = (id: string) => `${id.replace(/[^A-Za-z0-9_]/g, '_')}["${(label.get(id) ?? id).replace(/["[\]]/g, '')}"]`
+    const lines = f.links.map((k) => `  ${node(k.from)} ${k.mismatch ? '-.->|wrong workers|' : '-->'} ${node(k.to)}`)
+    if (lines.length) out += '\n```mermaid\nflowchart LR\n' + lines.join('\n') + '\n```\n'
+  }
+  if (kinds.has('npcBondLadder')) {
+    const b = bondLadder(project)
+    if (b.levels.length) out += `\n_Bond ladder: ${b.levels.map((l) => `${l.name} ${l.from}…${l.to}${l.bonds.length ? ` → ${l.bonds.map((x) => entityLabel(x)).join(', ')}` : ''}`).join('; ')}._\n`
+  }
+  if (kinds.has('npcEventOdds')) {
+    const rows = eventOdds(project, yearLength(project), seasonYear(project).ranges.length || 4).filter((x) => x.perYear !== null)
+    if (rows.length) out += `\n_Expected per year (one eligible roll): ${rows.map((x) => `${entityLabel(x.event)} ≈ ${r(x.perYear!)}`).join(', ')}._\n`
   }
   return out
 }
@@ -740,7 +776,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
     }
     case 'collection':
       if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data) + (mod.id === DIFFICULTY_DOC && sec.id === 'values' ? difficultySummaryMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'relations' ? diplomacyRelationsMd(project) : '')
     case 'graph':

@@ -10,7 +10,7 @@ import { useSection, useProject } from '../hooks'
 import { FieldInput, displayValue, isLongField } from '../FieldInput'
 import { Link } from 'react-router-dom'
 import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView, RangesView, EconomyView } from './views'
-import { NeedsBalanceView, StatPreviewView } from './npcViews'
+import { BondLadderView, EventOddsView, LifespanView, NeedChainView, NeedsBalanceView, PopulationView, RoutineView, StatPreviewView, WorkforceView } from './npcViews'
 import { BuildPlannerView, DepletionView, LevelCurveView, SkillTreeView } from './playerViews'
 import { GuideEmpty } from '../guides/GuideEmpty'
 import { hiddenGroups } from '../../core/groupFilter'
@@ -48,6 +48,13 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   townNetwork: 'Logistics network',
   statPreview: 'Preview',
   needsBalance: 'Needs balance',
+  npcPopulation: 'Population',
+  npcLifespan: 'Lifespan',
+  npcNeedChain: 'Need chain',
+  npcWorkforce: 'Workforce map',
+  npcRoutine: 'Day plan',
+  npcBondLadder: 'Bond ladder',
+  npcEventOdds: 'Event odds',
   depletion: 'Depletion',
   levelCurve: 'Level curve',
   skillTree: 'Skill tree',
@@ -174,6 +181,13 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} scale={view.scale} />}
           {view.kind === 'statPreview' && <StatPreviewView {...props} view={view} />}
           {view.kind === 'needsBalance' && <NeedsBalanceView {...props} view={view} />}
+          {view.kind === 'npcPopulation' && <PopulationView {...props} />}
+          {view.kind === 'npcLifespan' && <LifespanView {...props} />}
+          {view.kind === 'npcNeedChain' && <NeedChainView {...props} />}
+          {view.kind === 'npcWorkforce' && <WorkforceView {...props} />}
+          {view.kind === 'npcRoutine' && <RoutineView {...props} />}
+          {view.kind === 'npcBondLadder' && <BondLadderView {...props} />}
+          {view.kind === 'npcEventOdds' && <EventOddsView {...props} />}
           {view.kind === 'depletion' && <DepletionView {...props} />}
           {view.kind === 'levelCurve' && <LevelCurveView />}
           {view.kind === 'skillTree' && <SkillTreeView {...props} />}
