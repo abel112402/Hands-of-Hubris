@@ -21,6 +21,7 @@ import { BiomeWeatherView, ConditionsView, DayClockView, YearStripView } from '.
 import { CoverageView, CraftTreeView, LootOddsView, RarityCurveView, ValuePreviewView } from './itemViews'
 import { GateReadiness } from './GateReadiness'
 import { MerchantStockView, MoneyFlowView, PriceLadderView, WanderingCalendarView } from './tradeViews'
+import { TownNetworkView, TownResourceFlowView } from './townViews'
 import { ActPacingView, CastCoverageView, EndingPathsView, QuestFlowView, RewardBudgetView } from './storyViews'
 import { WireframeView } from './wireframe/WireframeView'
 import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
@@ -29,6 +30,7 @@ import { CutSavingsView, PhaseProgressView } from './roadmapViews'
 import { LoopPacingView } from './coreLoopViews'
 import { CustomSimulatorView, DifficultyImpactView, PressureOverviewView, TuningBoardView } from './difficultyViews'
 import { ActionSimulatorView, FactionFootprintView, RelationsWebView, ReputationScaleView } from './diplomacyViews'
+import { BiomeCoverageView, BiomeDossierView, BiomeThreatView, UnlockPathView, WorldAtlasView } from './worldViews'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   cards: 'Cards',
@@ -42,6 +44,8 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   compare: 'Compare',
   ranges: 'Ranges',
   economy: 'Estimate',
+  townFlow: 'Resource flow',
+  townNetwork: 'Logistics network',
   statPreview: 'Preview',
   needsBalance: 'Needs balance',
   depletion: 'Depletion',
@@ -87,6 +91,11 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   factionFootprint: 'Footprint',
   reputationScale: 'Scale',
   actionSimulator: 'Simulator',
+  biomeDossier: 'Dossier',
+  worldAtlas: 'Atlas',
+  unlockPath: 'Unlock path',
+  biomeThreat: 'Threat',
+  biomeCoverage: 'Coverage',
 }
 
 export type ViewProps = {
@@ -208,6 +217,11 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'factionFootprint' && <FactionFootprintView {...props} />}
           {view.kind === 'reputationScale' && <ReputationScaleView {...props} />}
           {view.kind === 'actionSimulator' && <ActionSimulatorView {...props} />}
+          {view.kind === 'biomeDossier' && <BiomeDossierView {...props} />}
+          {view.kind === 'worldAtlas' && <WorldAtlasView {...props} />}
+          {view.kind === 'unlockPath' && <UnlockPathView {...props} />}
+          {view.kind === 'biomeThreat' && <BiomeThreatView {...props} />}
+          {view.kind === 'biomeCoverage' && <BiomeCoverageView {...props} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
@@ -215,6 +229,8 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'compare' && <CompareView {...props} valuesSection={view.valuesSection} columns={view.columns} />}
           {view.kind === 'ranges' && <RangesView {...props} view={view} />}
           {view.kind === 'economy' && <EconomyView />}
+          {view.kind === 'townFlow' && <TownResourceFlowView {...props} />}
+          {view.kind === 'townNetwork' && <TownNetworkView {...props} />}
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
         {sel && view.kind !== 'wireframe' && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}

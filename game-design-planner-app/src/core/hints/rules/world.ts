@@ -1,4 +1,4 @@
-import { biomesWithoutEnemies, biomesWithoutEntry, biomesWithoutZone, graphDisagreements, outpostsMissing, unlinkedZones, unreachedBiomes, WORLD_DOC as DOC } from '../../world'
+import { biomesWithoutEnemies, biomesWithoutEntry, biomesWithoutZone, graphDisagreements, levelInversions, outpostsMissing, unlinkedZones, unlockPath, unreachedBiomes, WORLD_DOC as DOC } from '../../world'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, hintId, shortList } from '../util'
 
@@ -55,5 +55,13 @@ export const worldRules: HintRule[] = [
   active('world.enemies', ({ project }) => {
     const l = biomesWithoutEnemies(project)
     return l.length ? [hint({ key: 'worldEnemies', ruleId: 'world.enemies', severity: 'info', sectionId: 'biomes', entityId: l[0].id, params: { count: l.length, names: names(l) } })] : []
+  }),
+  active('world.locked', ({ project }) => {
+    const l = unlockPath(project).locked
+    return l.length ? [hint({ key: 'worldLocked', ruleId: 'world.locked', severity: 'suggest', sectionId: 'biomes', entityId: l[0].id, params: { count: l.length, names: names(l) } })] : []
+  }),
+  active('world.levels', ({ project }) => {
+    const l = levelInversions(project)
+    return l.length ? [hint({ key: 'worldLevels', ruleId: 'world.levels', severity: 'info', sectionId: 'biomes', entityId: l[0].id, params: { count: l.length, names: names(l) } })] : []
   }),
 ]

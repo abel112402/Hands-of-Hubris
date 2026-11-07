@@ -107,6 +107,12 @@ export type CollectionView =
   | { kind: 'factionFootprint' }
   | { kind: 'reputationScale' }
   | { kind: 'actionSimulator' }
+  /** World & Biomes views; fields are fixed by the module (see core/world.ts). */
+  | { kind: 'biomeDossier' }
+  | { kind: 'worldAtlas' }
+  | { kind: 'unlockPath' }
+  | { kind: 'biomeThreat' }
+  | { kind: 'biomeCoverage' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {
@@ -118,6 +124,10 @@ export type CollectionView =
     }
   /** Planning estimate of resource balance, workforce and route load, derived from the Town module. */
   | { kind: 'economy' }
+  /** Visual resource production and consumption lanes derived from Town buildings. */
+  | { kind: 'townFlow' }
+  /** Interactive base-and-route network derived from Town bases and routes. */
+  | { kind: 'townNetwork' }
   | { kind: 'progression'; scaleField: string; leadsField: string }
   | {
       kind: 'compare'

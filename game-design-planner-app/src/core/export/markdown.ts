@@ -28,6 +28,7 @@ import { CORE_LOOP_DOC, formatMinutes, loopList, loopPacing, pillarLoops } from 
 import { CATEGORIES as DIFFICULTY_CATEGORIES, DIFFICULTY_DOC, levelPressure, levelsOf, levelSteps } from '../difficulty'
 import { difficultyImpact } from '../difficultyImpact'
 import { DIPLOMACY_DOC, factionStandings, relationPairs, startValue, levelAt } from '../diplomacy'
+import { biomeCoverage, biomesInOrder, biomeThreat, COVERAGE_COLUMNS, unlockPath, WORLD_DOC } from '../world'
 import { factionFootprints } from '../diplomacyFootprint'
 import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
 
@@ -629,6 +630,36 @@ function diplomacyStartMd(project: Project): string {
   return `\n_A new game starts at ${v}${l ? ` (${esc(l.name)})` : ', outside every level'}._\n`
 }
 
+/** World overview after the biome sheets (views: unlockPath, biomeThreat, biomeCoverage): unlock order, threat and gaps, plus a Mermaid unlock path. */
+function worldSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>): string {
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const list = biomesInOrder(project)
+  if (!list.length || !kinds.has('unlockPath')) return ''
+  const path = unlockPath(project)
+  const threat = new Map(biomeThreat(project).map((r) => [r.biome.id, r]))
+  const cov = new Map(biomeCoverage(project).map((r) => [r.biome.id, r]))
+  const n = (x: number | null | undefined) => (x === null || x === undefined ? '' : String(Math.round(x)))
+  let out = '\n**World overview**\n\n| Biome | Role | Player level | Opens | Gates | Median threat | Coverage | Missing |\n|---|---|---|---|---|---|---|---|\n'
+  for (const b of list) {
+    const t = threat.get(b.id)
+    const c = cov.get(b.id)
+    const wave = path.wave.get(b.id)
+    const gates = path.links.filter((l) => l.to === b.id).map((l) => `${l.via}: ${l.gate}`).join(', ')
+    const missing = c ? COVERAGE_COLUMNS.filter((col) => c.cells[col.key] === 0).map((col) => col.label).join(', ') : ''
+    const lv = t?.levelMin !== null && t?.levelMin !== undefined ? `${t.levelMin}${t.levelMax !== null && t.levelMax !== t.levelMin ? `–${t.levelMax}` : ''}` : ''
+    out += `| ${[entityLabel(b), b.role ?? '', lv, wave === undefined ? 'never' : wave === 0 ? 'at start' : `wave ${wave}`, gates, n(t?.median) + (t?.flag ? ` (${t.flag})` : ''), c ? `${Math.round(c.score * 100)}%` : '', missing].map(esc).join(' | ')} |\n`
+  }
+  const drawn = path.links.filter((l) => l.from && l.from !== l.to)
+  if (drawn.length) {
+    const id = (s: string) => `b_${s.replace(/[^A-Za-z0-9]/g, '_')}`
+    out += '\n```mermaid\nflowchart LR\n'
+    for (const b of list) out += `  ${id(b.id)}["${entityLabel(b).replace(/"/g, "'")} (${b.role ?? 'no role'})"]\n`
+    for (const l of drawn) out += `  ${id(l.from!)} -->|${`${l.via}: ${l.gate}`.replace(/[|"]/g, '/')}| ${id(l.to)}\n`
+    out += '```\n'
+  }
+  return out
+}
+
 /** Loop pacing and pillar coverage, written under the Core Loop's "Rewards and progression" chapter (doc ch. 5). */
 function coreLoopSummaryMd(project: Project): string {
   let out = ''
@@ -709,7 +740,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
     }
     case 'collection':
       if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data) + (mod.id === DIFFICULTY_DOC && sec.id === 'values' ? difficultySummaryMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'relations' ? diplomacyRelationsMd(project) : '')
     case 'graph':

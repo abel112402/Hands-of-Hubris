@@ -386,7 +386,7 @@
     },
     "worldReach": {
       "title": "Biómok, amiket semmi nem old fel",
-      "body": "{{count}} biom hiányzik a haladási gráfból, vagy nincs bejövő kapcsolata: {{names}}. Jelöld választhatónak, ha ez szándékos."
+      "body": "{{count}} biomhoz nem vezet másik biomban teljesíthető feltétel, és a haladási gráfban sincs bejövő nyila: {{names}}. Köss be egy bosst vagy küldetést a Belépésnél, vagy jelöld választhatónak, ha ez szándékos."
     },
     "worldEntry": {
       "title": "Belépési feltétel nélküli biómok",
@@ -411,6 +411,14 @@
     "worldEnemies": {
       "title": "Ellenség nélküli biómok",
       "body": "{{count}} biomnál nincs ellenség vagy főellenség: {{names}}."
+    },
+    "worldLocked": {
+      "title": "Biómok, amelyek sosem nyílnak meg",
+      "body": "{{count}} biomhoz olyan küldetés vagy boss kell, amely csak egy még elérhetetlen biomban (vagy magában a biomban) található: {{names}}. Nézd meg a Feloldási út nézetet."
+    },
+    "worldLevels": {
+      "title": "Visszafelé haladó szintsávok",
+      "body": "{{count}} biom alacsonyabb játékosszinten kezdődik, mint egy korábbi szerepű biom: {{names}}. Nézd meg a Fenyegetés nézetet."
     },
     "npcStatCoverage": {
       "title": "Szabály nélküli statok",

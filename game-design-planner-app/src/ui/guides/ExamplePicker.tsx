@@ -16,9 +16,11 @@ import { ClockDial } from '../editors/timeWeatherViews'
 import { moneyFlow, priceOf, reputationLevels, tradeList, wanderingOdds } from '../../core/trade'
 import { actPacing, endingReachability, storyList } from '../../core/story'
 import { QuestFlowCanvas } from '../editors/storyViews'
+import { AtlasPreview } from '../editors/worldViews'
 import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, screensOf, uiList } from '../../core/ui'
 import { TreeCanvas } from '../editors/playerViews'
 import { questionList } from '../../core/openQuestions'
+import { estimateTown, TOWN_DOC } from '../../core/town'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
 
@@ -466,6 +468,36 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
     )
   }
   if (ex.preview === 'questFlow') return <QuestFlowCanvas project={project} />
+  if (ex.preview === 'worldAtlas') return <AtlasPreview project={project} />
+  if (ex.preview === 'townFlow') {
+    const estimate = estimateTown(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Resource</th><th>Produced / {estimate.timeUnit}</th><th>Consumed / {estimate.timeUnit}</th><th>Net</th></tr></thead>
+        <tbody>
+          {estimate.resources.map((resource) => (
+            <tr key={resource.id}><td>{resource.label}</td><td className="num">{fmt(resource.produced)}</td><td className="num">{fmt(resource.consumed)}</td><td className="num">{fmt(resource.net)}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'townNetwork') {
+    const estimate = estimateTown(project)
+    const bases = (project.documents[TOWN_DOC]?.data.bases ?? []) as Entity[]
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Route</th><th>From → to</th><th>Requested / capacity</th><th>Status</th></tr></thead>
+        <tbody>
+          {estimate.routes.map((route) => {
+            const source = bases.find((base) => base.id === project.documents[TOWN_DOC]?.data.routes?.find((item: Entity) => item.id === route.id)?.fromBase)
+            const target = bases.find((base) => base.id === project.documents[TOWN_DOC]?.data.routes?.find((item: Entity) => item.id === route.id)?.toBase)
+            return <tr key={route.id}><td>{route.name}</td><td>{source?.name ?? 'Missing base'} → {target?.name ?? 'Missing base'}</td><td className="num">{fmt(route.demand)} / {fmt(route.throughput)}</td><td>{route.overloaded ? 'Overloaded' : 'Within capacity'}</td></tr>
+          })}
+        </tbody>
+      </table>
+    )
+  }
   if (ex.preview === 'endingPaths') {
     return (
       <table className="grid npc-preview">

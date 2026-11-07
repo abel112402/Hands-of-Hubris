@@ -386,7 +386,7 @@
     },
     "worldReach": {
       "title": "Biomes nothing unlocks",
-      "body": "{{count}} biome(s) are missing from the progression graph or have no incoming connection: {{names}}. Mark them optional if that is intended."
+      "body": "{{count}} biome(s) have no gate met in another biome and no incoming arrow in the progression graph: {{names}}. Link a boss or quest under Entry, or mark them optional if that is intended."
     },
     "worldEntry": {
       "title": "Biomes without an entry condition",
@@ -411,6 +411,14 @@
     "worldEnemies": {
       "title": "Biomes without enemies",
       "body": "{{count}} biome(s) list no enemies or bosses: {{names}}."
+    },
+    "worldLocked": {
+      "title": "Biomes that can never open",
+      "body": "{{count}} biome(s) need a quest or boss that is only met inside a biome the player can’t reach yet (or inside the biome itself): {{names}}. See the Unlock path view."
+    },
+    "worldLevels": {
+      "title": "Level ranges run backwards",
+      "body": "{{count}} biome(s) start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view."
     },
     "npcStatCoverage": {
       "title": "Stats without a rule",

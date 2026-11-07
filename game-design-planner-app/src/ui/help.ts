@@ -65,8 +65,33 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'New here? Open the Guide for a step-by-step walkthrough with examples.',
     ],
   },
-  'design.world': { purpose: 'Lays out biomes, progression gating and the map so content can be planned per area.', tips: ['Set the entry condition on each biome; the graph is the visual layer and hints flag disagreements.', 'Link map zones to biome entries instead of retyping names; the sketch is the layout, Exploration holds scale, generation and navigation.', 'List enemies, bosses and garrisons per biome so the export carries them.', 'Mark biomes optional if they are intentionally isolated.'] },
-  'design.town': { purpose: 'Plans buildings, resource flow and economy so the town is balanced before it is built.', tips: ['Draw resource flow in the graph; look for sources without sinks.', 'Keep building costs as maps so new resources appear automatically.'], links: [L.balance] },
+  'design.world': {
+    purpose: 'Lays out biomes, how the player unlocks them and where they sit on the map, so content can be planned per area.',
+    tips: [
+      'Biomes › Dossier: one page per biome with everything other modules put there (enemies, bosses, outposts, weather, quests), how the player gets in, what it opens and where it lies on the map.',
+      'Biomes › Atlas: the map sketch coloured by biome, role tier, threat or coverage, with borders, unlock arrows and capitals/outposts. Click a zone to edit the biome; shapes are edited in Map sketch.',
+      'Biomes › Unlock path: worked out from each biome’s entry condition (the quest, faction or boss it needs). Switch to “Unlock order” to see which biomes open in which wave; locked biomes and gates met in the wrong place are listed.',
+      'Biomes › Threat: median and strongest enemy per biome from Combat, in role order, with the biome’s player level band. Dips and spikes are flagged.',
+      'Biomes › Coverage: a biome × content grid. Empty cells are gaps; a fully green row is a biome that is designed end to end.',
+      'Set the entry condition on each biome; it is authoritative. The progression graph is an optional drawing and hints flag disagreements.',
+      'Record Borders on biomes, or let the Atlas suggest them from zones that touch. Mark biomes optional if they are intentionally isolated.',
+      'New here? Open the Guide for a step-by-step walkthrough with example worlds.',
+    ],
+  },
+  'design.town': {
+    purpose: 'Plans the settlements, buildings, resource rates and transport network that make town management legible before implementation.',
+    tips: [
+      'Start with real bases and warehouses; routes reference these entries, not free-text place names.',
+      'Set building count and cycle, then enter inputs and outputs per cycle. Resource flow compares their rates per named time unit.',
+      'In Resource flow, click a building to open its inspector and adjust the producer or consumer that creates an imbalance.',
+      'The Logistics network view shows base connections and flags requested cargo above route capacity; click a route or base to edit it.',
+      'Economy › Estimate is a straight-line planning estimate, not a gameplay simulation. Horizon and starting stock determine projected balances and runway.',
+      'Population overrides housing capacity in the workforce estimate; leave it unset to use planned building capacity.',
+      'Define morale thresholds, then connect factors to groups, consequences and remedies so the settlement pressure has a response.',
+      'The Guide tab walks through a first setup and provides a starter production chain, bases and route.',
+    ],
+    links: [L.balance],
+  },
   'design.npc': {
     purpose: 'Specifies who the NPCs are and how they live: stats, needs, archetypes, life cycle, work, relationships and events. It is the heart of the town simulation.',
     tips: [

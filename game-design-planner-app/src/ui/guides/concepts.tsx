@@ -563,6 +563,34 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="165" y="80" textAnchor="middle" className="c-small">one-sided</text>
         </svg>
       )
+    case 'unlockWaves':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Three columns: a starter biome open at the start, two biomes opened in wave 1 by a boss and a quest in the starter, and a final biome opened in wave 2">
+          {[['start', 10], ['wave 1', 120], ['wave 2', 230]].map(([t, x]) => <text key={t} x={Number(x) + 45} y="10" textAnchor="middle" className="c-small">{t}</text>)}
+          <rect x="10" y="38" width="90" height="24" rx="5" className="c-box" /><text x="55" y="54" textAnchor="middle" className="c-small">Meadow</text>
+          <rect x="120" y="18" width="90" height="24" rx="5" className="c-box" /><text x="165" y="34" textAnchor="middle" className="c-small">Swamp</text>
+          <rect x="120" y="62" width="90" height="24" rx="5" className="c-box" /><text x="165" y="78" textAnchor="middle" className="c-small">Hills</text>
+          <rect x="230" y="38" width="90" height="24" rx="5" className="c-accent" /><text x="275" y="54" textAnchor="middle" className="c-small">Spire</text>
+          <path d="M100 46 C110 46 110 30 120 30" className="c-arrow" /><text x="104" y="26" className="c-small">boss</text>
+          <path d="M100 54 C110 54 110 74 120 74" className="c-arrow" /><text x="102" y="92" className="c-small">quest</text>
+          <path d="M210 30 C220 30 220 46 230 46" className="c-arrow" />
+          <path d="M210 74 C220 74 220 54 230 54" className="c-arrow" />
+        </svg>
+      )
+    case 'atlasLayers':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Three map layers stacked: biome zones, then borders and unlock arrows, then capitals and outposts">
+          <rect x="10" y="12" width="96" height="70" rx="8" className="c-box" />
+          <rect x="18" y="20" width="44" height="54" rx="6" className="c-accent" /><rect x="64" y="20" width="34" height="54" rx="6" className="c-danger-band" />
+          <text x="58" y="94" textAnchor="middle" className="c-small">zones</text>
+          <rect x="117" y="12" width="96" height="70" rx="8" className="c-box" />
+          <line x1="145" y1="47" x2="190" y2="47" className="c-arrow" strokeDasharray="2 4" /><path d="M140 70 Q165 25 195 40" className="c-line" />
+          <text x="165" y="94" textAnchor="middle" className="c-small">borders + unlocks</text>
+          <rect x="224" y="12" width="96" height="70" rx="8" className="c-box" />
+          <text x="250" y="45" className="c-small">★ capital</text><text x="250" y="65" className="c-small">⚑ outpost</text>
+          <text x="272" y="94" textAnchor="middle" className="c-small">markers</text>
+        </svg>
+      )
     case 'repScale':
       return (
         <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="A scale from -100 to 100 split into Hostile, Neutral and Allied, with the start marker at 0 and an action pushing the value across a boundary">
