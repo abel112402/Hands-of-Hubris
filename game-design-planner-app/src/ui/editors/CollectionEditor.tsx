@@ -24,6 +24,9 @@ import { MerchantStockView, MoneyFlowView, PriceLadderView, WanderingCalendarVie
 import { ActPacingView, CastCoverageView, EndingPathsView, QuestFlowView, RewardBudgetView } from './storyViews'
 import { WireframeView } from './wireframe/WireframeView'
 import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
+import { PillarMatrixView, VisionReadinessView } from './visionViews'
+import { CutSavingsView, PhaseProgressView } from './roadmapViews'
+import { LoopPacingView } from './coreLoopViews'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   cards: 'Cards',
@@ -69,6 +72,11 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   screenMap: 'Screen map',
   screenReadiness: 'Readiness',
   bindingMap: 'Binding map',
+  pillarMatrix: 'Pillar matrix',
+  visionReadiness: 'Readiness',
+  phaseProgress: 'Progress',
+  cutSavings: 'Savings',
+  loopPacing: 'Pacing',
 }
 
 export type ViewProps = {
@@ -177,6 +185,11 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'screenMap' && <ScreenMapView {...props} />}
           {view.kind === 'screenReadiness' && <ScreenReadinessView {...props} />}
           {view.kind === 'bindingMap' && <BindingMapView {...props} />}
+          {view.kind === 'pillarMatrix' && <PillarMatrixView {...props} />}
+          {view.kind === 'visionReadiness' && <VisionReadinessView />}
+          {view.kind === 'phaseProgress' && <PhaseProgressView {...props} />}
+          {view.kind === 'cutSavings' && <CutSavingsView {...props} />}
+          {view.kind === 'loopPacing' && <LoopPacingView {...props} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}

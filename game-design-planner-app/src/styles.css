@@ -411,3 +411,18 @@ tr.clickable{cursor:pointer}tr.clickable:hover td,tr.clickable:hover th{backgrou
 .md-mermaid.loading pre{text-align:left;opacity:.6;margin:0}
 .md-mermaid.error{text-align:left;border:1px solid var(--warn)}.md-mermaid.error p{color:var(--warn);margin:0 0 6px}
 .md-broken-img{display:inline-block;padding:6px 10px;border:1px dashed var(--warn);border-radius:6px;color:var(--warn);font-size:13px}
+.vision-matrix td.clickable{cursor:pointer}.vision-matrix td.clickable:hover{background:var(--panel2)}
+.vision-matrix .cov-cell{text-align:center;cursor:pointer;min-width:64px}.vision-matrix .cov-cell:hover{background:var(--panel2)}.vision-matrix .cov-cell.on{outline:2px solid var(--accent);outline-offset:-3px}
+.vision-matrix tr.group th{background:var(--panel2);color:var(--muted);font-weight:600}
+.vision-matrix tr.loose td:first-child{outline:2px dashed var(--warn);outline-offset:-3px}
+.vision-matrix tfoot td.num{text-align:center;font-variant-numeric:tabular-nums}.vision-matrix tfoot td.hole{color:var(--warn);font-weight:600}.vision-matrix tfoot td.short{color:var(--muted)}
+.vision-readiness{list-style:none;margin:0;padding:0}.vision-readiness li{padding:3px 0;color:var(--muted)}.vision-readiness li.ok{color:var(--ok)}
+:is(.roadmap-progress,.roadmap-cuts) .bar-track{position:relative;height:10px;min-width:120px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;margin:2px 0}
+:is(.roadmap-progress,.roadmap-cuts) .bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:2px;opacity:.55}
+:is(.roadmap-progress,.roadmap-cuts) .bar-fill.ok{background:var(--ok);opacity:.9}:is(.roadmap-progress,.roadmap-cuts) .bar-fill.danger{background:var(--danger)}
+:is(.roadmap-progress,.roadmap-cuts) .bar-cap{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--warn)}
+:is(.roadmap-progress,.roadmap-cuts) .warn-text{color:var(--warn)}
+.roadmap-cuts tr.enough td{border-bottom:2px solid var(--ok)}.roadmap-cuts td.num{text-align:right;font-variant-numeric:tabular-nums}
+.loop-pacing .bar-track{position:relative;height:8px;min-width:120px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;margin:2px 0}
+.loop-pacing .bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:2px}
+.loop-pacing .warn-text{color:var(--warn)}

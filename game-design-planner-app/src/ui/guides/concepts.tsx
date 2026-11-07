@@ -427,6 +427,105 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="54" y="72" className="c-small">Close · Inventory  → fine</text>
         </svg>
       )
+    case 'pillarTest':
+      return (
+        <svg viewBox="0 0 330 100" className="concept-svg" role="img" aria-label="Two features tested against a pillar: one serves it and stays, one serves none and is cut">
+          <rect x="120" y="36" width="90" height="28" rx="5" className="c-accent" />
+          <text x="165" y="54" textAnchor="middle" className="c-small">Pillar</text>
+          <rect x="10" y="10" width="90" height="24" rx="5" className="c-box" />
+          <text x="55" y="26" textAnchor="middle" className="c-small">Feature A</text>
+          <rect x="10" y="66" width="90" height="24" rx="5" className="c-danger-band" />
+          <text x="55" y="82" textAnchor="middle" className="c-small">Feature B</text>
+          <line x1="100" y1="22" x2="120" y2="46" className="c-line" />
+          <text x="226" y="50" className="c-small">A serves it: keep</text>
+          <text x="226" y="86" className="c-small">B serves none: cut</text>
+        </svg>
+      )
+    case 'scopeBuckets':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="Three buckets: In MVP, Later and Out of scope">
+          {[
+            ['In MVP', 10, 'c-accent'],
+            ['Later', 120, 'c-box'],
+            ['Out of scope', 230, 'c-danger-band'],
+          ].map(([t, x, cls]) => (
+            <g key={t as string}>
+              <rect x={x as number} y="14" width="90" height="34" rx="5" className={cls as string} />
+              <text x={(x as number) + 45} y="35" textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <text x="10" y="70" className="c-small">every item gets one bucket and at least one pillar</text>
+        </svg>
+      )
+    case 'criticalPath':
+      return (
+        <svg viewBox="0 0 330 90" className="concept-svg" role="img" aria-label="Three chained phases on the critical path, one side phase with slack, and a buffer after the planned end">
+          <rect x="10" y="12" width="70" height="20" rx="4" className="c-accent" />
+          <text x="45" y="26" textAnchor="middle" className="c-small">Prep</text>
+          <rect x="80" y="12" width="90" height="20" rx="4" className="c-accent" />
+          <text x="125" y="26" textAnchor="middle" className="c-small">Prototype</text>
+          <rect x="170" y="12" width="90" height="20" rx="4" className="c-accent" />
+          <text x="215" y="26" textAnchor="middle" className="c-small">Slice</text>
+          <rect x="80" y="42" width="60" height="20" rx="4" className="c-box" />
+          <text x="110" y="56" textAnchor="middle" className="c-small">Art</text>
+          <line x1="140" y1="52" x2="170" y2="52" className="c-line" strokeDasharray="3 3" />
+          <text x="146" y="72" className="c-small">slack</text>
+          <rect x="260" y="12" width="40" height="20" rx="4" className="c-danger-band" />
+          <text x="280" y="26" textAnchor="middle" className="c-small">+15%</text>
+          <text x="10" y="86" className="c-small">highlighted: no slack · last box: buffer</text>
+        </svg>
+      )
+    case 'cutLadder':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Three cuts adding up until their total passes the overload line">
+          {[
+            ['1. Events', 30],
+            ['2. Classes', 50],
+            ['3. Factions', 70],
+          ].map(([t, w], i) => (
+            <g key={t as string}>
+              <text x="10" y={22 + i * 24} className="c-small">{t}</text>
+              <rect x="90" y={10 + i * 24} width={(w as number) * 2.6} height="16" rx="3" className={i === 2 ? 'c-accent' : 'c-box'} />
+            </g>
+          ))}
+          <line x1="250" y1="4" x2="250" y2="80" className="c-line" strokeDasharray="4 3" />
+          <text x="214" y="92" className="c-small">overload</text>
+        </svg>
+      )
+    case 'nestedLoops':
+      return (
+        <svg viewBox="0 0 330 100" className="concept-svg" role="img" aria-label="Three nested rings: many short loops inside a medium loop inside the campaign loop">
+          <ellipse cx="130" cy="50" rx="120" ry="44" className="c-box" />
+          <ellipse cx="100" cy="50" rx="78" ry="30" className="c-box" />
+          <ellipse cx="70" cy="50" rx="36" ry="16" className="c-accent" />
+          <text x="70" y="54" textAnchor="middle" className="c-small">gather</text>
+          <text x="148" y="54" textAnchor="middle" className="c-small">town</text>
+          <text x="226" y="54" textAnchor="middle" className="c-small">campaign</text>
+          <text x="262" y="30" className="c-small">×15</text>
+          <text x="262" y="46" className="c-small">per day</text>
+          <text x="262" y="70" className="c-small">ratio =</text>
+          <text x="262" y="84" className="c-small">pacing</text>
+        </svg>
+      )
+    case 'feedbackLoop':
+      return (
+        <svg viewBox="0 0 330 90" className="concept-svg" role="img" aria-label="Gather feeds craft, craft rewards a better axe, the axe leads back to gather">
+          {[
+            ['Gather', 10, 'c-box'],
+            ['Craft', 120, 'c-box'],
+            ['Better axe', 230, 'c-accent'],
+          ].map(([t, x, cls]) => (
+            <g key={t as string}>
+              <rect x={x as number} y="10" width="90" height="26" rx="5" className={cls as string} />
+              <text x={(x as number) + 45} y="27" textAnchor="middle" className="c-small">{t}</text>
+            </g>
+          ))}
+          <line x1="100" y1="23" x2="120" y2="23" className="c-line" />
+          <line x1="210" y1="23" x2="230" y2="23" className="c-line" />
+          <path d="M275 36 V60 H55 V36" fill="none" className="c-line" strokeDasharray="4 3" />
+          <text x="110" y="78" className="c-small">feedback: the reward makes the next action better</text>
+        </svg>
+      )
     case 'abilityTimeline':
       return (
         <svg viewBox="0 0 320 70" className="concept-svg" role="img" aria-label="Spend cost, cast time, effect, then cooldown">

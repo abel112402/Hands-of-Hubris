@@ -42,7 +42,9 @@ export const useStore = create<State>((set, get) => ({
       fn(d)
       d.meta.updatedAt = new Date().toISOString()
     })
-    if (patches.length <= 1) return
+    // Only the timestamp changed (or nothing): not an edit. Counting patches is not enough, because the
+    // timestamp produces no patch when two edits land in the same millisecond.
+    if (!patches.some((p) => !(p.path[0] === 'meta' && p.path[1] === 'updatedAt'))) return
     const now = Date.now()
     const past = [...get().past]
     const last = past[past.length - 1]

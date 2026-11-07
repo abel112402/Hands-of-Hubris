@@ -89,6 +89,14 @@ export type CollectionView =
   | { kind: 'screenMap' }
   | { kind: 'screenReadiness' }
   | { kind: 'bindingMap' }
+  /** Vision & Concept views; fields are fixed by the module (see core/vision.ts). */
+  | { kind: 'pillarMatrix' }
+  | { kind: 'visionReadiness' }
+  /** Roadmap views; fields are fixed by the module (see core/roadmap.ts). */
+  | { kind: 'phaseProgress' }
+  | { kind: 'cutSavings' }
+  /** Core Loop view; fields are fixed by the module (see core/coreLoop.ts). */
+  | { kind: 'loopPacing' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {

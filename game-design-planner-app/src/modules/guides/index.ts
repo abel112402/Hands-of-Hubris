@@ -6,9 +6,16 @@ import { TIME_GUIDE } from './timeWeather'
 import { TRADE_GUIDE } from './trade'
 import { STORY_GUIDE } from './story'
 import { UI_GUIDE } from './ui'
+import { OPEN_QUESTIONS_GUIDE } from './openQuestions'
+import { VISION_GUIDE } from './vision'
+import { ROADMAP_GUIDE } from './roadmap'
+import { CORE_LOOP_GUIDE } from './coreLoop'
 
 /** Guides per module. A module without an entry shows no Guide tab, map or examples. */
 export const GUIDES: Record<string, ModuleGuide> = {
+  'overview.vision': VISION_GUIDE,
+  'overview.roadmap': ROADMAP_GUIDE,
+  'design.coreLoop': CORE_LOOP_GUIDE,
   'design.player': PLAYER_GUIDE,
   'design.items': ITEMS_GUIDE,
   'design.combat': COMBAT_GUIDE,
@@ -16,6 +23,7 @@ export const GUIDES: Record<string, ModuleGuide> = {
   'design.trade': TRADE_GUIDE,
   'design.story': STORY_GUIDE,
   'design.ui': UI_GUIDE,
+  'design.openQuestions': OPEN_QUESTIONS_GUIDE,
 }
 
 export const guideOf = (docId: string): ModuleGuide | undefined => GUIDES[docId]

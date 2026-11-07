@@ -1,5 +1,6 @@
 import type { Entity } from '../../model/types'
 import { analyze, phaseLoad, weekToDate } from '../../schedule'
+import { cutSavings, cutsToRecover, overload, phaseProgress, protectedConflicts } from '../../roadmap'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, entityName, hintId, isDocEmpty, shortList } from '../util'
 
@@ -21,6 +22,7 @@ const hint = (d: Draft): Hint => ({
 })
 
 const names = (list: Entity[]) => shortList(list.map(entityName))
+const round = (n: number) => Math.round(n * 10) / 10
 const SECTIONS = [
   { id: 'phases', label: 'phases' },
   { id: 'tasks', label: 'tasks' },
@@ -96,5 +98,23 @@ export const roadmapRules: HintRule[] = [
     )
     const open = entitiesOf(project, DOC, 'gates').filter((g) => endedPhases.has(g.phase) && (!g.decision || g.decision === 'Pending'))
     return open.length ? [hint({ rule: 'roadmap.decision', key: 'roadmapDecision', severity: 'suggest', sectionId: 'gates', entityId: open[0].id, params: { count: open.length, names: names(open) } })] : []
+  }),
+  rule('roadmap.late', ({ project, now }) => {
+    const late = phaseProgress(project, now).filter((r) => r.late)
+    return late.length
+      ? [hint({ rule: 'roadmap.late', key: 'roadmapLate', severity: 'suggest', sectionId: 'phases', entityId: late[0].phase.id, params: { count: late.length, names: names(late.map((r) => r.phase)), open: late[0].tasks - late[0].done } })]
+      : []
+  }),
+  rule('roadmap.cutsShort', ({ project }) => {
+    const need = overload(project)
+    if (need <= 0 || cutsToRecover(project) !== null) return []
+    const total = cutSavings(project).at(-1)?.cumulative ?? 0
+    return [hint({ rule: 'roadmap.cutsShort', key: 'roadmapCutsShort', severity: 'info', sectionId: 'cuts', params: { over: round(need), saved: round(total) } })]
+  }),
+  rule('roadmap.cutProtected', ({ project }) => {
+    const bad = protectedConflicts(project)
+    return bad.length
+      ? [hint({ rule: 'roadmap.cutProtected', key: 'roadmapCutProtected', severity: 'suggest', sectionId: 'cuts', entityId: bad[0].cut.id, params: { count: bad.length, names: names(bad.map((b) => b.cut)), pillars: names(bad.flatMap((b) => b.pillars)) } })]
+      : []
   }),
 ]
