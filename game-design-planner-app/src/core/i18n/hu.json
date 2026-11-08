@@ -12,12 +12,33 @@
     "settings": "Beállítások",
     "main": "Fő"
   },
+  "walkthrough": {
+    "phases": {
+      "concept": "Koncepció",
+      "systems": "Alaprendszerek",
+      "content": "Tartalom",
+      "production": "Gyártás",
+      "ship": "Csiszolás és kiadás"
+    },
+    "settings": {
+      "intro": "Az útmutató az alap útmutatóból és a kiválasztott műfajok csomagjaiból áll össze. A lépések a projekt adatai alapján maguktól kipipálódnak, de kézzel is kipipálhatod vagy kihagyhatod őket. A pipák a projektfájlba mentődnek, így a csapatod is látja őket.",
+      "packs": "Összetevők",
+      "base": "Alap útmutató",
+      "progress": "Haladás: {{total}} lépésből {{done}} kész, {{skipped}} kihagyva",
+      "phaseLine": "{{done}} kész · {{skipped}} kihagyva · {{total}} lépés",
+      "reset": "Visszaállítás",
+      "resetHint": "Törli a kézi pipákat és kihagyásokat. A projekt adatai alapján kész lépések készek maradnak.",
+      "resetSteps": "Útmutató pipáinak és kihagyásainak törlése ({{count}})",
+      "resetAll": "A tervezők útmutató-pipáit is töröld ({{count}})"
+    }
+  },
   "settingsPage": {
     "title": "Beállítások",
     "tabsLabel": "Beállítási részek",
     "tabs": {
       "general": "Általános",
       "genre": "Műfaj és tervezők",
+      "walkthrough": "Útmutató",
       "hints": "Tippek",
       "ai": "AI",
       "definitions": "Definíciók",

@@ -1,25 +1,50 @@
 import { create } from 'zustand'
 import type { GuideStep } from '../../core/guides/types'
 import type { Project } from '../../core/model/types'
+import { useStore } from '../../core/store/store'
+import { readGuideState, setModuleStepManual } from '../../core/walkthrough/evaluate'
 
-const key = (project: string, docId: string) => `hohplan:guide:${project}:${docId}`
+/** Legacy browser-local ticks (before they moved into the project file), keyed by project name. */
+const legacyKey = (project: string, docId: string) => `hohplan:guide:${project}:${docId}`
 
-/** Steps ticked by hand, per project name and document. Browser-local; the guide works without it. */
-export function readManual(project: string, docId: string): string[] {
+export function readLegacyManual(project: string, docId: string): string[] {
   try {
-    const v = JSON.parse(localStorage.getItem(key(project, docId)) ?? '[]')
+    const v = JSON.parse(localStorage.getItem(legacyKey(project, docId)) ?? '[]')
     return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []
   } catch {
     return []
   }
 }
 
-function writeManual(project: string, docId: string, ids: string[]) {
+function dropLegacy(project: string, docId: string) {
   try {
-    localStorage.setItem(key(project, docId), JSON.stringify(ids))
+    localStorage.removeItem(legacyKey(project, docId))
   } catch {
-    /* storage unavailable: the tick lasts for this session only */
+    /* storage unavailable: nothing to clean up */
   }
+}
+
+/**
+ * Module-guide steps ticked by hand. Saved in the project file (`meta.guide.modules`), so they are
+ * shared with teammates and survive renames. Old browser-local ticks are shown until the first
+ * change, which moves them into the project (one undo step) and removes the old key.
+ */
+export function manualDone(project: Project, docId: string): string[] {
+  const saved = readGuideState(project).modules?.[docId] ?? []
+  const legacy = readLegacyManual(project.meta.name, docId)
+  return legacy.length ? [...new Set([...saved, ...legacy])] : saved
+}
+
+export function toggleManual(docId: string, stepId: string) {
+  const { project, readOnly } = useStore.getState()
+  if (readOnly) return
+  const name = project.meta.name
+  const current = manualDone(project, docId)
+  useStore.getState().mutate((p) => {
+    for (const id of current) setModuleStepManual(p, docId, id, true)
+    setModuleStepManual(p, docId, stepId, !current.includes(stepId))
+  })
+  dropLegacy(name, docId)
 }
 
 /** Session-only guide UI state. */
@@ -30,27 +55,13 @@ export const useGuideUi = create<{
   /** Section whose example picker is open. */
   picker: string | null
   openPicker: (section: string | null) => void
-  manual: Record<string, string[]>
-  toggleManual: (project: string, docId: string, stepId: string) => void
-}>((set, get) => ({
+}>((set) => ({
   spotlight: null,
   setSpotlight: (spotlight) => set({ spotlight }),
   picker: null,
   openPicker: (picker) => set({ picker }),
-  manual: {},
-  toggleManual: (project, docId, stepId) => {
-    const k = key(project, docId)
-    const cur = get().manual[k] ?? readManual(project, docId)
-    const next = cur.includes(stepId) ? cur.filter((x) => x !== stepId) : [...cur, stepId]
-    writeManual(project, docId, next)
-    set({ manual: { ...get().manual, [k]: next } })
-  },
 }))
 
-export function useManualDone(project: Project, docId: string): string[] {
-  const k = key(project.meta.name, docId)
-  const cached = useGuideUi((s) => s.manual[k])
-  return cached ?? readManual(project.meta.name, docId)
-}
+export const useManualDone = (project: Project, docId: string): string[] => manualDone(project, docId)
 
 export const stepDone = (step: GuideStep, project: Project, manual: string[]) => (step.done ? step.done(project) : manual.includes(step.id))

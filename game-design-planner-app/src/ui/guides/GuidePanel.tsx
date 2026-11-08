@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import type { GuideStep, ModuleGuide } from '../../core/guides/types'
 import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
-import { stepDone, useGuideUi, useManualDone } from './guideStore'
+import { stepDone, toggleManual, useGuideUi, useManualDone } from './guideStore'
 
 /** Opens a step: goes to its section and spotlights its control. */
 export function useOpenStep(docId: string) {
@@ -25,7 +25,6 @@ export function runStepAction(step: GuideStep) {
 export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide }) {
   const project = useProject()
   const manual = useManualDone(project, docId)
-  const toggle = useGuideUi((s) => s.toggleManual)
   const open = useOpenStep(docId)
   const nav = useNavigate()
   const done = guide.steps.map((s) => stepDone(s, project, manual))
@@ -65,7 +64,7 @@ export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide
               )}
               {!step.done && (
                 <label className="row guide-manual">
-                  <input type="checkbox" checked={isDone} onChange={() => toggle(project.meta.name, docId, step.id)} /> mark done
+                  <input type="checkbox" checked={isDone} onChange={() => toggleManual(docId, step.id)} /> mark done
                 </label>
               )}
             </li>

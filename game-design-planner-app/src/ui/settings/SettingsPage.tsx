@@ -12,6 +12,7 @@ import { HintsPage } from '../hints/HintsPage'
 import { AiSettings } from '../ai/AiSettings'
 import { Definitions } from '../pages/Definitions'
 import { ProjectSettings } from '../cloud/ProjectSettings'
+import { WalkthroughSettings } from './WalkthroughSettings'
 
 /**
  * Every project setting in one place. Each tab reuses the existing page or panel, so behaviour and
@@ -22,6 +23,7 @@ type Tab = { id: string; render: () => ReactNode; when?: (ctx: { cloudActive: bo
 const TABS: Tab[] = [
   { id: 'general', render: () => <GeneralSettings /> },
   { id: 'genre', render: () => <GenreProfilePanel /> },
+  { id: 'walkthrough', render: () => <WalkthroughSettings /> },
   { id: 'hints', render: () => <HintsPage /> },
   { id: 'ai', render: () => <AiSettings /> },
   { id: 'definitions', render: () => <Definitions /> },

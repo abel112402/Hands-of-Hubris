@@ -23,7 +23,7 @@ describe('settings page', () => {
     open('#/settings')
     expect(location.hash).toBe('#/settings/general')
     const names = within(tabs()).getAllByRole('link').map((l) => l.textContent)
-    expect(names).toEqual(['General', 'Genre & editors', 'Hints', 'AI', 'Definitions', 'Data & backups'])
+    expect(names).toEqual(['General', 'Genre & editors', 'Walkthrough', 'Hints', 'AI', 'Definitions', 'Data & backups'])
     // Members & history needs an open cloud project.
     expect(within(tabs()).queryByText('Members & history')).toBeNull()
     for (const name of names) {

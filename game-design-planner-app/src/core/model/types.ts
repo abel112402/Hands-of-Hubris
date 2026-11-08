@@ -1,3 +1,4 @@
+import type { GuideState } from '../walkthrough/types'
 export const FORMAT = 'hands-of-hubris-planner'
 export const FORMAT_VERSION = 1
 export const APP_VERSION = '0.1.0'
@@ -352,6 +353,8 @@ export interface Project {
     hints?: HintPrefs
     aiTemplates?: AiTemplate[]
     profile?: ProjectProfile
+    /** Walkthrough progress (manual ticks, skips); see core/walkthrough. Absent = nothing ticked. */
+    guide?: GuideState
   }
   registry: Registry
   documents: Record<string, DocumentEnvelope>

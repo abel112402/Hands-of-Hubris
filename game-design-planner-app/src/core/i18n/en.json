@@ -12,12 +12,33 @@
     "settings": "Settings",
     "main": "Main"
   },
+  "walkthrough": {
+    "phases": {
+      "concept": "Concept",
+      "systems": "Core systems",
+      "content": "Content",
+      "production": "Production",
+      "ship": "Polish & ship"
+    },
+    "settings": {
+      "intro": "The walkthrough is built from the base guide plus a pack for each selected genre. Steps tick themselves from your project; you can also tick or skip them by hand. Ticks are saved in the project file, so your team sees them too.",
+      "packs": "Built from",
+      "base": "Base walkthrough",
+      "progress": "Progress: {{done}} done, {{skipped}} skipped of {{total}}",
+      "phaseLine": "{{done}} done · {{skipped}} skipped · {{total}} steps",
+      "reset": "Reset",
+      "resetHint": "Clears hand-made ticks and skips. Steps that are done because of your project data stay done.",
+      "resetSteps": "Reset walkthrough ticks and skips ({{count}})",
+      "resetAll": "Also reset planner guide ticks ({{count}})"
+    }
+  },
   "settingsPage": {
     "title": "Settings",
     "tabsLabel": "Settings sections",
     "tabs": {
       "general": "General",
       "genre": "Genre & editors",
+      "walkthrough": "Walkthrough",
       "hints": "Hints",
       "ai": "AI",
       "definitions": "Definitions",

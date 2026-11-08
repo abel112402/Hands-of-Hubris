@@ -1,6 +1,6 @@
 # Guided Workspace Plan — genre walkthroughs, 3-pane home, settings
 
-Status: **in progress** — M1 and M2 done (2026-11-08); no Walkthrough tab in Settings until M4. Supersedes the "Tailored guide" part of `ACCOUNTS_COLLABORATION_GENRE_PLAN.md` §6 (the profile model stays).
+Status: **in progress** — M1, M2 and M4 done (2026-11-08); M3 (layout) next. Engine: `src/core/walkthrough/`, content: `src/modules/walkthroughs/`. Supersedes the "Tailored guide" part of `ACCOUNTS_COLLABORATION_GENRE_PLAN.md` §6 (the profile model stays).
 
 ## 1. Goals
 

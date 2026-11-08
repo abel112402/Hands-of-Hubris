@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { FORMAT } from './types'
+import { guideStateSchema } from '../walkthrough/schema'
 
 const catalogItem = z.object({ id: z.string(), label: z.string() }).passthrough()
 const registry = z
@@ -32,6 +33,7 @@ export const projectSchema = z
         updatedAt: z.string(),
         appVersion: z.string(),
         profile: profileSchema.optional(),
+        guide: guideStateSchema.optional(),
       })
       .passthrough(),
     registry,
