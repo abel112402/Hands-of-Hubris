@@ -863,8 +863,6 @@ tr.clickable{cursor:pointer}tr.clickable:hover td,tr.clickable:hover th{backgrou
 .genre-customize summary{cursor:pointer;color:var(--accent)}
 .genre-customize fieldset{display:flex;flex-wrap:wrap;gap:4px var(--space-3)}
 .genre-module{display:inline-flex;gap:6px;align-items:center}
-.project-guide{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:var(--space-2) var(--space-3);margin:var(--space-2) 0}
-.project-guide summary{cursor:pointer}
 .guide-steps li.done .guide-step-text strong{color:var(--muted)}
 .guide-step-text{display:flex;flex-direction:column;min-width:0}
 .guide-step-source{font-size:var(--fs-xs)}
@@ -1042,3 +1040,17 @@ a.button.primary{background:var(--accent-strong);border-color:var(--accent-stron
 .walk-chip-label{color:var(--muted);font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em}
 .walk-chip .spacer{flex:1}
 a.button.small{padding:1px 8px;font-size:var(--fs-sm)}
+/* Hint cards in the workspace center (step tips, Hints tab): title over text, actions on the right.
+   Overrides the generic .list row layout, which squeezed title, text and buttons into one row. */
+.workspace-center .hint-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title actions" "body actions";column-gap:var(--space-4);row-gap:2px;align-items:start;padding:8px 12px;margin:0 0 6px;border:1px solid var(--line);border-left-width:3px}
+.workspace-center .hint-card>strong{grid-area:title;font-size:var(--fs-md);overflow-wrap:anywhere}
+.workspace-center .hint-card>p{grid-area:body;margin:0;color:var(--muted);font-size:var(--fs-md-sm);overflow-wrap:anywhere}
+.workspace-center .hint-actions{grid-area:actions;flex-wrap:nowrap;align-self:center}
+.step-hints .list{margin:0}
+.step-hints .hint-card{background:var(--bg)}
+@media (max-width:560px){
+  .workspace-center .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "body" "actions"}
+  .workspace-center .hint-actions{margin-top:var(--space-1);align-self:start}
+}
+@media (prefers-reduced-motion:reduce){.ring-value{transition:none}}
+.center-tabs button:focus-visible,.rail-item:focus-visible,.rail-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { readAutosave } from '../../core/persistence/autosave'
 import { useCloud } from '../../core/cloud/session'
@@ -19,7 +19,16 @@ export function Home() {
   // The local autosave banner belongs to local mode; cloud projects recover from their own drafts.
   const cloudActive = useCloud((s) => !!s.active)
   const [auto, setAuto] = useState<string | null>(null)
-  const [railOpen, setRailOpen] = useState(false)
+  const [railOpen, setRailState] = useState(false)
+  const drawerBtn = useRef<HTMLButtonElement>(null)
+  const setRailOpen = (open: boolean) => {
+    setRailState(open)
+    // Opening focuses the filter; closing returns focus to the button that opened it.
+    requestAnimationFrame(() => {
+      if (open) document.querySelector<HTMLInputElement>('#workspace-rail .rail-filter')?.focus()
+      else if (getComputedStyle(drawerBtn.current ?? document.body).display !== 'none') drawerBtn.current?.focus()
+    })
+  }
   const view = useWalkthrough()
   useEffect(() => {
     void readAutosave().then((a) => setAuto(a ? new Date(a.savedAt).toLocaleString() : null))
@@ -34,7 +43,7 @@ export function Home() {
       <main className="workspace-center">
         <div className="workspace-intro">
           {/* Narrow screens: the planner list is a drawer. */}
-          <button className="rail-drawer-btn" aria-expanded={railOpen} aria-controls="workspace-rail" onClick={() => setRailOpen(!railOpen)}>
+          <button ref={drawerBtn} className="rail-drawer-btn" aria-expanded={railOpen} aria-controls="workspace-rail" onClick={() => setRailOpen(!railOpen)}>
             <Icon name="file" /> {t('workspace.planners')}
           </button>
           <h1>{t('home.title')}</h1>

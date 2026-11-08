@@ -40,5 +40,5 @@ export default defineConfig(({ mode }) => ({
   server: { fs: { allow: ['..'] } },
   // UI tests render the whole app; under a full parallel run the first render of a file can pass 5 s.
   // tests/cloud needs the local Supabase stack: run it with `npm run test:cloud`.
-  test: { environment: 'jsdom', include: ['tests/**/*.test.ts?(x)'], exclude: ['tests/cloud/**', 'node_modules/**'], testTimeout: 15000 },
+  test: { environment: 'jsdom', setupFiles: ['tests/setup.ts'], include: ['tests/**/*.test.ts?(x)'], exclude: ['tests/cloud/**', 'node_modules/**'], testTimeout: 15000 },
 }))

@@ -155,3 +155,39 @@ describe('walkthrough across the app', () => {
     expect(screen.queryByText(/Walkthrough step/)).toBeNull()
   })
 })
+
+describe('language', () => {
+  it('shows the walkthrough in Hungarian when the app is in Hungarian', async () => {
+    const i18n = (await import('../src/core/i18n')).default
+    await i18n.changeLanguage('hu')
+    try {
+      open('#/')
+      expect(screen.getByRole('heading', { name: 'Írd meg a pitch-et' })).toBeTruthy()
+      expect(screen.getByTestId('walk-step-concept.pillars').textContent).toContain('Válassz 3–5 tervezési pillért')
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  })
+})
+
+describe('keyboard and screen readers', () => {
+  it('moves between center tabs with the arrow keys, with one tab in the tab order', () => {
+    open('#/')
+    const tabs = () => screen.getAllByRole('tab')
+    expect(tabs().map((t) => t.tabIndex)).toEqual([0, -1, -1])
+    fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' })
+    expect(screen.getByRole('tab', { name: /^Hints/ }).getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: /^Hints/ }))
+    fireEvent.keyDown(screen.getByRole('tablist'), { key: 'End' })
+    expect(screen.getByRole('tab', { name: 'AI' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' })
+    expect(screen.getByRole('tab', { name: 'Walkthrough' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('names step status icons and links group toggles to their lists', () => {
+    open('#/')
+    expect(within(screen.getByTestId('walk-step-concept.pitch')).getByRole('img', { name: 'Not done' })).toBeTruthy()
+    const toggle = within(screen.getByRole('navigation', { name: 'Planners' })).getByRole('button', { name: 'QA' })
+    expect(document.getElementById(toggle.getAttribute('aria-controls')!)?.textContent).toContain('Bug Reports')
+  })
+})

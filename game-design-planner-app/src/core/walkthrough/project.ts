@@ -1,13 +1,13 @@
 /**
  * Glue between the walkthrough engine, the genre profile and the content registry.
  */
-import { BASE_PACK, GENRE_PACKS } from '../../modules/walkthroughs'
+import { BASE_PACK, GENRE_PACKS, WALKTHROUGH_TRANSLATIONS } from '../../modules/walkthroughs'
 import { guideOf } from '../../modules/guides'
 import { knownGenres, readProfile } from '../genre'
 import { getModule, getSections } from '../modules/registry'
 import { RULES } from '../hints/engine'
 import { createProject } from '../model/project'
-import { composeWalkthrough } from './compose'
+import { composeWalkthrough, localizeWalkthrough } from './compose'
 import type { BasePack, DoneRule, GenrePack, Walkthrough, WalkStep, WalkTarget } from './types'
 import type { Project } from '../model/types'
 
@@ -24,7 +24,8 @@ export function projectWalkthrough(project: Project, packs: Record<string, Genre
   const key = genres.join(',')
   let w = cache.get(key)
   if (!w) {
-    w = composeWalkthrough(base, genres.map((id) => packs[id]))
+    // Translations are attached once here; the UI picks the language with textOf(text, lang).
+    w = localizeWalkthrough(composeWalkthrough(base, genres.map((id) => packs[id])), WALKTHROUGH_TRANSLATIONS)
     cache.set(key, w)
   }
   return w

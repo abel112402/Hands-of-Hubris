@@ -8,12 +8,9 @@ import {
   FOUNDATION_EDITORS,
   GENERAL_ORDER,
   GENRES,
-  PROJECT_GUIDE_STEPS,
   type GenreDef,
-  type ProjectGuideStepDef,
 } from '../modules/genres'
-import { GROUPS, MODULES, getModule, getSections } from './modules/registry'
-import { isDocEmpty, isSectionEmpty } from './hints/util'
+import { GROUPS, MODULES, getModule } from './modules/registry'
 import type { ModuleGroup, Project, ProjectProfile } from './model/types'
 
 export const PROFILE_VERSION = 1
@@ -199,38 +196,3 @@ export function restoreEditorDefaults(project: Project) {
 
 export const hasEditorOverrides = (profile: ProjectProfile) =>
   !!(profile.editors?.add.length || profile.editors?.remove.length)
-
-// ---------- Project guide ----------
-
-export type ProjectGuideStep = ProjectGuideStepDef & {
-  /** Selected genre IDs (or 'foundation') that added this step. */
-  sources: string[]
-  done: boolean
-}
-
-function stepDone(project: Project, step: ProjectGuideStepDef): boolean {
-  const mod = getModule(step.docId)
-  if (!mod) return false
-  if (!step.section) return !isDocEmpty(project, step.docId)
-  const sec = getSections(mod, project.registry).find((s) => s.id === step.section)
-  if (!sec) return !isDocEmpty(project, step.docId)
-  return !isSectionEmpty(sec, project.documents[step.docId]?.data[sec.id])
-}
-
-/**
- * Composes the guide: foundation steps plus each selected genre's steps, deduplicated by step ID,
- * ordered by priority then catalog order. Steps for missing modules or removed editors are skipped.
- * Completion is derived from project data only, so it survives genre changes and needs no extra state.
- */
-export function composeProjectGuide(project: Project, steps: ProjectGuideStepDef[] = PROJECT_GUIDE_STEPS): ProjectGuideStep[] {
-  const profile = readProfile(project)
-  const selected = new Set(knownGenres(profile).map((g) => g.id))
-  if (!selected.size) return []
-  const removed = new Set(profile.editors?.remove ?? [])
-  return steps
-    .map((s, i) => ({ s, i, sources: s.genres.filter((g) => g === 'foundation' || selected.has(g)) }))
-    .filter(({ s, sources }) => sources.length && getModule(s.docId) && !removed.has(s.docId))
-    .sort((a, b) => a.s.priority - b.s.priority || a.i - b.i)
-    .filter(({ s }, idx, arr) => arr.findIndex((x) => x.s.id === s.id) === idx)
-    .map(({ s, sources }) => ({ ...s, sources, done: stepDone(project, s) }))
-}

@@ -161,7 +161,7 @@ function StepRow({ step, progress, detailed, onAsk }: { step: ComposedStep; prog
   return (
     <li className={`walk-step ${status}${current ? ' current' : ''}`} data-testid={`walk-step-${step.id}`}>
       <div className="walk-step-head">
-        <span className="walk-check" aria-label={t(`workspace.status.${status}`)}>{STATUS_ICON[status]}</span>
+        <span className="walk-check" role="img" aria-label={t(`workspace.status.${status}`)}>{STATUS_ICON[status]}</span>
         {detailed ? (
           <button className="link-btn" aria-expanded={expanded} onClick={() => setOpen(!open)}>{textOf(step.title, i18n.language)}</button>
         ) : link ? (
@@ -228,9 +228,16 @@ export function GuideCenter({ view }: { view: WalkthroughView }) {
   return (
     <div className="guide-center">
       <CurrentStep view={view} onAsk={onAsk} />
-      <div className="center-tabs" role="tablist" aria-label={t('workspace.tabsLabel')}>
+      <div className="center-tabs" role="tablist" aria-label={t('workspace.tabsLabel')} onKeyDown={(e) => {
+        const i = tabs.findIndex((x) => x.id === tab)
+        const next = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1
+        if (next < 0) return
+        e.preventDefault()
+        setTab(tabs[next].id)
+        document.getElementById(`tab-${tabs[next].id}`)?.focus()
+      }}>
         {tabs.map((x) => (
-          <button key={x.id} role="tab" id={`tab-${x.id}`} aria-selected={tab === x.id} aria-controls={`panel-${x.id}`} className={tab === x.id ? 'active' : ''} onClick={() => setTab(x.id)}>
+          <button key={x.id} role="tab" id={`tab-${x.id}`} aria-selected={tab === x.id} aria-controls={`panel-${x.id}`} tabIndex={tab === x.id ? 0 : -1} className={tab === x.id ? 'active' : ''} onClick={() => setTab(x.id)}>
             {x.label}{!!x.badge && <span className="badge" aria-hidden="true">{x.badge}</span>}
           </button>
         ))}

@@ -180,14 +180,7 @@
     "noMatch": "Egyik ajánlott tervező sem felel meg a szűrésnek.",
     "whyFoundation": "Alapok",
     "whyManual": "Te adtad hozzá",
-    "whyGeneral": "Általános sorrend",
-    "guideTitle": "Projektútmutató: {{genres}}",
-    "guideProgress": "{{done}} / {{total}} kész",
-    "guideOpen": "{{doc}} megnyitása",
-    "guideAll": "Mind a(z) {{count}} lépés megjelenítése",
-    "guideLess": "Csak a következő lépések",
-    "done": "Kész",
-    "todo": "Teendő"
+    "whyGeneral": "Általános sorrend"
   },
   "editor": {
     "visual": "Vizuális szerkesztő",

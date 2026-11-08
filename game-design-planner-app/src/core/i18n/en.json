@@ -180,14 +180,7 @@
     "noMatch": "No recommended planner matches the filter.",
     "whyFoundation": "Foundation",
     "whyManual": "Added by you",
-    "whyGeneral": "General order",
-    "guideTitle": "Project guide: {{genres}}",
-    "guideProgress": "{{done}} of {{total}} done",
-    "guideOpen": "Open {{doc}}",
-    "guideAll": "Show all {{count}} steps",
-    "guideLess": "Show next steps only",
-    "done": "Done",
-    "todo": "To do"
+    "whyGeneral": "General order"
   },
   "editor": {
     "visual": "Visual editor",

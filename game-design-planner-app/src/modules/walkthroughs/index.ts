@@ -18,7 +18,15 @@ import { ADVENTURE_PACK } from './adventure'
 import { ROGUELIKE_PACK } from './roguelike'
 import { SANDBOX_PACK } from './sandbox'
 
+import { HU } from './i18n/hu'
+
 export { BASE_PACK } from './base'
+
+/**
+ * Translations of walkthrough content per language, keyed by the English text.
+ * Add a language = one dictionary file + one entry here (plus the UI strings in core/i18n).
+ */
+export const WALKTHROUGH_TRANSLATIONS: Record<string, Record<string, string>> = { hu: HU }
 
 /** Genre walkthrough packs, keyed by genre ID. A selected genre without a pack uses the base only. */
 export const GENRE_PACKS: Record<string, GenrePack> = Object.fromEntries(

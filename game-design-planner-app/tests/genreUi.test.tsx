@@ -30,7 +30,6 @@ describe('genre profile on the planner menu', () => {
     // Choosing genres happens in Settings; the menu only links there.
     expect(within(panel()).getByRole('link', { name: 'Choose genres' }).getAttribute('href')).toBe('#/settings/genre')
     expect(screen.queryByRole('group', { name: 'Planner view' })).toBeNull()
-    expect(document.querySelector('.project-guide')).toBeNull()
     for (const m of MODULES) expect(screen.getAllByText(m.title).length).toBeGreaterThan(0)
   })
 

@@ -82,6 +82,35 @@ export function composeWalkthrough(base: BasePack, packs: GenrePack[]): Walkthro
   }
 }
 
+/**
+ * Attaches translations to every content text: `"Write the pitch"` becomes
+ * `{ en: "Write the pitch", hu: "…" }` when a dictionary has it, so `textOf(text, lang)` resolves it.
+ * Texts that already carry their own translations keep them. Pure; returns a new walkthrough.
+ */
+export function localizeWalkthrough(w: Walkthrough, dictionaries: Record<string, Record<string, string>>): Walkthrough {
+  const langs = Object.entries(dictionaries)
+  if (!langs.length) return w
+  const tr = (t: I18nText): I18nText => {
+    const en = typeof t === 'string' ? t : t.en
+    const extra = Object.fromEntries(langs.filter(([, d]) => d[en]).map(([lang, d]) => [lang, d[en]]))
+    if (!Object.keys(extra).length) return t
+    return typeof t === 'string' ? { en, ...extra } : { ...extra, ...t }
+  }
+  const opt = (t: I18nText | undefined) => (t === undefined ? undefined : tr(t))
+  return {
+    ...w,
+    chapters: w.chapters.map((c) => ({ ...c, title: tr(c.title) })),
+    steps: w.steps.map((s) => ({
+      ...s,
+      title: tr(s.title),
+      body: tr(s.body),
+      ...(s.tips ? { tips: s.tips.map(tr) } : {}),
+      ...(s.aiPrompt ? { aiPrompt: opt(s.aiPrompt) } : {}),
+      notes: s.notes.map((n) => ({ ...n, text: tr(n.text) })),
+    })),
+  }
+}
+
 /** Steps grouped for display: phase → chapter → steps. Empty phases and chapters are left out. */
 export function groupWalkthrough(w: Walkthrough) {
   return PHASES.map((phase) => {

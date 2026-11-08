@@ -1,6 +1,6 @@
 # Guided Workspace Plan — genre walkthroughs, 3-pane home, settings
 
-Status: **in progress** — M1–M7 done (2026-11-08); M8 (Hungarian content, accessibility pass, cleanup) next. Old genre checklist (`ProjectGuide`, `PROJECT_GUIDE_STEPS`) is no longer shown; delete it in M8. Layout: `src/ui/workspace/`. Engine: `src/core/walkthrough/`, content: `src/modules/walkthroughs/`. Supersedes the "Tailored guide" part of `ACCOUNTS_COLLABORATION_GENRE_PLAN.md` §6 (the profile model stays).
+Status: **implemented** — M1–M8 done (2026-11-08). Layout: `src/ui/workspace/`. Engine: `src/core/walkthrough/`, content: `src/modules/walkthroughs/` (Hungarian in `i18n/hu.ts`). Supersedes the "Tailored guide" part of `ACCOUNTS_COLLABORATION_GENRE_PLAN.md` §6 (the profile model stays).
 
 ## 1. Goals
 

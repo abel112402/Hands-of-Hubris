@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { createProject } from '../src/core/model/project'
 import { deserializeProject, serializeProject } from '../src/core/persistence/serialize'
-import { MODULES, getModule, getSections } from '../src/core/modules/registry'
-import { ALWAYS_SHOWN_GROUPS, FOUNDATION_EDITORS, GENERAL_ORDER, GENRES, PROJECT_GUIDE_STEPS } from '../src/modules/genres'
+import { MODULES, getModule } from '../src/core/modules/registry'
+import { ALWAYS_SHOWN_GROUPS, FOUNDATION_EDITORS, GENERAL_ORDER, GENRES } from '../src/modules/genres'
 import {
-  composeProjectGuide,
   defaultRecommendations,
   editorGroups,
   onboardingOrder,
@@ -23,21 +22,11 @@ const ids = (p: ProjectProfile) => recommendEditors(p).map((r) => r.docId)
 const roundTrip = (p: Project) => deserializeProject(serializeProject(p)).project
 
 describe('genre catalog integrity', () => {
-  it('uses unique IDs and only registered modules and sections', () => {
+  it('uses unique IDs and only registered modules', () => {
     expect(new Set(GENRES.map((g) => g.id)).size).toBe(GENRES.length)
-    expect(new Set(PROJECT_GUIDE_STEPS.map((s) => s.id)).size).toBe(PROJECT_GUIDE_STEPS.length)
-    const genreIds = new Set(['foundation', ...GENRES.map((g) => g.id)])
-    const project = createProject('x', false)
     for (const e of [...FOUNDATION_EDITORS, ...GENRES.flatMap((g) => g.editors)]) expect(getModule(e.docId), e.docId).toBeTruthy()
     for (const d of GENERAL_ORDER) expect(getModule(d), d).toBeTruthy()
-    for (const s of PROJECT_GUIDE_STEPS) {
-      const mod = getModule(s.docId)
-      expect(mod, s.id).toBeTruthy()
-      if (s.section) expect(getSections(mod!, project.registry).some((x) => x.id === s.section), `${s.id} → ${s.section}`).toBe(true)
-      for (const g of s.genres) expect(genreIds.has(g), `${s.id} genre ${g}`).toBe(true)
-    }
-    // Every genre adds at least one guide step.
-    for (const g of GENRES) expect(PROJECT_GUIDE_STEPS.some((s) => s.genres.includes(g.id)), g.id).toBe(true)
+    // Walkthrough packs per genre are checked in walkthrough.test.ts.
   })
 })
 
@@ -166,35 +155,6 @@ describe('portable file format', () => {
     const p = createProject('x', false) as any
     p.meta.profile = { version: 1, genres: 'rpg' }
     expect(() => deserializeProject(JSON.stringify(p))).toThrow(/meta\.profile\.genres/)
-  })
-})
-
-describe('project guide', () => {
-  it('is empty for neutral projects', () => {
-    expect(composeProjectGuide(createProject('x', false))).toEqual([])
-  })
-
-  it('composes foundation + genre steps, deduplicated and ordered', () => {
-    const p = createProject('x', false, profile(['survival', 'rpg']))
-    const steps = composeProjectGuide(p)
-    expect(steps.slice(0, 3).map((s) => s.id)).toEqual(['foundation.pitch', 'foundation.pillars', 'foundation.loop'])
-    expect(new Set(steps.map((s) => s.id)).size).toBe(steps.length)
-    const biomes = steps.find((s) => s.id === 'world.biomes')!
-    expect(biomes.sources).toEqual(['survival', 'rpg'])
-    expect(steps.map((s) => s.priority)).toEqual([...steps.map((s) => s.priority)].sort((a, b) => a - b))
-    expect(steps.some((s) => s.genres.includes('action') && !s.genres.some((g) => ['survival', 'rpg', 'foundation'].includes(g)))).toBe(false)
-  })
-
-  it('derives completion from project data and skips removed editors', () => {
-    let p = createProject('x', false, profile(['survival']))
-    expect(composeProjectGuide(p).every((s) => !s.done)).toBe(true)
-    p = produce(p, (d) => {
-      d.documents['overview.vision'] = { moduleVersion: getModule('overview.vision')!.version, data: { pitch: { pitch: 'A survival game' } } }
-    })
-    const pitch = composeProjectGuide(p).find((s) => s.id === 'foundation.pitch')!
-    expect(pitch.done).toBe(true)
-    p = produce(p, (d) => setEditorRecommended(d, 'design.timeWeather', false))
-    expect(composeProjectGuide(p).some((s) => s.docId === 'design.timeWeather')).toBe(false)
   })
 })
 

@@ -83,14 +83,14 @@ export function EditorRail({ onNavigate }: { onNavigate?: () => void }) {
         return (
           <section key={g.group} className="rail-group" aria-labelledby={id}>
             <h2 id={id} className="rail-head">
-              <button className="rail-toggle" aria-expanded={!isCollapsed} onClick={() => toggle(g.group)}>
+              <button className="rail-toggle" aria-expanded={!isCollapsed} aria-controls={`${id}-list`} onClick={() => toggle(g.group)}>
                 <Icon name={isCollapsed ? 'chevronRight' : 'chevronDown'} /> {g.label}
               </button>
             </h2>
             {!isCollapsed && (
               <>
                 {g.filtered && <p className="rail-note muted">{t('genres.recommendedFor', { genres: genreNames(profile.genres) })}</p>}
-                <div className="rail-list">
+                <div className="rail-list" id={`${id}-list`}>
                   {shown.map((e) => (
                     // In a narrowed group every planner is recommended, so the star only marks them in mixed lists.
                     <RailItem key={e.docId} entry={e} project={project} star={e.recommended && (showAll || !g.filtered)} />

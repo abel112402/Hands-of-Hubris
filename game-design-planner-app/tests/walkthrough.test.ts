@@ -398,3 +398,55 @@ describe('step focus', () => {
     expect(buildPrompt({ task: 'chat', language: 'en', instruction: 'Help' }).user).not.toContain('walkthrough_step')
   })
 })
+
+describe('translations', () => {
+  /** Every English content text of every pack, including overrides and genre notes. */
+  const contentTexts = () => {
+    const out = new Set<string>()
+    const add = (t: unknown) => {
+      if (typeof t === 'string') out.add(t)
+      else if (t && typeof t === 'object' && 'en' in t) out.add((t as { en: string }).en)
+    }
+    const stepTexts = (s: Partial<WalkStep>) => {
+      add(s.title)
+      add(s.body)
+      s.tips?.forEach(add)
+      add(s.aiPrompt)
+    }
+    for (const p of [BASE_PACK, ...Object.values(GENRE_PACKS)]) {
+      p.chapters?.forEach((c) => add(c.title))
+      if ('steps' in p) p.steps.forEach(stepTexts)
+      else {
+        p.insert?.forEach((g) => g.steps.forEach(stepTexts))
+        Object.values(p.replace ?? {}).forEach(stepTexts)
+        Object.values(p.notes ?? {}).forEach((l) => l.forEach(add))
+      }
+    }
+    return [...out]
+  }
+
+  it('has a Hungarian translation for every walkthrough text', async () => {
+    const { WALKTHROUGH_TRANSLATIONS } = await import('../src/modules/walkthroughs')
+    const missing = contentTexts().filter((t) => !WALKTHROUGH_TRANSLATIONS.hu[t])
+    expect(missing).toEqual([])
+    // No stale entries for texts that were removed or reworded.
+    const texts = new Set(contentTexts())
+    expect(Object.keys(WALKTHROUGH_TRANSLATIONS.hu).filter((k) => !texts.has(k))).toEqual([])
+  })
+
+  it('attaches translations to the composed walkthrough, including merged genre notes', async () => {
+    const { localizeWalkthrough } = await import('../src/core/walkthrough/compose')
+    const p = createProject('G', false, { version: 1, genres: ['survival', 'rpg'] })
+    const w = projectWalkthrough(p)
+    const pitch = w.steps.find((s) => s.id === 'concept.pitch')!
+    expect(textOf(pitch.title, 'hu')).toBe('Írd meg a pitch-et')
+    expect(textOf(pitch.title, 'en')).toBe('Write the pitch')
+    const enemies = w.steps.find((s) => s.id === 'combat.enemies')!
+    expect(enemies.notes.every((n) => textOf(n.text, 'hu') !== textOf(n.text, 'en'))).toBe(true)
+    expect(textOf(w.chapters[0].title, 'hu')).toBe('Alapok')
+    // Own translations win; unknown texts stay as they are.
+    const own = localizeWalkthrough(composeWalkthrough({ ...BASE, steps: [step('a', { title: { en: 'Write the pitch', hu: 'Saját' } }), step('b', { title: 'Unknown' })] }, []), { hu: { 'Write the pitch': 'X' } })
+    expect(textOf(own.steps[0].title, 'hu')).toBe('Saját')
+    expect(own.steps[1].title).toBe('Unknown')
+  })
+})
