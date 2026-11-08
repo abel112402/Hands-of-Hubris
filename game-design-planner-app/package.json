@@ -9,9 +9,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:cloud": "vitest run --config vitest.cloud.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "@xyflow/react": "^12.12.1",
     "i18next": "^26.7.1",
     "idb-keyval": "^6.3.0",
@@ -39,6 +41,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
     "jsdom": "^30.1.3",
+    "supabase": "^3.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.5",

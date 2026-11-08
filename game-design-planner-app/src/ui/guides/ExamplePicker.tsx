@@ -23,6 +23,8 @@ import { questionList } from '../../core/openQuestions'
 import { estimateTown, TOWN_DOC } from '../../core/town'
 import { bondLadder, eventOdds, lifespan, needChains, NPC_DOC, populationMix, statScale } from '../../core/npc'
 import { NPC_COLORS, RadarSvg } from '../editors/npcViews'
+import { branchFlow, codingList, enforcementSummary, folderTree, namePattern } from '../../core/coding'
+import { dataList, dataModel, loadPlan, recordCount } from '../../core/dataDriven'
 import { ARCH_DOC, archList, bootSequence, dependencies, dependencyCycles, extensionCoverage, layerOrder, messageFlow, nameOf, tickBudget } from '../../core/architecture'
 import { useProject } from '../hooks'
 import { useGuideUi } from './guideStore'
@@ -635,6 +637,99 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
         <thead><tr><th>Step</th><th>Scenes</th><th>Initialises</th><th>Seconds</th></tr></thead>
         <tbody>{boot.steps.map((s, i) => <tr key={s.order}><td className="num">{i + 1}</td><td>{s.scenes.map(nameOf).join(', ')}</td><td>{s.modules.map(nameOf).join(', ') || '–'}</td><td className="num">{fmt(s.seconds)}</td></tr>)}</tbody>
         <tfoot><tr><td colSpan={4} className="muted">{project.documents[ARCH_DOC] ? `≈ ${fmt(boot.totalSeconds)} s to the last step` : ''}</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'codingNaming') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Rule</th><th>Pattern</th><th>Good</th><th>Bad</th></tr></thead>
+        <tbody>
+          {codingList(project, 'naming').map((r) => {
+            const pat = namePattern(r)
+            return <tr key={r.id}><td>{r.name}</td><td><code>{'error' in pat ? 'invalid' : pat.source}</code></td><td>{r.example ?? '–'}</td><td><s>{r.counterExample ?? ''}</s></td></tr>
+          })}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'codingFolders') {
+    const tree = folderTree(project)
+    return (
+      <pre className="code-sample">
+        {'Assets/\n' + tree.flat.map((n) => `${'  '.repeat(n.depth + 1)}${n.folder.name}/${n.folder.asmdef ? '  (.asmdef)' : ''}${n.folder.contents?.length ? '  ' + n.folder.contents.join(' ') : ''}`).join('\n')}
+      </pre>
+    )
+  }
+  if (ex.preview === 'codingAssets') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Rule</th><th>Asset</th><th>Conflict risk</th><th>Mitigation</th></tr></thead>
+        <tbody>{codingList(project, 'assetRules').map((r) => <tr key={r.id}><td>{r.name}</td><td>{r.assetType}</td><td>{r.mergeRisk ?? '–'}</td><td>{r.mitigation ?? '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'codingBranches') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Branch</th><th>Pattern</th><th>From</th><th>Merges into</th></tr></thead>
+        <tbody>{branchFlow(project).map((r) => <tr key={r.branch.id}><td>{r.branch.name}{r.branch.protected ? ' 🔒' : ''}</td><td><code>{r.branch.pattern}</code></td><td>{r.from?.name ?? '–'}</td><td>{r.into.map((b) => b.name).join(', ') || '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'dataFormats') {
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Format</th><th>Edited in</th><th>Git</th><th>When</th></tr></thead>
+        <tbody>{dataList(project, 'formats').map((f) => <tr key={f.id}><td>{f.name}</td><td>{f.editedIn ?? '–'}</td><td>{f.merge ?? '–'}</td><td>{f.whenToUse ?? ''}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'dataSchemas') {
+    const model = dataModel(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Schema</th><th>Prefix</th><th>Fields</th><th>References</th><th>Records</th></tr></thead>
+        <tbody>
+          {model.nodes.map((n) => (
+            <tr key={n.schema.id}>
+              <td>{n.schema.name}</td>
+              <td><code>{n.schema.idPrefix ?? ''}</code></td>
+              <td className="num">{n.fields.length}</td>
+              <td>{model.edges.filter((e) => e.from.id === n.schema.id).map((e) => `${e.field.name} → ${e.to.name}`).join(', ') || '–'}</td>
+              <td className="num">{recordCount(project, n.schema).count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'dataLoad') {
+    const plan = loadPlan(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>When</th><th>Group</th><th>Schemas</th><th>MB</th></tr></thead>
+        <tbody>{plan.phases.flatMap((ph) => ph.groups.map((g) => <tr key={g.group.id}><td>{ph.label}</td><td>{g.group.name}</td><td>{g.schemas.map((s) => s.schema.name).join(', ') || '–'}</td><td className="num">{fmt(g.mb)}</td></tr>))}</tbody>
+        <tfoot><tr><td colSpan={4} className="muted">{plan.unassigned.length ? `Never loaded: ${plan.unassigned.map((s) => s.name).join(', ')}` : 'Every schema is loaded'}</td></tr></tfoot>
+      </table>
+    )
+  }
+  if (ex.preview === 'dataValidators') {
+    const names = new Map(dataList(project, 'schemas').map((s) => [s.id, s.name]))
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Runs</th><th>Validator</th><th>Schema</th><th>Check</th></tr></thead>
+        <tbody>{dataList(project, 'validators').map((v) => <tr key={v.id}><td>{v.when ?? '–'}</td><td>{v.name}</td><td>{names.get(v.schema) ?? 'all'}</td><td>{v.kind ?? '–'}</td></tr>)}</tbody>
+      </table>
+    )
+  }
+  if (ex.preview === 'codingReview') {
+    const s = enforcementSummary(project)
+    return (
+      <table className="grid npc-preview">
+        <thead><tr><th>Check</th><th>Severity</th><th>Enforced by</th></tr></thead>
+        <tbody>{codingList(project, 'review').map((r) => <tr key={r.id}><td>{r.name}</td><td>{r.severity ?? '–'}</td><td>{r.enforcement ?? 'Manual'}</td></tr>)}</tbody>
+        <tfoot><tr><td colSpan={3} className="muted">{s.total.automated} of {s.total.total} rules automated</td></tr></tfoot>
       </table>
     )
   }

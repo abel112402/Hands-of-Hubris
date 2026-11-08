@@ -68,6 +68,14 @@ export type CollectionView =
   | { kind: 'archExtensions' }
   | { kind: 'archTicks' }
   | { kind: 'archBoot' }
+  | { kind: 'codingNaming' }
+  | { kind: 'codingFolders' }
+  | { kind: 'codingGit' }
+  | { kind: 'codingReview' }
+  | { kind: 'dataModel' }
+  | { kind: 'dataTester' }
+  | { kind: 'dataReadiness' }
+  | { kind: 'dataLoadPlan' }
   | { kind: 'depletion' }
   | { kind: 'levelCurve' }
   | { kind: 'skillTree' }
@@ -318,10 +326,33 @@ export interface Link {
   kind: string
 }
 
+/**
+ * Optional genre profile (portable, saved in the project file). Absent = neutral project.
+ * Unknown genre IDs and extra keys are kept so newer files round-trip without loss.
+ */
+export interface ProjectProfile {
+  /** Profile shape version (see PROFILE_VERSION in core/genre.ts); independent of FORMAT_VERSION. */
+  version: number
+  /** Stable genre IDs from the catalog, in the order the user picked them. */
+  genres: string[]
+  /** Free-text "Other" genres; shown, but they add no recommendations. */
+  customGenres?: string[]
+  /** Explicit user changes to the recommended editors; applied after the genre defaults. */
+  editors?: { add: string[]; remove: string[] }
+}
+
 export interface Project {
   format: typeof FORMAT
   formatVersion: number
-  meta: { name: string; createdAt: string; updatedAt: string; appVersion: string; hints?: HintPrefs; aiTemplates?: AiTemplate[] }
+  meta: {
+    name: string
+    createdAt: string
+    updatedAt: string
+    appVersion: string
+    hints?: HintPrefs
+    aiTemplates?: AiTemplate[]
+    profile?: ProjectProfile
+  }
   registry: Registry
   documents: Record<string, DocumentEnvelope>
   links: Link[]

@@ -10,6 +10,8 @@ import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
 import { Icon } from './Icon'
 import { Menu } from './Menu'
+import { flushSave, hasUnsyncedChanges, leaveLocalMode, signOut, useCloud } from '../core/cloud/session'
+import { CloudBanners, CloudSaveStatus } from './cloud/CloudBanners'
 
 function Palette({ onClose }: { onClose: () => void }) {
   const nav = useNavigate()
@@ -44,6 +46,17 @@ export function AppShell() {
   const canUndo = useStore((s) => s.past.length > 0)
   const canRedo = useStore((s) => s.future.length > 0)
   const [palette, setPalette] = useState(false)
+  const nav = useNavigate()
+  const readOnly = useStore((s) => s.readOnly)
+  const cloudEnabled = useCloud((s) => s.enabled)
+  const cloudActive = useCloud((s) => !!s.active)
+  const mode = useCloud((s) => s.mode)
+  const user = useCloud((s) => s.user)
+  const doSignOut = async () => {
+    if (hasUnsyncedChanges() && !confirm(t('cloud.account.signOutUnsaved'))) return
+    await signOut()
+    nav('/welcome')
+  }
   const issues = validateProject(project).length
   // Same hook as the panel and home page, so snoozing and the edit debounce apply everywhere.
   const hintCount = useHints().total
@@ -61,7 +74,9 @@ export function AppShell() {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
     const unsub = useStore.subscribe((s, prev) => {
-      if (s.project === prev.project) return
+      // Cloud projects keep their own per-account recovery drafts (core/cloud/session.ts);
+      // the legacy autosave key is for local-only work.
+      if (s.project === prev.project || useCloud.getState().active) return
       clearTimeout(timer)
       timer = setTimeout(() => void writeAutosave(s.project), 1500)
     })
@@ -76,7 +91,7 @@ export function AppShell() {
       const typing = tag === 'INPUT' || tag === 'TEXTAREA'
       if (!mod) return
       const k = e.key.toLowerCase()
-      if (k === 's') { e.preventDefault(); void saveProject(e.shiftKey) }
+      if (k === 's') { e.preventDefault(); void (useCloud.getState().active && !e.shiftKey ? flushSave() : saveProject(e.shiftKey)) }
       else if (k === 'k') { e.preventDefault(); setPalette(true) }
       else if (!typing && k === 'z') { e.preventDefault(); if (e.shiftKey) useStore.getState().redo()
         else useStore.getState().undo() }
@@ -92,9 +107,9 @@ export function AppShell() {
       <header className="topbar">
         <div className="topbar-left">
           <Link to="/" className="brand" title={t('nav.home')}>{t('app.title')}</Link>
-          <input className="title-input" aria-label={t('app.projectName')} value={project.meta.name}
+          <input className="title-input" aria-label={t('app.projectName')} value={project.meta.name} readOnly={readOnly}
             onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
-          <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>
+          {cloudActive ? <CloudSaveStatus /> : <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>}
         </div>
         <nav className="topnav" aria-label={t('nav.main')}>{navLinks}</nav>
         <div className="topbar-right">
@@ -105,11 +120,31 @@ export function AppShell() {
           <button className="icon-btn" disabled={!canRedo} aria-label={t('actions.redo')} title={`${t('actions.redo')} (Ctrl+Y)`} onClick={() => useStore.getState().redo()}><Icon name="redo" /></button>
           {/* Save is the one filled action; everything else about files lives in its menu. */}
           <div className="split">
-            <button className="primary" title={`${t('actions.save')} (Ctrl+S)`} onClick={() => void saveProject()}>{t('actions.save')}</button>
+            {cloudActive ? (
+              <button className="primary" disabled={readOnly} title={`${t('cloud.account.saveNow')} (Ctrl+S)`} onClick={() => void flushSave()}>{t('actions.save')}</button>
+            ) : (
+              <button className="primary" title={`${t('actions.save')} (Ctrl+S)`} onClick={() => void saveProject()}>{t('actions.save')}</button>
+            )}
             <Menu className="split-menu" label={t('actions.more')} summary={<Icon name="chevronDown" />}>
-              <button onClick={newProject}>{t('actions.new')}</button>
-              <button onClick={() => void openProject()}>{t('actions.open')}</button>
-              <button onClick={() => void saveProject(true)}>{t('actions.saveAs')}</button>
+              {cloudActive ? (
+                <>
+                  <button onClick={() => nav('/projects')}>{t('cloud.account.projects')}</button>
+                  <button onClick={() => nav('/project')}>{t('cloud.account.settings')}</button>
+                  <button onClick={() => void saveProject(true)}>{t('cloud.account.saveCopy')}</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={newProject}>{t('actions.new')}</button>
+                  <button onClick={() => void openProject()}>{t('actions.open')}</button>
+                  <button onClick={() => void saveProject(true)}>{t('actions.saveAs')}</button>
+                </>
+              )}
+              {cloudEnabled && mode === 'local' && (
+                <button onClick={() => { leaveLocalMode(); nav(user ? '/projects' : '/welcome') }}>{user ? t('cloud.account.projects') : t('cloud.account.signIn')}</button>
+              )}
+              {user && (
+                <button onClick={() => void doSignOut()}>{t('cloud.account.signOutAs', { email: user.email })}</button>
+              )}
               <hr />
               <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
               <button onClick={downloadJson}>{t('actions.exportJson')}</button>
@@ -124,6 +159,7 @@ export function AppShell() {
           </div>
         </div>
       </header>
+      <CloudBanners />
       <div className="shell-body"><Outlet /></div>
       {palette && <Palette onClose={() => setPalette(false)} />}
     </div>

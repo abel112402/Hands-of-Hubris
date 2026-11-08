@@ -17,6 +17,11 @@ interface State {
   project: Project
   fileName?: string
   dirty: boolean
+  /** Viewer access to a shared project: every edit path is a no-op (the server enforces it too). */
+  readOnly: boolean
+  setReadOnly: (readOnly: boolean) => void
+  /** Marks the loaded project as having unsaved edits (e.g. a restored recovery draft). */
+  markDirty: () => void
   past: HistoryEntry[]
   future: HistoryEntry[]
   mutate: (fn: (p: Project) => void, key?: string) => void
@@ -34,10 +39,15 @@ const MAX_HISTORY = 200
 export const useStore = create<State>((set, get) => ({
   project: createProject(),
   dirty: false,
+  readOnly: false,
   past: [],
   future: [],
 
+  setReadOnly: (readOnly) => set({ readOnly }),
+  markDirty: () => set({ dirty: true }),
+
   mutate: (fn, key) => {
+    if (get().readOnly) return
     const [next, patches, inverse] = produceWithPatches(get().project, (d) => {
       fn(d)
       d.meta.updatedAt = new Date().toISOString()
@@ -58,6 +68,7 @@ export const useStore = create<State>((set, get) => ({
 
   // Hint preferences are saved with the project but are not undoable.
   updateHintPrefs: (fn) => {
+    if (get().readOnly) return
     const [next] = produceWithPatches(get().project, (d) => {
       d.meta.hints ??= defaultHintPrefs()
       fn(d.meta.hints)
@@ -66,6 +77,7 @@ export const useStore = create<State>((set, get) => ({
   },
 
   undo: () => {
+    if (get().readOnly) return
     const { past, future, project } = get()
     const entry = past[past.length - 1]
     if (!entry) return
@@ -73,13 +85,15 @@ export const useStore = create<State>((set, get) => ({
   },
 
   redo: () => {
+    if (get().readOnly) return
     const { past, future, project } = get()
     const entry = future[future.length - 1]
     if (!entry) return
     set({ project: applyPatches(project, entry.patches), future: future.slice(0, -1), past: [...past, { ...entry, key: undefined }], dirty: true })
   },
 
-  loadProject: (project, fileName) => set({ project, fileName, dirty: false, past: [], future: [] }),
+  // Replacing the project clears history (no stale patches across projects/revisions) and edit locks.
+  loadProject: (project, fileName) => set({ project, fileName, dirty: false, readOnly: false, past: [], future: [] }),
   markSaved: (fileName) => set((s) => ({ dirty: false, fileName: fileName ?? s.fileName })),
 
   ensureDoc: (docId) => {

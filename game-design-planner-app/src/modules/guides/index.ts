@@ -16,6 +16,8 @@ import { WORLD_GUIDE } from './world'
 import { TOWN_GUIDE } from './town'
 import { NPC_GUIDE } from './npc'
 import { ARCHITECTURE_GUIDE } from './architecture'
+import { CODING_GUIDE } from './coding'
+import { DATA_DRIVEN_GUIDE } from './dataDriven'
 
 /** Guides per module. A module without an entry shows no Guide tab, map or examples. */
 export const GUIDES: Record<string, ModuleGuide> = {
@@ -28,6 +30,8 @@ export const GUIDES: Record<string, ModuleGuide> = {
   'design.town': TOWN_GUIDE,
   'design.npc': NPC_GUIDE,
   'technical.architecture': ARCHITECTURE_GUIDE,
+  'technical.coding': CODING_GUIDE,
+  'technical.dataDriven': DATA_DRIVEN_GUIDE,
   'design.player': PLAYER_GUIDE,
   'design.items': ITEMS_GUIDE,
   'design.combat': COMBAT_GUIDE,

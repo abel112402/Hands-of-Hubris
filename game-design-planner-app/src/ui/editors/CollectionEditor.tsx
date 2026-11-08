@@ -25,6 +25,8 @@ import { TownNetworkView, TownResourceFlowView } from './townViews'
 import { ActPacingView, CastCoverageView, EndingPathsView, QuestFlowView, RewardBudgetView } from './storyViews'
 import { WireframeView } from './wireframe/WireframeView'
 import { BootSequenceView, CouplingView, DependencyMatrixView, ExtensionCoverageView, LayerDiagramView, LayerStackView, MessageFlowView, TickScheduleView } from './architectureViews'
+import { BranchFlowView, EnforcementBoardView, FolderTreeView, NamingTesterView } from './codingViews'
+import { DataModelView, LoadPlanView, PipelineReadinessView, RecordTesterView } from './dataDrivenViews'
 import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
 import { PillarMatrixView, VisionReadinessView } from './visionViews'
 import { CutSavingsView, PhaseProgressView } from './roadmapViews'
@@ -66,6 +68,14 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   archExtensions: 'Coverage',
   archTicks: 'Tick schedule',
   archBoot: 'Boot sequence',
+  codingNaming: 'Rule tester',
+  codingFolders: 'Folder tree',
+  codingGit: 'Branch flow',
+  codingReview: 'Enforcement board',
+  dataModel: 'Data model',
+  dataTester: 'Record tester',
+  dataReadiness: 'Pipeline readiness',
+  dataLoadPlan: 'Load plan',
   depletion: 'Depletion',
   levelCurve: 'Level curve',
   skillTree: 'Skill tree',
@@ -207,6 +217,14 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'archExtensions' && <ExtensionCoverageView {...props} />}
           {view.kind === 'archTicks' && <TickScheduleView {...props} />}
           {view.kind === 'archBoot' && <BootSequenceView {...props} />}
+          {view.kind === 'codingNaming' && <NamingTesterView {...props} />}
+          {view.kind === 'codingFolders' && <FolderTreeView {...props} />}
+          {view.kind === 'codingGit' && <BranchFlowView {...props} />}
+          {view.kind === 'codingReview' && <EnforcementBoardView {...props} />}
+          {view.kind === 'dataModel' && <DataModelView {...props} />}
+          {view.kind === 'dataTester' && <RecordTesterView {...props} />}
+          {view.kind === 'dataReadiness' && <PipelineReadinessView {...props} />}
+          {view.kind === 'dataLoadPlan' && <LoadPlanView {...props} />}
           {view.kind === 'depletion' && <DepletionView {...props} />}
           {view.kind === 'levelCurve' && <LevelCurveView />}
           {view.kind === 'skillTree' && <SkillTreeView {...props} />}

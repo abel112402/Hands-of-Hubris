@@ -34,6 +34,43 @@
     "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}}).",
     "closeBanner": "Bezárás"
   },
+  "genres": {
+    "title": "Műfajok",
+    "notSet": "Nincs megadva. A tervezők az általános sorrendben jelennek meg.",
+    "choose": "Műfajok kiválasztása",
+    "edit": "Műfajok szerkesztése",
+    "pickerTitle": "Milyen műfajú a játékod?",
+    "pickerHint": "Bármilyen kombinációt választhatsz. Az ajánlások csak javaslatok: minden tervező elérhető marad, és semmilyen adat nem törlődik.",
+    "unknown": "{{id}} (ismeretlen műfaj)",
+    "unknownHint": "Egy másik verzió mentette. Megtarthatod, vagy a jelölés törlésével eltávolíthatod.",
+    "maxReached": "Legfeljebb {{count}} műfajt választhatsz.",
+    "other": "Egyéb műfajok (vesszővel elválasztva)",
+    "otherPlaceholder": "pl. Cozy, Horror",
+    "preview": "Ajánlott tervezők",
+    "apply": "Alkalmaz",
+    "cancel": "Mégse",
+    "safe": "A műfajok módosítása soha nem töröl adatot.",
+    "customize": "Ajánlott tervezők testreszabása",
+    "customizeHint": "A választásaid megmaradnak, ha a műfajok változnak. Az alapértelmezések visszaállításával újra a műfajok szerint alakul a lista.",
+    "restore": "Alapértelmezések visszaállítása",
+    "viewLabel": "Tervezőnézet",
+    "viewRecommended": "Ajánlott",
+    "viewAll": "Összes tervező",
+    "recommendedFor": "Ajánlott ehhez: {{genres}}",
+    "recommendedBadge": "Ajánlott ehhez a projekthez",
+    "showAll": "Összes tervező megjelenítése (még {{count}})",
+    "noMatch": "Egyik ajánlott tervező sem felel meg a szűrésnek.",
+    "whyFoundation": "Alapok",
+    "whyManual": "Te adtad hozzá",
+    "whyGeneral": "Általános sorrend",
+    "guideTitle": "Projektútmutató: {{genres}}",
+    "guideProgress": "{{done}} / {{total}} kész",
+    "guideOpen": "{{doc}} megnyitása",
+    "guideAll": "Mind a(z) {{count}} lépés megjelenítése",
+    "guideLess": "Csak a következő lépések",
+    "done": "Kész",
+    "todo": "Teendő"
+  },
   "editor": {
     "visual": "Vizuális szerkesztő",
     "markdown": "Markdown előnézet",
@@ -542,6 +579,70 @@
       "title": "Hiányos jelenetfolyam",
       "body": "Jelenetek: {{names}}."
     },
+    "dataType": {
+      "title": "Ismeretlen típusú mezők",
+      "body": "{{count}} mezőnek hiányzik vagy ismeretlen a típusa: {{names}}. Használj primitív típust, Unity asset-típust vagy egy másik séma nevét."
+    },
+    "dataPrefix": {
+      "title": "Sémák közös ID-előtaggal",
+      "body": "Azonos előtagú sémák azonos ID-t adhatnak: {{names}}. Adj minden sémának saját előtagot."
+    },
+    "dataNoFields": {
+      "title": "Mező nélküli sémák",
+      "body": "{{count}} sémának még nincs mezője: {{names}}."
+    },
+    "dataUnloaded": {
+      "title": "Soha be nem töltött sémák",
+      "body": "{{count}} séma nincs egyetlen betöltési csoportban sem: {{names}}. A Betöltési tervben egy kattintással felveheted."
+    },
+    "dataBudget": {
+      "title": "Keret feletti betöltési csoport",
+      "body": "{{count}} betöltési csoport túllépi a memóriakeretét: {{names}}. Bontsd szét, vagy tölts be egy részt igény szerint."
+    },
+    "dataUnvalidated": {
+      "title": "Ellenőrzés nélküli sémák",
+      "body": "{{count}} sémának nincs validátora és írott szabálya sem: {{names}}."
+    },
+    "dataLegacy": {
+      "title": "Jegyzetek a korábbi verzióból",
+      "body": "A frissítés a szabad szöveges formátum-, ID-, betöltési, validációs és modding-jegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket formátumokká, ID-szabályokká, betöltési csoportokká és validátorokká, majd ürítsd a mezőt."
+    },
+    "codingExample": {
+      "title": "Az elnevezési szabályok ellentmondanak a példáiknak",
+      "body": "{{count}} szabály elbukik a saját jó példáján, átengedi a rossz példát, vagy hibás a mintája: {{names}}. A Szabályteszterben látod, miért."
+    },
+    "codingNamespace": {
+      "title": "Assemblyk megszegik a névtérszabályt",
+      "body": "{{count}} technikai architektúra-assembly nem követi a névtérszabályt: {{names}}. Nevezd át őket, vagy módosítsd a szabályt."
+    },
+    "codingUnplaced": {
+      "title": "Modulok mappa nélkül",
+      "body": "{{count}} technikai architektúra-modulnak nincs mappája: {{names}}. A Mappafában egy kattintással felveheted."
+    },
+    "codingFolderLoop": {
+      "title": "Önmagában lévő mappa",
+      "body": "A szülőlánc körbeér: {{names}}. Válassz másik szülőmappát."
+    },
+    "codingLfs": {
+      "title": "Bináris fájlok Git LFS nélkül",
+      "body": "{{count}} mappáknál felsorolt bináris fájltípusnak nincs Git LFS mintája: {{names}}. Adj hozzá mintát (pl. *.psd), hogy a repó kicsi maradjon."
+    },
+    "codingBranch": {
+      "title": "Hiányos branch-folyamat",
+      "body": "{{count}} branch-típusnak nincs forrása vagy merge-célja: {{names}}. A Branch-folyamat nézet megjelöli őket."
+    },
+    "codingProtect": {
+      "title": "Nem védett fő branch",
+      "body": "{{names}} kapja az összes merge-et, de nem védett. Védd le, hogy csak átnézett pull requesttel kerüljön rá változás."
+    },
+    "codingManualBlocker": {
+      "title": "Blokkolók, amiket csak ember vesz észre",
+      "body": "{{count}} blokkoló szabályt kézzel ellenőriztek: {{names}}. Megbízhatóbb egy buildet elbuktató CI-ellenőrzés vagy analyzer."
+    },
+    "codingLegacy": {
+      "title": "Jegyzetek a korábbi verzióból",
+      "body": "A frissítés a szabad szöveges elnevezési, stílus-, mappa-, asset- és Git-jegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket szabályokká, mappákká és branchekké, majd ürítsd a mezőt."
+    },
     "archLegacy": {
       "title": "Jegyzetek a korábbi verzióból",
       "body": "A frissítés a szabad szöveges stack-, kommunikációs, szimulációs és jelenetjegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket bejegyzésekké, majd ürítsd a mezőt."
@@ -988,5 +1089,165 @@
     "title": "Rendszertérkép",
     "hint": "hogyan táplálják egymást a szakaszok; kattints egy dobozra a megnyitáshoz",
     "summary": "{{empty}} üres · {{started}} nyitott tippel"
+  },
+  "cloud": {
+    "loading": "Betöltés…",
+    "roles": {
+      "owner": "Tulajdonos",
+      "editor": "Szerkesztő",
+      "viewer": "Megtekintő"
+    },
+    "status": {
+      "saved": "Mentve a felhőbe",
+      "pending": "Nem mentett változások",
+      "saving": "Mentés…",
+      "conflict": "Mentési ütközés",
+      "offline": "Offline – nincs mentve",
+      "error": "Nincs mentve",
+      "forbidden": "Nincs szerkesztési jog",
+      "readOnly": "Csak olvasható"
+    },
+    "errors": {
+      "forbidden": "Ehhez nincs jogosultságod.",
+      "quota": "Elérted a projektkorlátot (20 projekt).",
+      "rate": "Túl sok kérés. Várj egy kicsit, majd próbáld újra.",
+      "pending": "Ennek a projektnek túl sok függő meghívója van.",
+      "notFound": "A projekt nem található, vagy törölték.",
+      "tooLarge": "A projekt nagyobb a 2 MB-os felhőkorlátnál. Töltsd le inkább fájlként.",
+      "network": "A szerver nem érhető el. Ellenőrizd a kapcsolatot.",
+      "auth": "Jelentkezz be újra.",
+      "unknown": "Valami hiba történt. Próbáld újra."
+    },
+    "landing": {
+      "title": "Tervezd meg a játékod – együtt",
+      "lead": "Strukturált tervdokumentum-tervező játékokhoz: vízió, alapciklus, rendszerek, történet, gyártás és QA egy helyen.",
+      "features": {
+        "planners": {
+          "title": "30+ tervező",
+          "body": "Vezetett szerkesztők példákkal, ábrákkal és következetességi tippekkel."
+        },
+        "genres": {
+          "title": "A műfajodhoz igazítva",
+          "body": "Válaszd a Survival, RPG vagy bármilyen kombinációt: ajánlott tervezőket és lépésenkénti útmutatót kapsz."
+        },
+        "team": {
+          "title": "Csapatmunka",
+          "body": "Hívj meg szerkesztőket és megtekintőket. A mentések ellenőrzöttek, senki nem írja felül a másikat észrevétlenül."
+        },
+        "files": {
+          "title": "Hordozható adatok",
+          "body": "Bármikor exportálhatsz JSON-ba és Markdownba, vagy fiók nélkül, teljesen offline is dolgozhatsz."
+        }
+      },
+      "signIn": "Bejelentkezés vagy regisztráció",
+      "signInHint": "Nem kell jelszó: e-mailben küldünk bejelentkezési linket.",
+      "welcomeBack": "Üdv újra",
+      "signedInAs": "Bejelentkezve: {{email}}",
+      "toProjects": "Tovább a projektjeidhez",
+      "useLocal": "Használat fiók nélkül",
+      "useLocalHint": "Csak ebben a böngészőben dolgozol; a projektfájlokat te mented és nyitod meg."
+    },
+    "signIn": {
+      "email": "E-mail-cím",
+      "sendLink": "Bejelentkezési link küldése",
+      "sending": "Küldés…",
+      "noPassword": "Új vagy? Ugyanez a link létrehozza a fiókodat.",
+      "or": "vagy",
+      "with": "Folytatás ezzel: {{provider}}",
+      "failed": "A bejelentkezés nem sikerült. Ellenőrizd a címet, és próbáld újra.",
+      "checkEmail": "Nézd meg az e-mailjeidet",
+      "sentTo": "Bejelentkezési linket küldtünk ide: {{email}}.",
+      "sameBrowser": "Ugyanebben a böngészőben nyisd meg a linket; máshol megnyitva nem jelentkeztet be.",
+      "useOther": "Másik cím használata"
+    },
+    "account": {
+      "projects": "Projektjeim",
+      "settings": "Tagok és előzmények",
+      "saveNow": "Mentés a felhőbe most",
+      "saveCopy": "Másolat letöltése…",
+      "signIn": "Bejelentkezés a felhőprojektekhez",
+      "signOut": "Kijelentkezés",
+      "signOutAs": "Kijelentkezés ({{email}})",
+      "signOutUnsaved": "Néhány változás még nincs mentve a felhőbe. Mégis kijelentkezel? Az eszközön lévő nem mentett változások törlődnek.",
+      "useLocal": "Offline munka (helyi)"
+    },
+    "projects": {
+      "title": "Projektjeid",
+      "new": "Új projekt",
+      "newTitle": "Projekt létrehozása",
+      "name": "Projekt neve",
+      "untitled": "Névtelen projekt",
+      "examples": "Indítás a Hands of Hubris példatartalommal",
+      "create": "Projekt létrehozása",
+      "import": "Fájl importálása…",
+      "importConfirm": "Létrehozol egy új felhőprojektet ebből: „{{name}}”?",
+      "empty": "Még nincs projekted. Hozz létre egyet, importálj egy .hohplan.json fájlt, vagy kérd meg egy csapattársadat, hogy hívjon meg.",
+      "open": "Megnyitás",
+      "delete": "Törlés",
+      "deleteConfirm": "Törlöd: „{{name}}”? Minden tag számára eltűnik. Ha még szükséged lehet rá, előbb tölts le egy másolatot.",
+      "leave": "Kilépés",
+      "leaveConfirm": "Kilépsz ebből: „{{name}}”? Újabb meghívásig nem férsz hozzá.",
+      "leaveUnsaved": "A megnyitott projektben vannak a felhőbe még nem mentett változások. Mégis folytatod? Piszkozatként megmaradnak ezen az eszközön.",
+      "localFound": "A böngészőben mentett projekt („{{name}}”, {{date}}) feltölthető új felhőprojektként. A helyi példány megmarad.",
+      "uploadLocal": "Feltöltés új projektként",
+      "noGenres": "Nincs műfaj",
+      "sharedBy": "megosztotta: {{email}}",
+      "members_one": "{{count}} tag",
+      "members_other": "{{count}} tag",
+      "updated": "frissítve: {{date}}"
+    },
+    "open": {
+      "failed": "A projektet nem sikerült megnyitni",
+      "back": "Vissza a projektjeidhez"
+    },
+    "banner": {
+      "viewer": "Ennek a megosztott projektnek megtekintője vagy: olvashatod és exportálhatod, de nem szerkesztheted.",
+      "conflict": "Valaki újabb verziót mentett ({{rev}}. revízió), amíg szerkesztettél. A változásaid itt megmaradtak, de még nincsenek mentve.",
+      "downloadMine": "Saját verzió letöltése",
+      "takeServer": "Az újabb verzió betöltése",
+      "takeServerConfirm": "Lecseréled a nem mentett változásaidat az újabb verzióra? A saját verziódról pillanatkép készül (Pillanatképek a menüoldalon).",
+      "saveAsNew": "Saját mentése új projektként",
+      "copySuffix": "(saját másolat)",
+      "overwrite": "Felülírás a sajátommal",
+      "overwriteConfirm": "Felülírod az újabb verziót a sajátoddal? Az ő verziójuk az előzményekben marad, ha revízióként mentődött.",
+      "forbidden": "Már nincs szerkesztési jogod ehhez a projekthez. A változásaid ezen az eszközön megmaradtak; töltsd le őket, ha meg akarod tartani.",
+      "toProjects": "Vissza a projektekhez",
+      "offline": "Offline vagy. A változások ezen az eszközön megmaradnak, és a kapcsolat helyreállásakor mentődnek.",
+      "retry": "Újrapróbálás most"
+    },
+    "settings": {
+      "title": "Tagok és előzmények"
+    },
+    "members": {
+      "title": "Tagok",
+      "you": "te",
+      "role": "Szerepkör",
+      "roleFor": "{{email}} szerepköre",
+      "makeOwner": "Tulajdonossá tétel",
+      "transferConfirm": "{{email}} legyen a tulajdonos? Te szerkesztő leszel, és többé nem kezelheted a tagokat.",
+      "transferred": "A tulajdonjog átadva.",
+      "remove": "Eltávolítás",
+      "removeConfirm": "Eltávolítod őt a projektből: {{email}}? A hozzáférése azonnal megszűnik.",
+      "leave": "Kilépés a projektből",
+      "leaveConfirm": "Kilépsz ebből a projektből? Újabb meghívásig nem férsz hozzá.",
+      "inviteTitle": "Meghívás",
+      "inviteHint": "A meghívás akkor lép életbe, amikor az illető ezzel az igazolt e-mail-címmel bejelentkezik. A meghívók 14 nap után lejárnak.",
+      "invite": "Meghívás",
+      "invited": "Meghívó elmentve: {{email}}. Szólj neki, és küldd el az alábbi linket.",
+      "shareLink": "Elküldendő link:",
+      "copy": "Másolás",
+      "pending": "Függő meghívók",
+      "expires": "lejár: {{date}}",
+      "revoke": "Visszavonás"
+    },
+    "history": {
+      "title": "Előzmények",
+      "hint": "Mentett verziók (szerkesztési munkamenetenként legfeljebb 10 percenként egy; a legutóbbi 50 marad meg). A visszaállítás új verziót hoz létre.",
+      "revision": "{{rev}}. revízió",
+      "formerMember": "korábbi tag",
+      "restore": "Visszaállítás",
+      "restoreConfirm": "Lecseréled a jelenlegi tartalmat a(z) {{rev}}. revízióra? Visszavonható.",
+      "restored": "A(z) {{rev}}. revízió visszaállítva és új verzióként mentve."
+    }
   }
 }
