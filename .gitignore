@@ -116,3 +116,6 @@ InitTestScene*.unity*
 /game-design-planner-app/playwright-report/
 /game-design-planner-app/*.tsbuildinfo
 /game-design-planner-app/.vite/
+/game-design-planner-app/.env*.local
+/game-design-planner-app/supabase/.temp/
+/game-design-planner-app/supabase/.branches/

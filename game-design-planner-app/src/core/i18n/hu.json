@@ -34,6 +34,43 @@
     "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}}).",
     "closeBanner": "Bezárás"
   },
+  "genres": {
+    "title": "Műfajok",
+    "notSet": "Nincs megadva. A tervezők az általános sorrendben jelennek meg.",
+    "choose": "Műfajok kiválasztása",
+    "edit": "Műfajok szerkesztése",
+    "pickerTitle": "Milyen műfajú a játékod?",
+    "pickerHint": "Bármilyen kombinációt választhatsz. Az ajánlások csak javaslatok: minden tervező elérhető marad, és semmilyen adat nem törlődik.",
+    "unknown": "{{id}} (ismeretlen műfaj)",
+    "unknownHint": "Egy másik verzió mentette. Megtarthatod, vagy a jelölés törlésével eltávolíthatod.",
+    "maxReached": "Legfeljebb {{count}} műfajt választhatsz.",
+    "other": "Egyéb műfajok (vesszővel elválasztva)",
+    "otherPlaceholder": "pl. Cozy, Horror",
+    "preview": "Ajánlott tervezők",
+    "apply": "Alkalmaz",
+    "cancel": "Mégse",
+    "safe": "A műfajok módosítása soha nem töröl adatot.",
+    "customize": "Ajánlott tervezők testreszabása",
+    "customizeHint": "A választásaid megmaradnak, ha a műfajok változnak. Az alapértelmezések visszaállításával újra a műfajok szerint alakul a lista.",
+    "restore": "Alapértelmezések visszaállítása",
+    "viewLabel": "Tervezőnézet",
+    "viewRecommended": "Ajánlott",
+    "viewAll": "Összes tervező",
+    "recommendedFor": "Ajánlott ehhez: {{genres}}",
+    "recommendedBadge": "Ajánlott ehhez a projekthez",
+    "showAll": "Összes tervező megjelenítése (még {{count}})",
+    "noMatch": "Egyik ajánlott tervező sem felel meg a szűrésnek.",
+    "whyFoundation": "Alapok",
+    "whyManual": "Te adtad hozzá",
+    "whyGeneral": "Általános sorrend",
+    "guideTitle": "Projektútmutató: {{genres}}",
+    "guideProgress": "{{done}} / {{total}} kész",
+    "guideOpen": "{{doc}} megnyitása",
+    "guideAll": "Mind a(z) {{count}} lépés megjelenítése",
+    "guideLess": "Csak a következő lépések",
+    "done": "Kész",
+    "todo": "Teendő"
+  },
   "editor": {
     "visual": "Vizuális szerkesztő",
     "markdown": "Markdown előnézet",
@@ -541,6 +578,70 @@
     "archBoot": {
       "title": "Hiányos jelenetfolyam",
       "body": "Jelenetek: {{names}}."
+    },
+    "dataType": {
+      "title": "Ismeretlen típusú mezők",
+      "body": "{{count}} mezőnek hiányzik vagy ismeretlen a típusa: {{names}}. Használj primitív típust, Unity asset-típust vagy egy másik séma nevét."
+    },
+    "dataPrefix": {
+      "title": "Sémák közös ID-előtaggal",
+      "body": "Azonos előtagú sémák azonos ID-t adhatnak: {{names}}. Adj minden sémának saját előtagot."
+    },
+    "dataNoFields": {
+      "title": "Mező nélküli sémák",
+      "body": "{{count}} sémának még nincs mezője: {{names}}."
+    },
+    "dataUnloaded": {
+      "title": "Soha be nem töltött sémák",
+      "body": "{{count}} séma nincs egyetlen betöltési csoportban sem: {{names}}. A Betöltési tervben egy kattintással felveheted."
+    },
+    "dataBudget": {
+      "title": "Keret feletti betöltési csoport",
+      "body": "{{count}} betöltési csoport túllépi a memóriakeretét: {{names}}. Bontsd szét, vagy tölts be egy részt igény szerint."
+    },
+    "dataUnvalidated": {
+      "title": "Ellenőrzés nélküli sémák",
+      "body": "{{count}} sémának nincs validátora és írott szabálya sem: {{names}}."
+    },
+    "dataLegacy": {
+      "title": "Jegyzetek a korábbi verzióból",
+      "body": "A frissítés a szabad szöveges formátum-, ID-, betöltési, validációs és modding-jegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket formátumokká, ID-szabályokká, betöltési csoportokká és validátorokká, majd ürítsd a mezőt."
+    },
+    "codingExample": {
+      "title": "Az elnevezési szabályok ellentmondanak a példáiknak",
+      "body": "{{count}} szabály elbukik a saját jó példáján, átengedi a rossz példát, vagy hibás a mintája: {{names}}. A Szabályteszterben látod, miért."
+    },
+    "codingNamespace": {
+      "title": "Assemblyk megszegik a névtérszabályt",
+      "body": "{{count}} technikai architektúra-assembly nem követi a névtérszabályt: {{names}}. Nevezd át őket, vagy módosítsd a szabályt."
+    },
+    "codingUnplaced": {
+      "title": "Modulok mappa nélkül",
+      "body": "{{count}} technikai architektúra-modulnak nincs mappája: {{names}}. A Mappafában egy kattintással felveheted."
+    },
+    "codingFolderLoop": {
+      "title": "Önmagában lévő mappa",
+      "body": "A szülőlánc körbeér: {{names}}. Válassz másik szülőmappát."
+    },
+    "codingLfs": {
+      "title": "Bináris fájlok Git LFS nélkül",
+      "body": "{{count}} mappáknál felsorolt bináris fájltípusnak nincs Git LFS mintája: {{names}}. Adj hozzá mintát (pl. *.psd), hogy a repó kicsi maradjon."
+    },
+    "codingBranch": {
+      "title": "Hiányos branch-folyamat",
+      "body": "{{count}} branch-típusnak nincs forrása vagy merge-célja: {{names}}. A Branch-folyamat nézet megjelöli őket."
+    },
+    "codingProtect": {
+      "title": "Nem védett fő branch",
+      "body": "{{names}} kapja az összes merge-et, de nem védett. Védd le, hogy csak átnézett pull requesttel kerüljön rá változás."
+    },
+    "codingManualBlocker": {
+      "title": "Blokkolók, amiket csak ember vesz észre",
+      "body": "{{count}} blokkoló szabályt kézzel ellenőriztek: {{names}}. Megbízhatóbb egy buildet elbuktató CI-ellenőrzés vagy analyzer."
+    },
+    "codingLegacy": {
+      "title": "Jegyzetek a korábbi verzióból",
+      "body": "A frissítés a szabad szöveges elnevezési, stílus-, mappa-, asset- és Git-jegyzeteket a „Jegyzetek a korábbi verzióból” mezőbe tette. Alakítsd őket szabályokká, mappákká és branchekké, majd ürítsd a mezőt."
     },
     "archLegacy": {
       "title": "Jegyzetek a korábbi verzióból",

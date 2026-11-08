@@ -14,6 +14,8 @@ import { getSections, MODULES } from '../modules/registry'
 import { entityLabel, resolveSource } from '../references/refs'
 import { tryEvaluate } from '../formula'
 import { analyze, weekToDate, withBuffer } from '../schedule'
+import { DATA_DOC, dataModel, loadPlan, pipelineReadiness, READINESS_STEPS } from '../dataDriven'
+import { branchFlow, CODING_DOC, enforcementSummary, folderTree, namePattern, type FolderNode } from '../coding'
 import { ARCH_DOC, bootSequence, dependencies, dependencyCycles, extensionCoverage, layerOrder, messageFlow, nameOf, tickBudget } from '../architecture'
 import { bondLadder, eventOdds, lifespan, needChains, needsBalance, NPC_DOC, populationMix, workforceFlow } from '../npc'
 import { comparedLevels, depletion, levelTable, PLAYER_DOC, treeAnalysis } from '../player'
@@ -155,6 +157,72 @@ function needsBalanceMd(project: Project, sec: Extract<SectionDef, { kind: 'coll
     const b = needsBalance(project, s, view.populationField)
     const parts = b.rows.map((x) => `${x.label} ${r(x.demand)}/${x.supply === null ? '–' : r(x.supply)}${x.short ? ' (short)' : ''}`)
     out += `_Needs balance for ${entityLabel(s)} (population ${r(b.population)}; needed/supplied): ${parts.join(', ') || 'no needs set'}._\n`
+  }
+  return out
+}
+
+/** Summaries for the Data-driven Design views: a Mermaid class diagram, readiness per schema and the load plan. */
+function dataDrivenSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!data.length) return ''
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const cls = (e: Entity) => 'S_' + String(e.name || e.id).replace(/[^A-Za-z0-9_]/g, '_')
+  const clean = (s: string) => s.replace(/[{}<>"`]/g, (c) => (c === '<' || c === '>' ? '~' : ''))
+  let out = ''
+  if (kinds.has('dataModel')) {
+    const model = dataModel(project)
+    out += '\n```mermaid\nclassDiagram\n'
+    for (const n of model.nodes) {
+      out += `  class ${cls(n.schema)}["${clean(nameOf(n.schema))}"] {\n`
+      for (const f of n.fields) out += `    ${f.optional ? '' : '+'}${clean(f.name)} : ${clean(f.type || '?')}\n`
+      out += '  }\n'
+    }
+    for (const e of model.edges) out += `  ${cls(e.from)} --> ${cls(e.to)} : ${clean(e.field.name)}${e.field.array ? ' [*]' : ''}\n`
+    out += '```\n'
+  }
+  if (kinds.has('dataReadiness')) {
+    const r = pipelineReadiness(project)
+    out += `\n| Schema | ${READINESS_STEPS.map((s) => s.label).join(' | ')} | Ready |\n|---|${READINESS_STEPS.map(() => '---').join('|')}|---|\n`
+    for (const row of r.rows) out += `| ${nameOf(row.schema)} | ${READINESS_STEPS.map((s) => (row.cells[s.id].ok ? '✓' : '–')).join(' | ')} | ${row.score}/${r.total} |\n`
+  }
+  if (kinds.has('dataLoadPlan')) {
+    const plan = loadPlan(project)
+    const r = (n: number) => Math.round(n * 100) / 100
+    out += `\n_Load plan (estimate): ${plan.phases.map((ph) => `${ph.label} ${r(ph.mb)} MB${ph.groups.length ? ` (${ph.groups.map((g) => nameOf(g.group)).join(', ')})` : ''}`).join(' → ')}; ${r(plan.totalMb)} MB in all.${plan.unassigned.length ? ` Never loaded: ${plan.unassigned.map(nameOf).join(', ')}.` : ''}_\n`
+  }
+  return out
+}
+
+/** Summaries for the Coding Standards views: rule patterns, the folder tree, a Mermaid branch flow and the automation share. */
+function codingSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'collection' }>, data: Entity[]): string {
+  if (!data.length) return ''
+  const kinds = new Set(sec.views.map((v) => v.kind))
+  const cell = (s: unknown) => String(s ?? '').replace(/\|/g, '\\|') || '–'
+  let out = ''
+  if (kinds.has('codingNaming')) {
+    out += '\n| Rule | Applies to | Pattern | Good | Bad |\n|---|---|---|---|---|\n'
+    for (const r of data) {
+      const pat = namePattern(r)
+      out += `| ${cell(r.name)} | ${cell(r.target)} | ${'error' in pat ? 'invalid' : '`' + cell(pat.source) + '`'} | ${cell(r.example)} | ${cell(r.counterExample)} |\n`
+    }
+  }
+  if (kinds.has('codingFolders')) {
+    const line = (n: FolderNode): string =>
+      `${'  '.repeat(n.depth + 1)}${nameOf(n.folder)}/${n.folder.asmdef ? ' (.asmdef)' : ''}${n.folder.purpose ? `  # ${String(n.folder.purpose).split('\n')[0]}` : ''}\n` + n.children.map(line).join('')
+    out += '\n```text\nAssets/\n' + folderTree(project).roots.map(line).join('') + '```\n'
+  }
+  if (kinds.has('codingGit')) {
+    const node = (e: Entity) => `${e.id.replace(/[^A-Za-z0-9_]/g, '_')}["${nameOf(e).replace(/["[\]]/g, '')}"]`
+    out += '\n```mermaid\nflowchart LR\n'
+    for (const r of branchFlow(project)) {
+      out += `  ${node(r.branch)}\n`
+      if (r.from) out += `  ${node(r.from)} -->|branch| ${node(r.branch)}\n`
+      for (const t of r.into) out += `  ${node(r.branch)} -->|${r.branch.mergeMethod ? String(r.branch.mergeMethod).toLowerCase() : 'merge'}| ${node(t)}\n`
+    }
+    out += '```\n'
+  }
+  if (kinds.has('codingReview')) {
+    const s = enforcementSummary(project)
+    out += `\n_Enforcement: ${s.total.automated} of ${s.total.total} rules automated (${Math.round(s.total.share * 100)}%); ${s.bySource.map((x) => `${x.label} ${x.automated}/${x.total}`).join(', ')}._\n`
   }
   return out
 }
@@ -821,7 +889,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
     }
     case 'collection':
       if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + (mod.id === ARCH_DOC ? architectureSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + (mod.id === ARCH_DOC ? architectureSummaryMd(project, sec, data) : '') + (mod.id === CODING_DOC ? codingSummaryMd(project, sec, data) : '') + (mod.id === DATA_DOC ? dataDrivenSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data) + (mod.id === DIFFICULTY_DOC && sec.id === 'values' ? difficultySummaryMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'relations' ? diplomacyRelationsMd(project) : '')
     case 'graph':

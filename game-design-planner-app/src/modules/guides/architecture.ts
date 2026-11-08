@@ -2,7 +2,7 @@ import { ARCH_DOC, archList, dependencies, dependencyCycles, DATA_DOC } from '..
 import type { GuideExample, ModuleGuide } from '../../core/guides/types'
 import { makeId } from '../../core/model/project'
 import type { Entity, Project } from '../../core/model/types'
-import { DEFAULT_LAYERS } from '../technical'
+import { DEFAULT_FORMATS, DEFAULT_LAYERS } from '../technical'
 
 const data = (p: Project): Record<string, any> => {
   if (!p.documents[ARCH_DOC]) p.documents[ARCH_DOC] = { moduleVersion: 2, data: {} }
@@ -112,11 +112,13 @@ const extensionsExample: GuideExample = {
   preview: 'archCoverage',
   apply: (p) => {
     const id = ensureModules(p)
-    if (!p.documents[DATA_DOC]) p.documents[DATA_DOC] = { moduleVersion: 1, data: {} }
+    if (!p.documents[DATA_DOC]) p.documents[DATA_DOC] = { moduleVersion: 2, data: {} }
+    const formats = ensureList(p, 'formats', p.documents[DATA_DOC].data)
+    const so = byName(formats, 'ScriptableObject') ?? (formats.push({ ...DEFAULT_FORMATS[0] }), formats[formats.length - 1])
     const schemas = ensureList(p, 'schemas', p.documents[DATA_DOC].data)
     const schema = (name: string) => {
       let s = byName(schemas, name)
-      if (!s) schemas.push((s = { id: makeId(), name, format: 'ScriptableObject' }))
+      if (!s) schemas.push((s = { id: makeId(), name, format: so.id }))
       return s.id
     }
     const points = ensureList(p, 'extensionPoints')

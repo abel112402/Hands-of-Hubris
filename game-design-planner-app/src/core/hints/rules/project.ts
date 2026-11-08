@@ -1,21 +1,11 @@
 import { getModule } from '../../modules/registry'
+import { GENERAL_ORDER } from '../../../modules/genres'
+import { onboardingOrder } from '../../genre'
 import type { HintRule } from '../types'
 import { hintId, isDocEmpty } from '../util'
 
-/** Recommended order, following docs/README.md: vision first, then the core design documents. */
-export const ONBOARDING_ORDER = [
-  'overview.vision',
-  'design.coreLoop',
-  'design.player',
-  'design.world',
-  'design.items',
-  'design.npc',
-  'design.combat',
-  'design.trade',
-  'design.story',
-  'production.milestones',
-  'qa.testPlan',
-]
+/** General order (docs/README.md) used for genre-neutral projects; see `onboardingOrder`. */
+export const ONBOARDING_ORDER = GENERAL_ORDER
 
 const DESIGN_DOCS = ONBOARDING_ORDER.filter((d) => d.startsWith('design.'))
 
@@ -23,8 +13,9 @@ export const projectRules: HintRule[] = [
   {
     id: 'onboarding.next',
     scope: 'project',
+    // Follows the project's genre profile, so hints and the tailored guide agree.
     evaluate: ({ project }) =>
-      ONBOARDING_ORDER.filter((d) => getModule(d) && isDocEmpty(project, d))
+      onboardingOrder(project).filter((d) => getModule(d) && isDocEmpty(project, d))
         .slice(0, 3)
         // All onboarding steps share one severity, so their colour does not depend on their position.
         .map((docId) => ({

@@ -34,6 +34,43 @@
     "restoreBanner": "An autosaved session from {{date}} was found.",
     "closeBanner": "Close"
   },
+  "genres": {
+    "title": "Genres",
+    "notSet": "Not set. Planners are shown in the general order.",
+    "choose": "Choose genres",
+    "edit": "Edit genres",
+    "pickerTitle": "Which genres is your game?",
+    "pickerHint": "Pick any combination. Recommendations are suggestions: every planner stays available and no data is removed.",
+    "unknown": "{{id}} (unknown genre)",
+    "unknownHint": "Saved by another version. Keep it or untick it to remove it.",
+    "maxReached": "You can pick up to {{count}} genres.",
+    "other": "Other genres (comma-separated)",
+    "otherPlaceholder": "e.g. Cozy, Horror",
+    "preview": "Recommended planners",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "safe": "Changing genres never deletes data.",
+    "customize": "Customize recommended planners",
+    "customizeHint": "Your choices are kept when genres change. Restore defaults to follow the genres again.",
+    "restore": "Restore defaults",
+    "viewLabel": "Planner view",
+    "viewRecommended": "Recommended",
+    "viewAll": "All planners",
+    "recommendedFor": "Recommended for {{genres}}",
+    "recommendedBadge": "Recommended for this project",
+    "showAll": "Show all planners ({{count}} more)",
+    "noMatch": "No recommended planner matches the filter.",
+    "whyFoundation": "Foundation",
+    "whyManual": "Added by you",
+    "whyGeneral": "General order",
+    "guideTitle": "Project guide: {{genres}}",
+    "guideProgress": "{{done}} of {{total}} done",
+    "guideOpen": "Open {{doc}}",
+    "guideAll": "Show all {{count}} steps",
+    "guideLess": "Show next steps only",
+    "done": "Done",
+    "todo": "To do"
+  },
   "editor": {
     "visual": "Visual editor",
     "markdown": "Markdown preview",
@@ -685,6 +722,81 @@
     "archLegacy": {
       "title": "Notes from the earlier version",
       "body": "The upgrade moved free-text stack, communication, simulation and scene notes into “Notes from the earlier version”. Turn them into entries, then clear the field."
+    },
+    "dataType": {
+      "title": "Fields with unknown types",
+      "body_other": "{{count}} fields have a missing or unknown type: {{names}}. Use a primitive, a Unity asset type or another schema’s name.",
+      "body_one": "{{count}} field has a missing or unknown type: {{names}}. Use a primitive, a Unity asset type or another schema’s name."
+    },
+    "dataPrefix": {
+      "title": "Schemas share an ID prefix",
+      "body": "Two schemas with the same prefix can produce the same ID: {{names}}. Give each schema its own prefix."
+    },
+    "dataNoFields": {
+      "title": "Schemas without fields",
+      "body_other": "{{count}} schemas have no fields yet: {{names}}.",
+      "body_one": "{{count}} schema has no fields yet: {{names}}."
+    },
+    "dataUnloaded": {
+      "title": "Schemas never loaded",
+      "body_other": "{{count}} schemas are in no load group: {{names}}. The Load plan adds them with one click.",
+      "body_one": "{{count}} schema is in no load group: {{names}}. The Load plan adds it with one click."
+    },
+    "dataBudget": {
+      "title": "Load group over budget",
+      "body_other": "{{count}} load groups exceed their memory budget: {{names}}. Split them or load part on demand.",
+      "body_one": "{{count}} load group exceeds its memory budget: {{names}}. Split it or load part on demand."
+    },
+    "dataUnvalidated": {
+      "title": "Schemas without validation",
+      "body_other": "{{count}} schemas have no validator and no written rules: {{names}}.",
+      "body_one": "{{count}} schema has no validator and no written rules: {{names}}."
+    },
+    "dataLegacy": {
+      "title": "Notes from the earlier version",
+      "body": "The upgrade moved the free-text format, ID, loading, validation and modding notes into “Notes from the earlier version”. Turn them into formats, ID rules, load groups and validators, then clear the field."
+    },
+    "codingExample": {
+      "title": "Naming rules contradict their examples",
+      "body_other": "{{count}} rules fail their own good example, pass their bad example or have an invalid pattern: {{names}}. Open the Rule tester to see why.",
+      "body_one": "{{count}} rule fails its own good example, passes its bad example or has an invalid pattern: {{names}}. Open the Rule tester to see why."
+    },
+    "codingNamespace": {
+      "title": "Assemblies break the namespace rule",
+      "body_other": "{{count}} Technical Architecture assemblies don’t follow the Namespace rule: {{names}}. Rename them or change the rule.",
+      "body_one": "{{count}} Technical Architecture assembly doesn’t follow the Namespace rule: {{names}}. Rename it or change the rule."
+    },
+    "codingUnplaced": {
+      "title": "Modules without a folder",
+      "body_other": "{{count}} Technical Architecture modules have no folder: {{names}}. The Folder tree adds one per click.",
+      "body_one": "{{count}} Technical Architecture module has no folder: {{names}}. The Folder tree adds one in a click."
+    },
+    "codingFolderLoop": {
+      "title": "Folder inside itself",
+      "body": "The parent chain loops for: {{names}}. Pick another parent folder."
+    },
+    "codingLfs": {
+      "title": "Binary files outside Git LFS",
+      "body_other": "{{count}} binary file types listed under folders have no Git LFS pattern: {{names}}. Add patterns such as *.psd so the repository stays small.",
+      "body_one": "{{count}} binary file type listed under folders has no Git LFS pattern: {{names}}. Add a pattern such as *.psd so the repository stays small."
+    },
+    "codingBranch": {
+      "title": "Branch flow has loose ends",
+      "body_other": "{{count}} branch types are missing a source or a merge target: {{names}}. The Branch flow view marks them.",
+      "body_one": "{{count}} branch type is missing a source or a merge target: {{names}}. The Branch flow view marks it."
+    },
+    "codingProtect": {
+      "title": "Main branch not protected",
+      "body": "{{names}} receives every merge but is not protected. Protect it so changes land only through reviewed pull requests."
+    },
+    "codingManualBlocker": {
+      "title": "Blockers only a person catches",
+      "body_other": "{{count}} blocker rules are checked by hand: {{names}}. A CI check or analyzer that fails the build is more reliable.",
+      "body_one": "{{count}} blocker rule is checked by hand: {{names}}. A CI check or analyzer that fails the build is more reliable."
+    },
+    "codingLegacy": {
+      "title": "Notes from the earlier version",
+      "body": "The upgrade moved the free-text naming, style, folder, asset and Git notes into “Notes from the earlier version”. Turn them into rules, folders and branches, then clear the field."
     },
     "npcBalance": {
       "title": "Town cannot meet the population's needs",

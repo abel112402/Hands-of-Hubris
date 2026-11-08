@@ -824,6 +824,136 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="288" y="18" textAnchor="middle" className="c-small">+ HUD</text>
         </svg>
       )
+    case 'nameAnatomy':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="The name IDamageable split into prefix I and PascalCase body Damageable; _hunger split into prefix underscore and camelCase body hunger">
+          {[['I', 'Damageable', 'prefix', 'PascalCase', 10], ['_', 'hunger', 'prefix', 'camelCase', 170]].map(([pre, body, l1, l2, x]) => (
+            <g key={pre as string} transform={`translate(${x},14)`}>
+              <rect width="22" height="26" rx="4" className="c-accent" />
+              <text x="11" y="18" textAnchor="middle" className="c-small">{pre}</text>
+              <rect x="24" width="104" height="26" rx="4" className="c-box" />
+              <text x="76" y="18" textAnchor="middle" className="c-small">{body}</text>
+              <text x="11" y="56" textAnchor="middle" className="c-small">{l1}</text>
+              <text x="76" y="56" textAnchor="middle" className="c-small">{l2}</text>
+              <path d="M11,30 L11,44 M76,30 L76,44" className="c-arrow" />
+            </g>
+          ))}
+        </svg>
+      )
+    case 'folderTree':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="Scripts folder with Core and UI sub-folders, each holding an asmdef matching an Architecture module">
+          <text x="10" y="16" className="c-small">📁 Scripts</text>
+          <path d="M18,22 L18,74 M18,44 L34,44 M18,74 L34,74" className="c-arrow" />
+          {[['Core', 34], ['UI', 64]].map(([n, y]) => (
+            <g key={n as string}>
+              <rect x="36" y={(y as number) - 2} width="110" height="20" rx="4" className="c-box" />
+              <text x="44" y={(y as number) + 12} className="c-small">📁 {n} + .asmdef</text>
+              <path d={`M146,${(y as number) + 8} L196,${(y as number) + 8}`} className="c-arrow" strokeDasharray="3 2" />
+              <rect x="198" y={(y as number) - 2} width="110" height="20" rx="4" className="c-accent" />
+              <text x="206" y={(y as number) + 12} className="c-small">module {n}</text>
+            </g>
+          ))}
+        </svg>
+      )
+    case 'mergeConflict':
+      return (
+        <svg viewBox="0 0 330 90" className="concept-svg" role="img" aria-label="Two people editing one big scene collide; split into additive scenes they edit separately">
+          <rect x="10" y="30" width="80" height="30" rx="5" className="c-danger-band" />
+          <text x="50" y="49" textAnchor="middle" className="c-small">World.unity</text>
+          <text x="20" y="20" className="c-small">👤 art</text>
+          <text x="60" y="20" className="c-small">👤 code</text>
+          <text x="50" y="78" textAnchor="middle" className="c-small">✗ conflict</text>
+          <path d="M100,45 L140,45" className="c-arrow" />
+          {[['World_Art', 8], ['World_Light', 36], ['World_Logic', 64]].map(([n, y]) => (
+            <g key={n as string}>
+              <rect x="150" y={y as number} width="110" height="22" rx="4" className="c-box" />
+              <text x="205" y={(y as number) + 15} textAnchor="middle" className="c-small">{n}</text>
+            </g>
+          ))}
+          <text x="266" y="50" className="c-small">✓ one each</text>
+        </svg>
+      )
+    case 'branchLanes':
+      return (
+        <svg viewBox="0 0 330 90" className="concept-svg" role="img" aria-label="A main lane and a feature lane: the feature branches off main, gets commits, and merges back">
+          <text x="6" y="24" className="c-small">main</text>
+          <text x="6" y="70" className="c-small">feature</text>
+          <path d="M60,20 L320,20" stroke="var(--accent)" strokeWidth="4" />
+          <path d="M90,20 C110,20 100,66 130,66 L230,66 C260,66 250,20 280,20" className="c-arrow" />
+          {[150, 180, 210].map((x) => <circle key={x} cx={x} cy="66" r="5" className="c-accent" />)}
+          <text x="100" y="48" className="c-small">branch</text>
+          <text x="248" y="48" className="c-small">merge</text>
+        </svg>
+      )
+    case 'formatFit':
+      return (
+        <svg viewBox="0 0 330 92" className="concept-svg" role="img" aria-label="Unity Inspector edits ScriptableObject, a spreadsheet edits CSV, a text editor or mod edits JSON">
+          {[['Inspector', 'ScriptableObject'], ['Spreadsheet', 'CSV'], ['Mods / tools', 'JSON']].map(([who, fmtName], i) => (
+            <g key={fmtName} transform={`translate(${10 + i * 108},10)`}>
+              <rect width="96" height="24" rx="5" className="c-box" />
+              <text x="48" y="16" textAnchor="middle" className="c-small">{who}</text>
+              <path d="M48,24 L48,44" className="c-arrow" />
+              <rect y="44" width="96" height="24" rx="5" className="c-accent" />
+              <text x="48" y="60" textAnchor="middle" className="c-small">{fmtName}</text>
+            </g>
+          ))}
+        </svg>
+      )
+    case 'schemaRef':
+      return (
+        <svg viewBox="0 0 330 96" className="concept-svg" role="img" aria-label="A Recipe box with output of type Item and inputs of type Item list, both pointing at the Item box">
+          <rect x="10" y="10" width="130" height="76" rx="6" className="c-box" />
+          <text x="20" y="27" className="c-small">Recipe</text>
+          <text x="20" y="49" className="c-small">output: Item</text>
+          <text x="20" y="69" className="c-small">inputs: Item[]</text>
+          <rect x="200" y="22" width="120" height="44" rx="6" className="c-accent" />
+          <text x="212" y="40" className="c-small">Item</text>
+          <text x="212" y="56" className="c-small">id: item.iron_bar</text>
+          <path d="M140,45 C170,45 170,38 200,38" className="c-arrow" />
+          <path d="M140,65 C175,65 170,50 200,50" className="c-arrow" strokeWidth="3" />
+        </svg>
+      )
+    case 'idAnatomy':
+      return (
+        <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="The ID item.iron_sword split into the prefix item. and the snake_case name iron_sword">
+          <rect x="30" y="12" width="56" height="28" rx="4" className="c-accent" />
+          <text x="58" y="31" textAnchor="middle" className="c-small">item.</text>
+          <rect x="88" y="12" width="110" height="28" rx="4" className="c-box" />
+          <text x="143" y="31" textAnchor="middle" className="c-small">iron_sword</text>
+          <text x="58" y="62" textAnchor="middle" className="c-small">schema prefix</text>
+          <text x="143" y="62" textAnchor="middle" className="c-small">snake_case name</text>
+          <text x="214" y="31" className="c-small">≠ bld.iron_sword</text>
+        </svg>
+      )
+    case 'loadTimeline':
+      return (
+        <svg viewBox="0 0 330 84" className="concept-svg" role="img" aria-label="Timeline: small core data at boot, larger town data with the world scene, enemies on demand">
+          {[['Boot', 'core 2 MB', 30], ['World scene', 'town 40 MB', 70], ['On demand', 'enemies', 50]].map(([label, what, w], i) => (
+            <g key={label as string} transform={`translate(${10 + i * 108},8)`}>
+              <text x="0" y="12" className="c-small">{label}</text>
+              <rect y="22" width={w as number} height="18" rx="3" className="c-accent" />
+              <text x="0" y="58" className="c-small">{what}</text>
+              {i < 2 && <path d="M90,31 L104,31" className="c-arrow" />}
+            </g>
+          ))}
+        </svg>
+      )
+    case 'shiftLeft':
+      return (
+        <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="Four stages from IDE to analyzer to CI to review; cost grows to the right">
+          {['IDE', 'Analyzer', 'CI', 'Review'].map((t, i) => (
+            <g key={t} transform={`translate(${10 + i * 80},14)`}>
+              <rect width="70" height="26" rx="5" className={i === 3 ? 'c-danger-band' : 'c-accent'} opacity={1 - i * 0.18} />
+              <text x="35" y="17" textAnchor="middle" className="c-small">{t}</text>
+              {i < 3 && <path d="M70,13 L80,13" className="c-arrow" />}
+            </g>
+          ))}
+          <path d="M14,62 L316,62" className="c-arrow" />
+          <text x="14" y="76" className="c-small">cheap, instant</text>
+          <text x="316" y="76" textAnchor="end" className="c-small">slow, easy to miss →</text>
+        </svg>
+      )
     case 'abilityTimeline':
       return (
         <svg viewBox="0 0 320 70" className="concept-svg" role="img" aria-label="Spend cost, cast time, effect, then cooldown">
