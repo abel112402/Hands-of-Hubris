@@ -11,7 +11,6 @@ import type { ComposedStep, StepStatus } from '../../core/walkthrough/types'
 import { HintCard } from '../hints/HintPanel'
 import { useHints } from '../hints/useHints'
 import { AiPanel } from '../ai/AiPanel'
-import { ProjectGuide } from '../genres/ProjectGuide'
 import { Icon } from '../Icon'
 
 type Tab = 'walkthrough' | 'hints' | 'ai'
@@ -77,7 +76,7 @@ function CurrentStep({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Compos
   }
   return (
     <section className="step-hero" aria-labelledby="current-step-title">
-      <p className="step-crumb muted">{t('workspace.nextStep')} · {crumb(view.walk, step, t, i18n.language)}</p>
+      <p className="step-crumb muted">{t('workspace.nextStep')} · {crumb(view.walk, step, t, i18n.language)} <GenreTags step={step} /></p>
       <h2 id="current-step-title">{textOf(step.title, i18n.language)}</h2>
       <p>{textOf(step.body, i18n.language)}</p>
       <Notes step={step} />
@@ -127,6 +126,13 @@ function WalkthroughList({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Co
   )
 }
 
+/** Which selected genres added or changed the step. */
+function GenreTags({ step }: { step: ComposedStep }) {
+  const genres = step.sources.filter((s) => s !== 'base')
+  if (!genres.length) return null
+  return <span className="walk-genres muted">{genres.map(genreLabel).join(' · ')}</span>
+}
+
 function StepRow({ step, progress, detailed, onAsk }: { step: ComposedStep; progress: WalkthroughProgress; detailed: boolean; onAsk: (s: ComposedStep) => void }) {
   const { t, i18n } = useTranslation()
   const status = progress.status[step.id]
@@ -147,6 +153,7 @@ function StepRow({ step, progress, detailed, onAsk }: { step: ComposedStep; prog
           <span>{textOf(step.title, i18n.language)}</span>
         )}
         {step.optional && <span className="pill">{t('workspace.optional')}</span>}
+        <GenreTags step={step} />
       </div>
       {expanded && (
         <div className="walk-step-body">
@@ -204,13 +211,7 @@ export function GuideCenter({ view }: { view: WalkthroughView }) {
         ))}
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="center-panel">
-        {tab === 'walkthrough' && (
-          <>
-            <WalkthroughList view={view} onAsk={onAsk} />
-            {/* Genre checklist from the genre catalog; replaced by genre walkthrough packs (plan M6). */}
-            <ProjectGuide />
-          </>
-        )}
+        {tab === 'walkthrough' && <WalkthroughList view={view} onAsk={onAsk} />}
         {tab === 'hints' && <HintsTab />}
         {tab === 'ai' && <AiPanel key={ask.n} docId={ask.docId} initialInstruction={ask.prompt} />}
       </div>

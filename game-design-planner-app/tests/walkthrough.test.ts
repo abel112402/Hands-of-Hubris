@@ -295,3 +295,53 @@ describe('module-guide ticks', () => {
     expect(manualDone(useStore.getState().project, 'design.player')).toEqual(['a'])
   })
 })
+
+describe('genre packs', () => {
+  const genreIds = GENRES.map((g) => g.id)
+  const forGenres = (genres: string[]) => {
+    const p = createProject('G', false, { version: 1, genres })
+    return { p, w: projectWalkthrough(p) }
+  }
+  const own = (id: string) => composeWalkthrough(BASE_PACK, [GENRE_PACKS[id]]).steps.filter((s) => s.sources.includes(id))
+
+  it('every catalog genre has a pack that adds real guidance', () => {
+    for (const id of genreIds) {
+      expect(GENRE_PACKS[id], id).toBeTruthy()
+      expect(own(id).length, id).toBeGreaterThanOrEqual(6)
+      // Each pack teaches with at least one review that gates on design checks.
+      expect(own(id).some((s) => s.kind === 'review'), id).toBe(true)
+    }
+  })
+
+  it('starts with nothing done for any single genre and for all genres together', () => {
+    for (const genres of [...genreIds.map((g) => [g]), genreIds]) {
+      const { p, w } = forGenres(genres)
+      const r = evaluateWalkthrough(w, p)
+      expect(Object.entries(r.status).filter(([, s]) => s !== 'open'), genres.join('+')).toEqual([])
+    }
+  })
+
+  it('keeps step IDs unique and every chapter in its own phase, whatever the mix', () => {
+    const { w } = forGenres(genreIds)
+    expect(new Set(w.steps.map((s) => s.id)).size).toBe(w.steps.length)
+    for (const s of w.steps) expect(w.chapters.find((c) => c.id === s.chapter)?.phase, s.id).toBe(s.phase)
+    expect(Object.keys(w.packs).sort()).toEqual(['base', ...genreIds].sort())
+  })
+
+  it('merges topics two genres share: Survival + RPG list enemies and items once, with both genres', () => {
+    const { w } = forGenres(['survival', 'rpg'])
+    for (const id of ['combat.enemies', 'items.list']) {
+      const steps = w.steps.filter((s) => s.id === id)
+      expect(steps, id).toHaveLength(1)
+      expect(steps[0].sources, id).toEqual(['survival', 'rpg'])
+      expect(steps[0].notes.some((n) => n.source === 'rpg'), id).toBe(true)
+    }
+    // Survival-only and RPG-only steps are both present.
+    for (const id of ['survival.needs', 'player.skills', 'story.quests']) expect(w.steps.some((s) => s.id === id), id).toBe(true)
+  })
+
+  it('removes a step only when every selected genre drops it', () => {
+    expect(forGenres(['adventure']).w.steps.some((s) => s.id === 'systems.difficulty')).toBe(false)
+    expect(forGenres(['adventure', 'action']).w.steps.find((s) => s.id === 'systems.difficulty')?.optional).toBe(false)
+  })
+})

@@ -17,9 +17,16 @@ export const readGuideState = (project: Project): GuideState =>
 /** Lazily computed facts shared by all rules of one evaluation. */
 type Ctx = { project: Project; firing?: Set<string> }
 
+/** Firing rules per project version (projects are immutable), shared across evaluations. */
+const firingCache = new WeakMap<Project, Set<string>>()
+
 function firingRules(ctx: Ctx): Set<string> {
   // Raw rule output, before snooze/mute/dismiss: muting a hint must not count as fixing it.
-  ctx.firing ??= new Set(collectHints(makeContext(ctx.project)).map((h) => ruleOf(h.ruleId)))
+  if (!ctx.firing) {
+    let set = firingCache.get(ctx.project)
+    if (!set) firingCache.set(ctx.project, (set = new Set(collectHints(makeContext(ctx.project)).map((h) => ruleOf(h.ruleId)))))
+    ctx.firing = set
+  }
   return ctx.firing
 }
 

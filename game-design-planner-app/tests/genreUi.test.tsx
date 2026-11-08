@@ -62,13 +62,12 @@ describe('genre profile on the planner menu', () => {
     expect(within(railGroup('QA')).getByText('Bug Reports')).toBeTruthy()
     for (const group of ['Overview', 'Technical', 'Art & Audio', 'Production', 'Templates']) expect(railGroup(group)).toBeTruthy()
 
-    expect(screen.getByText(/Project guide: Survival · RPG/)).toBeTruthy()
-    // Compact by default: only the next open steps; the rest on request.
-    expect(document.querySelectorAll('.guide-steps li')).toHaveLength(3)
-    fireEvent.click(screen.getByRole('button', { name: /Show all \d+ steps/ }))
-    expect(document.querySelectorAll('.guide-steps li').length).toBeGreaterThan(3)
-    const guideLink = screen.getAllByRole('link', { name: /Open Player Character › / })[0]
-    expect(guideLink.getAttribute('href')).toMatch(/#\/doc\/design\.player\?s=/)
+    // The walkthrough now includes both genres' steps, tagged with the genre that added them.
+    const needs = screen.getByTestId('walk-step-survival.needs')
+    expect(within(needs).getByText('Survival')).toBeTruthy()
+    expect(within(screen.getByTestId('walk-step-combat.enemies')).getByText('Survival · RPG')).toBeTruthy()
+    fireEvent.click(within(needs).getByRole('button', { name: 'Define the survival needs' }))
+    expect(within(needs).getByRole('link', { name: 'Open planner' }).getAttribute('href')).toBe('#/doc/design.player?s=survival')
 
     fireEvent.click(within(rec).getByRole('button', { name: /Show all planners \(\d+ more\)/ }))
     expect(within(railGroup('Game Design')).getByText('UI / UX')).toBeTruthy()

@@ -62,8 +62,9 @@ function checkRule(where: string, rule: DoneRule, errors: string[]) {
   }
 }
 
-function checkStep(s: Partial<WalkStep>, where: string, chapters: Set<string>, errors: string[]) {
+function checkStep(s: Partial<WalkStep>, where: string, chapters: Map<string, string>, errors: string[]) {
   if (s.chapter && !chapters.has(s.chapter)) errors.push(`${where}: unknown chapter ${s.chapter}`)
+  else if (s.chapter && s.phase && chapters.get(s.chapter) !== s.phase) errors.push(`${where}: chapter ${s.chapter} is not in phase ${s.phase}`)
   if (s.target) checkTarget(where, s.target.docId, s.target.section, errors)
   if (s.target?.moduleStep && !guideOf(s.target.docId)?.steps.some((x) => x.id === s.target!.moduleStep)) errors.push(`${where}: unknown module step ${s.target.moduleStep}`)
   if (s.done) checkRule(where, s.done, errors)
@@ -76,7 +77,7 @@ function checkStep(s: Partial<WalkStep>, where: string, chapters: Set<string>, e
  */
 export function validatePack(pack: BasePack | GenrePack, base: BasePack = BASE_PACK): string[] {
   const errors: string[] = []
-  const chapters = new Set([...base.chapters, ...(pack.chapters ?? [])].map((c) => c.id))
+  const chapters = new Map([...base.chapters, ...(pack.chapters ?? [])].map((c) => [c.id, c.phase as string]))
   if ('steps' in pack) {
     const ids = pack.steps.map((s) => s.id)
     if (new Set(ids).size !== ids.length) errors.push('base: duplicate step IDs')

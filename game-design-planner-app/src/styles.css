@@ -1031,3 +1031,5 @@ a.button.primary{background:var(--accent-strong);border-color:var(--accent-stron
   .workspace-center{padding:var(--space-3)}
   .side-rail.open{width:200px}
 }
+.walk-genres{margin-left:auto;font-size:var(--fs-xs);white-space:nowrap}
+.step-crumb .walk-genres{margin-left:var(--space-2);text-transform:none;letter-spacing:0}
