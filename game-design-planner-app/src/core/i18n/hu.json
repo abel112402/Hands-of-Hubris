@@ -1089,5 +1089,165 @@
     "title": "Rendszertérkép",
     "hint": "hogyan táplálják egymást a szakaszok; kattints egy dobozra a megnyitáshoz",
     "summary": "{{empty}} üres · {{started}} nyitott tippel"
+  },
+  "cloud": {
+    "loading": "Betöltés…",
+    "roles": {
+      "owner": "Tulajdonos",
+      "editor": "Szerkesztő",
+      "viewer": "Megtekintő"
+    },
+    "status": {
+      "saved": "Mentve a felhőbe",
+      "pending": "Nem mentett változások",
+      "saving": "Mentés…",
+      "conflict": "Mentési ütközés",
+      "offline": "Offline – nincs mentve",
+      "error": "Nincs mentve",
+      "forbidden": "Nincs szerkesztési jog",
+      "readOnly": "Csak olvasható"
+    },
+    "errors": {
+      "forbidden": "Ehhez nincs jogosultságod.",
+      "quota": "Elérted a projektkorlátot (20 projekt).",
+      "rate": "Túl sok kérés. Várj egy kicsit, majd próbáld újra.",
+      "pending": "Ennek a projektnek túl sok függő meghívója van.",
+      "notFound": "A projekt nem található, vagy törölték.",
+      "tooLarge": "A projekt nagyobb a 2 MB-os felhőkorlátnál. Töltsd le inkább fájlként.",
+      "network": "A szerver nem érhető el. Ellenőrizd a kapcsolatot.",
+      "auth": "Jelentkezz be újra.",
+      "unknown": "Valami hiba történt. Próbáld újra."
+    },
+    "landing": {
+      "title": "Tervezd meg a játékod – együtt",
+      "lead": "Strukturált tervdokumentum-tervező játékokhoz: vízió, alapciklus, rendszerek, történet, gyártás és QA egy helyen.",
+      "features": {
+        "planners": {
+          "title": "30+ tervező",
+          "body": "Vezetett szerkesztők példákkal, ábrákkal és következetességi tippekkel."
+        },
+        "genres": {
+          "title": "A műfajodhoz igazítva",
+          "body": "Válaszd a Survival, RPG vagy bármilyen kombinációt: ajánlott tervezőket és lépésenkénti útmutatót kapsz."
+        },
+        "team": {
+          "title": "Csapatmunka",
+          "body": "Hívj meg szerkesztőket és megtekintőket. A mentések ellenőrzöttek, senki nem írja felül a másikat észrevétlenül."
+        },
+        "files": {
+          "title": "Hordozható adatok",
+          "body": "Bármikor exportálhatsz JSON-ba és Markdownba, vagy fiók nélkül, teljesen offline is dolgozhatsz."
+        }
+      },
+      "signIn": "Bejelentkezés vagy regisztráció",
+      "signInHint": "Nem kell jelszó: e-mailben küldünk bejelentkezési linket.",
+      "welcomeBack": "Üdv újra",
+      "signedInAs": "Bejelentkezve: {{email}}",
+      "toProjects": "Tovább a projektjeidhez",
+      "useLocal": "Használat fiók nélkül",
+      "useLocalHint": "Csak ebben a böngészőben dolgozol; a projektfájlokat te mented és nyitod meg."
+    },
+    "signIn": {
+      "email": "E-mail-cím",
+      "sendLink": "Bejelentkezési link küldése",
+      "sending": "Küldés…",
+      "noPassword": "Új vagy? Ugyanez a link létrehozza a fiókodat.",
+      "or": "vagy",
+      "with": "Folytatás ezzel: {{provider}}",
+      "failed": "A bejelentkezés nem sikerült. Ellenőrizd a címet, és próbáld újra.",
+      "checkEmail": "Nézd meg az e-mailjeidet",
+      "sentTo": "Bejelentkezési linket küldtünk ide: {{email}}.",
+      "sameBrowser": "Ugyanebben a böngészőben nyisd meg a linket; máshol megnyitva nem jelentkeztet be.",
+      "useOther": "Másik cím használata"
+    },
+    "account": {
+      "projects": "Projektjeim",
+      "settings": "Tagok és előzmények",
+      "saveNow": "Mentés a felhőbe most",
+      "saveCopy": "Másolat letöltése…",
+      "signIn": "Bejelentkezés a felhőprojektekhez",
+      "signOut": "Kijelentkezés",
+      "signOutAs": "Kijelentkezés ({{email}})",
+      "signOutUnsaved": "Néhány változás még nincs mentve a felhőbe. Mégis kijelentkezel? Az eszközön lévő nem mentett változások törlődnek.",
+      "useLocal": "Offline munka (helyi)"
+    },
+    "projects": {
+      "title": "Projektjeid",
+      "new": "Új projekt",
+      "newTitle": "Projekt létrehozása",
+      "name": "Projekt neve",
+      "untitled": "Névtelen projekt",
+      "examples": "Indítás a Hands of Hubris példatartalommal",
+      "create": "Projekt létrehozása",
+      "import": "Fájl importálása…",
+      "importConfirm": "Létrehozol egy új felhőprojektet ebből: „{{name}}”?",
+      "empty": "Még nincs projekted. Hozz létre egyet, importálj egy .hohplan.json fájlt, vagy kérd meg egy csapattársadat, hogy hívjon meg.",
+      "open": "Megnyitás",
+      "delete": "Törlés",
+      "deleteConfirm": "Törlöd: „{{name}}”? Minden tag számára eltűnik. Ha még szükséged lehet rá, előbb tölts le egy másolatot.",
+      "leave": "Kilépés",
+      "leaveConfirm": "Kilépsz ebből: „{{name}}”? Újabb meghívásig nem férsz hozzá.",
+      "leaveUnsaved": "A megnyitott projektben vannak a felhőbe még nem mentett változások. Mégis folytatod? Piszkozatként megmaradnak ezen az eszközön.",
+      "localFound": "A böngészőben mentett projekt („{{name}}”, {{date}}) feltölthető új felhőprojektként. A helyi példány megmarad.",
+      "uploadLocal": "Feltöltés új projektként",
+      "noGenres": "Nincs műfaj",
+      "sharedBy": "megosztotta: {{email}}",
+      "members_one": "{{count}} tag",
+      "members_other": "{{count}} tag",
+      "updated": "frissítve: {{date}}"
+    },
+    "open": {
+      "failed": "A projektet nem sikerült megnyitni",
+      "back": "Vissza a projektjeidhez"
+    },
+    "banner": {
+      "viewer": "Ennek a megosztott projektnek megtekintője vagy: olvashatod és exportálhatod, de nem szerkesztheted.",
+      "conflict": "Valaki újabb verziót mentett ({{rev}}. revízió), amíg szerkesztettél. A változásaid itt megmaradtak, de még nincsenek mentve.",
+      "downloadMine": "Saját verzió letöltése",
+      "takeServer": "Az újabb verzió betöltése",
+      "takeServerConfirm": "Lecseréled a nem mentett változásaidat az újabb verzióra? A saját verziódról pillanatkép készül (Pillanatképek a menüoldalon).",
+      "saveAsNew": "Saját mentése új projektként",
+      "copySuffix": "(saját másolat)",
+      "overwrite": "Felülírás a sajátommal",
+      "overwriteConfirm": "Felülírod az újabb verziót a sajátoddal? Az ő verziójuk az előzményekben marad, ha revízióként mentődött.",
+      "forbidden": "Már nincs szerkesztési jogod ehhez a projekthez. A változásaid ezen az eszközön megmaradtak; töltsd le őket, ha meg akarod tartani.",
+      "toProjects": "Vissza a projektekhez",
+      "offline": "Offline vagy. A változások ezen az eszközön megmaradnak, és a kapcsolat helyreállásakor mentődnek.",
+      "retry": "Újrapróbálás most"
+    },
+    "settings": {
+      "title": "Tagok és előzmények"
+    },
+    "members": {
+      "title": "Tagok",
+      "you": "te",
+      "role": "Szerepkör",
+      "roleFor": "{{email}} szerepköre",
+      "makeOwner": "Tulajdonossá tétel",
+      "transferConfirm": "{{email}} legyen a tulajdonos? Te szerkesztő leszel, és többé nem kezelheted a tagokat.",
+      "transferred": "A tulajdonjog átadva.",
+      "remove": "Eltávolítás",
+      "removeConfirm": "Eltávolítod őt a projektből: {{email}}? A hozzáférése azonnal megszűnik.",
+      "leave": "Kilépés a projektből",
+      "leaveConfirm": "Kilépsz ebből a projektből? Újabb meghívásig nem férsz hozzá.",
+      "inviteTitle": "Meghívás",
+      "inviteHint": "A meghívás akkor lép életbe, amikor az illető ezzel az igazolt e-mail-címmel bejelentkezik. A meghívók 14 nap után lejárnak.",
+      "invite": "Meghívás",
+      "invited": "Meghívó elmentve: {{email}}. Szólj neki, és küldd el az alábbi linket.",
+      "shareLink": "Elküldendő link:",
+      "copy": "Másolás",
+      "pending": "Függő meghívók",
+      "expires": "lejár: {{date}}",
+      "revoke": "Visszavonás"
+    },
+    "history": {
+      "title": "Előzmények",
+      "hint": "Mentett verziók (szerkesztési munkamenetenként legfeljebb 10 percenként egy; a legutóbbi 50 marad meg). A visszaállítás új verziót hoz létre.",
+      "revision": "{{rev}}. revízió",
+      "formerMember": "korábbi tag",
+      "restore": "Visszaállítás",
+      "restoreConfirm": "Lecseréled a jelenlegi tartalmat a(z) {{rev}}. revízióra? Visszavonható.",
+      "restored": "A(z) {{rev}}. revízió visszaállítva és új verzióként mentve."
+    }
   }
 }

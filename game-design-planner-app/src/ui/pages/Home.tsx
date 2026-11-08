@@ -12,6 +12,7 @@ import { hasGenreProfile, readProfile, recommendEditors, type RecommendationReas
 import type { PlannerModule, Project } from '../../core/model/types'
 import { GenreProfilePanel, genreNames, reasonText } from '../genres/GenreProfilePanel'
 import { ProjectGuide } from '../genres/ProjectGuide'
+import { useCloud } from '../../core/cloud/session'
 
 function ModuleCard({ m, project, reasons, recommended }: { m: PlannerModule; project: Project; reasons?: RecommendationReason[]; recommended?: boolean }) {
   const { t } = useTranslation()
@@ -41,6 +42,8 @@ function progress(doc: { data: Record<string, any> } | undefined, total: number)
 export function Home() {
   const { t } = useTranslation()
   const project = useStore((s) => s.project)
+  // The local autosave banner belongs to local mode; cloud projects recover from their own drafts.
+  const cloudActive = useCloud((s) => !!s.active)
   const [q, setQ] = useState('')
   const [auto, setAuto] = useState<string | null>(null)
   const [snaps, setSnaps] = useState<Snapshot[]>([])
@@ -65,7 +68,7 @@ export function Home() {
     <div className="page home">
       <h1>{t('home.title')}</h1>
       <p className="muted">{t('home.subtitle')}</p>
-      {auto && (
+      {auto && !cloudActive && (
         <div className="banner" role="status">
           <span>{t('home.restoreBanner', { date: auto })}</span>
           <button onClick={() => void restoreAutosave()}>{t('actions.restore')}</button>
