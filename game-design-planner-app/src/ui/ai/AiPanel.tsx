@@ -27,7 +27,7 @@ let embeddedIndex: Promise<DocFile[]> | null = null
 
 const NO_TEMPLATES: never[] = []
 
-export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: string }) {
+export function AiPanel({ docId, sectionId, initialInstruction = '' }: { docId: string; sectionId?: string; /** Pre-filled question, e.g. from a walkthrough step; remount (key) to apply a new one. */ initialInstruction?: string }) {
   const { t, i18n } = useTranslation()
   const project = useStore((s) => s.project)
   const hasKey = useAiSession((s) => s.hasKey)
@@ -38,7 +38,7 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
   const [scope, setScope] = useState<Scope>('section')
   const [docIds, setDocIds] = useState<string[]>([])
   const [includeRef, setIncludeRef] = useState(false)
-  const [instruction, setInstruction] = useState('')
+  const [instruction, setInstruction] = useState(initialInstruction)
   const [count, setCount] = useState(3)
   const [mode, setMode] = useState<'expand' | 'rewrite' | 'translate'>('expand')
   const [toLang, setToLang] = useState<'en' | 'hu'>('en')

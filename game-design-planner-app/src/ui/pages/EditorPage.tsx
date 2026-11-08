@@ -20,6 +20,7 @@ import { useGuideUi } from '../guides/guideStore'
 import { mapStates } from '../guides/GuideMap'
 import { Icon } from '../Icon'
 import { Menu } from '../Menu'
+import { SideRail } from '../workspace/EditorRail'
 
 const isEmptyCollection = (project: Project, docId: string, sec: SectionDef) => {
   if (sec.kind !== 'collection') return false
@@ -101,6 +102,7 @@ export function EditorPage() {
 
   return (
     <div className="editor-page">
+      <SideRail />
       <nav className="sidebar">
         <Link to="/" className="muted">← {t('nav.home')}</Link>
         <h3>{mod.icon} {mod.title}</h3>

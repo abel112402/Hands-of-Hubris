@@ -13,6 +13,9 @@ beforeEach(() => {
 })
 
 const panel = () => screen.getByRole('region', { name: 'Genres' })
+/** A group of the planner rail on the home page. */
+const railGroup = (name: string) =>
+  within(screen.getByRole('navigation', { name: 'Planners' })).getByRole('heading', { name }).closest('section')!
 /** Re-renders the app at a route, as navigating there would. */
 const open = (hash: string) => {
   cleanup()
@@ -47,16 +50,17 @@ describe('genre profile on the planner menu', () => {
 
     open('#/')
     expect(within(panel()).getByText('Survival · RPG')).toBeTruthy()
-    const rec = screen.getByRole('heading', { name: 'Recommended for Survival · RPG' }).closest('section')!
+    const rec = railGroup('Game Design')
+    expect(within(rec).getByText('Recommended for Survival · RPG')).toBeTruthy()
     expect(within(rec).getByText('Player Character')).toBeTruthy()
     expect(within(rec).queryByText('Bug Reports')).toBeNull()
     expect(within(rec).queryByText('Trade & Economy')).toBeTruthy()
     expect(within(rec).queryByText('UI / UX')).toBeNull()
-    expect(within(rec).getAllByText(/Survival: /).length).toBeGreaterThan(0)
+    // Each planner explains why it is recommended.
+    expect(within(rec).getByText('Player Character').closest('a')!.getAttribute('title')).toMatch(/Survival: /)
     // Core groups are listed in full whatever the genre.
-    const qa = screen.getByRole('heading', { name: 'QA' }).closest('section')!
-    expect(within(qa).getByText('Bug Reports')).toBeTruthy()
-    for (const group of ['Overview', 'Technical', 'Art & Audio', 'Production', 'Templates']) expect(screen.getByRole('heading', { name: group })).toBeTruthy()
+    expect(within(railGroup('QA')).getByText('Bug Reports')).toBeTruthy()
+    for (const group of ['Overview', 'Technical', 'Art & Audio', 'Production', 'Templates']) expect(railGroup(group)).toBeTruthy()
 
     expect(screen.getByText(/Project guide: Survival · RPG/)).toBeTruthy()
     // Compact by default: only the next open steps; the rest on request.
@@ -66,9 +70,9 @@ describe('genre profile on the planner menu', () => {
     const guideLink = screen.getAllByRole('link', { name: /Open Player Character › / })[0]
     expect(guideLink.getAttribute('href')).toMatch(/#\/doc\/design\.player\?s=/)
 
-    fireEvent.click(screen.getByRole('button', { name: 'All planners' }))
-    expect(screen.getByText('Bug Reports')).toBeTruthy()
-    expect(document.querySelectorAll('.recommended-badge').length).toBeGreaterThan(0)
+    fireEvent.click(within(rec).getByRole('button', { name: /Show all planners \(\d+ more\)/ }))
+    expect(within(railGroup('Game Design')).getByText('UI / UX')).toBeTruthy()
+    expect(railGroup('Game Design').querySelectorAll('.rail-star').length).toBeGreaterThan(0)
 
     useStore.getState().undo()
     expect(useStore.getState().project.meta.profile?.genres ?? []).toEqual([])
@@ -85,9 +89,9 @@ describe('genre profile on the planner menu', () => {
     fireEvent.click(box)
     expect(useStore.getState().project.meta.profile?.editors).toEqual({ add: ['design.story'], remove: [] })
     open('#/')
-    const rec = screen.getByRole('heading', { name: 'Recommended for Action' }).closest('section')!
-    expect(within(rec).getByText('Story & Quests')).toBeTruthy()
-    expect(within(rec).getByText('Added by you')).toBeTruthy()
+    const rec = railGroup('Game Design')
+    expect(within(rec).getByText('Recommended for Action')).toBeTruthy()
+    expect(within(rec).getByText('Story & Quests').closest('a')!.getAttribute('title')).toBe('Added by you')
     open('#/settings/genre')
     fireEvent.click(screen.getByText('Customize recommended planners'))
     fireEvent.click(screen.getByRole('button', { name: 'Restore defaults' }))
