@@ -132,7 +132,7 @@ export function EditorPage() {
               <span className="spacer" />
               {/* Empty collections offer examples in their empty state, so the header button would be a duplicate. */}
               {guide?.examples.some((e) => e.section === sec.id) && !isEmptyCollection(project, docId, sec) && (
-                <button data-guide="examples" onClick={() => useGuideUi.getState().openPicker(sec.id)}><Icon name="sparkle" /> Insert example…</button>
+                <button data-guide="examples" onClick={() => useGuideUi.getState().openPicker(sec.id)}><Icon name="sparkle" /> {t('guide.insertExample')}</button>
               )}
             </div>
             {sec.description && <p className="muted">{sec.description}</p>}

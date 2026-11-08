@@ -32,6 +32,22 @@
       "resetAll": "A tervezők útmutató-pipáit is töröld ({{count}})"
     }
   },
+  "guide": {
+    "tab": "Útmutató",
+    "steps": "{{done}}/{{total}} lépés",
+    "done": "kész",
+    "notDone": "nincs kész",
+    "showMe": "Mutasd",
+    "markDone": "késznek jelöl",
+    "allDone": "Minden lépés kész. A Tippek továbbra is figyelik a tervet, ahogy változik.",
+    "stepOf": "{{n}}. lépés / {{total}}",
+    "gotIt": "Értem",
+    "next": "Következő: {{title}}",
+    "empty": "Még nincs itt semmi.",
+    "add": "+ {{singular}} hozzáadása",
+    "insertExample": "Példa beszúrása…",
+    "insertExampleTitle": "Példa beszúrása"
+  },
   "workspace": {
     "planners": "Tervezők",
     "subtitle": "Kövesd lépésről lépésre az útmutatót, vagy nyiss meg bármelyik tervezőt a listából.",

@@ -1,6 +1,6 @@
 # Guided Workspace Plan — genre walkthroughs, 3-pane home, settings
 
-Status: **in progress** — M1–M4 done (2026-11-08); M5 (base walkthrough content) next. Layout: `src/ui/workspace/`. Engine: `src/core/walkthrough/`, content: `src/modules/walkthroughs/`. Supersedes the "Tailored guide" part of `ACCOUNTS_COLLABORATION_GENRE_PLAN.md` §6 (the profile model stays).
+Status: **in progress** — M1–M5 done (2026-11-08); M6 (genre packs) next. Layout: `src/ui/workspace/`. Engine: `src/core/walkthrough/`, content: `src/modules/walkthroughs/`. Supersedes the "Tailored guide" part of `ACCOUNTS_COLLABORATION_GENRE_PLAN.md` §6 (the profile model stays).
 
 ## 1. Goals
 

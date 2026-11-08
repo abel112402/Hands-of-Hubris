@@ -19,6 +19,7 @@ const open = (hash: string) => {
   location.hash = hash
   render(<App />)
 }
+const stepById = (id: string) => BASE_PACK.steps.find((s) => s.id === id)!
 const hero = () => screen.getByRole('region', { name: BASE_PACK.steps[0].title as string })
 const progress = () => screen.getByRole('complementary', { name: 'Planning progress' })
 
@@ -38,10 +39,12 @@ describe('workspace home', () => {
     fireEvent.click(within(hero()).getByRole('button', { name: 'Mark done' }))
     expect(useStore.getState().project.meta.guide?.manual).toEqual(['concept.pitch'])
     expect(useStore.getState().past.length).toBe(before + 1)
-    expect(screen.getByRole('region', { name: BASE_PACK.steps[1].title as string })).toBeTruthy()
-    expect(within(progress()).getByRole('img', { name: 'Walkthrough 33% complete' })).toBeTruthy()
-    fireEvent.click(within(screen.getByRole('region', { name: BASE_PACK.steps[1].title as string })).getByRole('button', { name: 'Skip' }))
-    expect(useStore.getState().project.meta.guide?.skipped).toEqual(['concept.pillars'])
+    const second = BASE_PACK.steps[1]
+    expect(screen.getByRole('region', { name: second.title as string })).toBeTruthy()
+    const percent = Math.round((1 / BASE_PACK.steps.length) * 100)
+    expect(within(progress()).getByRole('img', { name: `Walkthrough ${percent}% complete` })).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('region', { name: second.title as string })).getByRole('button', { name: 'Skip' }))
+    expect(useStore.getState().project.meta.guide?.skipped).toEqual([second.id])
     useStore.getState().undo()
     useStore.getState().undo()
     expect(useStore.getState().project.meta.guide?.manual ?? []).toEqual([])
@@ -62,11 +65,11 @@ describe('workspace home', () => {
     open('#/')
     const step = screen.getByTestId('walk-step-concept.pillars')
     fireEvent.click(within(step).getByRole('button', { name: /design pillars/ }))
-    expect(within(step).getByText(BASE_PACK.steps[1].body as string)).toBeTruthy()
+    expect(within(step).getByText(stepById('concept.pillars').body as string)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Checklist' }))
     const flat = screen.getByTestId('walk-step-concept.pillars')
     expect(within(flat).getByRole('link').getAttribute('href')).toBe('#/doc/overview.vision?s=pillars')
-    expect(within(flat).queryByText(BASE_PACK.steps[1].body as string)).toBeNull()
+    expect(within(flat).queryByText(stepById('concept.pillars').body as string)).toBeNull()
     open('#/')
     expect(screen.getByRole('button', { name: 'Checklist' }).getAttribute('aria-pressed')).toBe('true')
   })

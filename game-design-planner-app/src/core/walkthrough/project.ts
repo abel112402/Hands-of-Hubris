@@ -5,6 +5,7 @@ import { BASE_PACK, GENRE_PACKS } from '../../modules/walkthroughs'
 import { guideOf } from '../../modules/guides'
 import { knownGenres, readProfile } from '../genre'
 import { getModule, getSections } from '../modules/registry'
+import { RULES } from '../hints/engine'
 import { createProject } from '../model/project'
 import { composeWalkthrough } from './compose'
 import type { BasePack, DoneRule, GenrePack, Walkthrough, WalkStep, WalkTarget } from './types'
@@ -51,6 +52,9 @@ function checkRule(where: string, rule: DoneRule, errors: string[]) {
       return checkTarget(where, rule.docId, rule.section, errors)
     case 'moduleStep':
       if (!guideOf(rule.docId)?.steps.some((s) => s.id === rule.stepId)) errors.push(`${where}: unknown module step ${rule.docId}#${rule.stepId}`)
+      return
+    case 'hintsClear':
+      for (const id of rule.ruleIds) if (!RULES.some((r) => r.id === id)) errors.push(`${where}: unknown hint rule ${id}`)
       return
     case 'all':
     case 'any':

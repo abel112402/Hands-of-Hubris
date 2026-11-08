@@ -58,6 +58,20 @@ describe('built-in content', () => {
     }
   })
 
+  it('starts with nothing done on an empty project, so progress means real work', () => {
+    const p = createProject('Empty', false)
+    const r = evaluateWalkthrough(projectWalkthrough(p), p)
+    expect(Object.entries(r.status).filter(([, s]) => s !== 'open')).toEqual([])
+    expect(r.next?.id).toBe(BASE_PACK.steps[0].id)
+  })
+
+  it('covers every phase, and every chapter has steps', () => {
+    const phases = new Set(BASE_PACK.steps.map((s) => s.phase))
+    expect([...phases].sort()).toEqual(['concept', 'content', 'production', 'ship', 'systems'])
+    for (const c of BASE_PACK.chapters) expect(BASE_PACK.steps.some((s) => s.chapter === c.id && s.phase === c.phase), c.id).toBe(true)
+    for (const s of BASE_PACK.steps) expect(BASE_PACK.chapters.find((c) => c.id === s.chapter)?.phase, s.id).toBe(s.phase)
+  })
+
   it('reports broken references in a pack', () => {
     const bad: GenrePack = {
       id: 'x',
@@ -67,6 +81,7 @@ describe('built-in content', () => {
       remove: ['gone'],
     }
     const errors = validatePack(bad).join('\n')
+    expect(validatePack({ id: 'y', version: 1, notes: {}, replace: { 'concept.pitch': { done: { kind: 'hintsClear', ruleIds: ['no.such'] } } } }).join()).toContain('unknown hint rule no.such')
     for (const part of ['unknown anchor nope', 'unknown chapter ghost', 'unknown planner design.ghost', 'unknown section overview.vision/ghost', 'replace of unknown step missing', 'unknown step gone']) {
       expect(errors).toContain(part)
     }

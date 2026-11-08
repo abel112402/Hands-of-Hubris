@@ -32,6 +32,22 @@
       "resetAll": "Also reset planner guide ticks ({{count}})"
     }
   },
+  "guide": {
+    "tab": "Guide",
+    "steps": "{{done}}/{{total}} steps",
+    "done": "done",
+    "notDone": "not done",
+    "showMe": "Show me",
+    "markDone": "mark done",
+    "allDone": "All steps done. The tips under Hints keep checking the design as it changes.",
+    "stepOf": "Step {{n}} of {{total}}",
+    "gotIt": "Got it",
+    "next": "Next: {{title}}",
+    "empty": "Nothing here yet.",
+    "add": "+ Add {{singular}}",
+    "insertExample": "Insert example…",
+    "insertExampleTitle": "Insert example"
+  },
   "workspace": {
     "planners": "Planners",
     "subtitle": "Follow the walkthrough step by step, or open any planner from the list.",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { GuideExample, ModuleGuide } from '../../core/guides/types'
 import type { Entity, Project } from '../../core/model/types'
@@ -973,6 +974,7 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
 
 /** “Insert example…”: pick an example, see the result on a copy, then insert it as one undo step. */
 export function ExamplePicker({ guide }: { guide: ModuleGuide }) {
+  const { t } = useTranslation()
   const section = useGuideUi((s) => s.picker)
   const close = () => useGuideUi.getState().openPicker(null)
   const project = useProject()
@@ -994,9 +996,9 @@ export function ExamplePicker({ guide }: { guide: ModuleGuide }) {
   if (!section || !ex || !preview) return null
   return (
     <div className="overlay" onClick={close}>
-      <div className="help-popup example-picker" role="dialog" aria-label="Insert example" onClick={(e) => e.stopPropagation()}>
+      <div className="help-popup example-picker" role="dialog" aria-label={t('guide.insertExampleTitle')} onClick={(e) => e.stopPropagation()}>
         <div className="inspector-head">
-          <h2>Insert example</h2>
+          <h2>{t('guide.insertExampleTitle')}</h2>
           <span className="spacer" />
           <button onClick={close} aria-label="Close">✕</button>
         </div>
