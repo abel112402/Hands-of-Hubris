@@ -13,18 +13,26 @@ beforeEach(() => {
 })
 
 const panel = () => screen.getByRole('region', { name: 'Genres' })
+/** Re-renders the app at a route, as navigating there would. */
+const open = (hash: string) => {
+  cleanup()
+  location.hash = hash
+  render(<App />)
+}
 
 describe('genre profile on the planner menu', () => {
   it('neutral projects show every planner and no view toggle or guide', () => {
     render(<App />)
     expect(within(panel()).getByText(/Not set/)).toBeTruthy()
+    // Choosing genres happens in Settings; the menu only links there.
+    expect(within(panel()).getByRole('link', { name: 'Choose genres' }).getAttribute('href')).toBe('#/settings/genre')
     expect(screen.queryByRole('group', { name: 'Planner view' })).toBeNull()
     expect(document.querySelector('.project-guide')).toBeNull()
     for (const m of MODULES) expect(screen.getAllByText(m.title).length).toBeGreaterThan(0)
   })
 
   it('picks Survival + RPG in one undo step and shows recommendations, guide and All view', () => {
-    render(<App />)
+    open('#/settings/genre')
     fireEvent.click(within(panel()).getByRole('button', { name: 'Choose genres' }))
     fireEvent.click(screen.getByRole('checkbox', { name: /Survival/ }))
     fireEvent.click(screen.getByRole('checkbox', { name: /^RPG/ }))
@@ -37,6 +45,8 @@ describe('genre profile on the planner menu', () => {
     expect(useStore.getState().past.length).toBe(historyBefore + 1)
     expect(within(panel()).getByText('Survival · RPG')).toBeTruthy()
 
+    open('#/')
+    expect(within(panel()).getByText('Survival · RPG')).toBeTruthy()
     const rec = screen.getByRole('heading', { name: 'Recommended for Survival · RPG' }).closest('section')!
     expect(within(rec).getByText('Player Character')).toBeTruthy()
     expect(within(rec).queryByText('Bug Reports')).toBeNull()
@@ -66,7 +76,7 @@ describe('genre profile on the planner menu', () => {
 
   it('customizes recommended planners and restores defaults', () => {
     useStore.getState().loadProject(createProject('Test', false, { version: 1, genres: ['action'] }))
-    render(<App />)
+    open('#/settings/genre')
     fireEvent.click(screen.getByText('Customize recommended planners'))
     // Always-shown groups are not customizable.
     expect(screen.queryByRole('checkbox', { name: /Bug Reports/ })).toBeNull()
@@ -74,9 +84,12 @@ describe('genre profile on the planner menu', () => {
     expect(box.checked).toBe(false)
     fireEvent.click(box)
     expect(useStore.getState().project.meta.profile?.editors).toEqual({ add: ['design.story'], remove: [] })
+    open('#/')
     const rec = screen.getByRole('heading', { name: 'Recommended for Action' }).closest('section')!
     expect(within(rec).getByText('Story & Quests')).toBeTruthy()
     expect(within(rec).getByText('Added by you')).toBeTruthy()
+    open('#/settings/genre')
+    fireEvent.click(screen.getByText('Customize recommended planners'))
     fireEvent.click(screen.getByRole('button', { name: 'Restore defaults' }))
     expect(useStore.getState().project.meta.profile?.editors).toBeUndefined()
   })
@@ -85,6 +98,7 @@ describe('genre profile on the planner menu', () => {
     useStore.getState().loadProject(createProject('Test', false, { version: 1, genres: ['rpg', 'mmo-future'] }))
     render(<App />)
     expect(within(panel()).getByText('RPG · mmo-future')).toBeTruthy()
+    open('#/settings/genre')
     fireEvent.click(within(panel()).getByRole('button', { name: 'Edit genres' }))
     fireEvent.click(screen.getByRole('checkbox', { name: /mmo-future \(unknown genre\)/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))

@@ -185,14 +185,14 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
     return (
       <div className="ai-panel">
         <p>{t('ai.noKey')}</p>
-        <Link to="/ai">{t('ai.openSettings')}</Link>
+        <Link to="/settings/ai">{t('ai.openSettings')}</Link>
       </div>
     )
 
   const blocked = !!est && !est.budget.ok && !override
   return (
     <div className="ai-panel">
-      <div className="ai-row muted">{cfg.provider} · {cfg.model} · <Link to="/ai">{t('ai.settings')}</Link></div>
+      <div className="ai-row muted">{cfg.provider} · {cfg.model} · <Link to="/settings/ai">{t('ai.settings')}</Link></div>
       <select aria-label={t('ai.task')} value={task} onChange={(e) => { setTask(e.target.value as TaskId); resetResult() }}>
         {TASKS.map((x) => <option key={x} value={x}>{t(`ai.tasks.${x}`)}</option>)}
       </select>

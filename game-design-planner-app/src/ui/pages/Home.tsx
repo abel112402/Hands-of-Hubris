@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { GROUPS, MODULES, getModule, getSections } from '../../core/modules/registry'
 import { useStore } from '../../core/store/store'
-import { deleteSnapshot, listSnapshots, readAutosave, type Snapshot } from '../../core/persistence/autosave'
-import { deserializeProject } from '../../core/persistence/serialize'
+import { readAutosave } from '../../core/persistence/autosave'
 import { restoreAutosave } from '../actions'
 import { HintCard } from '../hints/HintPanel'
 import { useHints } from '../hints/useHints'
 import { editorGroups, hasGenreProfile, readProfile, recommendEditors, type RecommendationReason } from '../../core/genre'
 import type { PlannerModule, Project } from '../../core/model/types'
-import { GenreProfilePanel, genreNames, reasonText } from '../genres/GenreProfilePanel'
+import { GenreSummary, genreNames, reasonText } from '../genres/GenreProfilePanel'
 import { ProjectGuide } from '../genres/ProjectGuide'
 import { useCloud } from '../../core/cloud/session'
 
@@ -46,11 +45,8 @@ export function Home() {
   const cloudActive = useCloud((s) => !!s.active)
   const [q, setQ] = useState('')
   const [auto, setAuto] = useState<string | null>(null)
-  const [snaps, setSnaps] = useState<Snapshot[]>([])
-  const refresh = () => void listSnapshots().then(setSnaps)
   useEffect(() => {
     void readAutosave().then((a) => setAuto(a ? new Date(a.savedAt).toLocaleString() : null))
-    refresh()
   }, [])
   const { visible: nextSteps } = useHints()
   // One next step by default, so the planner grid stays above the fold; the rest on request.
@@ -76,7 +72,7 @@ export function Home() {
           <button className="banner-close" aria-label={t('home.closeBanner')} title={t('home.closeBanner')} onClick={() => setAuto(null)}>×</button>
         </div>
       )}
-      <GenreProfilePanel />
+      <GenreSummary />
       <ProjectGuide />
       <div className="home-tools">
         <input className="search" aria-label={t('home.filter')} placeholder={t('home.filter')} value={q} onChange={(e) => setQ(e.target.value)} />
@@ -136,21 +132,6 @@ export function Home() {
           </section>
         )
       })}
-      {snaps.length > 0 && (
-        <section>
-          <h2>Snapshots</h2>
-          <ul className="list">
-            {snaps.map((s) => (
-              <li key={s.savedAt}>
-                <span>{s.name} <span className="muted">{new Date(s.savedAt).toLocaleString()}</span></span>
-                <span className="spacer" />
-                <button onClick={() => { if (confirm('Load this snapshot?')) useStore.getState().loadProject(deserializeProject(s.json).project) }}>Load</button>
-                <button className="danger" onClick={() => void deleteSnapshot(s.savedAt).then(refresh)}>Delete</button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   )
 }

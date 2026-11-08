@@ -5,7 +5,7 @@ import { useStore } from '../core/store/store'
 import { validateProject } from '../core/references/refs'
 import { useHints } from './hints/useHints'
 import { MODULES } from '../core/modules/registry'
-import { setLanguage } from '../core/i18n'
+import { SETTINGS_TABS } from './settings/SettingsPage'
 import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
 import { Icon } from './Icon'
@@ -14,15 +14,14 @@ import { flushSave, hasUnsyncedChanges, leaveLocalMode, signOut, useCloud } from
 import { CloudBanners, CloudSaveStatus } from './cloud/CloudBanners'
 
 function Palette({ onClose }: { onClose: () => void }) {
+  const { i18n } = useTranslation()
   const nav = useNavigate()
   const [q, setQ] = useState('')
   const items = [
     ...MODULES.map((m) => ({ label: `${m.icon} ${m.title}`, to: `/doc/${m.id}` })),
-    { label: 'Definitions', to: '/definitions' },
-    { label: 'Issues', to: '/issues' },
-    { label: 'Hints', to: '/hints' },
-    { label: 'AI settings', to: '/ai' },
-    { label: 'Menu', to: '/' },
+    ...SETTINGS_TABS.map((id) => ({ label: `${i18n.t('settingsPage.title')}: ${i18n.t(`settingsPage.tabs.${id}`)}`, to: `/settings/${id}` })),
+    { label: i18n.t('nav.issues'), to: '/issues' },
+    { label: i18n.t('nav.home'), to: '/' },
   ].filter((i) => i.label.toLowerCase().includes(q.toLowerCase()))
   return (
     <div className="overlay" onClick={onClose}>
@@ -39,7 +38,7 @@ function Palette({ onClose }: { onClose: () => void }) {
 }
 
 export function AppShell() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const project = useStore((s) => s.project)
   const dirty = useStore((s) => s.dirty)
   const fileName = useStore((s) => s.fileName)
@@ -62,12 +61,12 @@ export function AppShell() {
   const hintCount = useHints().total
   const navLinks = (
     <>
-      <NavLink to="/definitions" className="nav-link">{t('nav.definitions')}</NavLink>
       <NavLink to="/issues" className="nav-link">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</NavLink>
-      <NavLink to="/hints" className="nav-link" title={t('hints.projectWide', { count: hintCount })} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`}>
+      <NavLink to="/settings/hints" className="nav-link" title={t('hints.projectWide', { count: hintCount })} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`}>
         {t('nav.hints')}{hintCount > 0 && <span className="badge" aria-hidden="true">{hintCount}</span>}
       </NavLink>
-      <NavLink to="/ai" className="nav-link"><Icon name="sparkle" /> {t('nav.ai')}</NavLink>
+      {/* All project settings (genre, hints, AI, definitions, sharing, data) live on one page. */}
+      <NavLink to="/settings" className="nav-link"><Icon name="settings" /> {t('nav.settings')}</NavLink>
     </>
   )
 
@@ -129,7 +128,7 @@ export function AppShell() {
               {cloudActive ? (
                 <>
                   <button onClick={() => nav('/projects')}>{t('cloud.account.projects')}</button>
-                  <button onClick={() => nav('/project')}>{t('cloud.account.settings')}</button>
+                  <button onClick={() => nav('/settings/sharing')}>{t('cloud.account.settings')}</button>
                   <button onClick={() => void saveProject(true)}>{t('cloud.account.saveCopy')}</button>
                 </>
               ) : (
@@ -149,7 +148,6 @@ export function AppShell() {
               <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
               <button onClick={downloadJson}>{t('actions.exportJson')}</button>
               <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
-              <button onClick={() => setLanguage(i18n.language === 'hu' ? 'en' : 'hu')}>Language: {i18n.language === 'hu' ? 'Magyar → English' : 'English → Magyar'}</button>
               {/* On narrow screens the nav row is hidden and its links appear here instead. */}
               <div className="menu-nav">
                 <hr />

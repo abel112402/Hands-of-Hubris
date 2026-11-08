@@ -9,7 +9,33 @@
     "issues": "Problémák",
     "hints": "Tippek",
     "ai": "AI",
+    "settings": "Beállítások",
     "main": "Fő"
+  },
+  "settingsPage": {
+    "title": "Beállítások",
+    "tabsLabel": "Beállítási részek",
+    "tabs": {
+      "general": "Általános",
+      "genre": "Műfaj és tervezők",
+      "hints": "Tippek",
+      "ai": "AI",
+      "definitions": "Definíciók",
+      "sharing": "Tagok és előzmények",
+      "data": "Adatok és mentések"
+    },
+    "language": "Nyelv",
+    "languageHint": "Az alkalmazás menüinek és gombjainak nyelve. A projekt tartalmát nem fordítja le.",
+    "created": "Létrehozva",
+    "updated": "Utoljára módosítva",
+    "appVersion": "Mentve ezzel az alkalmazásverzióval",
+    "export": "Exportálás",
+    "snapshots": "Pillanatképek",
+    "snapshotsHint": "A pillanatképek a projekt ebben a böngészőben tárolt másolatai. Nagyobb változtatások előtt érdemes készíteni egyet.",
+    "noSnapshots": "Még nincs pillanatkép.",
+    "loadSnapshotConfirm": "Betöltöd ezt a pillanatképet? A nem mentett változások lecserélődnek.",
+    "load": "Betöltés",
+    "delete": "Törlés"
   },
   "actions": {
     "new": "Új",

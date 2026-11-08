@@ -21,7 +21,7 @@ describe('top bar', () => {
       expect(within(menu).getByRole('button', { name, hidden: true })).toBeTruthy()
     }
     const nav = within(bar).getByRole('navigation', { name: 'Main' })
-    expect(within(nav).getByText('Definitions')).toBeTruthy()
+    expect(within(nav).getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('#/settings')
     expect(bar.textContent).not.toMatch(/[↶↷🔍🤖]/u)
   })
 

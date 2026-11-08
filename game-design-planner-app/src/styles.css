@@ -905,3 +905,26 @@ a.button.primary{background:var(--accent-strong);border-color:var(--accent-stron
 .cloud-status.pending,.cloud-status.saving{color:var(--warn)}
 .project-settings section{margin-bottom:var(--space-5)}
 .project-settings code{background:var(--panel2);padding:1px 6px;border-radius:4px;word-break:break-all}
+/* Settings page: vertical section list + panel; the list becomes a scrolling row on narrow screens. */
+.settings-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:var(--space-5);align-items:start}
+.settings-tabs{display:flex;flex-direction:column;gap:2px;position:sticky;top:var(--space-3)}
+.settings-tab{padding:6px 10px;border-radius:6px;color:var(--text);text-decoration:none;border-left:2px solid transparent}
+.settings-tab:hover{background:var(--panel2)}
+.settings-tab.active{background:var(--panel2);border-left-color:var(--accent);font-weight:600}
+.settings-panel{min-width:0}
+.settings-panel .page{max-width:none;margin:0;padding:0}
+.settings-panel h1{font-size:var(--fs-xl);margin-top:0}
+.settings-panel>.genre-panel{margin-top:0}
+.settings-form{display:flex;flex-direction:column;gap:var(--space-3);max-width:640px}
+.settings-form h2{margin:0}
+.settings-form h3{margin:var(--space-3) 0 0}
+.settings-field{display:grid;grid-template-columns:160px minmax(0,1fr);gap:var(--space-3);align-items:center}
+.settings-meta{display:grid;grid-template-columns:160px 1fr;gap:var(--space-1) var(--space-3);margin:0}
+.settings-meta dt{color:var(--muted)}.settings-meta dd{margin:0}
+@media (max-width:760px){
+  .settings-layout{grid-template-columns:1fr;gap:var(--space-3)}
+  .settings-tabs{flex-direction:row;overflow-x:auto;position:static}
+  .settings-tab{white-space:nowrap;border-left:none;border-bottom:2px solid transparent}
+  .settings-tab.active{border-bottom-color:var(--accent)}
+  .settings-field,.settings-meta{grid-template-columns:1fr}
+}

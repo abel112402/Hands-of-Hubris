@@ -9,7 +9,33 @@
     "issues": "Issues",
     "hints": "Hints",
     "ai": "AI",
+    "settings": "Settings",
     "main": "Main"
+  },
+  "settingsPage": {
+    "title": "Settings",
+    "tabsLabel": "Settings sections",
+    "tabs": {
+      "general": "General",
+      "genre": "Genre & editors",
+      "hints": "Hints",
+      "ai": "AI",
+      "definitions": "Definitions",
+      "sharing": "Members & history",
+      "data": "Data & backups"
+    },
+    "language": "Language",
+    "languageHint": "The language of the app's menus and buttons. Your project content is not translated.",
+    "created": "Created",
+    "updated": "Last changed",
+    "appVersion": "Saved with app version",
+    "export": "Export",
+    "snapshots": "Snapshots",
+    "snapshotsHint": "Snapshots are copies of the project kept in this browser. Use them before big changes.",
+    "noSnapshots": "No snapshots yet.",
+    "loadSnapshotConfirm": "Load this snapshot? Unsaved changes are replaced.",
+    "load": "Load",
+    "delete": "Delete"
   },
   "actions": {
     "new": "New",
