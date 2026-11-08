@@ -27,7 +27,19 @@ let embeddedIndex: Promise<DocFile[]> | null = null
 
 const NO_TEMPLATES: never[] = []
 
-export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: string }) {
+export function AiPanel({
+  docId,
+  sectionId,
+  initialInstruction = '',
+  step: initialStep,
+}: {
+  docId: string
+  sectionId?: string
+  /** Pre-filled question, e.g. from a walkthrough step; remount (key) to apply a new one. */
+  initialInstruction?: string
+  /** Walkthrough step sent along as context; shown as a removable chip. */
+  step?: { title: string; data: string }
+}) {
   const { t, i18n } = useTranslation()
   const project = useStore((s) => s.project)
   const hasKey = useAiSession((s) => s.hasKey)
@@ -38,7 +50,8 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
   const [scope, setScope] = useState<Scope>('section')
   const [docIds, setDocIds] = useState<string[]>([])
   const [includeRef, setIncludeRef] = useState(false)
-  const [instruction, setInstruction] = useState('')
+  const [instruction, setInstruction] = useState(initialInstruction)
+  const [step, setStep] = useState(initialStep)
   const [count, setCount] = useState(3)
   const [mode, setMode] = useState<'expand' | 'rewrite' | 'translate'>('expand')
   const [toLang, setToLang] = useState<'en' | 'hu'>('en')
@@ -68,7 +81,7 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
   const resetResult = () => { setPrepared(null); setOutput(''); setError(''); setDiff(null); setFindings(null); setSources([]); setApplied('') }
   // Any change of inputs invalidates the previewed payload, so what is sent is always what was shown.
   /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => { setPrepared(null) }, [task, scope, docIds, includeRef, instruction, count, mode, toLang, entityId, src, docId, sectionId])
+  useEffect(() => { setPrepared(null) }, [task, scope, docIds, includeRef, instruction, count, mode, toLang, entityId, src, docId, sectionId, step])
   useEffect(() => { if (hintRequest) { setTask('hint'); resetResult() } }, [hintRequest])
   useEffect(() => {
     const defaults: Record<TaskId, Scope> = { chat: 'section', generate: 'document', rewrite: 'section', review: 'document', formula: 'document', summary: 'document', docs: 'none', hint: 'section' }
@@ -107,7 +120,7 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
           : sec
             ? `section "${sectionId}" of document "${docId}"`
             : undefined
-      const p = buildPrompt({ task, language: lang, instruction, context, docsExcerpts, hintData, count, rewriteMode: mode, translateTo: toLang, target })
+      const p = buildPrompt({ task, language: lang, instruction, context, docsExcerpts, hintData, stepData: step?.data, count, rewriteMode: mode, translateTo: toLang, target })
       const history = task === 'chat' ? chat.slice(-10) : []
       const messages: ChatMessage[] = [...history, { role: 'user', content: p.user }]
       setPrepared({ system: p.system, messages, json: p.json, payload: `${p.system}\n\n---\n\n${messages.map((m) => `[${m.role}]\n${m.content}`).join('\n\n')}`, sources: used })
@@ -185,14 +198,21 @@ export function AiPanel({ docId, sectionId }: { docId: string; sectionId?: strin
     return (
       <div className="ai-panel">
         <p>{t('ai.noKey')}</p>
-        <Link to="/ai">{t('ai.openSettings')}</Link>
+        <Link to="/settings/ai">{t('ai.openSettings')}</Link>
       </div>
     )
 
   const blocked = !!est && !est.budget.ok && !override
   return (
     <div className="ai-panel">
-      <div className="ai-row muted">{cfg.provider} · {cfg.model} · <Link to="/ai">{t('ai.settings')}</Link></div>
+      <div className="ai-row muted">{cfg.provider} · {cfg.model} · <Link to="/settings/ai">{t('ai.settings')}</Link></div>
+      {step && (
+        <div className="ai-step" role="status">
+          <span>{t('ai.aboutStep', { step: step.title })}</span>
+          <span className="spacer" />
+          <button className="small" aria-label={t('ai.removeStep')} title={t('ai.removeStep')} onClick={() => setStep(undefined)}>×</button>
+        </div>
+      )}
       <select aria-label={t('ai.task')} value={task} onChange={(e) => { setTask(e.target.value as TaskId); resetResult() }}>
         {TASKS.map((x) => <option key={x} value={x}>{t(`ai.tasks.${x}`)}</option>)}
       </select>

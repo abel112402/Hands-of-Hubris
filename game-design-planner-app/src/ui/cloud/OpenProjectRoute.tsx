@@ -18,7 +18,7 @@ export function OpenProjectRoute() {
 
   useEffect(() => {
     let alive = true
-    const target = rest.startsWith('doc/') ? `/${rest}` : rest === 'settings' || rest === 'members' ? '/project' : '/'
+    const target = rest.startsWith('doc/') ? `/${rest}` : rest === 'settings' || rest === 'members' ? '/settings/sharing' : '/'
     void (async () => {
       try {
         if (useCloud.getState().active?.id !== projectId) {

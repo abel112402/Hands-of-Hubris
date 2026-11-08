@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import type { GuideStep, ModuleGuide } from '../../core/guides/types'
 import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
-import { stepDone, useGuideUi, useManualDone } from './guideStore'
+import { stepDone, toggleManual, useGuideUi, useManualDone } from './guideStore'
 
 /** Opens a step: goes to its section and spotlights its control. */
 export function useOpenStep(docId: string) {
@@ -23,9 +24,9 @@ export function runStepAction(step: GuideStep) {
 
 /** Guided setup: ordered steps that tick themselves from the data, with a jump and a quick action each. */
 export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide }) {
+  const { t } = useTranslation()
   const project = useProject()
   const manual = useManualDone(project, docId)
-  const toggle = useGuideUi((s) => s.toggleManual)
   const open = useOpenStep(docId)
   const nav = useNavigate()
   const done = guide.steps.map((s) => stepDone(s, project, manual))
@@ -35,7 +36,7 @@ export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide
     <div className="guide-panel">
       <div className="progress" title={`${count}/${guide.steps.length}`}>
         <div style={{ width: `${(count / guide.steps.length) * 100}%` }} />
-        <span>{count}/{guide.steps.length} steps</span>
+        <span>{t('guide.steps', { done: count, total: guide.steps.length })}</span>
       </div>
       <ol className="guide-steps">
         {guide.steps.map((step, i) => {
@@ -44,13 +45,13 @@ export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide
           return (
             <li key={step.id} className={(isDone ? 'done' : '') + (current ? ' current' : '')} data-testid={`guide-step-${step.id}`}>
               <div className="guide-step-head">
-                <span className="guide-check" aria-label={isDone ? 'done' : 'not done'}>{isDone ? '✓' : i + 1}</span>
+                <span className="guide-check" aria-label={isDone ? t('guide.done') : t('guide.notDone')}>{isDone ? '✓' : i + 1}</span>
                 <button className="link-btn" onClick={() => open(step)}>{step.title}</button>
               </div>
               {current && <p className="muted">{step.body}</p>}
               {current && (
                 <div className="hint-actions">
-                  <button className="primary" onClick={() => open(step)}>Show me</button>
+                  <button className="primary" onClick={() => open(step)}>{t('guide.showMe')}</button>
                   {step.action && (
                     <button
                       onClick={() => {
@@ -65,14 +66,14 @@ export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide
               )}
               {!step.done && (
                 <label className="row guide-manual">
-                  <input type="checkbox" checked={isDone} onChange={() => toggle(project.meta.name, docId, step.id)} /> mark done
+                  <input type="checkbox" checked={isDone} onChange={() => toggleManual(docId, step.id)} /> {t('guide.markDone')}
                 </label>
               )}
             </li>
           )
         })}
       </ol>
-      {next === -1 && <p className="muted">All steps done. The tips under Hints keep checking the design as it changes.</p>}
+      {next === -1 && <p className="muted">{t('guide.allDone')}</p>}
     </div>
   )
 }

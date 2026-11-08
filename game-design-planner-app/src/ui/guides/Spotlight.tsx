@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ModuleGuide } from '../../core/guides/types'
 import { useProject } from '../hooks'
 import { stepDone, useGuideUi, useManualDone } from './guideStore'
@@ -8,6 +9,7 @@ type Box = { top: number; left: number; width: number; height: number }
 
 /** Coach mark: outlines the step's control and explains it in a popover. Esc or “Got it” closes it. */
 export function Spotlight({ docId, guide, sectionId }: { docId: string; guide: ModuleGuide; sectionId?: string }) {
+  const { t } = useTranslation()
   const spotlight = useGuideUi((s) => s.spotlight)
   const setSpotlight = useGuideUi((s) => s.setSpotlight)
   const project = useProject()
@@ -61,12 +63,12 @@ export function Spotlight({ docId, guide, sectionId }: { docId: string; guide: M
     : { top: 90, left: Math.max(10, window.innerWidth / 2 - 160) }
   return (
     <div className="coachmark" role="dialog" aria-label={step.title} style={style}>
-      <div className="coachmark-step muted">Step {idx + 1} of {guide.steps.length}</div>
+      <div className="coachmark-step muted">{t('guide.stepOf', { n: idx + 1, total: guide.steps.length })}</div>
       <strong>{step.title}</strong>
       <p>{step.body}</p>
       <div className="hint-actions">
-        <button className="primary" onClick={() => setSpotlight(null)}>Got it</button>
-        {following && <button onClick={() => open(following)}>Next: {following.title}</button>}
+        <button className="primary" onClick={() => setSpotlight(null)}>{t('guide.gotIt')}</button>
+        {following && <button onClick={() => open(following)}>{t('guide.next', { title: following.title })}</button>}
       </div>
     </div>
   )

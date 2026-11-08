@@ -16,13 +16,12 @@ describe('home next steps', () => {
   it('shows one next step and reveals the rest on request', async () => {
     const { fireEvent, within } = await import('@testing-library/react')
     const { container } = render(<App />)
+    // Project hints live in the center pane's Hints tab.
+    fireEvent.click(within(container).getByRole('tab', { name: /^Hints/ }))
     const section = container.querySelector('section.next-steps') as HTMLElement
     expect(section.querySelectorAll('[data-testid="hint"]')).toHaveLength(1)
     const more = within(section).getByRole('button', { name: /^Show \d+ more$/ })
     fireEvent.click(more)
     expect(section.querySelectorAll('[data-testid="hint"]').length).toBeGreaterThan(1)
-    // The planner filter comes before the next steps.
-    const filter = container.querySelector('input.search')!
-    expect(filter.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

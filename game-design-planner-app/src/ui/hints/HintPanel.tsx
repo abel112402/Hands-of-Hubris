@@ -170,7 +170,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
           >
             <Icon name="bulb" /> {t('hints.panel')}{here.length > 0 && <span className="badge" aria-hidden="true">{here.length}</span>}
           </button>
-          {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}><Icon name="compass" /> Guide</button>}
+          {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}><Icon name="compass" /> {t('guide.tab')}</button>}
           <button className={showAi ? 'active' : ''} onClick={() => setTab('ai')}><Icon name="sparkle" /> AI</button>
         </div>
         <button
