@@ -49,6 +49,13 @@
     "insertExampleTitle": "Insert example"
   },
   "workspace": {
+    "stepHints": "Tips for this step",
+    "chip": {
+      "step": "Walkthrough step",
+      "back": "Back to walkthrough",
+      "done": "Walkthrough step done",
+      "next": "Next: {{step}}"
+    },
     "planners": "Planners",
     "subtitle": "Follow the walkthrough step by step, or open any planner from the list.",
     "filled": "{{percent}}% filled",
@@ -1301,6 +1308,8 @@
     "more_other": "{{count}} more hidden"
   },
   "ai": {
+    "aboutStep": "About step: {{step}}",
+    "removeStep": "Do not send this step",
     "badgeTitle": "Created or changed by AI ({{model}}) {{date}}",
     "explain": "Explain",
     "settings": "Settings",

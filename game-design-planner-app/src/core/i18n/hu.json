@@ -49,6 +49,13 @@
     "insertExampleTitle": "Példa beszúrása"
   },
   "workspace": {
+    "stepHints": "Tippek ehhez a lépéshez",
+    "chip": {
+      "step": "Útmutató lépés",
+      "back": "Vissza az útmutatóhoz",
+      "done": "Az útmutató lépés kész",
+      "next": "Következő: {{step}}"
+    },
     "planners": "Tervezők",
     "subtitle": "Kövesd lépésről lépésre az útmutatót, vagy nyiss meg bármelyik tervezőt a listából.",
     "filled": "{{percent}}% kitöltve",
@@ -1072,6 +1079,8 @@
     }
   },
   "ai": {
+    "aboutStep": "Lépés: {{step}}",
+    "removeStep": "Ne küldd el ezt a lépést",
     "badgeTitle": "AI hozta létre vagy módosította ({{model}}) {{date}}",
     "explain": "Magyarázd el",
     "settings": "Beállítások",

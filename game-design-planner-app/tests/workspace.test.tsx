@@ -119,3 +119,39 @@ describe('progress helpers', () => {
     expect(docProgress(p, 'ghost')).toBe(0)
   })
 })
+
+describe('walkthrough across the app', () => {
+  it('shows the current step’s own hints under the step card', () => {
+    open('#/')
+    const tips = within(hero()).getByRole('region', { name: 'Tips for this step' })
+    expect(tips.querySelectorAll('[data-testid="hint"]').length).toBeGreaterThan(0)
+  })
+
+  it('sends the step to the AI as a removable chip', () => {
+    const provider = useAiSettings.getState().settings.provider
+    useAiSession.getState().setKey(provider, 'sk-test-0123456789abcdef0123456789')
+    open('#/')
+    fireEvent.click(within(hero()).getByRole('button', { name: /Ask AI/ }))
+    const panel = screen.getByRole('tabpanel')
+    expect(within(panel).getByText('About step: Write the pitch')).toBeTruthy()
+    fireEvent.click(within(panel).getByRole('button', { name: 'Do not send this step' }))
+    expect(within(panel).queryByText(/About step:/)).toBeNull()
+    useAiSession.getState().clearAll()
+  })
+
+  it('follows the user into the planner and points on to the next step', () => {
+    open('#/doc/overview.vision?s=pitch')
+    const chip = () => screen.getByText(/Walkthrough step/).closest('.walk-chip') as HTMLElement
+    expect(within(chip()).getByText('Write the pitch')).toBeTruthy()
+    expect(within(chip()).getByRole('link', { name: 'Back to walkthrough' }).getAttribute('href')).toBe('#/')
+    fireEvent.click(within(chip()).getByRole('button', { name: 'Mark done' }))
+    expect(useStore.getState().project.meta.guide?.manual).toEqual(['concept.pitch'])
+    const next = within(chip()).getByRole('link', { name: `Next: ${BASE_PACK.steps[1].title}` })
+    expect(next.getAttribute('href')).toBe('#/doc/overview.vision?s=audience')
+  })
+
+  it('shows no chip on planner pages the walkthrough does not use', () => {
+    open('#/doc/qa.bugs')
+    expect(screen.queryByText(/Walkthrough step/)).toBeNull()
+  })
+})

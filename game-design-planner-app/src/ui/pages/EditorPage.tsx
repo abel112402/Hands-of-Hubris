@@ -21,6 +21,7 @@ import { mapStates } from '../guides/GuideMap'
 import { Icon } from '../Icon'
 import { Menu } from '../Menu'
 import { SideRail } from '../workspace/EditorRail'
+import { WalkthroughChip } from '../workspace/WalkthroughChip'
 
 const isEmptyCollection = (project: Project, docId: string, sec: SectionDef) => {
   if (sec.kind !== 'collection') return false
@@ -135,6 +136,7 @@ export function EditorPage() {
                 <button data-guide="examples" onClick={() => useGuideUi.getState().openPicker(sec.id)}><Icon name="sparkle" /> {t('guide.insertExample')}</button>
               )}
             </div>
+            <WalkthroughChip docId={docId} sectionId={sec.id} />
             {sec.description && <p className="muted">{sec.description}</p>}
             {guide?.concepts[sec.id] && <ConceptCard concept={guide.concepts[sec.id]} />}
             <SectionRenderer docId={docId} sec={sec} />

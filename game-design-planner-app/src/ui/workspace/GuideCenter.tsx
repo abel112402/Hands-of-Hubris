@@ -6,6 +6,7 @@ import { genreLabel } from '../../core/genre'
 import { groupWalkthrough, textOf } from '../../core/walkthrough/compose'
 import { setStepManual, setStepSkipped, type WalkthroughProgress } from '../../core/walkthrough/evaluate'
 import { stepLink } from '../../core/walkthrough/project'
+import { focusHints, hintsForStep, stepPromptData } from '../../core/walkthrough/focus'
 import type { WalkthroughView } from './useWalkthrough'
 import type { ComposedStep, StepStatus } from '../../core/walkthrough/types'
 import { HintCard } from '../hints/HintPanel'
@@ -41,6 +42,21 @@ function StepActions({ step, status, onAsk, primary }: { step: ComposedStep; sta
       {status === 'open' && <button disabled={readOnly} onClick={() => mutate((p) => setStepSkipped(p, step.id, true))}>{t('workspace.skip')}</button>}
       {status === 'skipped' && <button disabled={readOnly} onClick={() => mutate((p) => setStepSkipped(p, step.id, false))}>{t('workspace.unskip')}</button>}
     </div>
+  )
+}
+
+const STEP_HINTS = 3
+
+/** Hints that belong to this step (its quality gates and its target planner), so problems show where the work is. */
+function StepHints({ step }: { step: ComposedStep }) {
+  const { t } = useTranslation()
+  const hints = hintsForStep(step, useHints().all)
+  if (!hints.length) return null
+  return (
+    <section className="step-hints" aria-label={t('workspace.stepHints')}>
+      <h3>{t('workspace.stepHints')} <span className="muted">({hints.length})</span></h3>
+      <ul className="list">{hints.slice(0, STEP_HINTS).map((h) => <HintCard key={h.id} hint={h} />)}</ul>
+    </section>
   )
 }
 
@@ -81,6 +97,7 @@ function CurrentStep({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Compos
       <p>{textOf(step.body, i18n.language)}</p>
       <Notes step={step} />
       <StepActions step={step} status="open" onAsk={onAsk} primary />
+      <StepHints step={step} />
     </section>
   )
 }
@@ -160,15 +177,17 @@ function StepRow({ step, progress, detailed, onAsk }: { step: ComposedStep; prog
           <p className="muted">{textOf(step.body, i18n.language)}</p>
           <Notes step={step} />
           <StepActions step={step} status={status} onAsk={onAsk} />
+          {status !== 'done' && <StepHints step={step} />}
         </div>
       )}
     </li>
   )
 }
 
-function HintsTab() {
+/** Project hints, with the current step's hints first. */
+function HintsTab({ focus }: { focus?: ComposedStep }) {
   const { t } = useTranslation()
-  const { visible } = useHints()
+  const visible = focusHints(useHints().visible, focus)
   const [all, setAll] = useState(false)
   const shown = all ? visible : visible.slice(0, HINTS_SHOWN)
   if (!visible.length) return <p className="muted">{t('hints.none')}</p>
@@ -188,11 +207,17 @@ function HintsTab() {
 export function GuideCenter({ view }: { view: WalkthroughView }) {
   const { t, i18n } = useTranslation()
   const [tab, setTab] = useState<Tab>('walkthrough')
-  const [ask, setAsk] = useState<{ docId: string; prompt: string; n: number }>({ docId: 'overview.vision', prompt: '', n: 0 })
+  const [ask, setAsk] = useState<{ docId: string; sectionId?: string; prompt: string; step?: { title: string; data: string }; n: number }>({ docId: 'overview.vision', prompt: '', n: 0 })
   const hintCount = useHints().total
   const onAsk = (s: ComposedStep) => {
     const prompt = s.aiPrompt ? textOf(s.aiPrompt, i18n.language) : `${textOf(s.title, i18n.language)}: ${textOf(s.body, i18n.language)}`
-    setAsk((a) => ({ docId: s.target?.docId ?? 'overview.vision', prompt, n: a.n + 1 }))
+    setAsk((a) => ({
+      docId: s.target?.docId ?? 'overview.vision',
+      sectionId: s.target?.section,
+      prompt,
+      step: { title: textOf(s.title, i18n.language), data: stepPromptData(view.walk, s, i18n.language) },
+      n: a.n + 1,
+    }))
     setTab('ai')
   }
   const tabs: { id: Tab; label: string; badge?: number }[] = [
@@ -212,8 +237,8 @@ export function GuideCenter({ view }: { view: WalkthroughView }) {
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="center-panel">
         {tab === 'walkthrough' && <WalkthroughList view={view} onAsk={onAsk} />}
-        {tab === 'hints' && <HintsTab />}
-        {tab === 'ai' && <AiPanel key={ask.n} docId={ask.docId} initialInstruction={ask.prompt} />}
+        {tab === 'hints' && <HintsTab focus={view.progress.next} />}
+        {tab === 'ai' && <AiPanel key={ask.n} docId={ask.docId} sectionId={ask.sectionId} initialInstruction={ask.prompt} step={ask.step} />}
       </div>
     </div>
   )

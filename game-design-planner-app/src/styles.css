@@ -1033,3 +1033,12 @@ a.button.primary{background:var(--accent-strong);border-color:var(--accent-stron
 }
 .walk-genres{margin-left:auto;font-size:var(--fs-xs);white-space:nowrap}
 .step-crumb .walk-genres{margin-left:var(--space-2);text-transform:none;letter-spacing:0}
+.step-hints{margin-top:var(--space-3);border-top:1px solid var(--line);padding-top:var(--space-2)}
+.step-hints h3{font-size:var(--fs-sm);margin:0 0 var(--space-1);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ai-step{display:flex;align-items:center;gap:var(--space-2);padding:4px 8px;border:1px solid var(--line);border-radius:6px;font-size:var(--fs-sm);margin-bottom:var(--space-2)}
+.ai-step .spacer{flex:1}
+.walk-chip{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2);padding:6px 10px;margin:var(--space-2) 0;border:1px solid var(--accent);border-radius:8px;background:var(--panel);font-size:var(--fs-md-sm)}
+.walk-chip.done{border-color:var(--ok)}
+.walk-chip-label{color:var(--muted);font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.05em}
+.walk-chip .spacer{flex:1}
+a.button.small{padding:1px 8px;font-size:var(--fs-sm)}
