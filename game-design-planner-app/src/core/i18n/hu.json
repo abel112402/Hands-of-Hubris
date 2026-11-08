@@ -51,7 +51,7 @@
     "cancel": "Mégse",
     "safe": "A műfajok módosítása soha nem töröl adatot.",
     "customize": "Ajánlott tervezők testreszabása",
-    "customizeHint": "A választásaid megmaradnak, ha a műfajok változnak. Az alapértelmezések visszaállításával újra a műfajok szerint alakul a lista.",
+    "customizeHint": "Válaszd ki, mely játéktervezési tervezők jelenjenek meg. Az Áttekintés, Technikai, Grafika & hang, Gyártás, QA és Sablonok mindig láthatók. A választásaid megmaradnak, ha a műfajok változnak; az alapértelmezések visszaállításával újra a műfajok szerint alakul a lista.",
     "restore": "Alapértelmezések visszaállítása",
     "viewLabel": "Tervezőnézet",
     "viewRecommended": "Ajánlott",

@@ -8,7 +8,7 @@ import { deserializeProject } from '../../core/persistence/serialize'
 import { restoreAutosave } from '../actions'
 import { HintCard } from '../hints/HintPanel'
 import { useHints } from '../hints/useHints'
-import { hasGenreProfile, readProfile, recommendEditors, type RecommendationReason } from '../../core/genre'
+import { editorGroups, hasGenreProfile, readProfile, recommendEditors, type RecommendationReason } from '../../core/genre'
 import type { PlannerModule, Project } from '../../core/model/types'
 import { GenreProfilePanel, genreNames, reasonText } from '../genres/GenreProfilePanel'
 import { ProjectGuide } from '../genres/ProjectGuide'
@@ -102,22 +102,28 @@ export function Home() {
           )}
         </section>
       )}
-      {showRecommended && (() => {
-        const shown = recs.filter((r) => { const m = getModule(r.docId); return m && (match(m.title) || match(m.summary)) })
+      {/* Genres narrow only the genre-driven groups (Game Design); core groups are always listed in full. */}
+      {showRecommended && editorGroups(profile).map((g) => {
+        const shown = g.editors.filter((e) => { const m = getModule(e.docId); return m && (match(m.title) || match(m.summary)) })
+        if (!g.filtered && !shown.length) return null
         return (
-          <section>
-            <h2>{t('genres.recommendedFor', { genres: genreNames(profile.genres) })}</h2>
+          <section key={g.group}>
+            <h2>{g.filtered ? t('genres.recommendedFor', { genres: genreNames(profile.genres) }) : g.label}</h2>
             {shown.length ? (
               <div className="cards">
-                {shown.map((r) => <ModuleCard key={r.docId} m={getModule(r.docId)!} project={project} reasons={r.reasons} />)}
+                {shown.map((e) => (
+                  <ModuleCard key={e.docId} m={getModule(e.docId)!} project={project} reasons={e.reasons} recommended={!g.filtered && e.recommended} />
+                ))}
               </div>
             ) : (
               <p className="muted">{t('genres.noMatch')}</p>
             )}
-            <button className="small" onClick={() => setView('all')}>{t('genres.showAll', { count: MODULES.length - recs.length })}</button>
+            {g.filtered && g.hidden > 0 && (
+              <button className="small" onClick={() => setView('all')}>{t('genres.showAll', { count: g.hidden })}</button>
+            )}
           </section>
         )
-      })()}
+      })}
       {!showRecommended && GROUPS.map((g) => {
         const mods = MODULES.filter((m) => m.group === g.id && (match(m.title) || match(m.summary)))
         if (!mods.length) return null

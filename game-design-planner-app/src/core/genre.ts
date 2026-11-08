@@ -4,6 +4,7 @@
  * in the local app, a future cloud project list, or a server-side job.
  */
 import {
+  ALWAYS_SHOWN_GROUPS,
   FOUNDATION_EDITORS,
   GENERAL_ORDER,
   GENRES,
@@ -11,9 +12,9 @@ import {
   type GenreDef,
   type ProjectGuideStepDef,
 } from '../modules/genres'
-import { MODULES, getModule, getSections } from './modules/registry'
+import { GROUPS, MODULES, getModule, getSections } from './modules/registry'
 import { isDocEmpty, isSectionEmpty } from './hints/util'
-import type { Project, ProjectProfile } from './model/types'
+import type { ModuleGroup, Project, ProjectProfile } from './model/types'
 
 export const PROFILE_VERSION = 1
 export const MAX_GENRES = 8
@@ -100,6 +101,48 @@ export function recommendEditors(profile: ProjectProfile): Recommendation[] {
     list.push({ docId, reasons: [{ kind: 'manual' }] })
   }
   return list
+}
+
+/** True when the planner's group is shown for every genre (see ALWAYS_SHOWN_GROUPS). */
+export const isAlwaysShownGroup = (group: ModuleGroup) => ALWAYS_SHOWN_GROUPS.includes(group)
+
+/** True when genres decide which of the planner's group are shown (today: Game Design). */
+export const isGenreDrivenModule = (docId: string) => {
+  const mod = getModule(docId)
+  return !!mod && !isAlwaysShownGroup(mod.group)
+}
+
+export type EditorEntry = { docId: string; recommended: boolean; reasons?: RecommendationReason[] }
+export type EditorGroupView = {
+  group: ModuleGroup
+  label: string
+  /** True when this group is narrowed to the recommendations (genre-driven group of a tailored profile). */
+  filtered: boolean
+  /** Planners of the group not listed because the genres don't recommend them. */
+  hidden: number
+  editors: EditorEntry[]
+}
+
+/**
+ * Planners to show, per group, for a profile. Always-shown groups list every planner in registry order
+ * (genre picks marked as recommended, with reasons). Genre-driven groups list only the recommendations,
+ * in recommendation order, when a known genre is selected; without one, everything is shown unmarked.
+ * Empty groups are left out. Pure, so the planner menu and a future side rail share it.
+ */
+export function editorGroups(profile: ProjectProfile): EditorGroupView[] {
+  const tailored = hasGenreProfile(profile)
+  const recs = tailored ? recommendEditors(profile) : []
+  const byId = new Map(recs.map((r) => [r.docId, r]))
+  return GROUPS.flatMap(({ id, label }): EditorGroupView[] => {
+    const mods = MODULES.filter((m) => m.group === id)
+    if (!mods.length) return []
+    if (!tailored || isAlwaysShownGroup(id)) {
+      const editors = mods.map((m) => ({ docId: m.id, recommended: byId.has(m.id), reasons: byId.get(m.id)?.reasons }))
+      return [{ group: id, label, filtered: false, hidden: 0, editors }]
+    }
+    const editors = recs.filter((r) => getModule(r.docId)?.group === id).map((r) => ({ docId: r.docId, recommended: true, reasons: r.reasons }))
+    return [{ group: id, label, filtered: true, hidden: mods.length - editors.length, editors }]
+  })
 }
 
 /**

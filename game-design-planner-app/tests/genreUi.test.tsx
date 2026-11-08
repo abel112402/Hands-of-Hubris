@@ -40,7 +40,13 @@ describe('genre profile on the planner menu', () => {
     const rec = screen.getByRole('heading', { name: 'Recommended for Survival · RPG' }).closest('section')!
     expect(within(rec).getByText('Player Character')).toBeTruthy()
     expect(within(rec).queryByText('Bug Reports')).toBeNull()
+    expect(within(rec).queryByText('Trade & Economy')).toBeTruthy()
+    expect(within(rec).queryByText('UI / UX')).toBeNull()
     expect(within(rec).getAllByText(/Survival: /).length).toBeGreaterThan(0)
+    // Core groups are listed in full whatever the genre.
+    const qa = screen.getByRole('heading', { name: 'QA' }).closest('section')!
+    expect(within(qa).getByText('Bug Reports')).toBeTruthy()
+    for (const group of ['Overview', 'Technical', 'Art & Audio', 'Production', 'Templates']) expect(screen.getByRole('heading', { name: group })).toBeTruthy()
 
     expect(screen.getByText(/Project guide: Survival · RPG/)).toBeTruthy()
     // Compact by default: only the next open steps; the rest on request.
@@ -62,12 +68,14 @@ describe('genre profile on the planner menu', () => {
     useStore.getState().loadProject(createProject('Test', false, { version: 1, genres: ['action'] }))
     render(<App />)
     fireEvent.click(screen.getByText('Customize recommended planners'))
-    const box = screen.getByRole('checkbox', { name: /Bug Reports/ }) as HTMLInputElement
+    // Always-shown groups are not customizable.
+    expect(screen.queryByRole('checkbox', { name: /Bug Reports/ })).toBeNull()
+    const box = screen.getByRole('checkbox', { name: /Story & Quests/ }) as HTMLInputElement
     expect(box.checked).toBe(false)
     fireEvent.click(box)
-    expect(useStore.getState().project.meta.profile?.editors).toEqual({ add: ['qa.bugs'], remove: [] })
+    expect(useStore.getState().project.meta.profile?.editors).toEqual({ add: ['design.story'], remove: [] })
     const rec = screen.getByRole('heading', { name: 'Recommended for Action' }).closest('section')!
-    expect(within(rec).getByText('Bug Reports')).toBeTruthy()
+    expect(within(rec).getByText('Story & Quests')).toBeTruthy()
     expect(within(rec).getByText('Added by you')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Restore defaults' }))
     expect(useStore.getState().project.meta.profile?.editors).toBeUndefined()

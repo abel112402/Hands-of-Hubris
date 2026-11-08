@@ -51,7 +51,7 @@
     "cancel": "Cancel",
     "safe": "Changing genres never deletes data.",
     "customize": "Customize recommended planners",
-    "customizeHint": "Your choices are kept when genres change. Restore defaults to follow the genres again.",
+    "customizeHint": "Choose which Game Design planners to show. Overview, Technical, Art & Audio, Production, QA and Templates are always shown. Your choices are kept when genres change; Restore defaults follows the genres again.",
     "restore": "Restore defaults",
     "viewLabel": "Planner view",
     "viewRecommended": "Recommended",

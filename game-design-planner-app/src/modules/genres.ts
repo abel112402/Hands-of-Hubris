@@ -9,6 +9,14 @@
  * - Add a genre = one entry in GENRES (+ optional guide steps tagged with its ID). No other code changes.
  */
 
+import type { ModuleGroup } from '../core/model/types'
+
+/**
+ * Planner groups every game needs, shown in full whatever the genre. Genres still mark (★) and explain
+ * the planners they recommend inside these groups, but only the other groups (Game Design) are narrowed.
+ */
+export const ALWAYS_SHOWN_GROUPS: readonly ModuleGroup[] = ['overview', 'technical', 'artAudio', 'production', 'qa', 'templates', 'custom']
+
 /** A planner a genre recommends, with the reason shown to the user. Earlier = higher priority. */
 export type GenreEditor = { docId: string; why: string }
 

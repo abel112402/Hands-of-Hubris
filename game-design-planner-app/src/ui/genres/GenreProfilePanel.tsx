@@ -6,6 +6,7 @@ import {
   genreLabel,
   hasEditorOverrides,
   hasGenreProfile,
+  isAlwaysShownGroup,
   readProfile,
   recommendEditors,
   restoreEditorDefaults,
@@ -71,7 +72,8 @@ export function GenreProfilePanel() {
           <details className="genre-customize">
             <summary>{t('genres.customize')}</summary>
             <p className="muted">{t('genres.customizeHint')}</p>
-            {GROUPS.map((g) => {
+            {/* Always-shown groups list every planner anyway, so only genre-driven groups are customizable. */}
+            {GROUPS.filter((g) => !isAlwaysShownGroup(g.id)).map((g) => {
               const mods = MODULES.filter((m) => m.group === g.id)
               if (!mods.length) return null
               return (

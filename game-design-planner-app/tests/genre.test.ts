@@ -3,10 +3,11 @@ import { produce } from 'immer'
 import { createProject } from '../src/core/model/project'
 import { deserializeProject, serializeProject } from '../src/core/persistence/serialize'
 import { MODULES, getModule, getSections } from '../src/core/modules/registry'
-import { FOUNDATION_EDITORS, GENERAL_ORDER, GENRES, PROJECT_GUIDE_STEPS } from '../src/modules/genres'
+import { ALWAYS_SHOWN_GROUPS, FOUNDATION_EDITORS, GENERAL_ORDER, GENRES, PROJECT_GUIDE_STEPS } from '../src/modules/genres'
 import {
   composeProjectGuide,
   defaultRecommendations,
+  editorGroups,
   onboardingOrder,
   projectGenres,
   readProfile,
@@ -70,6 +71,46 @@ describe('recommendations', () => {
     expect(list[list.length - 1]).toBe('qa.bugs')
     expect(list).not.toContain('gone.module')
     expect(recommendEditors(p).at(-1)!.reasons).toEqual([{ kind: 'manual' }])
+  })
+})
+
+describe('editor groups', () => {
+  const groupOf = (p: ProjectProfile, g: string) => editorGroups(p).find((x) => x.group === g)
+  const all = (g: string) => MODULES.filter((m) => m.group === g).map((m) => m.id)
+
+  it('always lists core groups in full; genres narrow only Game Design', () => {
+    const p = profile(['strategy'])
+    for (const g of ALWAYS_SHOWN_GROUPS) {
+      const view = groupOf(p, g)
+      if (!all(g).length) { expect(view).toBeUndefined(); continue }
+      expect(view!.filtered).toBe(false)
+      expect(view!.editors.map((e) => e.docId)).toEqual(all(g))
+    }
+    // Genre picks inside core groups stay marked and explained.
+    const ai = groupOf(p, 'technical')!.editors.find((e) => e.docId === 'technical.ai')!
+    expect(ai.recommended).toBe(true)
+    expect(ai.reasons?.some((r) => r.kind === 'genre' && r.genre === 'strategy')).toBe(true)
+    expect(groupOf(p, 'technical')!.editors.find((e) => e.docId === 'technical.save')!.recommended).toBe(false)
+
+    const design = groupOf(p, 'design')!
+    expect(design.filtered).toBe(true)
+    expect(design.editors.map((e) => e.docId)).toEqual(ids(p).filter((d) => d.startsWith('design.')))
+    expect(design.hidden).toBe(all('design').length - design.editors.length)
+  })
+
+  it('shows every planner unmarked without a known genre', () => {
+    for (const v of editorGroups(profile(['future-genre']))) {
+      expect(v.filtered).toBe(false)
+      expect(v.editors.map((e) => e.docId)).toEqual(all(v.group))
+      expect(v.editors.every((e) => !e.recommended)).toBe(true)
+    }
+  })
+
+  it('applies editor overrides inside Game Design only', () => {
+    const p = profile(['action'], { editors: { add: ['design.story'], remove: ['design.ui'] } })
+    const design = groupOf(p, 'design')!.editors.map((e) => e.docId)
+    expect(design).toContain('design.story')
+    expect(design).not.toContain('design.ui')
   })
 })
 

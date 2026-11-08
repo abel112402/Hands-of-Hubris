@@ -126,6 +126,8 @@ Behavior worth knowing:
 
 ## 6. Staging backend (Supabase Free)
 
+> **Status (2026-11-08):** §6–§9 are set up for staging. Social login (GitHub/Google) is postponed; the sign-in page hides those buttons until a provider is enabled in Supabase, so no code change is needed when you add them.
+
 1. Supabase dashboard → **New organization** (Free plan) → **New project** `hoh-staging`, region **Central EU (Frankfurt)**, generate a strong DB password and store it in your password manager.
 2. Link and push the migrations:
    ```bash
