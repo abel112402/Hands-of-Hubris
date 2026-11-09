@@ -10,6 +10,7 @@ import { GuideCenter } from '../workspace/GuideCenter'
 import { ProgressPanel, ProgressStrip } from '../workspace/ProgressPanel'
 import { useWalkthrough } from '../workspace/useWalkthrough'
 import { Icon } from '../Icon'
+import { Greeting } from '../flavor/easter'
 
 const formatEdited = (iso: string, lang: string) => {
   const d = new Date(iso)
@@ -71,6 +72,7 @@ export function Home() {
           </button>
           <p className="eyebrow">{t('workspace.eyebrow')}</p>
           <h1>{name || t('app.projectName')}</h1>
+          <Greeting />
           <div className="intro-meta">
             {genresSet && <GenreSummary />}
             {edited && <span className="muted">{t('workspace.edited', { when: edited })}</span>}

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../core/store/store'
@@ -13,9 +13,13 @@ import type { ComposedStep, StepStatus } from '../../core/walkthrough/types'
 import type { Hint } from '../../core/hints/types'
 import { HintCard } from '../hints/HintPanel'
 import { useProgressLine } from './ProgressPanel'
+import { Flavor } from '../flavor/Flavor'
+import { useMoments } from '../flavor/moments'
 import { useHints } from '../hints/useHints'
 import { AiPanel } from '../ai/AiPanel'
 import { Icon, type IconName } from '../Icon'
+import { prefersMotion, useJustChanged, useNewlyAdded } from '../hooks'
+import { Segmented, Tick } from '../motion'
 
 type Tab = 'walkthrough' | 'hints' | 'ai'
 const VIEW_KEY = 'hohplan:walkView'
@@ -29,7 +33,10 @@ const readView = (): 'guided' | 'checklist' => {
   }
 }
 
-const STATUS_ICON: Record<StepStatus, string> = { done: '✓', skipped: '–', open: '' }
+const STATUS_ICON: Record<StepStatus, ReactNode> = { done: <Tick />, skipped: '–', open: '' }
+/** How long the finished step's card lingers while it lifts away (matches .step-hero.leaving). */
+const HERO_LEAVE_MS = 180
+const justFinished = (prev: StepStatus | undefined, next: StepStatus | undefined) => next === 'done' && prev !== 'done'
 
 function StepActions({ step, status, onAsk, primary }: { step: ComposedStep; status: StepStatus; onAsk: (s: ComposedStep) => void; primary?: boolean }) {
   const { t } = useTranslation()
@@ -108,8 +115,30 @@ function crumb(walk: WalkthroughView['walk'], step: ComposedStep, t: (k: string)
 
 /** The step to work on now, with its teaching text and actions. */
 function CurrentStep({ view, onAsk }: { view: WalkthroughView; onAsk: (s: ComposedStep) => void }) {
-  const { t, i18n } = useTranslation()
-  const step = view.progress.next
+  const { t } = useTranslation()
+  const next = view.progress.next
+  // Hand-off: when the step changes, the old card stays for a moment and lifts away before the next
+  // one rises in. View-only: the store has already moved on, so undo and saving are not delayed.
+  const [shown, setShown] = useState(next)
+  const [leaving, setLeaving] = useState<ComposedStep | null>(null)
+  if (next?.id !== shown?.id) {
+    setShown(next)
+    setLeaving(shown && prefersMotion() ? shown : null)
+  }
+  useEffect(() => {
+    if (!leaving) return
+    const id = setTimeout(() => setLeaving(null), HERO_LEAVE_MS)
+    return () => clearTimeout(id)
+  }, [leaving])
+  if (leaving) {
+    // Same content as before, so the card does not change height while it fades.
+    return (
+      <section key={leaving.id} className="step-hero leaving" data-phase={leaving.phase} aria-hidden="true" inert>
+        <HeroBody view={view} step={leaving} onAsk={onAsk} />
+      </section>
+    )
+  }
+  const step = next
   if (!step) {
     return (
       <section className="step-hero done" aria-label={t('workspace.currentStep')}>
@@ -120,13 +149,22 @@ function CurrentStep({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Compos
   }
   return (
     <section key={step.id} className="step-hero" data-phase={step.phase} aria-labelledby="current-step-title">
+      <HeroBody view={view} step={step} onAsk={onAsk} titleId="current-step-title" />
+    </section>
+  )
+}
+
+function HeroBody({ view, step, onAsk, titleId }: { view: WalkthroughView; step: ComposedStep; onAsk: (s: ComposedStep) => void; titleId?: string }) {
+  const { t, i18n } = useTranslation()
+  return (
+    <>
       <p className="step-crumb eyebrow"><span className="here-dot" aria-hidden="true" />{t('workspace.nextStep')} · {crumb(view.walk, step, t, i18n.language)} <GenreTags step={step} /></p>
-      <h2 id="current-step-title">{textOf(step.title, i18n.language)}</h2>
+      <h2 id={titleId}>{textOf(step.title, i18n.language)}</h2>
       <p>{textOf(step.body, i18n.language)}</p>
       <Notes step={step} />
       <StepActions step={step} status="open" onAsk={onAsk} primary />
       <StepHints step={step} />
-    </section>
+    </>
   )
 }
 
@@ -147,6 +185,13 @@ function WalkthroughList({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Co
   // moves along with the current step; once toggled by hand, the choice sticks for this visit.
   const [toggled, setToggled] = useState<Record<string, boolean>>({})
   const finished = (steps: ComposedStep[]) => steps.filter((s) => progress.status[s.id] !== 'open').length
+  const phases = groupWalkthrough(view.walk)
+  // The one big moment: a phase that has just been finished gets a short burst on its node.
+  const justCompleted = useNewlyAdded(phases.filter((p) => { const s = p.chapters.flatMap((c) => c.steps); return s.length > 0 && finished(s) === s.length }).map((p) => p.phase))
+  // The same moment in words: the only aside allowed to skip the rate limit.
+  useEffect(() => {
+    if (justCompleted.size) useMoments.getState().announce({ keys: 'flavor.phaseDone', ctx: [...justCompleted].join() }, true)
+  }, [justCompleted])
   const disclosure = (key: string, byDefault: boolean) => ({
     open: toggled[key] ?? byDefault,
     onToggle: (e: React.SyntheticEvent<HTMLDetailsElement>) => {
@@ -159,18 +204,18 @@ function WalkthroughList({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Co
       <div className="walk-head">
         <span className="muted">{line}</span>
         <span className="spacer" />
-        <div className="view-toggle segmented" role="group" aria-label={t('workspace.viewLabel')}>
+        <Segmented className="view-toggle" role="group" aria-label={t('workspace.viewLabel')}>
           <button aria-pressed={mode === 'guided'} onClick={() => setView('guided')}>{t('workspace.viewGuided')}</button>
           <button aria-pressed={mode === 'checklist'} onClick={() => setView('checklist')}>{t('workspace.viewChecklist')}</button>
-        </div>
+        </Segmented>
       </div>
       {/* Journey line: the phase holding the current step is open, finished and future phases fold into one line. */}
-      {groupWalkthrough(view.walk).map((phase) => {
+      {phases.map((phase) => {
         const steps = phase.chapters.flatMap((c) => c.steps)
         const done = finished(steps)
         const isCurrent = progress.next?.phase === phase.phase
         return (
-          <details key={phase.phase} className={`walk-phase${done === steps.length ? ' complete' : ''}${isCurrent ? ' current' : ''}`} data-phase={phase.phase} {...disclosure(phase.phase, isCurrent)}>
+          <details key={phase.phase} className={`walk-phase${done === steps.length ? ' complete' : ''}${isCurrent ? ' current' : ''}${justCompleted.has(phase.phase) ? ' just-complete' : ''}`} data-phase={phase.phase} {...disclosure(phase.phase, isCurrent)}>
             <summary>
               <span className="walk-phase-node" aria-hidden="true" />
               <h3 id={`phase-${phase.phase}`}>{t(`walkthrough.phases.${phase.phase}`)}</h3>
@@ -210,12 +255,13 @@ function StepRow({ step, progress, detailed, onAsk }: { step: ComposedStep; prog
   const { t, i18n } = useTranslation()
   const status = progress.status[step.id]
   const current = progress.next?.id === step.id
+  const popped = useJustChanged(status, 700, justFinished)
   const [open, setOpen] = useState(false)
   // The current step is already shown in full in the card above, so it starts collapsed here too.
   const expanded = detailed && open
   const link = stepLink(step.target)
   return (
-    <li className={`walk-step ${status}${current ? ' current' : ''}`} data-testid={`walk-step-${step.id}`}>
+    <li className={`walk-step ${status}${current ? ' current' : ''}${popped ? ' just-done' : ''}`} data-testid={`walk-step-${step.id}`}>
       <div className="walk-step-head">
         <span className="walk-check" role="img" aria-label={t(`workspace.status.${status}`)}>{STATUS_ICON[status]}</span>
         {detailed ? (
@@ -246,7 +292,7 @@ function HintsTab({ focus }: { focus?: ComposedStep }) {
   const visible = focusHints(useHints().visible, focus)
   const [all, setAll] = useState(false)
   const shown = all ? visible : visible.slice(0, HINTS_SHOWN)
-  if (!visible.length) return <p className="muted">{t('hints.none')}</p>
+  if (!visible.length) return <><p className="muted">{t('hints.none')}</p><Flavor keys="flavor.noHints" /></>
   return (
     <section className="next-steps" aria-label={t('hints.nextSteps')}>
       <ul className="list">{shown.map((h) => <HintCard key={h.id} hint={h} />)}</ul>

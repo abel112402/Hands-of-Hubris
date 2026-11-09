@@ -6,6 +6,7 @@ import { setStepManual } from '../../core/walkthrough/evaluate'
 import { stepsForPage } from '../../core/walkthrough/focus'
 import { stepLink } from '../../core/walkthrough/project'
 import { useWalkthrough } from './useWalkthrough'
+import { Flavor } from '../flavor/Flavor'
 
 /**
  * On a planner page: the walkthrough step this page is for, its status, and the way back or on.
@@ -35,6 +36,7 @@ export function WalkthroughChip({ docId, sectionId }: { docId: string; sectionId
   return (
     <div className="walk-chip done" role="status">
       <span className="walk-chip-label">✓ {t('workspace.chip.done')}</span>
+      <Flavor as="span" keys="flavor.stepDone" ctx={`${docId}/${sectionId ?? ''}`} />
       <span className="spacer" />
       {next && nextLink ? (
         <Link className="button small primary" to={nextLink}>{t('workspace.chip.next', { step: textOf(next.title, i18n.language) })}</Link>

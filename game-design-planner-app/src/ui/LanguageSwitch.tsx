@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { setLanguage } from '../core/i18n'
 import { Icon } from './Icon'
+import { Segmented } from './motion'
 
 const LANGS = [
   { id: 'en', short: 'EN', name: 'English' },
@@ -14,13 +15,13 @@ export function LanguageSwitch() {
   return (
     <div className="lang-switch" role="group" aria-label={t('cloud.landing.language')}>
       <Icon name="globe" className="lang-switch-icon" />
-      <div className="segmented">
+      <Segmented>
         {LANGS.map((l) => (
           <button key={l.id} lang={l.id} aria-pressed={current === l.id} aria-label={l.name} title={l.name} onClick={() => setLanguage(l.id)}>
             {l.short}
           </button>
         ))}
-      </div>
+      </Segmented>
     </div>
   )
 }

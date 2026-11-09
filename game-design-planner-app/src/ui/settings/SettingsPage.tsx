@@ -13,6 +13,8 @@ import { AiSettings } from '../ai/AiSettings'
 import { Definitions } from '../pages/Definitions'
 import { ProjectSettings } from '../cloud/ProjectSettings'
 import { WalkthroughSettings } from './WalkthroughSettings'
+import { FLAVOR_LEVELS, type FlavorLevel } from '../../core/flavor/pick'
+import { useFlavorLevel } from '../flavor/Flavor'
 
 /**
  * Every project setting in one place. Each tab reuses the existing page or panel, so behaviour and
@@ -65,6 +67,7 @@ function GeneralSettings() {
   const { t, i18n } = useTranslation()
   const meta = useStore((s) => s.project.meta)
   const readOnly = useStore((s) => s.readOnly)
+  const { level: flavorLevel, setLevel: setFlavorLevel } = useFlavorLevel()
   return (
     <div className="settings-form">
       <h2>{t('settingsPage.tabs.general')}</h2>
@@ -80,6 +83,13 @@ function GeneralSettings() {
         </select>
       </label>
       <p className="muted">{t('settingsPage.languageHint')}</p>
+      <label className="settings-field">
+        <span>{t('flavor.settings.label')}</span>
+        <select value={flavorLevel} onChange={(e) => setFlavorLevel(e.target.value as FlavorLevel)}>
+          {FLAVOR_LEVELS.map((l) => <option key={l} value={l}>{t(`flavor.settings.${l}`)}</option>)}
+        </select>
+      </label>
+      <p className="muted">{t('flavor.settings.hint')}</p>
       <dl className="settings-meta">
         <dt>{t('settingsPage.created')}</dt>
         <dd>{new Date(meta.createdAt).toLocaleString()}</dd>

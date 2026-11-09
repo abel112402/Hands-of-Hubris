@@ -10,6 +10,9 @@ import { genreNames, reasonText } from '../genres/GenreProfilePanel'
 import { Icon } from '../Icon'
 import { ModuleIcon } from '../ModuleIcon'
 import { useWalkthrough } from './useWalkthrough'
+import { useJustChanged } from '../hooks'
+
+const becameTrue = (prev: boolean, next: boolean) => next && !prev
 
 const COLLAPSED_KEY = 'hohplan:railCollapsed'
 const OPEN_KEY = 'hohplan:railOpen'
@@ -35,6 +38,7 @@ function RailItem({ entry, project, star, here }: { entry: EditorEntry; project:
   const m = getModule(entry.docId)!
   const p = docProgress(project, m.id)
   const why = entry.reasons ? reasonText(t, entry.reasons) : m.summary
+  const filled = useJustChanged(p >= 100, 700, becameTrue)
   return (
     <NavLink to={`/doc/${m.id}`} className={'rail-item' + (here ? ' here' : '')} title={why}>
       <span className="rail-icon" aria-hidden="true"><ModuleIcon id={m.id} /></span>
@@ -44,7 +48,7 @@ function RailItem({ entry, project, star, here }: { entry: EditorEntry; project:
         {/* "You are here": the planner that holds the walkthrough's current step. */}
         {here && <span className="here-dot" title={t('workspace.currentHere')}><span className="sr-only"> {t('workspace.currentHere')}</span></span>}
         {/* Fill as a small pie: empty ring, partly filled, full. The label carries the number. */}
-        <span className={'rail-fill' + (p >= 100 ? ' full' : p > 0 ? ' some' : '')} role="img" aria-label={t('workspace.filled', { percent: p })} style={{ ['--p' as string]: p }} />
+        <span className={'rail-fill' + (p >= 100 ? ' full' : p > 0 ? ' some' : '') + (filled ? ' just-full' : '')} role="img" aria-label={t('workspace.filled', { percent: p })} style={{ ['--p' as string]: p }} />
       </span>
     </NavLink>
   )

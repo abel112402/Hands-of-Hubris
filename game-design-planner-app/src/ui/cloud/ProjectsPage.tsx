@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BrandMark } from '../BrandMark'
+import { Flavor } from '../flavor/Flavor'
+import { useLoadingLine } from '../flavor/easter'
 import { CloudError, getBackend, type CloudProjectSummary } from '../../core/cloud/backend'
 import { enterLocalMode, hasUnsyncedChanges, openCloudProject, signOut, uploadAsNewProject, useCloud } from '../../core/cloud/session'
 import { createProject } from '../../core/model/project'
@@ -72,6 +74,7 @@ function NewProjectForm({ onCreate }: { onCreate: (p: Project) => Promise<void> 
 /** Signed-in home: own and shared cloud projects, create/import, and local migration. */
 export function ProjectsPage() {
   const { t } = useTranslation()
+  const loadingLine = useLoadingLine()
   const nav = useNavigate()
   const user = useCloud((s) => s.user)
   const errorText = useCloudErrorText()
@@ -186,10 +189,11 @@ export function ProjectsPage() {
           </div>
         )}
         {projects === null ? (
-          <p role="status">{t('cloud.loading')}</p>
+          <p role="status">{loadingLine ?? t('cloud.loading')}</p>
         ) : projects.length === 0 ? (
           <div className="empty-state">
             <p>{t('cloud.projects.empty')}</p>
+            <Flavor keys="flavor.empty.projects" />
             {!creating && <button className="primary" onClick={() => setCreating(true)}>{t('cloud.projects.new')}</button>}
           </div>
         ) : (

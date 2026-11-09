@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { guideOf } from '../../modules/guides'
 import { useGuideUi } from './guideStore'
+import { Flavor } from '../flavor/Flavor'
 
 /** Empty collection: what the section is for and how to start, instead of a bare “nothing here”. */
 export function GuideEmpty({ docId, sectionId, singular, onAdd }: { docId: string; sectionId: string; singular: string; onAdd: () => void }) {
@@ -13,6 +14,7 @@ export function GuideEmpty({ docId, sectionId, singular, onAdd }: { docId: strin
   return (
     <div className="empty guide-empty">
       <p>{text ?? t('guide.empty')}</p>
+      <Flavor keys={[`flavor.empty.${docId.split('.').pop()}`, 'flavor.empty.generic']} ctx={`${docId}/${sectionId}`} />
       <div className="hint-actions">
         <button className="primary" data-guide="add" onClick={onAdd}>{t('guide.add', { singular })}</button>
         {hasExamples && <button data-guide="examples" onClick={() => useGuideUi.getState().openPicker(sectionId)}>{t('guide.insertExample')}</button>}

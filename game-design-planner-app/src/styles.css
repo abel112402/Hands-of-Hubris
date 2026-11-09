@@ -151,14 +151,16 @@ h1,h2,h3{margin:.6em 0 .3em}
 .hint-form{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .pill.important{color:var(--danger)}.pill.suggest{color:var(--warn)}
 /* editor side panel: title and text on the left, buttons stacked on the right */
-.hint-panel .hint-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'title actions' 'body actions';column-gap:8px;align-items:start;overflow:hidden}
+.hint-panel .hint-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'title actions' 'body actions' 'flavor actions';column-gap:8px;align-items:start;overflow:hidden}
 .hint-panel .hint-card>strong{grid-area:title;display:block;min-width:0;overflow-wrap:anywhere}
 .hint-panel .hint-card>p{grid-area:body;min-width:0;overflow-wrap:anywhere}
+/* The flavor aside gets its own row; sharing the body area made the two lines overlap. */
+.hint-panel .hint-card>p.flavor,.workspace-center .hint-card>p.flavor{grid-area:flavor;margin:2px 0 0;min-width:0;overflow-wrap:anywhere}
 .hint-panel .hint-actions{grid-area:actions;flex-direction:column;flex-wrap:nowrap;align-items:stretch}
 .hint-panel .hint-actions button{padding:2px 7px;font-size:12px;white-space:nowrap}
 .hint-actions button{min-height:26px;min-width:26px}
 @container (max-width:300px){
-  .hint-panel .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:'title' 'body' 'actions'}
+  .hint-panel .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:'title' 'body' 'flavor' 'actions'}
   .hint-panel .hint-actions{flex-direction:row;flex-wrap:wrap}
 }
 /* ai */
@@ -334,6 +336,9 @@ h1,h2,h3{margin:.6em 0 .3em}
 .example-option input{position:absolute;opacity:0}
 .example-option.on{border-color:var(--accent);background:#22324a}
 .guide-empty p{margin:4px 0 8px}
+/* Flavor: optional asides under factual text (src/ui/flavor). Muted colour keeps AA contrast. */
+.flavor{color:var(--muted);font-style:italic;font-size:.92em}
+p.flavor{margin:2px 0 8px}
 .st-key.learned{background:#24432f}.st-key.available{border-style:dashed}.st-key.locked{opacity:.45}
 /* Trade & Economy views */
 .price-ladders{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
@@ -1082,7 +1087,7 @@ button.ghost:hover:not(:disabled),a.button.ghost:hover{background:var(--surface-
 .progress-overall{display:flex;align-items:center;gap:var(--space-3)}
 .progress-overall p{margin:2px 0 0;font-size:var(--fs-sm)}
 .ring-track{fill:none;stroke:var(--surface-3);stroke-width:8}
-.ring-value{fill:none;stroke:var(--ok);stroke-width:8;stroke-linecap:round;transition:stroke-dasharray .3s}
+.ring-value{fill:none;stroke:var(--ok);stroke-width:8;stroke-linecap:round}
 .ring-text{fill:var(--text);font-size:17px;font-weight:600}
 .walk-phases{list-style:none;margin:0;padding:0;position:relative}
 .walk-phases::before{content:"";position:absolute;left:6px;top:12px;bottom:12px;width:2px;background:var(--line)}
@@ -1147,12 +1152,12 @@ button.ghost:hover:not(:disabled),a.button.ghost:hover{background:var(--surface-
 a.button.small{padding:1px 8px;font-size:var(--fs-sm)}
 /* Hint cards in the workspace center (step tips, Hints tab): title over text, actions on the right.
    Overrides the generic .list row layout, which squeezed title, text and buttons into one row. */
-.workspace-center .hint-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title actions" "body actions";column-gap:var(--space-4);row-gap:2px;align-items:start;padding:8px 12px;margin:0 0 6px;border:1px solid var(--line);border-left-width:3px}
+.workspace-center .hint-card{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title actions" "body actions" "flavor actions";column-gap:var(--space-4);row-gap:2px;align-items:start;padding:8px 12px;margin:0 0 6px;border:1px solid var(--line);border-left-width:3px}
 .workspace-center .hint-card>strong{grid-area:title;font-size:var(--fs-md);overflow-wrap:anywhere}
 .workspace-center .hint-card>p{grid-area:body;margin:0;color:var(--muted);font-size:var(--fs-md-sm);overflow-wrap:anywhere}
 .workspace-center .hint-actions{grid-area:actions;flex-wrap:nowrap;align-self:center}
 @media (max-width:560px){
-  .workspace-center .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "body" "actions"}
+  .workspace-center .hint-card{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "body" "flavor" "actions"}
   .workspace-center .hint-actions{margin-top:var(--space-1);align-self:start}
 }
 @media (prefers-reduced-motion:reduce){.ring-value{transition:none}}
@@ -1190,6 +1195,117 @@ button,a.button,.rail-item,.nav-link,.milestone-card,.walk-step,.walk-phase>summ
 .landing-hero,.landing-panel{animation:hoh-rise .4s var(--ease-out) both}
 .landing-panel{animation-delay:.06s}
 .landing-shot{animation:hoh-rise .5s var(--ease-out) .12s both}
+
+/* ── Phase E: moments (plans/MOTION_PLAN.md) ────────────────────────────── */
+/* Motion marks progress: quiet everywhere, expressive for a moment when a step is finished.
+   Classes like .just-done are set only on a change (useJustChanged), never on mount. */
+:root{--dur-med:240ms;--dur-slow:420ms;--ease-spring:cubic-bezier(.34,1.56,.64,1);--ease-in-out:cubic-bezier(.65,0,.35,1)}
+@keyframes hoh-pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:none}}
+@keyframes hoh-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes hoh-halo{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--halo,var(--brand)) 60%,transparent)}to{box-shadow:0 0 0 9px transparent}}
+@keyframes hoh-leave{to{opacity:0;transform:translateY(-6px)}}
+@keyframes hoh-sweep-down{from{background-position:0 -100%}to{background-position:0 250%}}
+/* P1.1 step check: pop, ring of the phase colour, then the tick draws itself. */
+.walk-check svg{display:block}
+.walk-step.just-done .walk-check{--halo:var(--phase,var(--ok));animation:hoh-pop var(--dur-slow) var(--ease-spring) both,hoh-halo 600ms var(--ease-out) both}
+.walk-step.just-done .walk-check path{stroke-dasharray:1;animation:hoh-draw var(--dur-med) var(--ease-in-out) 120ms both}
+/* P1.2 hero hand-off: the finished step lifts away, the next rises in and a light runs down its edge. */
+.step-hero.leaving{animation:hoh-leave 180ms var(--ease-in-out) both;pointer-events:none}
+.step-hero:not(.done)::before{content:"";position:absolute;left:-4px;top:-1px;bottom:-1px;width:4px;border-radius:var(--radius-md) 0 0 var(--radius-md);background:linear-gradient(to bottom,transparent,color-mix(in srgb,#fff 75%,var(--phase,var(--accent))),transparent) 0 0/100% 40% no-repeat;animation:hoh-sweep-down 560ms var(--ease-in-out) 120ms both;pointer-events:none}
+.step-hero.leaving::before{display:none}
+/* P1.4 phase track: a light runs across a segment whose share just grew (after its width starts moving). */
+@keyframes hoh-sweep-x{from{background-position:-150% 0}to{background-position:250% 0}}
+.phase-track li.sweep>span{background-image:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 55%,transparent),transparent);background-size:60% 100%;background-repeat:no-repeat;animation:hoh-sweep-x 700ms var(--ease-in-out) 150ms both}
+/* P1.5 phase complete, the one big moment: the node pops and six amber sparks fly out and fade. */
+@keyframes hoh-burst{0%{opacity:1;transform:scale(.2)}70%{opacity:1}100%{opacity:0;transform:scale(1)}}
+.walk-phase-node{position:relative}
+.walk-phase.just-complete .walk-phase-node{animation:hoh-pop var(--dur-slow) var(--ease-spring) both}
+.walk-phase.just-complete .walk-phase-node::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;color:var(--brand);box-shadow:14px 0 0 currentColor,7px 12px 0 currentColor,-7px 12px 0 currentColor,-14px 0 0 currentColor,-7px -12px 0 currentColor,7px -12px 0 currentColor;animation:hoh-burst 700ms var(--ease-out) both;pointer-events:none}
+/* P1.6 rail: a planner that just reached 100 % pops once with a green ring. */
+.rail-fill.just-full{--halo:var(--ok);animation:hoh-pop var(--dur-slow) var(--ease-spring),hoh-halo 600ms var(--ease-out)}
+/* P2.1 save status: the text crossfades, and the tick draws in when the project gets saved. */
+.status .tick{display:inline-block;vertical-align:-1px;margin-right:4px}
+.status.swap{animation:hoh-fade var(--dur-med) var(--ease-out)}
+.status.just-saved .tick path{stroke-dasharray:1;animation:hoh-draw var(--dur-med) var(--ease-in-out) 80ms both}
+/* P2.2 badges bump when their count goes up. */
+@keyframes hoh-bump{50%{transform:scale(1.3)}}
+.badge{display:inline-block}
+.badge.bump{animation:hoh-bump 320ms var(--ease-spring)}
+/* P2.3 "you are here": the halo breathes three times whenever a dot appears (each new step remounts it). */
+@keyframes hoh-breathe{0%,100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 28%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
+.here-dot{animation:hoh-breathe 1.8s var(--ease-in-out) 400ms 3}
+/* P2.5 sticky progress strip: pinned flush to the top of the scroll area (the centre's padding used to
+   leave a gap that content scrolled through), with a shadow edge only while it is pinned (useStuck). */
+@media (max-width:1200px){
+  .progress-strip{top:calc(-1 * var(--space-5));transition:box-shadow var(--dur-med) var(--ease-out),border-radius var(--dur-med) var(--ease-out)}
+  .progress-strip[data-stuck]{border-top-left-radius:0;border-top-right-radius:0;box-shadow:0 12px 24px -16px #000}
+}
+@media (max-width:800px){.progress-strip{top:calc(-1 * var(--space-3))}}
+/* P2.6 segmented controls: one thumb slides to the pressed option (<Segmented> measures it). Until it
+   has measured, or without layout support, the pressed button keeps painting its own chip. */
+.segmented{position:relative;isolation:isolate}
+.segmented[data-thumb]::before{content:"";position:absolute;z-index:-1;top:2px;bottom:2px;left:0;width:var(--thumb-w);transform:translateX(var(--thumb-x));border-radius:var(--radius-xs);background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-strong),0 1px 2px #0006;transition:transform var(--dur-med) var(--ease-out),width var(--dur-med) var(--ease-out)}
+.segmented[data-thumb]>button[aria-pressed=true]{background:none;box-shadow:none}
+/* P2.7 landing card: its height follows the chosen path (<AutoHeight>), and the new content fades in. */
+.auto-height{overflow:clip;overflow-clip-margin:8px}
+.auto-height[data-ready]{transition:height var(--dur-med) var(--ease-out)}
+.auto-height-inner{display:flow-root}
+.auto-height[data-ready] .landing-path{animation:hoh-fade var(--dur-med) var(--ease-out)}
+/* P3.1 pop-overs: the backdrop fades and the panel settles in from slightly below and smaller. */
+@keyframes hoh-zoom{from{opacity:0;transform:translateY(4px) scale(.97)}to{opacity:1;transform:none}}
+.overlay{animation:hoh-fade 160ms var(--ease-out)}
+.overlay>*{animation:hoh-zoom 200ms var(--ease-out)}
+/* P3.2 menus grow out of their toggle (they hang from the right edge). Opening only; closing stays instant. */
+.menu[open]>div{transform-origin:top right;animation:hoh-zoom 160ms var(--ease-out)}
+/* P3.3 folds open and closed smoothly where the browser can animate to auto; elsewhere the older fade stays. */
+@supports selector(::details-content){
+  .walk-phase,.walk-chapter,.hint-elsewhere{interpolate-size:allow-keywords}
+  .walk-phase::details-content,.walk-chapter::details-content,.hint-elsewhere::details-content{block-size:0;overflow:clip;transition:block-size var(--dur-med) var(--ease-out),content-visibility var(--dur-med) allow-discrete}
+  .walk-phase[open]::details-content,.walk-chapter[open]::details-content,.hint-elsewhere[open]::details-content{block-size:auto}
+}
+/* P3.4 inspector: keyed by the selected item, so choosing another one slides its fields in. */
+@keyframes hoh-in-side{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+.inspector{animation:hoh-in-side 200ms var(--ease-out)}
+/* P3.5 editor sections switch with a quick fade only: this is a work tool, it must feel instant. */
+.section-swap{animation:hoh-fade 160ms var(--ease-out)}
+/* ── P4: micro-interactions ── */
+/* Press: buttons give a little under the pointer. `scale` composes with any transform a button already has. */
+button:not(:disabled),a.button,.menu>summary{transition-property:background-color,border-color,color,box-shadow,scale;transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
+button:not(:disabled):active,a.button:active,.menu>summary:active{scale:.97;transition-duration:90ms}
+/* The few brand calls to action lift on hover; the landing one also catches a single sheen when it first shows. */
+/* (Element-qualified so they outrank `button:not(:disabled)` above and the `button.primary` background shorthand.) */
+.step-hero .step-actions a.button.primary,button.landing-cta,a.landing-cta{transition-property:background-color,border-color,color,box-shadow,scale,translate}
+.step-hero .step-actions a.button.primary:hover{translate:0 -1px;box-shadow:0 6px 16px -8px color-mix(in srgb,var(--brand) 70%,transparent)}
+button.landing-cta:hover:not(:disabled),a.landing-cta:hover{translate:0 -1px;box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 80%,transparent)}
+@keyframes hoh-sheen{from{background-position:-120% 0}to{background-position:220% 0}}
+button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transparent 35%,#ffffff40 50%,transparent 65%);background-size:60% 100%;background-repeat:no-repeat;background-position:-120% 0;animation:hoh-sheen 900ms var(--ease-in-out) 700ms both}
+/* Drag: the card you picked up stays behind as a faint outline; a card that lands (or is new) settles in. */
+.small-card[data-dragging],.g2-item[data-dragging]{opacity:.4;outline:1px dashed var(--line-strong);outline-offset:-1px}
+.small-card.landed{animation:hoh-zoom var(--dur-med) var(--ease-spring)}
+.tl-bar{transition:scale var(--dur-med) var(--ease-spring),box-shadow var(--dur-med) var(--ease-out)}
+.tl-bar.dragging{scale:1.04;box-shadow:0 8px 18px -8px #000;z-index:2;cursor:grabbing}
+.tl-bar.milestone.dragging{scale:1.15}
+/* Graph: a node that was just added pops in (`scale`, because xyflow positions nodes with `transform`). */
+@keyframes hoh-node-in{from{opacity:0;scale:.85}to{opacity:1;scale:1}}
+.react-flow__node.node-new{animation:hoh-node-in var(--dur-slow) var(--ease-spring)}
+/* Landing illustration, played once in view (useRevealOnce): the ring and bars fill, done steps and the
+   "you are here" dots pop. Armed = held at the start (paused, backwards fill); no attribute = final state. */
+@keyframes hoh-ill-arc{from{stroke-dasharray:0 151}}
+@keyframes hoh-ill-grow{from{transform:scaleX(0)}}
+@keyframes hoh-ill-pop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:none}}
+.landing-shot-svg .ill-grow,.landing-shot-svg .ill-pop{transform-box:fill-box;transform-origin:left center}
+.landing-shot-svg .ill-pop{transform-origin:center}
+.landing-shot-svg[data-anim] .ill-arc{animation:hoh-ill-arc 900ms var(--ease-out) 250ms both}
+.landing-shot-svg[data-anim] .ill-grow{animation:hoh-ill-grow 600ms var(--ease-out) calc(300ms + var(--d,0) * 90ms) both}
+.landing-shot-svg[data-anim] .ill-pop{animation:hoh-ill-pop var(--dur-slow) var(--ease-spring) calc(200ms + var(--d,0) * 110ms) both}
+.landing-shot-svg[data-anim] .ill-fade{animation:hoh-fade 400ms var(--ease-out) calc(300ms + var(--d,0) * 120ms) both}
+.landing-shot-svg[data-anim=armed] :is(.ill-arc,.ill-grow,.ill-pop,.ill-fade){animation-play-state:paused}
+@media (forced-colors:active){
+  .landing-shot-svg :is(.ill-arc,.ill-grow,.ill-pop,.ill-fade){animation:none}
+  button.landing-cta,a.landing-cta{background-image:none}
+  .step-hero::before,.walk-phase.just-complete .walk-phase-node::after,.segmented[data-thumb]::before{display:none}
+  .walk-step.just-done .walk-check,.walk-phase.just-complete .walk-phase-node,.rail-fill.just-full,.badge.bump,.here-dot,.phase-track li.sweep>span{animation:none}
+}
 /* One guard for everything above and older rules: no movement when the user asks for less. */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
@@ -1218,3 +1334,15 @@ button,a.button,.rail-item,.nav-link,.milestone-card,.walk-step,.walk-phase>summ
   .center-tabs button[aria-selected=true]{border-bottom-color:Highlight}
   .step-hero .step-actions a.button.primary{forced-color-adjust:none;background:Highlight;color:HighlightText;border-color:Highlight}
 }
+
+/* Flavor moments (src/ui/flavor/moments.tsx): one short-lived aside in the corner. */
+.walk-chip .flavor{margin-left:8px}
+.flavor-toast-region{position:fixed;right:16px;bottom:16px;z-index:80;pointer-events:none}
+.flavor-toast{pointer-events:auto;display:flex;align-items:flex-start;gap:8px;max-width:340px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--radius-md);box-shadow:0 6px 24px #0006;font-style:italic;animation:hoh-rise var(--dur-slow,.42s) var(--ease-out) both}
+.flavor-toast .banner-close{margin-left:auto}
+@media (prefers-reduced-motion:reduce){.flavor-toast{animation:none}}
+.intro-greeting{margin:2px 0 6px}
+/* Easter egg: the logo spins once (src/ui/flavor/easter.tsx). */
+@keyframes hoh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.brand-mark.spin{animation:hoh-spin .9s var(--ease-spring,cubic-bezier(.34,1.56,.64,1))}
+@media (prefers-reduced-motion:reduce){.brand-mark.spin{animation:none}}

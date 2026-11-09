@@ -1631,5 +1631,301 @@
       "restoreConfirm": "Replace the current content with revision {{rev}}? You can undo this.",
       "restored": "Revision {{rev}} restored and saved as a new version."
     }
+  },
+  "flavor": {
+    "settings": {
+      "label": "Personality",
+      "hint": "Small, kind (and sometimes funny) asides on empty pages, while loading and when saving. Never shown in errors or confirmations.",
+      "off": "Off",
+      "subtle": "Subtle",
+      "full": "Full"
+    },
+    "empty": {
+      "generic": [
+        "A blank page. Every great GDD started here.",
+        "Nothing here yet but potential.",
+        "Emptier than a level before the level designer arrives.",
+        "Every big plan starts with one entry. This could be it."
+      ],
+      "vision": [
+        "The vision is still blurry. Visions usually are, at first.",
+        "What should the player feel? Start there."
+      ],
+      "roadmap": [
+        "No schedule means no delays. Yet.",
+        "The most optimistic roadmap is an empty one."
+      ],
+      "coreLoop": [
+        "No loop yet. Just a circle, waiting.",
+        "Gather, grow, repeat. We just don't know what yet."
+      ],
+      "difficulty": [
+        "No difficulty yet. Only planning is hard.",
+        "Easy, Normal, Hubris. Your call."
+      ],
+      "factions": [
+        "Nobody is at war. Yet.",
+        "A peaceful world. Suspiciously peaceful."
+      ],
+      "world": [
+        "The world is still flat. Literally.",
+        "Without a map, every direction is exploration."
+      ],
+      "town": [
+        "This town is still just a clearing.",
+        "It will need a tavern. There is always a tavern."
+      ],
+      "npc": [
+        "A ghost town. Literally.",
+        "No NPCs yet. Nobody has taken an arrow to the knee.",
+        "Your first villager awaits a name. Hurry, before they become Bob."
+      ],
+      "player": [
+        "The hero is still a silhouette on the character select screen.",
+        "Who's in control here? Nobody, so far."
+      ],
+      "items": [
+        "The inventory is empty. The hero is still in the stick phase.",
+        "No legendary sword started out legendary."
+      ],
+      "combat": [
+        "Nobody has hit anybody yet. A peaceful start.",
+        "No combat. The balance is perfect."
+      ],
+      "timeWeather": [
+        "Eternal afternoon, clear skies. Boring, but pretty.",
+        "Time stands still. Might as well use it."
+      ],
+      "trade": [
+        "No economy. At least inflation is zero.",
+        "Nobody sells anything yet. The merchants' guild is worried."
+      ],
+      "story": [
+        "No quests yet. Nobody needs ten wolf pelts.",
+        "Once upon a time there was… something. Go on."
+      ],
+      "ui": [
+        "A blank screen. The cleanest UI you will ever design.",
+        "No HUD yet. The player can finally see the game."
+      ],
+      "openQuestions": [
+        "No open questions? That's the biggest question of all.",
+        "Everything is clear. For now."
+      ],
+      "architecture": [
+        "No architecture yet. Only infinite possibility and the threat of spaghetti."
+      ],
+      "coding": [
+        "No rules yet. What could go wrong?",
+        "The code style debate hasn't even started. Enjoy it."
+      ],
+      "dataDriven": [
+        "No data yet. The spreadsheet holds its breath."
+      ],
+      "projects": [
+        "Not a single ambitious plan in here. Let's change that.",
+        "A clean slate. The hubris comes later."
+      ]
+    },
+    "allClear": [
+      "Spotless. Suspiciously spotless.",
+      "The hints are taking a coffee break.",
+      "Nothing to complain about. Savour the moment."
+    ],
+    "noHints": [
+      "No hints. Either very good or very empty.",
+      "The hints are quietly watching.",
+      "No complaints. For now."
+    ],
+    "allDone": [
+      "The plan is done. Now the hard part: making it.",
+      "Every box ticked. You've earned a break.",
+      "Achievement unlocked: Read the whole guide."
+    ],
+    "loading": [
+      "Rolling the dice…",
+      "Generating levels…",
+      "NPCs taking their places…",
+      "Unfolding the map…",
+      "Loading save… from the right slot, hopefully."
+    ],
+    "aiThinking": [
+      "Thinking… like an NPC without a dialogue tree.",
+      "The oracle is meditating…",
+      "Counting tokens on its fingers…",
+      "The AI is flipping through its notes…"
+    ],
+    "saved": [
+      "Checkpoint reached.",
+      "All saved. The hubris, however, is not.",
+      "Saved. You could pull the plug now. (Please don't.)",
+      "Safe and sound, like a save room."
+    ],
+    "dismiss": "Dismiss note",
+    "stepDone": [
+      "+10 XP to planning.",
+      "Tick. Feels good, right?",
+      "One step closer to gold master."
+    ],
+    "phaseDone": [
+      "Phase complete! Achievement unlocked: Still motivated.",
+      "A whole phase done. That's worth a coffee.",
+      "Phase ticked off. Hubris levelled up."
+    ],
+    "milestone": {
+      "npc1": [
+        "Your first villager is born. Name them before they become Bob.",
+        "The first NPC! Hopefully they say more than \"Greetings, traveller\"."
+      ],
+      "npc10": [
+        "Ten NPCs. One of them is surely a blacksmith.",
+        "Ten villagers. The town already has gossip."
+      ],
+      "item1": [
+        "The first item. Every legendary sword starts like this.",
+        "First item in the inventory. Plenty of room left."
+      ],
+      "item50": [
+        "Fifty items. The inventory UI designer is crying.",
+        "Fifty items! Time to think about a weight limit."
+      ],
+      "character1": [
+        "Your first character. The story finally has someone to be about."
+      ],
+      "quest1": [
+        "The first quest. Hopefully not rat extermination.",
+        "The first quest! The exclamation mark is already blinking."
+      ],
+      "quest10": [
+        "Ten quests. The journal is getting thick.",
+        "Ten quests. Somewhere there's surely a fetch quest."
+      ]
+    },
+    "hint": {
+      "roadmapOverload": [
+        "Scope creep detected. The name of the game demands it.",
+        "More work than people. A classic."
+      ],
+      "roadmapCutsShort": [
+        "The cut list is shorter than the wish list. As always."
+      ],
+      "roadmapCycle": [
+        "A waits for B, B waits for A. A lovely stalemate.",
+        "Circular dependency: the ouroboros of planning."
+      ],
+      "roadmapLate": [
+        "The deadline left, the tasks stayed. A familiar feeling."
+      ],
+      "milestonePast": [
+        "The whooshing sound of deadlines flying by."
+      ],
+      "oqOverdue": [
+        "These questions are tapping their feet impatiently."
+      ],
+      "orphan": [
+        "Nobody references these. A little sad.",
+        "Orphaned entries. Adopt them or let them go."
+      ],
+      "graphIsolated": [
+        "Lonely nodes. Shall we connect a few?"
+      ],
+      "kanban": [
+        "This column is getting crowded.",
+        "This column isn't kanban any more, it's a pile."
+      ],
+      "sparse": [
+        "Still just sketches. They need some meat on their bones."
+      ],
+      "storyQuestCycle": [
+        "Each one waits for the other. Like a very polite queue at a door."
+      ],
+      "storyUnreachable": [
+        "Not even the most determined completionist can reach these."
+      ],
+      "storyCastIdle": [
+        "Main characters just standing around. Give them something to do."
+      ],
+      "itemsUnused": [
+        "These items are gathering dust at the bottom of the inventory."
+      ],
+      "itemsNoSource": [
+        "Legendary items, literally: they only exist in legends."
+      ],
+      "combatNoLoot": [
+        "These enemies drop nothing. Players sigh in disappointment."
+      ],
+      "combatImmune": [
+        "Immune to everything? That's not a boss, that's a wall."
+      ],
+      "tradeArbitrage": [
+        "Infinite money! Speedrunners are already taking notes."
+      ],
+      "tradeNoSinks": [
+        "Money in, no money out. Inflation is rubbing its hands."
+      ],
+      "tradePiling": [
+        "Gold is piling up. Dragons would approve."
+      ],
+      "npcBalance": [
+        "The town is hungry. Literally."
+      ],
+      "difficultyReversal": [
+        "The harder mode is easier? Bold design. Or a typo."
+      ],
+      "visionFirst": [
+        "A plan without a vision is a map without a compass."
+      ],
+      "visionNoPillars": [
+        "Without pillars, the roof is going to be tricky."
+      ]
+    },
+    "greeting": {
+      "night": [
+        "Planning at midnight? True game jam spirit.",
+        "Small hours, fresh ideas. Or just tired ones."
+      ],
+      "morning": [
+        "Good morning! Got coffee? Then the plan can begin.",
+        "Morning. The best time for big decisions."
+      ],
+      "afternoon": [
+        "Afternoon, the golden hour of productivity. Supposedly.",
+        "Hello again! Where were we?"
+      ],
+      "fridayAfternoon": [
+        "Friday afternoon. No big refactors, please.",
+        "It's Friday afternoon. Let's not grow the scope today."
+      ],
+      "evening": [
+        "Good evening! A little planning before bed?",
+        "Evening. The best ideas always arrive about now."
+      ],
+      "weekend": [
+        "Planning on the weekend. That is passion.",
+        "It's the weekend and you're here. Respect."
+      ]
+    },
+    "welcomeBack": [
+      "You're back! The project didn't forget you. (Neither did we.)",
+      "Long time no see! The plan is right where you left it."
+    ],
+    "undoSpree": [
+      "Changed your mind? That's what planning is for.",
+      "Undo, undo, undo… Are you a time traveller now?"
+    ],
+    "konami": [
+      "+30 lives. Sadly only for planning.",
+      "Cheat code accepted. Planning didn't get any easier."
+    ],
+    "brandClicks": [
+      "Yes, it's a logo. We're very proud of it.",
+      "Seven clicks. The logo is a little dizzy."
+    ],
+    "loadingAprilFools": [
+      "Initialising MMO backend…",
+      "Rendering open world (all 400 km²)…",
+      "Adding battle royale mode…",
+      "Planning live-service monetisation… kidding."
+    ]
   }
 }

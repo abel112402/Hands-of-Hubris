@@ -1,3 +1,6 @@
+import { useRef, type CSSProperties } from 'react'
+import { useRevealOnce } from '../hooks'
+
 /**
  * Stylised picture of the workspace for the landing page: planners · current step + journey · progress.
  * Drawn inline (no image request, CSP-safe) in the app's own palette; it is a sketch, not a screenshot.
@@ -8,9 +11,16 @@ const C = {
 }
 const PHASES = [C.concept, C.systems, C.content, C.production, C.polish]
 
-const Bar = ({ x, y, w, h = 6, fill = C.s3, r = 3 }: { x: number; y: number; w: number; h?: number; fill?: string; r?: number }) => <rect x={x} y={y} width={w} height={h} rx={r} fill={fill} />
+const Bar = ({ x, y, w, h = 6, fill = C.s3, r = 3, className, d }: { x: number; y: number; w: number; h?: number; fill?: string; r?: number; className?: string; d?: number }) => (
+  <rect x={x} y={y} width={w} height={h} rx={r} fill={fill} className={className} style={d === undefined ? undefined : ({ ['--d' as string]: d } as CSSProperties)} />
+)
+/** Stagger index for the one-shot reveal (see .landing-shot-svg in styles.css). */
+const delay = (d: number) => ({ ['--d' as string]: d }) as CSSProperties
 
 export function WorkspaceIllustration({ label }: { label: string }) {
+  // Plays once when it scrolls into view: the progress fills in and the "you are here" dots pop.
+  const svg = useRef<SVGSVGElement>(null)
+  useRevealOnce(svg)
   const rail = [70, 52, 64, 58, 76, 48, 66, 60, 54, 72]
   const steps = [
     { done: true, w: 120 },
@@ -21,7 +31,7 @@ export function WorkspaceIllustration({ label }: { label: string }) {
     { w: 140 },
   ]
   return (
-    <svg className="landing-shot-svg" viewBox="0 0 960 440" role="img" aria-label={label}>
+    <svg ref={svg} className="landing-shot-svg" viewBox="0 0 960 440" role="img" aria-label={label}>
       <rect width="960" height="440" rx="14" fill={C.bg} stroke={C.line} />
       {/* top bar */}
       <rect x="0.5" y="0.5" width="959" height="40" rx="14" fill={C.s1} />
@@ -40,9 +50,9 @@ export function WorkspaceIllustration({ label }: { label: string }) {
           {i === 1 && <rect x="8" y="-8" width="184" height="26" rx="5" fill={C.s2} />}
           <rect x="20" y="-1" width="12" height="12" rx="3" fill="none" stroke={C.muted} strokeWidth="1.5" />
           <Bar x={42} y={2} w={w} fill={i === 1 ? C.text : C.s3} />
-          {i === 1 && <circle cx="160" cy="5" r="4" fill={C.brand} />}
+          {i === 1 && <circle className="ill-pop" style={delay(6)} cx="160" cy="5" r="4" fill={C.brand} />}
           <circle cx="176" cy="5" r="5.5" fill="none" stroke={C.line} strokeWidth="1.5" />
-          {i % 3 === 0 && <path d="M176 5V-.5A5.5 5.5 0 0 1 181.2 6.8Z" fill={C.ok} />}
+          {i % 3 === 0 && <path className="ill-fade" style={delay(i / 3)} d="M176 5V-.5A5.5 5.5 0 0 1 181.2 6.8Z" fill={C.ok} />}
         </g>
       ))}
 
@@ -59,7 +69,7 @@ export function WorkspaceIllustration({ label }: { label: string }) {
       {/* hero card */}
       <rect x="240" y="154" width="480" height="132" rx="10" fill={C.s1} stroke={C.line} />
       <rect x="240" y="154" width="4" height="132" fill={C.concept} />
-      <circle cx="262" cy="174" r="4" fill={C.brand} />
+      <circle className="ill-pop" style={delay(6)} cx="262" cy="174" r="4" fill={C.brand} />
       <Bar x={272} y={171} w={130} fill={C.s3} />
       <Bar x={258} y={188} w={180} h={14} r={4} fill={C.text} />
       <Bar x={258} y={214} w={420} fill={C.s3} />
@@ -76,7 +86,7 @@ export function WorkspaceIllustration({ label }: { label: string }) {
       {steps.map((s, i) => (
         <g key={i} transform={`translate(0 ${334 + i * 18})`}>
           {s.current && <rect x="244" y="-7" width="476" height="16" rx="4" fill={C.brand} opacity=".08" />}
-          <circle cx="257" cy="1" r="5.5" fill={s.done ? C.concept : C.bg} stroke={s.current ? C.brand : s.done ? C.concept : C.line} strokeWidth="2" />
+          <circle className={s.done ? "ill-pop" : undefined} style={s.done ? delay(2 + i) : undefined} cx="257" cy="1" r="5.5" fill={s.done ? C.concept : C.bg} stroke={s.current ? C.brand : s.done ? C.concept : C.line} strokeWidth="2" />
           <Bar x={274} y={-2} w={s.w} fill={s.done ? C.s3 : C.muted} />
         </g>
       ))}
@@ -86,7 +96,7 @@ export function WorkspaceIllustration({ label }: { label: string }) {
       <line x1="760" y1="41" x2="760" y2="440" stroke={C.line} />
       <Bar x={780} y={62} w={110} h={8} fill={C.text} />
       <circle cx="810" cy="112" r="24" fill="none" stroke={C.s3} strokeWidth="7" />
-      <circle cx="810" cy="112" r="24" fill="none" stroke={C.ok} strokeWidth="7" strokeLinecap="round" strokeDasharray="34 151" transform="rotate(-90 810 112)" />
+      <circle className="ill-arc" cx="810" cy="112" r="24" fill="none" stroke={C.ok} strokeWidth="7" strokeLinecap="round" strokeDasharray="34 151" transform="rotate(-90 810 112)" />
       <Bar x={846} y={102} w={80} fill={C.text} />
       <Bar x={846} y={116} w={60} fill={C.s3} />
       {PHASES.map((c, i) => (
@@ -100,7 +110,7 @@ export function WorkspaceIllustration({ label }: { label: string }) {
         <g key={i} transform={`translate(0 ${314 + i * 22})`}>
           <Bar x={780} y={-3} w={60} fill={C.s3} />
           <Bar x={852} y={-2} w={70} h={5} fill={C.s3} />
-          <Bar x={852} y={-2} w={70 * p} h={5} fill={C.ok} />
+          <Bar x={852} y={-2} w={70 * p} h={5} fill={C.ok} className="ill-grow" d={1 + i} />
         </g>
       ))}
     </svg>

@@ -20,6 +20,7 @@ import { useGuideUi } from '../guides/guideStore'
 import { mapStates } from '../guides/GuideMap'
 import { Icon } from '../Icon'
 import { ModuleIcon } from '../ModuleIcon'
+import { Segmented } from '../motion'
 import { Menu } from '../Menu'
 import { SideRail } from '../workspace/EditorRail'
 import { WalkthroughChip } from '../workspace/WalkthroughChip'
@@ -114,10 +115,10 @@ export function EditorPage() {
       </nav>
       <main className="content">
         <div className="toolbar">
-          <div className="segmented" role="group" aria-label={t('editor.viewLabel')}>
+          <Segmented role="group" aria-label={t('editor.viewLabel')}>
             <button aria-pressed={!preview} onClick={() => setParam('v', null)}>{t('editor.visual')}</button>
             <button aria-pressed={preview} onClick={() => setParam('v', 'md')}>{t('editor.markdown')}</button>
-          </div>
+          </Segmented>
           <span className="spacer" />
           <Menu className="doc-menu" label={t('editor.docMenu')} summary={<><Icon name="file" /> {t('editor.document')} <Icon name="chevronDown" /></>}>
             <button onClick={() => exportDocumentMarkdown(docId)}>{t('editor.downloadMd')}</button>
@@ -130,7 +131,7 @@ export function EditorPage() {
         {preview ? (
           <MarkdownPreview text={moduleToMarkdown(project, mod)} assets={exportAssets(project, mod)} fromPath={exportPath(mod)} />
         ) : sec ? (
-          <div key={`${docId}/${sec.id}`}>
+          <div key={`${docId}/${sec.id}`} className="section-swap">
             <div className="section-head">
               <h2>{sec.title}</h2>
               <span className="spacer" />
