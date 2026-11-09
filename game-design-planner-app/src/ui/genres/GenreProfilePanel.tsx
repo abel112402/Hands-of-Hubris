@@ -32,18 +32,38 @@ export function reasonText(t: TFunction, reasons: RecommendationReason[]) {
     .join(' · ')
 }
 
-/** One-line genre summary for the planner menu; choosing and customizing happens in Settings › Genre & editors. */
+/** The project's selected genres, or '' when none are set. */
+export function useGenreNames() {
+  const profile = useStore((s) => s.project.meta.profile)
+  return profile ? genreNames(profile.genres, profile.customGenres) : ''
+}
+
+/**
+ * Genre summary for the workspace home; choosing and customizing happens in Settings › Genre & editors.
+ * Set: a quiet chip line in the project header. Not set: the "step 0" setup card above the current step,
+ * because the genre tailors both the planner list and the walkthrough.
+ */
 export function GenreSummary() {
   const { t } = useTranslation()
-  const profile = useStore((s) => s.project.meta.profile)
-  const names = profile ? genreNames(profile.genres, profile.customGenres) : ''
+  const names = useGenreNames()
+  if (names)
+    return (
+      <section className="genre-chips" aria-labelledby="genre-summary-title">
+        <h2 id="genre-summary-title" className="genre-chips-label">{t('genres.title')}</h2>
+        <span className="genre-chip">{names}</span>
+        <Link className="genre-edit" to="/settings/genre">{t('genres.edit')}</Link>
+      </section>
+    )
   return (
-    <section className="genre-panel" aria-labelledby="genre-summary-title">
-      <div className="genre-bar">
-        <h2 id="genre-summary-title">{t('genres.title')}</h2>
-        {names ? <span className="genre-names">{names}</span> : <span className="muted">{t('genres.notSet')}</span>}
-        <span className="spacer" />
-        <Link className={'button' + (names ? '' : ' primary')} to="/settings/genre">{names ? t('genres.edit') : t('genres.choose')}</Link>
+    <section className="genre-setup" aria-labelledby="genre-summary-title">
+      <p className="eyebrow">{t('workspace.setupEyebrow')}</p>
+      <div className="genre-setup-row">
+        <div>
+          <h2 id="genre-summary-title">{t('genres.title')}</h2>
+          <p>{t('workspace.setupBody')}</p>
+          <p className="muted">{t('genres.notSet')}</p>
+        </div>
+        <Link className="button" to="/settings/genre">{t('genres.choose')}</Link>
       </div>
     </section>
   )

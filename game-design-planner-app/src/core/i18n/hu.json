@@ -72,7 +72,6 @@
     "nextStep": "Következő lépés",
     "allDone": "Az útmutató kész",
     "allDoneHint": "Minden lépés kész vagy kihagyva. A tippek továbbra is figyelik a tervet, ahogy változik.",
-    "progressLine": "{{done}} kész · {{skipped}} kihagyva · {{total}} lépés",
     "viewLabel": "Útmutató nézet",
     "viewGuided": "Részletes",
     "viewChecklist": "Ellenőrzőlista",
@@ -93,7 +92,7 @@
     "walkthroughLabel": "Útmutató",
     "phases": "Fázisok",
     "noSteps": "—",
-    "coverage": "Tervezők kitöltöttsége",
+    "coverage": "Dokumentumok kitöltöttsége",
     "milestone": "Következő mérföldkő",
     "unnamed": "Névtelen mérföldkő",
     "noMilestone": "Nincs nyitott mérföldkő.",
@@ -101,7 +100,24 @@
     "issues_one": "{{count}} probléma",
     "issues_other": "{{count}} probléma",
     "hints_one": "{{count}} tipp",
-    "hints_other": "{{count}} tipp"
+    "hints_other": "{{count}} tipp",
+    "eyebrow": "Játéktervezési munkatér",
+    "edited": "Módosítva: {{when}}",
+    "setupEyebrow": "0. lépés · Beállítás",
+    "setupBody": "Először válassz műfajt: a tervezők és a végigvezetés a játékodhoz igazodnak.",
+    "progressDone": "{{total}} lépésből {{done}} kész",
+    "progressSkipped": "{{count}} kihagyva",
+    "openTarget": "{{title}} megnyitása",
+    "currentHere": "Aktuális lépés",
+    "details": "Részletek",
+    "closeProgress": "Haladás bezárása",
+    "stripLabel": "Végigvezetés haladása",
+    "phaseState": {
+      "empty": "Nincs lépés",
+      "todo": "Nem kezdődött el",
+      "active": "Folyamatban",
+      "done": "Kész"
+    }
   },
   "settingsPage": {
     "title": "Beállítások",
@@ -146,7 +162,6 @@
     "saveMenu": "További mentési lehetőségek"
   },
   "home": {
-    "title": "Mit szeretnél megtervezni?",
     "subtitle": "Válassz egy tervezőt. Minden egyetlen projektfájlban tárolódik, amit menthetsz és betölthetsz.",
     "filter": "Tervezők szűrése…",
     "restoreBanner": "Találtunk egy automatikusan mentett munkamenetet ({{date}}).",
@@ -185,6 +200,7 @@
   "editor": {
     "visual": "Vizuális szerkesztő",
     "markdown": "Markdown előnézet",
+    "viewLabel": "Szerkesztő nézete",
     "exportDoc": "Exportálás JSON-ként",
     "importDoc": "Importálás JSON-ból…",
     "document": "Dokumentum",
@@ -1232,12 +1248,12 @@
       "unknown": "Valami hiba történt. Próbáld újra."
     },
     "landing": {
-      "title": "Tervezd meg a játékod – együtt",
-      "lead": "Strukturált tervdokumentum-tervező játékokhoz: vízió, alapciklus, rendszerek, történet, gyártás és QA egy helyen.",
+      "title": "A pitch-től a kiadási tervig, egy vezetett tervdokumentumban",
+      "lead": "30+ tervező a vízióhoz, alapciklushoz, rendszerekhez, történethez, gyártáshoz és QA-hoz, és egy végigvezetés, amely megmondja, mit dönts el következőnek.",
       "features": {
         "planners": {
-          "title": "30+ tervező",
-          "body": "Vezetett szerkesztők példákkal, ábrákkal és következetességi tippekkel."
+          "title": "30+ vezetett tervező",
+          "body": "Szerkesztők példákkal, ábrákkal és tippekkel, amelyek ellenőrzik, hogy a terv következetes marad-e."
         },
         "genres": {
           "title": "A műfajodhoz igazítva",
@@ -1258,7 +1274,20 @@
       "signedInAs": "Bejelentkezve: {{email}}",
       "toProjects": "Tovább a projektjeidhez",
       "useLocal": "Használat fiók nélkül",
-      "useLocalHint": "Csak ebben a böngészőben dolgozol; a projektfájlokat te mented és nyitod meg."
+      "useLocalHint": "Csak ebben a böngészőben dolgozol; a projektfájlokat te mented és nyitod meg.",
+      "eyebrow": "Egyéni fejlesztőknek, diákoknak és kis csapatoknak",
+      "pathLabel": "Hogyan szeretnél dolgozni?",
+      "pathCloud": "Csapat · felhő",
+      "pathLocal": "Helyben · fiók nélkül",
+      "cloudBody": "Ments a felhőbe, nyisd meg a projektjeidet bárhol, és hívj meg szerkesztőket és megtekintőket.",
+      "localTitle": "Kezdés helyben",
+      "localLater": "Később bejelentkezhetsz, és feltöltheted a projektet.",
+      "shotAlt": "A munkatér előnézete: balra a tervezők, középen az aktuális lépés, jobbra a haladás.",
+      "language": "Nyelv",
+      "version": "Verzió: {{version}}",
+      "offline": "Offline is működik",
+      "privacy": "Adatvédelem",
+      "terms": "Feltételek"
     },
     "signIn": {
       "email": "E-mail-cím",
@@ -1269,9 +1298,12 @@
       "with": "Folytatás ezzel: {{provider}}",
       "failed": "A bejelentkezés nem sikerült. Ellenőrizd a címet, és próbáld újra.",
       "checkEmail": "Nézd meg az e-mailjeidet",
-      "sentTo": "Bejelentkezési linket küldtünk ide: {{email}}.",
+      "sentTo": "Bejelentkezési linket küldtünk ide: <0>{{email}}</0>.",
       "sameBrowser": "Ugyanebben a böngészőben nyisd meg a linket; máshol megnyitva nem jelentkeztet be.",
-      "useOther": "Másik cím használata"
+      "useOther": "Másik cím használata",
+      "resend": "Küldés újra",
+      "resendIn": "Újraküldés {{seconds}} mp múlva",
+      "privacy": "Az e-mail-címedet csak a bejelentkezéshez használjuk."
     },
     "account": {
       "projects": "Projektjeim",

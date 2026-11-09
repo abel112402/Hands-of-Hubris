@@ -8,6 +8,8 @@ import { useStore } from '../../core/store/store'
 import type { Project } from '../../core/model/types'
 import { genreNames, reasonText } from '../genres/GenreProfilePanel'
 import { Icon } from '../Icon'
+import { ModuleIcon } from '../ModuleIcon'
+import { useWalkthrough } from './useWalkthrough'
 
 const COLLAPSED_KEY = 'hohplan:railCollapsed'
 const OPEN_KEY = 'hohplan:railOpen'
@@ -28,18 +30,21 @@ function writeJson(key: string, value: unknown) {
   }
 }
 
-function RailItem({ entry, project, star }: { entry: EditorEntry; project: Project; star: boolean }) {
+function RailItem({ entry, project, star, here }: { entry: EditorEntry; project: Project; star: boolean; here: boolean }) {
   const { t } = useTranslation()
   const m = getModule(entry.docId)!
   const p = docProgress(project, m.id)
   const why = entry.reasons ? reasonText(t, entry.reasons) : m.summary
   return (
-    <NavLink to={`/doc/${m.id}`} className="rail-item" title={why}>
-      <span className="rail-icon" aria-hidden="true">{m.icon}</span>
+    <NavLink to={`/doc/${m.id}`} className={'rail-item' + (here ? ' here' : '')} title={why}>
+      <span className="rail-icon" aria-hidden="true"><ModuleIcon id={m.id} /></span>
       <span className="rail-title">{m.title}</span>
-      {star && <span className="rail-star" title={t('genres.recommendedBadge')}>★<span className="sr-only"> {t('genres.recommendedBadge')}</span></span>}
-      <span className="rail-meter" role="img" aria-label={t('workspace.filled', { percent: p })}>
-        <span style={{ width: `${p}%` }} />
+      <span className="rail-end">
+        {star && <span className="rail-star" title={t('genres.recommendedBadge')}>★<span className="sr-only"> {t('genres.recommendedBadge')}</span></span>}
+        {/* "You are here": the planner that holds the walkthrough's current step. */}
+        {here && <span className="here-dot" title={t('workspace.currentHere')}><span className="sr-only"> {t('workspace.currentHere')}</span></span>}
+        {/* Fill as a small pie: empty ring, partly filled, full. The label carries the number. */}
+        <span className={'rail-fill' + (p >= 100 ? ' full' : p > 0 ? ' some' : '')} role="img" aria-label={t('workspace.filled', { percent: p })} style={{ ['--p' as string]: p }} />
       </span>
     </NavLink>
   )
@@ -53,6 +58,7 @@ export function EditorRail({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
   const project = useStore((s) => s.project)
   const profile = readProfile(project)
+  const here = useWalkthrough().progress.next?.target?.docId
   const [q, setQ] = useState('')
   const [collapsed, setCollapsed] = useState<string[]>(() => readJson(COLLAPSED_KEY, []))
   const [expanded, setExpanded] = useState(false)
@@ -93,7 +99,7 @@ export function EditorRail({ onNavigate }: { onNavigate?: () => void }) {
                 <div className="rail-list" id={`${id}-list`}>
                   {shown.map((e) => (
                     // In a narrowed group every planner is recommended, so the star only marks them in mixed lists.
-                    <RailItem key={e.docId} entry={e} project={project} star={e.recommended && (showAll || !g.filtered)} />
+                    <RailItem key={e.docId} entry={e} project={project} star={e.recommended && (showAll || !g.filtered)} here={e.docId === here} />
                   ))}
                 </div>
                 {g.filtered && g.hidden > 0 && (

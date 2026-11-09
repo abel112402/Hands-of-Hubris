@@ -30,6 +30,9 @@ beforeEach(() => {
   location.hash = '#/'
 })
 
+/** First renders of the whole app can take seconds under a full parallel run (see vite.config.ts). */
+const SLOW = { timeout: 5000 }
+
 afterEach(() => {
   cleanup()
   __resetCloudForTests()
@@ -38,7 +41,7 @@ afterEach(() => {
 describe('signed out', () => {
   it('shows the landing page with magic-link sign-in and enabled OAuth providers', async () => {
     render(<App cloudBackend={fake} />)
-    expect(await screen.findByRole('heading', { name: 'Plan your game, together' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'From pitch to ship plan, one guided design doc' })).toBeTruthy()
     expect(await screen.findByRole('button', { name: 'Continue with GitHub' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('E-mail address'), { target: { value: 'new@example.test' } })
     fireEvent.click(screen.getByRole('button', { name: 'Send sign-in link' }))
@@ -46,11 +49,34 @@ describe('signed out', () => {
     expect(fake.emailsSent).toEqual(['new@example.test'])
   })
 
+  it('confirms the sent link with focus, the address and a resend cooldown', async () => {
+    render(<App cloudBackend={fake} />)
+    fireEvent.change(await screen.findByLabelText('E-mail address', {}, SLOW), { target: { value: 'new@example.test' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send sign-in link' }))
+    const heading = await screen.findByRole('heading', { name: 'Check your e-mail' }, SLOW)
+    expect(document.activeElement).toBe(heading)
+    expect(screen.getByText('new@example.test').tagName).toBe('STRONG')
+    const resend = screen.getByRole('button', { name: /^Send again in \d+ s$/ })
+    expect((resend as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('remembers the chosen way in (team or local)', async () => {
+    render(<App cloudBackend={fake} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Local · no account/ }))
+    expect(screen.getByRole('heading', { name: 'Start locally' })).toBeTruthy()
+    expect(screen.queryByLabelText('E-mail address')).toBeNull()
+    cleanup()
+    render(<App cloudBackend={fake} />)
+    expect(await screen.findByRole('heading', { name: 'Start locally' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Local · no account/ }).getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('old #/doc links keep their destination through the landing page, and local mode opens them', async () => {
     location.hash = '#/doc/design.player'
     render(<App cloudBackend={fake} />)
-    await screen.findByRole('heading', { name: 'Plan your game, together' })
+    await screen.findByRole('heading', { name: 'From pitch to ship plan, one guided design doc' })
     expect(location.hash).toContain('next=%2Fdoc%2Fdesign.player')
+    fireEvent.click(screen.getByRole('button', { name: /Local · no account/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Use without an account' }))
     await waitFor(() => expect(location.hash).toBe('#/doc/design.player'))
     expect(useCloud.getState().mode).toBe('local')
@@ -60,7 +86,7 @@ describe('signed out', () => {
   it('project pages require sign-in', async () => {
     location.hash = '#/projects'
     render(<App cloudBackend={fake} />)
-    await screen.findByRole('heading', { name: 'Plan your game, together' })
+    await screen.findByRole('heading', { name: 'From pitch to ship plan, one guided design doc' })
   })
 })
 
@@ -72,13 +98,13 @@ describe('signed in', () => {
   it('lists projects, creates one with genres and opens it in the workspace', async () => {
     location.hash = '#/projects'
     render(<App cloudBackend={fake} />)
-    expect(await screen.findByText(/You have no projects yet/)).toBeTruthy()
+    expect(await screen.findByText(/You have no projects yet/, {}, SLOW)).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: 'New project' })[0])
     fireEvent.change(screen.getByLabelText('Project name'), { target: { value: 'My RPG' } })
     fireEvent.click(screen.getByRole('checkbox', { name: /^RPG/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Create project' }))
-    await waitFor(() => expect(location.hash).toBe('#/'))
-    expect(await screen.findByText('Saved to cloud')).toBeTruthy()
+    await waitFor(() => expect(location.hash).toBe('#/'), SLOW)
+    expect(await screen.findByText('Saved to cloud', {}, SLOW)).toBeTruthy()
     expect(useStore.getState().project.meta.profile?.genres).toEqual(['rpg'])
     const row = [...fake.rows.values()][0]
     expect(row.payload.meta.name).toBe('My RPG')
@@ -144,8 +170,8 @@ describe('signed in', () => {
     location.hash = '#/projects'
     render(<App cloudBackend={fake} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Work offline (local)' }))
-    await waitFor(() => expect(location.hash).toBe('#/'))
-    expect(await screen.findByText('What do you want to plan?')).toBeTruthy()
+    await waitFor(() => expect(location.hash).toBe('#/'), SLOW)
+    expect(await screen.findByText('Game design workspace')).toBeTruthy()
     expect(useCloud.getState().mode).toBe('local')
   })
 })

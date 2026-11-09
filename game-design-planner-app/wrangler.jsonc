@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers (static assets) config for Workers Builds. See plans/HOSTING_SETUP_GUIDE.md §8.
+  // "name" must match the Worker in the Cloudflare dashboard.
+  "name": "hands-of-hubris",
+  "compatibility_date": "2026-11-09",
+  // Vite's build output; public/_headers is copied into it and applied by Cloudflare.
+  "assets": {
+    "directory": "./dist"
+  },
+  // Required by `wrangler preview` (non-production branch builds). Empty: previews use the
+  // top-level settings; the VITE_* values are baked in at build time from the Preview build variables.
+  "previews": {}
+}

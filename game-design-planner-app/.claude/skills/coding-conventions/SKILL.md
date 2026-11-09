@@ -23,6 +23,15 @@ Confirmed from config/source. If code disagrees, follow the code and report the 
 - Preserve stable IDs, schema/module versions, export ordering (= doc order), production CSP, `ALLOWED_HOSTS`.
 - i18n covers UI chrome only; add keys to both `en.json` and `hu.json`.
 
+## UI design system (see `plans/WORKSPACE_LANDING_REDESIGN_PLAN.md`)
+- Tokens live in the first `:root{}` of `src/styles.css`; `tests/tokens.test.ts` checks their contrast. Use tokens, not literals: surfaces `--surface-0…3` (`--bg/--panel/--panel2` are aliases), `--line`/`--line-strong`, `--radius-xs/sm/md/pill`, `--space-1…7`, `--fs-xs…4xl`, `--font-body`/`--font-display`, `--dur-fast`/`--ease-out`.
+- Colour roles: `--accent` = links, focus, standard primary buttons. `--brand` (amber) is reserved for "you are here / next action" (`.here-dot`, the hero's Open planner, current step/phase); text on it uses `--on-brand`. Phases: put `data-phase="<PhaseId>"` on a container and use `var(--phase)`.
+- Never show state by colour alone: pair it with shape (ring/pie/solid/dashed), a count, or sr-only text.
+- One filled (`primary`) action per view or card; companions use `.ghost`. Mode switches use `.segmented` with `aria-pressed`, never `button.active`.
+- Icons: `Icon` (line SVGs) for controls; `ModuleIcon id=…` for planners. Emoji stay only in module definitions (Markdown export).
+- Headings and big numbers use the display font automatically (`h1`, `h2`, `.brand`, `.num`); metadata labels use `.eyebrow`.
+- Motion: only via `--dur-fast`/`--ease-out` or the `hoh-*` keyframes; the global `prefers-reduced-motion` block in `styles.css` covers it, so don't add per-rule guards. Add `forced-colors` mappings for any new state-carrying fill.
+
 ## Tests
 - Vitest. Logic: `tests/<domain>.test.ts`; UI: `tests/<domain>Ui.test.tsx` (RTL + jsdom). Editor-visible behaviour needs both; bug fixes need a regression test.
 - Validate narrow-first: `npx vitest run tests/<file>` → `npm run typecheck` → `npm run lint`; `npm run build` for config changes.

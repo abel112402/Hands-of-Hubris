@@ -18,3 +18,15 @@ export async function createConfiguredBackend(): Promise<CloudBackend | null> {
 
 /** Where auth e-mails and OAuth return to: the app's own page, without the #route (PKCE adds ?code=). */
 export const authRedirectUrl = () => `${location.origin}${location.pathname}`
+
+/** Only absolute http or https URLs are used, so a bad build value cannot become a javascript: link. */
+const httpUrl = (v: string | undefined) => {
+  const s = v?.trim() ?? ''
+  return /^https?:\/\//i.test(s) && URL.canParse(s) ? s : ''
+}
+
+/** Optional legal pages linked from the landing page footer; hidden when not set. */
+export const siteLinks = {
+  privacy: httpUrl(import.meta.env.VITE_PRIVACY_URL),
+  terms: httpUrl(import.meta.env.VITE_TERMS_URL),
+}

@@ -1,22 +1,24 @@
+import type { RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { editorGroups, readProfile } from '../../core/genre'
 import { averageProgress, nextMilestone } from '../../core/progress'
 import { validateProject } from '../../core/references/refs'
 import { useStore } from '../../core/store/store'
-import { PHASES } from '../../core/walkthrough/types'
-import { useHints } from '../hints/useHints'
+import { PHASES, type PhaseId } from '../../core/walkthrough/types'
+import type { WalkthroughProgress } from '../../core/walkthrough/evaluate'
+import { Icon } from '../Icon'
 import type { WalkthroughView } from './useWalkthrough'
 
 const R = 34
 const C = 2 * Math.PI * R
 
-function Ring({ percent, label }: { percent: number; label: string }) {
+function Ring({ percent, label, size = 88 }: { percent: number; label: string; size?: number }) {
   return (
-    <svg className="progress-ring" viewBox="0 0 80 80" width="88" height="88" role="img" aria-label={label}>
+    <svg className="progress-ring" viewBox="0 0 80 80" width={size} height={size} role="img" aria-label={label}>
       <circle cx="40" cy="40" r={R} className="ring-track" />
       <circle cx="40" cy="40" r={R} className="ring-value" strokeDasharray={`${(percent / 100) * C} ${C}`} transform="rotate(-90 40 40)" />
-      <text x="40" y="45" textAnchor="middle" className="ring-text">{percent}%</text>
+      <text x="40" y="46" textAnchor="middle" className="ring-text">{percent}%</text>
     </svg>
   )
 }
@@ -25,38 +27,66 @@ function Bar({ percent }: { percent: number }) {
   return <span className="mini-bar" aria-hidden="true"><span style={{ width: `${percent}%` }} /></span>
 }
 
-/** Right pane: how far the plan is — walkthrough phases, planner coverage, next milestone, open issues. */
-export function ProgressPanel({ view }: { view: WalkthroughView }) {
+type PhaseState = 'empty' | 'todo' | 'active' | 'done'
+
+/** Per phase: share of finished (done or skipped) steps and a state that is never shown by colour alone. */
+export function phaseSummary(progress: WalkthroughProgress, phase: PhaseId): { percent: number; state: PhaseState; finished: number; total: number } {
+  const p = progress.phases.find((x) => x.phase === phase)
+  if (!p?.total) return { percent: 0, state: 'empty', finished: 0, total: 0 }
+  const finished = p.done + p.skipped
+  const percent = Math.round((finished / p.total) * 100)
+  return { percent, finished, total: p.total, state: percent === 100 ? 'done' : percent > 0 ? 'active' : 'todo' }
+}
+
+/** "5 of 33 steps done", plus the skipped count only when there is one. */
+export function useProgressLine(progress: WalkthroughProgress) {
+  const { t } = useTranslation()
+  const line = t('workspace.progressDone', { done: progress.done, total: progress.total })
+  return progress.skipped ? `${line} · ${t('workspace.progressSkipped', { count: progress.skipped })}` : line
+}
+
+/** Right pane: how far the plan is — walkthrough phases, planner fill, next milestone, open issues. */
+export function ProgressPanel({ view, onClose }: { view: WalkthroughView; onClose?: () => void }) {
   const { t } = useTranslation()
   const project = useStore((s) => s.project)
   const { progress } = view
   const issues = validateProject(project).length
-  const hints = useHints().total
   const milestone = nextMilestone(project)
   const groups = editorGroups(readProfile(project))
+  const line = useProgressLine(progress)
 
   return (
     <aside className="progress-panel" aria-label={t('workspace.progressTitle')}>
-      <h2>{t('workspace.progressTitle')}</h2>
+      <div className="progress-head">
+        <h2>{t('workspace.progressTitle')}</h2>
+        {onClose && (
+          <button className="icon-btn drawer-close" aria-label={t('workspace.closeProgress')} title={t('workspace.closeProgress')} onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        )}
+      </div>
       <div className="progress-overall">
         <Ring percent={progress.percent} label={t('workspace.overall', { percent: progress.percent })} />
         <div>
           <strong>{t('workspace.walkthroughLabel')}</strong>
-          <p className="muted">{t('workspace.progressLine', { done: progress.done, skipped: progress.skipped, total: progress.total })}</p>
+          <p className="muted">{line}</p>
         </div>
       </div>
 
       <h3>{t('workspace.phases')}</h3>
       <ol className="walk-phases" aria-label={t('workspace.phases')}>
         {PHASES.map((phase) => {
-          const p = progress.phases.find((x) => x.phase === phase)
-          const pct = p?.total ? Math.round(((p.done + p.skipped) / p.total) * 100) : 0
-          const state = !p ? 'empty' : pct === 100 ? 'done' : pct > 0 || progress.next?.phase === phase ? 'active' : 'todo'
+          const s = phaseSummary(progress, phase)
+          const current = progress.next?.phase === phase
           return (
-            <li key={phase} className={`walk-phase-item ${state}`}>
-              <span className="walk-phase-dot" aria-hidden="true" />
+            <li key={phase} className={`walk-phase-item ${s.state}${current ? ' current' : ''}`} data-phase={phase}>
+              <span className="walk-phase-dot" aria-hidden="true" style={{ ['--p' as string]: s.percent }} />
               <span className="walk-phase-name">{t(`walkthrough.phases.${phase}`)}</span>
-              <span className="walk-phase-value muted">{p ? `${pct}%` : t('workspace.noSteps')}</span>
+              <span className="sr-only">
+                {t(`workspace.phaseState.${s.state}`)}
+                {current && `, ${t('workspace.currentHere')}`}
+              </span>
+              <span className="walk-phase-value muted num" aria-hidden={!s.total}>{s.total ? `${s.finished}/${s.total}` : t('workspace.noSteps')}</span>
             </li>
           )
         })}
@@ -70,7 +100,7 @@ export function ProgressPanel({ view }: { view: WalkthroughView }) {
             <li key={g.group}>
               <span>{g.label}</span>
               <Bar percent={pct} />
-              <span className="muted">{pct}%</span>
+              <span className="muted num">{pct}%</span>
             </li>
           )
         })}
@@ -88,10 +118,39 @@ export function ProgressPanel({ view }: { view: WalkthroughView }) {
         </p>
       )}
 
-      <div className="progress-counts">
-        <Link to="/issues">{t('workspace.issues', { count: issues })}</Link>
-        <Link to="/settings/hints">{t('workspace.hints', { count: hints })}</Link>
-      </div>
+      {/* Hints already have their count in the top bar; issues are listed only when there are some. */}
+      {issues > 0 && (
+        <div className="progress-counts">
+          <Link className="button small" to="/issues">{t('workspace.issues', { count: issues })}</Link>
+        </div>
+      )}
     </aside>
+  )
+}
+
+/**
+ * One-line progress for narrow screens (CSS shows it below 1200px, where the progress pane is a drawer):
+ * the walkthrough share, a phase track and a button that opens the full pane.
+ */
+export function ProgressStrip({ view, open, onOpen, detailsRef }: { view: WalkthroughView; open: boolean; onOpen: () => void; detailsRef: RefObject<HTMLButtonElement | null> }) {
+  const { t } = useTranslation()
+  const { progress } = view
+  const line = useProgressLine(progress)
+  const phase = progress.next?.phase
+  return (
+    <section className="progress-strip" aria-label={t('workspace.stripLabel')}>
+      <Ring percent={progress.percent} label={t('workspace.overall', { percent: progress.percent })} size={40} />
+      <div className="progress-strip-text">
+        <strong>{phase ? t(`walkthrough.phases.${phase}`) : t('workspace.allDone')}</strong>
+        <span className="muted">{line}</span>
+      </div>
+      <ol className="phase-track" aria-hidden="true">
+        {PHASES.map((p) => {
+          const s = phaseSummary(progress, p)
+          return <li key={p} data-phase={p} className={`${s.state}${p === phase ? ' current' : ''}`}><span style={{ width: `${s.percent}%` }} /></li>
+        })}
+      </ol>
+      <button ref={detailsRef} className="small" aria-expanded={open} aria-controls="workspace-progress" onClick={onOpen}>{t('workspace.details')}</button>
+    </section>
   )
 }

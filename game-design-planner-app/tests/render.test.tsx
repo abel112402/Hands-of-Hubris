@@ -7,7 +7,7 @@ import { MODULES } from '../src/core/modules/registry'
 describe('app', () => {
   it('renders the home menu with every planner', () => {
     render(<App />)
-    expect(screen.getByText('What do you want to plan?')).toBeTruthy()
+    expect(screen.getByText('Game design workspace')).toBeTruthy()
     for (const m of MODULES) expect(screen.getAllByText(m.title).length).toBeGreaterThan(0)
   })
 })
