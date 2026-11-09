@@ -10,6 +10,8 @@ import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
 import { Icon } from './Icon'
 import { Menu } from './Menu'
+import { BrandMark } from './BrandMark'
+import { ModuleIcon } from './ModuleIcon'
 import { flushSave, hasUnsyncedChanges, leaveLocalMode, signOut, useCloud } from '../core/cloud/session'
 import { CloudBanners, CloudSaveStatus } from './cloud/CloudBanners'
 
@@ -17,8 +19,8 @@ function Palette({ onClose }: { onClose: () => void }) {
   const { i18n } = useTranslation()
   const nav = useNavigate()
   const [q, setQ] = useState('')
-  const items = [
-    ...MODULES.map((m) => ({ label: `${m.icon} ${m.title}`, to: `/doc/${m.id}` })),
+  const items: { label: string; to: string; doc?: string }[] = [
+    ...MODULES.map((m) => ({ label: m.title, to: `/doc/${m.id}`, doc: m.id })),
     ...SETTINGS_TABS.map((id) => ({ label: `${i18n.t('settingsPage.title')}: ${i18n.t(`settingsPage.tabs.${id}`)}`, to: `/settings/${id}` })),
     { label: i18n.t('nav.issues'), to: '/issues' },
     { label: i18n.t('nav.home'), to: '/' },
@@ -31,7 +33,7 @@ function Palette({ onClose }: { onClose: () => void }) {
             if (e.key === 'Escape') onClose()
             if (e.key === 'Enter' && items[0]) { nav(items[0].to); onClose() }
           }} />
-        <ul>{items.slice(0, 12).map((i) => <li key={i.to}><button onClick={() => { nav(i.to); onClose() }}>{i.label}</button></li>)}</ul>
+        <ul>{items.slice(0, 12).map((i) => <li key={i.to}><button onClick={() => { nav(i.to); onClose() }}>{i.doc && <ModuleIcon id={i.doc} />} {i.label}</button></li>)}</ul>
       </div>
     </div>
   )
@@ -105,7 +107,7 @@ export function AppShell() {
     <div className="shell">
       <header className="topbar">
         <div className="topbar-left">
-          <Link to="/" className="brand" title={t('nav.home')}>{t('app.title')}</Link>
+          <Link to="/" className="brand" title={t('nav.home')}><BrandMark /><span className="brand-name">{t('app.title')}</span></Link>
           <input className="title-input" aria-label={t('app.projectName')} value={project.meta.name} readOnly={readOnly}
             onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
           {cloudActive ? <CloudSaveStatus /> : <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>}

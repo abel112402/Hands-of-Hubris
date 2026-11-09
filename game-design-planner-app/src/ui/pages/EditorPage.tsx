@@ -19,6 +19,7 @@ import { ExamplePicker } from '../guides/ExamplePicker'
 import { useGuideUi } from '../guides/guideStore'
 import { mapStates } from '../guides/GuideMap'
 import { Icon } from '../Icon'
+import { ModuleIcon } from '../ModuleIcon'
 import { Menu } from '../Menu'
 import { SideRail } from '../workspace/EditorRail'
 import { WalkthroughChip } from '../workspace/WalkthroughChip'
@@ -106,15 +107,17 @@ export function EditorPage() {
       <SideRail />
       <nav className="sidebar">
         <Link to="/" className="muted">← {t('nav.home')}</Link>
-        <h3>{mod.icon} {mod.title}</h3>
+        <h3 className="sidebar-title"><ModuleIcon id={mod.id} /> {mod.title}</h3>
         {sections.map((s) => (
           <button key={s.id} className={s.id === sec?.id ? 'active' : ''} onClick={() => setParam('s', s.id)}>{s.title}</button>
         ))}
       </nav>
       <main className="content">
         <div className="toolbar">
-          <button className={!preview ? 'active' : ''} onClick={() => setParam('v', null)}>{t('editor.visual')}</button>
-          <button className={preview ? 'active' : ''} onClick={() => setParam('v', 'md')}>{t('editor.markdown')}</button>
+          <div className="segmented" role="group" aria-label={t('editor.viewLabel')}>
+            <button aria-pressed={!preview} onClick={() => setParam('v', null)}>{t('editor.visual')}</button>
+            <button aria-pressed={preview} onClick={() => setParam('v', 'md')}>{t('editor.markdown')}</button>
+          </div>
           <span className="spacer" />
           <Menu className="doc-menu" label={t('editor.docMenu')} summary={<><Icon name="file" /> {t('editor.document')} <Icon name="chevronDown" /></>}>
             <button onClick={() => exportDocumentMarkdown(docId)}>{t('editor.downloadMd')}</button>

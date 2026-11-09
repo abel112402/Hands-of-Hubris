@@ -1,18 +1,21 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../core/store/store'
 import { genreLabel } from '../../core/genre'
+import { getModule } from '../../core/modules/registry'
 import { groupWalkthrough, textOf } from '../../core/walkthrough/compose'
 import { setStepManual, setStepSkipped, type WalkthroughProgress } from '../../core/walkthrough/evaluate'
 import { stepLink } from '../../core/walkthrough/project'
 import { focusHints, hintsForStep, stepPromptData } from '../../core/walkthrough/focus'
 import type { WalkthroughView } from './useWalkthrough'
 import type { ComposedStep, StepStatus } from '../../core/walkthrough/types'
+import type { Hint } from '../../core/hints/types'
 import { HintCard } from '../hints/HintPanel'
+import { useProgressLine } from './ProgressPanel'
 import { useHints } from '../hints/useHints'
 import { AiPanel } from '../ai/AiPanel'
-import { Icon } from '../Icon'
+import { Icon, type IconName } from '../Icon'
 
 type Tab = 'walkthrough' | 'hints' | 'ai'
 const VIEW_KEY = 'hohplan:walkView'
@@ -33,19 +36,44 @@ function StepActions({ step, status, onAsk, primary }: { step: ComposedStep; sta
   const readOnly = useStore((s) => s.readOnly)
   const link = stepLink(step.target)
   const mutate = useStore.getState().mutate
+  // Next to the one filled action, the others are quiet ghost buttons.
+  const ghost = primary ? 'ghost' : undefined
   return (
     <div className="step-actions">
       {link && <Link className={'button' + (primary ? ' primary' : '')} to={link}>{t('workspace.openPlanner')}</Link>}
-      <button onClick={() => onAsk(step)}><Icon name="sparkle" /> {t('workspace.askAi')}</button>
-      {status !== 'done' && <button disabled={readOnly} onClick={() => mutate((p) => setStepManual(p, step.id, true))}>{t('workspace.markDone')}</button>}
-      {status === 'done' && <button disabled={readOnly} onClick={() => mutate((p) => setStepManual(p, step.id, false))}>{t('workspace.unmark')}</button>}
-      {status === 'open' && <button disabled={readOnly} onClick={() => mutate((p) => setStepSkipped(p, step.id, true))}>{t('workspace.skip')}</button>}
-      {status === 'skipped' && <button disabled={readOnly} onClick={() => mutate((p) => setStepSkipped(p, step.id, false))}>{t('workspace.unskip')}</button>}
+      <button className={ghost} onClick={() => onAsk(step)}><Icon name="sparkle" /> {t('workspace.askAi')}</button>
+      {status !== 'done' && <button className={ghost} disabled={readOnly} onClick={() => mutate((p) => setStepManual(p, step.id, true))}>{t('workspace.markDone')}</button>}
+      {status === 'done' && <button className={ghost} disabled={readOnly} onClick={() => mutate((p) => setStepManual(p, step.id, false))}>{t('workspace.unmark')}</button>}
+      {status === 'open' && <button className={ghost} disabled={readOnly} onClick={() => mutate((p) => setStepSkipped(p, step.id, true))}>{t('workspace.skip')}</button>}
+      {status === 'skipped' && <button className={ghost} disabled={readOnly} onClick={() => mutate((p) => setStepSkipped(p, step.id, false))}>{t('workspace.unskip')}</button>}
     </div>
   )
 }
 
 const STEP_HINTS = 3
+
+/**
+ * A hint shown as a note inside a step, not as a card: the step already has its main action.
+ * It only gets a link when it points somewhere other than the step's own planner; snoozing and
+ * dismissing stay in the Hints tab.
+ */
+function StepNote({ hint, step }: { hint: Hint; step: ComposedStep }) {
+  const { t } = useTranslation()
+  const a = hint.action
+  const elsewhere = a?.kind === 'goto' && a.docId !== step.target?.docId ? a : undefined
+  const mod = elsewhere && getModule(elsewhere.docId)
+  return (
+    <li className={`step-note ${hint.severity}`} data-testid="hint">
+      <strong>{hint.title ?? t(hint.titleKey!, hint.params)}</strong>
+      <span className="muted">{hint.body ?? t(hint.bodyKey!, hint.params)}</span>
+      {elsewhere && mod && (
+        <Link className="step-note-link" to={`/doc/${elsewhere.docId}${elsewhere.sectionId ? `?s=${elsewhere.sectionId}` : ''}`}>
+          {t('workspace.openTarget', { title: mod.title })} →
+        </Link>
+      )}
+    </li>
+  )
+}
 
 /** Hints that belong to this step (its quality gates and its target planner), so problems show where the work is. */
 function StepHints({ step }: { step: ComposedStep }) {
@@ -54,8 +82,8 @@ function StepHints({ step }: { step: ComposedStep }) {
   if (!hints.length) return null
   return (
     <section className="step-hints" aria-label={t('workspace.stepHints')}>
-      <h3>{t('workspace.stepHints')} <span className="muted">({hints.length})</span></h3>
-      <ul className="list">{hints.slice(0, STEP_HINTS).map((h) => <HintCard key={h.id} hint={h} />)}</ul>
+      <h3>{t('workspace.stepHints')} <span className="num">({hints.length})</span></h3>
+      <ul className="step-notes">{hints.slice(0, STEP_HINTS).map((h) => <StepNote key={h.id} hint={h} step={step} />)}</ul>
     </section>
   )
 }
@@ -91,8 +119,8 @@ function CurrentStep({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Compos
     )
   }
   return (
-    <section className="step-hero" aria-labelledby="current-step-title">
-      <p className="step-crumb muted">{t('workspace.nextStep')} · {crumb(view.walk, step, t, i18n.language)} <GenreTags step={step} /></p>
+    <section key={step.id} className="step-hero" data-phase={step.phase} aria-labelledby="current-step-title">
+      <p className="step-crumb eyebrow"><span className="here-dot" aria-hidden="true" />{t('workspace.nextStep')} · {crumb(view.walk, step, t, i18n.language)} <GenreTags step={step} /></p>
       <h2 id="current-step-title">{textOf(step.title, i18n.language)}</h2>
       <p>{textOf(step.body, i18n.language)}</p>
       <Notes step={step} />
@@ -114,31 +142,59 @@ function WalkthroughList({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Co
     }
   }
   const { progress } = view
+  const line = useProgressLine(progress)
+  // Open/closed per phase and chapter. Untouched ones follow the defaults below, so the open part
+  // moves along with the current step; once toggled by hand, the choice sticks for this visit.
+  const [toggled, setToggled] = useState<Record<string, boolean>>({})
+  const finished = (steps: ComposedStep[]) => steps.filter((s) => progress.status[s.id] !== 'open').length
+  const disclosure = (key: string, byDefault: boolean) => ({
+    open: toggled[key] ?? byDefault,
+    onToggle: (e: React.SyntheticEvent<HTMLDetailsElement>) => {
+      const open = e.currentTarget.open
+      if (open !== (toggled[key] ?? byDefault)) setToggled((m) => ({ ...m, [key]: open }))
+    },
+  })
   return (
     <div className="walk">
       <div className="walk-head">
-        <span className="muted">{t('workspace.progressLine', { done: progress.done, skipped: progress.skipped, total: progress.total })}</span>
+        <span className="muted">{line}</span>
         <span className="spacer" />
-        <div className="view-toggle" role="group" aria-label={t('workspace.viewLabel')}>
-          <button className={mode === 'guided' ? 'active' : ''} aria-pressed={mode === 'guided'} onClick={() => setView('guided')}>{t('workspace.viewGuided')}</button>
-          <button className={mode === 'checklist' ? 'active' : ''} aria-pressed={mode === 'checklist'} onClick={() => setView('checklist')}>{t('workspace.viewChecklist')}</button>
+        <div className="view-toggle segmented" role="group" aria-label={t('workspace.viewLabel')}>
+          <button aria-pressed={mode === 'guided'} onClick={() => setView('guided')}>{t('workspace.viewGuided')}</button>
+          <button aria-pressed={mode === 'checklist'} onClick={() => setView('checklist')}>{t('workspace.viewChecklist')}</button>
         </div>
       </div>
-      {groupWalkthrough(view.walk).map((phase) => (
-        <section key={phase.phase} className="walk-phase" aria-labelledby={`phase-${phase.phase}`}>
-          <h3 id={`phase-${phase.phase}`}>{t(`walkthrough.phases.${phase.phase}`)}</h3>
-          {phase.chapters.map((c) => (
-            <div key={c.id} className="walk-chapter">
-              <h4>{textOf(c.title, i18n.language)}</h4>
-              <ol className="walk-steps">
-                {c.steps.map((s) => (
-                  <StepRow key={s.id} step={s} progress={progress} detailed={mode === 'guided'} onAsk={onAsk} />
-                ))}
-              </ol>
-            </div>
-          ))}
-        </section>
-      ))}
+      {/* Journey line: the phase holding the current step is open, finished and future phases fold into one line. */}
+      {groupWalkthrough(view.walk).map((phase) => {
+        const steps = phase.chapters.flatMap((c) => c.steps)
+        const done = finished(steps)
+        const isCurrent = progress.next?.phase === phase.phase
+        return (
+          <details key={phase.phase} className={`walk-phase${done === steps.length ? ' complete' : ''}${isCurrent ? ' current' : ''}`} data-phase={phase.phase} {...disclosure(phase.phase, isCurrent)}>
+            <summary>
+              <span className="walk-phase-node" aria-hidden="true" />
+              <h3 id={`phase-${phase.phase}`}>{t(`walkthrough.phases.${phase.phase}`)}</h3>
+              <span className="walk-count num">{done}/{steps.length}</span>
+            </summary>
+            {phase.chapters.map((c) => {
+              const cDone = finished(c.steps)
+              return (
+                <details key={c.id} className={`walk-chapter${cDone === c.steps.length ? ' complete' : ''}`} {...disclosure(`${phase.phase}/${c.id}`, cDone < c.steps.length)}>
+                  <summary>
+                    <h4>{textOf(c.title, i18n.language)}</h4>
+                    <span className="walk-count num">{cDone}/{c.steps.length}</span>
+                  </summary>
+                  <ol className="walk-steps">
+                    {c.steps.map((s) => (
+                      <StepRow key={s.id} step={s} progress={progress} detailed={mode === 'guided'} onAsk={onAsk} />
+                    ))}
+                  </ol>
+                </details>
+              )
+            })}
+          </details>
+        )
+      })}
     </div>
   )
 }
@@ -203,12 +259,14 @@ function HintsTab({ focus }: { focus?: ComposedStep }) {
   )
 }
 
-/** Center pane: the step to do now, then the walkthrough, project hints and AI as tabs. */
-export function GuideCenter({ view }: { view: WalkthroughView }) {
+/**
+ * Center pane: Walkthrough, project Hints and AI as tabs. The Walkthrough tab leads with the step to
+ * do now (after the optional `setup` card, e.g. choosing genres), then the full journey.
+ */
+export function GuideCenter({ view, setup }: { view: WalkthroughView; setup?: ReactNode }) {
   const { t, i18n } = useTranslation()
   const [tab, setTab] = useState<Tab>('walkthrough')
   const [ask, setAsk] = useState<{ docId: string; sectionId?: string; prompt: string; step?: { title: string; data: string }; n: number }>({ docId: 'overview.vision', prompt: '', n: 0 })
-  const hintCount = useHints().total
   const onAsk = (s: ComposedStep) => {
     const prompt = s.aiPrompt ? textOf(s.aiPrompt, i18n.language) : `${textOf(s.title, i18n.language)}: ${textOf(s.body, i18n.language)}`
     setAsk((a) => ({
@@ -220,14 +278,14 @@ export function GuideCenter({ view }: { view: WalkthroughView }) {
     }))
     setTab('ai')
   }
-  const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'walkthrough', label: t('workspace.tabs.walkthrough') },
-    { id: 'hints', label: t('workspace.tabs.hints'), badge: hintCount },
-    { id: 'ai', label: t('workspace.tabs.ai') },
+  // The hint count lives in the top bar only, so the same number is not repeated here.
+  const tabs: { id: Tab; label: string; icon: IconName }[] = [
+    { id: 'walkthrough', label: t('workspace.tabs.walkthrough'), icon: 'compass' },
+    { id: 'hints', label: t('workspace.tabs.hints'), icon: 'bulb' },
+    { id: 'ai', label: t('workspace.tabs.ai'), icon: 'sparkle' },
   ]
   return (
     <div className="guide-center">
-      <CurrentStep view={view} onAsk={onAsk} />
       <div className="center-tabs" role="tablist" aria-label={t('workspace.tabsLabel')} onKeyDown={(e) => {
         const i = tabs.findIndex((x) => x.id === tab)
         const next = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1
@@ -238,12 +296,18 @@ export function GuideCenter({ view }: { view: WalkthroughView }) {
       }}>
         {tabs.map((x) => (
           <button key={x.id} role="tab" id={`tab-${x.id}`} aria-selected={tab === x.id} aria-controls={`panel-${x.id}`} tabIndex={tab === x.id ? 0 : -1} className={tab === x.id ? 'active' : ''} onClick={() => setTab(x.id)}>
-            {x.label}{!!x.badge && <span className="badge" aria-hidden="true">{x.badge}</span>}
+            <Icon name={x.icon} /> {x.label}
           </button>
         ))}
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="center-panel">
-        {tab === 'walkthrough' && <WalkthroughList view={view} onAsk={onAsk} />}
+        {tab === 'walkthrough' && (
+          <>
+            {setup}
+            <CurrentStep view={view} onAsk={onAsk} />
+            <WalkthroughList view={view} onAsk={onAsk} />
+          </>
+        )}
         {tab === 'hints' && <HintsTab focus={view.progress.next} />}
         {tab === 'ai' && <AiPanel key={ask.n} docId={ask.docId} sectionId={ask.sectionId} initialInstruction={ask.prompt} step={ask.step} />}
       </div>

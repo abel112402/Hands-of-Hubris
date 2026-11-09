@@ -72,7 +72,6 @@
     "nextStep": "Next step",
     "allDone": "Walkthrough complete",
     "allDoneHint": "Every step is done or skipped. Hints keep checking the design as it changes.",
-    "progressLine": "{{done}} done · {{skipped}} skipped · {{total}} steps",
     "viewLabel": "Walkthrough view",
     "viewGuided": "Guided",
     "viewChecklist": "Checklist",
@@ -93,7 +92,7 @@
     "walkthroughLabel": "Walkthrough",
     "phases": "Phases",
     "noSteps": "—",
-    "coverage": "Planner coverage",
+    "coverage": "Document fill",
     "milestone": "Next milestone",
     "unnamed": "Unnamed milestone",
     "noMilestone": "No open milestones.",
@@ -101,7 +100,24 @@
     "issues_one": "{{count}} issue",
     "issues_other": "{{count}} issues",
     "hints_one": "{{count}} hint",
-    "hints_other": "{{count}} hints"
+    "hints_other": "{{count}} hints",
+    "eyebrow": "Game design workspace",
+    "edited": "Edited {{when}}",
+    "setupEyebrow": "Step 0 · Setup",
+    "setupBody": "Pick your genres first: the planners and the walkthrough adapt to your game.",
+    "progressDone": "{{done}} of {{total}} steps done",
+    "progressSkipped": "{{count}} skipped",
+    "openTarget": "Open {{title}}",
+    "currentHere": "Current step",
+    "details": "Details",
+    "closeProgress": "Close progress",
+    "stripLabel": "Walkthrough progress",
+    "phaseState": {
+      "empty": "No steps",
+      "todo": "Not started",
+      "active": "In progress",
+      "done": "Done"
+    }
   },
   "settingsPage": {
     "title": "Settings",
@@ -146,7 +162,6 @@
     "saveMenu": "More save options"
   },
   "home": {
-    "title": "What do you want to plan?",
     "subtitle": "Pick a planner. Everything is stored in one project file you can save and load.",
     "filter": "Filter planners…",
     "restoreBanner": "An autosaved session from {{date}} was found.",
@@ -185,6 +200,7 @@
   "editor": {
     "visual": "Visual editor",
     "markdown": "Markdown preview",
+    "viewLabel": "Editor view",
     "exportDoc": "Export as JSON",
     "importDoc": "Import from JSON…",
     "document": "Document",
@@ -1469,12 +1485,12 @@
       "unknown": "Something went wrong. Please try again."
     },
     "landing": {
-      "title": "Plan your game, together",
-      "lead": "A structured design-document planner for games: vision, core loop, systems, story, production and QA in one place.",
+      "title": "From pitch to ship plan, one guided design doc",
+      "lead": "30+ planners for vision, core loop, systems, story, production and QA, with a walkthrough that tells you what to decide next.",
       "features": {
         "planners": {
-          "title": "30+ planners",
-          "body": "Guided editors with examples, diagrams and consistency hints."
+          "title": "30+ guided planners",
+          "body": "Editors with examples, diagrams and hints that check the design stays consistent."
         },
         "genres": {
           "title": "Tailored to your genre",
@@ -1495,7 +1511,20 @@
       "signedInAs": "Signed in as {{email}}",
       "toProjects": "Go to your projects",
       "useLocal": "Use without an account",
-      "useLocalHint": "Work in this browser only; save and open project files yourself."
+      "useLocalHint": "Work in this browser only; save and open project files yourself.",
+      "eyebrow": "For solo developers, students and small teams",
+      "pathLabel": "How do you want to work?",
+      "pathCloud": "Team · cloud",
+      "pathLocal": "Local · no account",
+      "cloudBody": "Save to the cloud, open your projects anywhere and invite editors and viewers.",
+      "localTitle": "Start locally",
+      "localLater": "You can sign in later and upload the project.",
+      "shotAlt": "Preview of the workspace: planners on the left, the current step in the middle, progress on the right.",
+      "language": "Language",
+      "version": "Version {{version}}",
+      "offline": "Works offline",
+      "privacy": "Privacy",
+      "terms": "Terms"
     },
     "signIn": {
       "email": "E-mail address",
@@ -1506,9 +1535,12 @@
       "with": "Continue with {{provider}}",
       "failed": "Sign-in failed. Check the address and try again.",
       "checkEmail": "Check your e-mail",
-      "sentTo": "We sent a sign-in link to {{email}}.",
+      "sentTo": "We sent a sign-in link to <0>{{email}}</0>.",
       "sameBrowser": "Open the link in this same browser; links opened elsewhere will not sign you in.",
-      "useOther": "Use another address"
+      "useOther": "Use another address",
+      "resend": "Send again",
+      "resendIn": "Send again in {{seconds}} s",
+      "privacy": "We only use your e-mail address to sign you in."
     },
     "account": {
       "projects": "My projects",

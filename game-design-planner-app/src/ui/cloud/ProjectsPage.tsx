@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { BrandMark } from '../BrandMark'
 import { CloudError, getBackend, type CloudProjectSummary } from '../../core/cloud/backend'
 import { enterLocalMode, hasUnsyncedChanges, openCloudProject, signOut, uploadAsNewProject, useCloud } from '../../core/cloud/session'
 import { createProject } from '../../core/model/project'
@@ -161,7 +162,7 @@ export function ProjectsPage() {
   return (
     <div className="projects-page">
       <header className="landing-top">
-        <strong className="brand">{t('app.title')}</strong>
+        <strong className="brand"><BrandMark size={24} /><span className="brand-name">{t('app.title')}</span></strong>
         <span className="spacer" />
         <span className="muted">{user?.email}</span>
         <button onClick={() => { enterLocalMode(); nav('/') }}>{t('cloud.account.useLocal')}</button>
