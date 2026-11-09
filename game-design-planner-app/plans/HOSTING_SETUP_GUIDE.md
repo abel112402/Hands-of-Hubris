@@ -186,6 +186,7 @@ For production, buy a domain (~€10–15/year, e.g. Cloudflare Registrar at cos
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (staging values for Preview; production values later for Production)
    - `VITE_TURNSTILE_SITE_KEY`
 4. Every push to `main` deploys production; every other branch gets a preview URL. Add the preview wildcard to Supabase redirect URLs (step 6.3).
+   - **Workers with static assets:** `wrangler.jsonc` in the app folder sets the Worker `name` (must match the dashboard: `hands-of-hubris`), `assets.directory: ./dist` and an empty `previews` block. Branch builds run `npx wrangler preview`, which fails with "missing a `previews` block" without it. Bump `compatibility_date` only on purpose.
 5. After the first deploy, check the headers:
    ```bash
    curl -sI https://<your-pages-project>.pages.dev
