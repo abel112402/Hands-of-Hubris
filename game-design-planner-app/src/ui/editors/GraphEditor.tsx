@@ -20,7 +20,7 @@ import type { Entity, GraphData, SectionDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { resolveSource } from '../../core/references/refs'
 import { useStore } from '../../core/store/store'
-import { useProject, useSection } from '../hooks'
+import { useNewlyAdded, useProject, useSection } from '../hooks'
 
 type GSec = Extract<SectionDef, { kind: 'graph' }>
 
@@ -85,11 +85,14 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
   const sourceItems = useMemo(() => (sec.nodeSource ? resolveSource(project, docId, sec.nodeSource) : []), [project, docId, sec.nodeSource])
   const refIsLabel = !!sec.nodeSource && !('catalog' in sec.nodeSource)
 
+  // A node that was just added (or brought back by undo) pops in; existing ones never animate.
+  const fresh = useNewlyAdded(g.nodes.map((n) => n.id), 500)
   const nodes: Node[] = g.nodes.map((n) => {
     const ref = sourceItems.find((i) => i.id === n.refId)
     return {
       id: n.id,
       type: 'card',
+      className: fresh.has(n.id) ? 'node-new' : undefined,
       position: { x: n.x, y: n.y },
       selected: sel?.type === 'node' && sel.id === n.id,
       data: { label: refIsLabel && ref ? ref.label : n.label, kind: n.kind, tag: !refIsLabel && ref ? ref.label : undefined, dim: dimmed(n.id) },
@@ -223,7 +226,7 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
           </ReactFlow>
         </div>
         {(node || edge) && (
-          <aside className="inspector">
+          <aside key={sel?.id} className="inspector">
             {node && (
               <div className="form">
                 <div className="inspector-head"><strong>Node</strong><span className="spacer" /><button className="small danger" onClick={() => removeNode(node.id)}>Delete</button></div>

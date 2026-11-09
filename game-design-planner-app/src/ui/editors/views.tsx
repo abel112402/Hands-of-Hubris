@@ -9,6 +9,7 @@ import { pressure } from '../../core/difficulty'
 import { analyzeRanges } from '../../core/diplomacy'
 import { estimateTown } from '../../core/town'
 import { useProject } from '../hooks'
+import { dragCue } from '../motion'
 import type { ViewProps } from './CollectionEditor'
 
 const PALETTE = ['#4f9cf9', '#f97b4f', '#53c28b', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e']
@@ -109,7 +110,11 @@ export function Grid2dView({ items, onSelect, selected, patch, xField, yField, m
                   <span
                     key={e.id}
                     draggable
-                    onDragStart={(ev) => ev.dataTransfer.setData('text/plain', e.id)}
+                    onDragStart={(ev) => {
+                      ev.dataTransfer.setData('text/plain', e.id)
+                      dragCue.start(ev)
+                    }}
+                    onDragEnd={dragCue.end}
                     className={'g2-item' + (e.id === selected ? ' selected' : '')}
                     onClick={() => onSelect(e.id)}
                     title={e.name}
@@ -267,7 +272,7 @@ export function TimelineView({ docId, items, onSelect, selected, patch, view }: 
                 </div>
                 <div
                   className={
-                    'tl-bar' + (milestone ? ' milestone' : '') + (r.id === selected ? ' selected' : '') + (critical.has(r.id) ? ' crit' : '') + (conflicted.has(r.id) ? ' conflict' : '')
+                    'tl-bar' + (milestone ? ' milestone' : '') + (r.id === selected ? ' selected' : '') + (drag?.id === r.id ? ' dragging' : '') + (critical.has(r.id) ? ' crit' : '') + (conflicted.has(r.id) ? ' conflict' : '')
                   }
                   title={`${r.name}: week ${span.start}–${span.end}${depsField ? `, slack ${slack}` : ''}`}
                   style={{

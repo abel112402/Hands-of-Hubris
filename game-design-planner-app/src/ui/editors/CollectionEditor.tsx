@@ -6,7 +6,8 @@ import { findUsages, resolveSource } from '../../core/references/refs'
 import { downloadText } from '../../core/persistence/file'
 import { sectionCsv } from '../../core/export/markdown'
 import { getModule } from '../../core/modules/registry'
-import { useSection, useProject } from '../hooks'
+import { useNewlyAdded, useSection, useProject } from '../hooks'
+import { dragCue } from '../motion'
 import { FieldInput, displayValue, isLongField } from '../FieldInput'
 import { Link } from 'react-router-dom'
 import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView, RangesView, EconomyView } from './views'
@@ -284,7 +285,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'townNetwork' && <TownNetworkView {...props} />}
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
-        {sel && view.kind !== 'wireframe' && <Inspector docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
+        {sel && view.kind !== 'wireframe' && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
       </div>
     </div>
   )
@@ -501,6 +502,8 @@ function KanbanView({ docId, sec, items, selected, onSelect, patch, groupBy, onA
   const project = useProject()
   const field = sec.fields.find((f) => f.key === groupBy)
   const [over, setOver] = useState<string | null>(null)
+  // A card that moved to another column (or was just added) settles in where it lands.
+  const landed = useNewlyAdded(items.map((e) => `${e[groupBy] ?? ''}:${e.id}`), 400)
   if (!field) return <p className="empty">Group field “{groupBy}” not found.</p>
   const columns: { id: string; label: string }[] =
     field.type === 'enum' ? field.options.map((o) => ({ id: o, label: o })) : field.type === 'ref' ? resolveSource(project, docId, field.source) : []
@@ -533,8 +536,12 @@ function KanbanView({ docId, sec, items, selected, onSelect, patch, groupBy, onA
               <div
                 key={e.id}
                 draggable
-                onDragStart={(ev) => ev.dataTransfer.setData('text/plain', e.id)}
-                className={'card small-card' + (e.id === selected ? ' selected' : '')}
+                onDragStart={(ev) => {
+                  ev.dataTransfer.setData('text/plain', e.id)
+                  dragCue.start(ev)
+                }}
+                onDragEnd={dragCue.end}
+                className={'card small-card' + (e.id === selected ? ' selected' : '') + (landed.has(`${e[groupBy] ?? ''}:${e.id}`) ? ' landed' : '')}
                 onClick={() => onSelect(e.id)}
               >
                 <div className="card-title">{e.name}<AiBadge entity={e} /></div>

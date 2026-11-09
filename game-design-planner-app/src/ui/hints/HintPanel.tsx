@@ -7,12 +7,15 @@ import { makeId } from '../../core/model/project'
 import { getModule, getSection } from '../../core/modules/registry'
 import { useStore } from '../../core/store/store'
 import { useHints, useSnooze } from './useHints'
+import { Flavor } from '../flavor/Flavor'
+import { hintFlavorKey } from '../../core/flavor/pick'
 import { AiPanel } from '../ai/AiPanel'
 import { useAiUi } from '../ai/aiStore'
 import { useAiSession, useAiSettings } from '../../core/ai/session'
 import { guideOf } from '../../modules/guides'
 import { GuidePanel } from '../guides/GuidePanel'
 import { Icon } from '../Icon'
+import { CountBadge } from '../motion'
 
 const WIDTH_KEY = 'hohplan:hintWidth'
 const MIN_WIDTH = 220
@@ -66,6 +69,8 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
     <li className={`hint-card ${hint.severity}`} data-testid="hint">
       <strong>{ICON[hint.severity]} {title}</strong>
       <p>{body}</p>
+      {/* Built-in hints may have an aside under the same key (hints.<key>.title → flavor.hint.<key>); the body stays the message. */}
+      {hint.titleKey && <Flavor keys={`flavor.hint.${hintFlavorKey(hint.titleKey)}`} ctx={hint.id} />}
       {confirming ? (
         <div className="hint-actions">
           <span>{t('hints.confirm')}</span>
@@ -168,7 +173,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
             title={t('hints.thisPageCount', { count: here.length })}
             onClick={() => setTab('hints')}
           >
-            <Icon name="bulb" /> {t('hints.panel')}{here.length > 0 && <span className="badge" aria-hidden="true">{here.length}</span>}
+            <Icon name="bulb" /> {t('hints.panel')}<CountBadge count={here.length} hidden />
           </button>
           {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}><Icon name="compass" /> {t('guide.tab')}</button>}
           <button className={showAi ? 'active' : ''} onClick={() => setTab('ai')}><Icon name="sparkle" /> AI</button>
@@ -188,7 +193,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
       {open && !showAi && !showGuide && (
         <>
           <h4 className="hint-group">{t('hints.thisPage')}</h4>
-          {here.length === 0 && <p className="muted">{t('hints.allClear')}</p>}
+          {here.length === 0 && <><p className="muted">{t('hints.allClear')}</p><Flavor keys="flavor.allClear" ctx={docId} /></>}
           <ul className="list">{shownHere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
           {here.length > MAX_ACTIVE_HINTS && (
             <button className="small" onClick={() => setShowAll(!showAll)}>

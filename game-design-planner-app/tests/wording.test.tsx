@@ -9,9 +9,12 @@ import { createProject } from '../src/core/model/project'
 
 afterEach(cleanup)
 
-type Tree = { [k: string]: string | Tree }
+// String arrays (flavor lines) are one key: their length may differ per language.
+type Tree = { [k: string]: string | string[] | Tree }
 const flat = (o: Tree, p = ''): [string, string][] =>
-  Object.entries(o).flatMap(([k, v]) => (typeof v === 'string' ? [[p + k, v] as [string, string]] : flat(v, `${p}${k}.`)))
+  Object.entries(o).flatMap(([k, v]) =>
+    typeof v === 'string' ? [[p + k, v] as [string, string]] : Array.isArray(v) ? [[p + k, v.join('\n')] as [string, string]] : flat(v, `${p}${k}.`),
+  )
 
 const PLURAL_MARKER = /\w\((s|es|ies)\)/
 

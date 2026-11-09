@@ -1394,5 +1394,301 @@
       "restoreConfirm": "Lecseréled a jelenlegi tartalmat a(z) {{rev}}. revízióra? Visszavonható.",
       "restored": "A(z) {{rev}}. revízió visszaállítva és új verzióként mentve."
     }
+  },
+  "flavor": {
+    "settings": {
+      "label": "Személyiség",
+      "hint": "Apró, kedves (és néha vicces) megjegyzések az üres oldalakon, betöltéskor és mentéskor. Hibaüzenetekben és megerősítéseknél sosem jelennek meg.",
+      "off": "Ki",
+      "subtle": "Finom",
+      "full": "Teljes"
+    },
+    "empty": {
+      "generic": [
+        "Üres lap. A legjobb GDD-k is így kezdődtek.",
+        "Itt még csak a lehetőség lakik.",
+        "Üres, mint egy pálya a szintdesigner előtt.",
+        "Minden nagy terv egyetlen elemmel kezdődik. Ez lehet az."
+      ],
+      "vision": [
+        "A vízió még homályos. Mint minden vízió az elején.",
+        "Mit akarsz, hogy érezzen a játékos? Kezdjük ezzel."
+      ],
+      "roadmap": [
+        "Nincs ütemterv, tehát még nincs csúszás sem.",
+        "A legoptimistább roadmap az üres roadmap."
+      ],
+      "coreLoop": [
+        "Még nincs loop. Csak egy kör, ami vár.",
+        "Gyűjts, fejlődj, ismételd. Csak még nem tudjuk, mit."
+      ],
+      "difficulty": [
+        "Nehézség még nincs. Csak a tervezés nehéz.",
+        "Easy, Normal, Hubris. Te döntöd el."
+      ],
+      "factions": [
+        "Még senki nem hadakozik. Egyelőre.",
+        "Békés világ. Gyanúsan békés."
+      ],
+      "world": [
+        "A világ még lapos. Szó szerint.",
+        "Térkép nélkül minden irány felfedezés."
+      ],
+      "town": [
+        "Ez a város még csak egy tisztás.",
+        "Egy kocsma biztosan kell majd. Mindig kell egy kocsma."
+      ],
+      "npc": [
+        "Ez a város még szellemváros. Szó szerint.",
+        "Még nincs NPC. Senkit sem talált még térden nyíl.",
+        "Az első lakos még nevet vár. Siess, mielőtt Bob lesz."
+      ],
+      "player": [
+        "A hős még csak egy körvonal a karakterválasztóban.",
+        "Ki irányít itt? Egyelőre senki."
+      ],
+      "items": [
+        "Az inventory üres. A hős még a bot-fázisban van.",
+        "Egy legendás kard sem kezdte legendásként."
+      ],
+      "combat": [
+        "Még senki sem ütött meg senkit. Békés kezdet.",
+        "Nincs harc. A balansz így tökéletes."
+      ],
+      "timeWeather": [
+        "Örök délután, felhőtlen ég. Unalmas, de szép.",
+        "Az idő még áll. Kihasználhatnád."
+      ],
+      "trade": [
+        "Nincs gazdaság. Az infláció legalább nulla.",
+        "Még senki sem ad el semmit. A kereskedők céhe aggódik."
+      ],
+      "story": [
+        "Még nincs küldetés. Senkinek sem kell 10 farkasbőr.",
+        "Volt egyszer egy… valami. Folytasd."
+      ],
+      "ui": [
+        "Üres képernyő. A legtisztább UI, amit valaha terveztél.",
+        "Még nincs HUD. A játékos végre látja a játékot."
+      ],
+      "openQuestions": [
+        "Nincs nyitott kérdés? Ez a legnagyobb kérdés.",
+        "Minden világos. Egyelőre."
+      ],
+      "architecture": [
+        "Még nincs architektúra. Csak a végtelen lehetőség és a spagetti veszélye."
+      ],
+      "coding": [
+        "Nincsenek szabályok. Mi baj lehet?",
+        "A kódstílus-vita még el sem kezdődött. Élvezd."
+      ],
+      "dataDriven": [
+        "Még nincs adat. Az Excel-tábla lélegzetvisszafojtva vár."
+      ],
+      "projects": [
+        "Még egyetlen nagyratörő terv sincs itt. Változtassunk ezen.",
+        "Tiszta lap. A hubris még csak ezután jön."
+      ]
+    },
+    "allClear": [
+      "Tiszta terv. Gyanúsan tiszta.",
+      "A Tippek most hátradőlnek egy kávéra.",
+      "Nincs mit kifogásolni. Ritka pillanat, élvezd."
+    ],
+    "noHints": [
+      "Nincs tipp. Ez vagy nagyon jó, vagy nagyon üres.",
+      "A Tippek csendben figyelnek.",
+      "Semmi panasz. Egyelőre."
+    ],
+    "allDone": [
+      "Kész a terv. Most jön a nehéz rész: megcsinálni.",
+      "Minden pipa a helyén. Megérdemelsz egy szünetet.",
+      "Achievement unlocked: Végigolvasta az útmutatót."
+    ],
+    "loading": [
+      "Kockák dobása…",
+      "Szintek generálása…",
+      "Az NPC-k a helyükre állnak…",
+      "A térkép kihajtogatása…",
+      "Mentés betöltése… a jó slotról, reméljük."
+    ],
+    "aiThinking": [
+      "Gondolkodik… mint egy NPC, akinek nincs dialógusfája.",
+      "Az orákulum meditál…",
+      "Tokenek számolása az ujjain…",
+      "Az AI a jegyzeteit lapozza…"
+    ],
+    "saved": [
+      "Checkpoint elérve.",
+      "Minden mentve. A hubris még nem.",
+      "Mentve. Nyugodtan kihúzhatod a tápot. (Azért ne.)",
+      "Biztonságban. Mint egy save room."
+    ],
+    "dismiss": "Megjegyzés bezárása",
+    "stepDone": [
+      "+10 XP a tervezésre.",
+      "Pipa. Jólesik, ugye?",
+      "Egy lépéssel közelebb a gold masterhez."
+    ],
+    "phaseDone": [
+      "Fázis teljesítve! Achievement unlocked: Még mindig motivált.",
+      "Egy egész fázis kész. Ez megér egy kávét.",
+      "Fázis kipipálva. A hubris szintet lépett."
+    ],
+    "milestone": {
+      "npc1": [
+        "Megszületett az első lakos. Adj neki nevet, mielőtt Bob lesz.",
+        "Az első NPC! Remélhetőleg nem csak annyit mond, hogy „Üdv, utazó”."
+      ],
+      "npc10": [
+        "Tíz NPC. Valaki közülük biztosan kovács lesz.",
+        "Tíz lakos. A városnak már pletykái is vannak."
+      ],
+      "item1": [
+        "Az első tárgy. Minden legendás kard így kezdődik.",
+        "Első tárgy az inventoryban. Még bőven van hely."
+      ],
+      "item50": [
+        "Ötven tárgy. Az inventory-UI tervezője már sír.",
+        "Ötven tárgy! Ideje gondolni a súlykorlátra."
+      ],
+      "character1": [
+        "Megvan az első szereplő. A történetnek már van kiről szólnia."
+      ],
+      "quest1": [
+        "Első küldetés. Remélhetőleg nem patkányirtás.",
+        "Az első quest! A felkiáltójel már ott villog a feje fölött."
+      ],
+      "quest10": [
+        "Tíz küldetés. A napló kezd vastag lenni.",
+        "Tíz quest. Valahol már biztosan van egy kézbesítős is."
+      ]
+    },
+    "hint": {
+      "roadmapOverload": [
+        "Scope creep észlelve. A játék neve kötelez.",
+        "Több a munka, mint az ember. Klasszikus."
+      ],
+      "roadmapCutsShort": [
+        "A kivágások listája rövidebb, mint a kívánságlista. Mint mindig."
+      ],
+      "roadmapCycle": [
+        "A egy B-re vár, B egy A-ra. Szép kis pat.",
+        "Körkörös függőség: a tervezés uroboroszkígyója."
+      ],
+      "roadmapLate": [
+        "A határidő elszállt, a feladatok maradtak. Ismerős érzés."
+      ],
+      "milestonePast": [
+        "A határidők suhogó hangja, ahogy elsuhannak mellettünk."
+      ],
+      "oqOverdue": [
+        "Ezek a kérdések már türelmetlenül toporognak."
+      ],
+      "orphan": [
+        "Ezeket senki sem hívja meg. Kicsit szomorú.",
+        "Árva elemek. Fogadd örökbe, vagy engedd el őket."
+      ],
+      "graphIsolated": [
+        "Magányos csomópontok. Kössünk össze néhányat?"
+      ],
+      "kanban": [
+        "Ebben az oszlopban már tolakodnak.",
+        "Ez az oszlop már nem kanban, hanem kupac."
+      ],
+      "sparse": [
+        "Ezek még csak vázlatok. Kis hús kellene a csontokra."
+      ],
+      "storyQuestCycle": [
+        "Mindegyik a másikra vár. Mint egy nagyon udvarias sor az ajtóban."
+      ],
+      "storyUnreachable": [
+        "Ezekhez a küldetésekhez még a legelszántabb completionist sem jut el."
+      ],
+      "storyCastIdle": [
+        "Főszereplők, akik csak ácsorognak. Adj nekik valami dolgot."
+      ],
+      "itemsUnused": [
+        "Ezek a tárgyak csak porosodnak az inventory alján."
+      ],
+      "itemsNoSource": [
+        "Legendás tárgyak, szó szerint: csak a legendákban léteznek."
+      ],
+      "combatNoLoot": [
+        "Ezek az ellenfelek semmit sem dobnak. A játékosok csalódottan sóhajtanak."
+      ],
+      "combatImmune": [
+        "Mindenre immunisak? Ez már nem boss, hanem fal."
+      ],
+      "tradeArbitrage": [
+        "Végtelen pénzforrás! A speedrunnerek már jegyzetelnek."
+      ],
+      "tradeNoSinks": [
+        "Pénz be, pénz ki sehol. Az infláció már dörzsöli a kezét."
+      ],
+      "tradePiling": [
+        "Az arany halmokban áll. Sárkányoknak tetszene."
+      ],
+      "npcBalance": [
+        "A város éhes. Szó szerint."
+      ],
+      "difficultyReversal": [
+        "A nehezebb fokozat könnyebb? Merész design. Vagy elírás."
+      ],
+      "visionFirst": [
+        "Vízió nélkül a terv olyan, mint egy térkép tájolás nélkül."
+      ],
+      "visionNoPillars": [
+        "Pillérek nélkül a tetőt is nehéz lesz feltenni."
+      ]
+    },
+    "greeting": {
+      "night": [
+        "Éjféli tervezés? Az igazi game jam-szellem.",
+        "Hajnali órák, friss ötletek. Vagy csak fáradtak."
+      ],
+      "morning": [
+        "Jó reggelt! Kávé megvan? Akkor jöhet a terv.",
+        "Reggel van. A legjobb idő nagy döntésekre."
+      ],
+      "afternoon": [
+        "Délután, a produktivitás aranyórája. Állítólag.",
+        "Jó napot! Hol is tartottunk?"
+      ],
+      "fridayAfternoon": [
+        "Péntek délután. Csak semmi nagy refaktor.",
+        "Péntek délután van. A scope-ot ma ne bővítsük."
+      ],
+      "evening": [
+        "Jó estét! Még egy kis tervezés lefekvés előtt?",
+        "Este van. A legjobb ötletek mindig ilyenkor jönnek."
+      ],
+      "weekend": [
+        "Hétvégi tervezés. Ez már szenvedély.",
+        "Hétvége van, és itt vagy. Tiszteletünk."
+      ]
+    },
+    "welcomeBack": [
+      "Visszatértél! A projekt nem felejtett el. (Mi sem.)",
+      "Rég láttunk! A terv pont ott vár, ahol hagytad."
+    ],
+    "undoSpree": [
+      "Meggondoltad magad? Ez a tervezés lényege.",
+      "Visszavonás, visszavonás, visszavonás… Időutazó lettél?"
+    ],
+    "konami": [
+      "+30 élet. Sajnos csak a tervezésben.",
+      "Cheat code elfogadva. A tervezés ettől nem lett könnyebb."
+    ],
+    "brandClicks": [
+      "Igen, ez egy logó. Nagyon büszkék vagyunk rá.",
+      "Hét kattintás. A logó kicsit szédül."
+    ],
+    "loadingAprilFools": [
+      "MMO-backend inicializálása…",
+      "Nyitott világ renderelése (mind a 400 km²)…",
+      "Battle royale mód hozzáadása…",
+      "Élő szolgáltatás monetizálásának tervezése… vicc."
+    ]
   }
 }

@@ -130,7 +130,7 @@ export function CanvasEditor({ docId, sec }: { docId: string; sec: CSec }) {
           </div>
         </div>
         {item && (
-          <aside className="inspector">
+          <aside key={item.id} className="inspector">
             <div className="form">
               <div className="inspector-head">
                 <strong>Element</strong><span className="spacer" />

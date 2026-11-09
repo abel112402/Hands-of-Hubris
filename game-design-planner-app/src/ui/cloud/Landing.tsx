@@ -7,6 +7,7 @@ import { siteLinks } from '../../core/cloud/config'
 import { APP_VERSION } from '../../core/model/types'
 import { Icon, type IconName } from '../Icon'
 import { LanguageSwitch } from '../LanguageSwitch'
+import { AutoHeight, Segmented } from '../motion'
 import { SignInForm } from './SignInForm'
 import { WorkspaceIllustration } from './WorkspaceIllustration'
 
@@ -87,24 +88,27 @@ export function Landing() {
           ) : (
             <>
               <p className="eyebrow" id="landing-path-label">{t('cloud.landing.pathLabel')}</p>
-              <div className="segmented landing-paths" role="group" aria-labelledby="landing-path-label">
+              <Segmented className="landing-paths" role="group" aria-labelledby="landing-path-label">
                 <button aria-pressed={path === 'cloud'} onClick={() => setPath('cloud')}><Icon name="users" /> {t('cloud.landing.pathCloud')}</button>
                 <button aria-pressed={path === 'local'} onClick={() => setPath('local')}><Icon name="save" /> {t('cloud.landing.pathLocal')}</button>
-              </div>
+              </Segmented>
+              {/* The card's height follows the chosen path instead of jumping, and the content crossfades. */}
+              <AutoHeight>
               {path === 'cloud' ? (
-                <div className="landing-path">
+                <div key="cloud" className="landing-path">
                   <h2 id="landing-signin">{t('cloud.landing.signIn')}</h2>
                   <p className="muted">{t('cloud.landing.cloudBody')} {t('cloud.landing.signInHint')}</p>
                   <SignInForm next={next} />
                 </div>
               ) : (
-                <div className="landing-path">
+                <div key="local" className="landing-path">
                   <h2 id="landing-signin">{t('cloud.landing.localTitle')}</h2>
                   <p className="muted">{t('cloud.landing.useLocalHint')}</p>
                   <button className="primary landing-cta" onClick={goLocal}>{t('cloud.landing.useLocal')}</button>
                   <p className="muted small-print">{t('cloud.landing.localLater')}</p>
                 </div>
               )}
+              </AutoHeight>
             </>
           )}
         </section>

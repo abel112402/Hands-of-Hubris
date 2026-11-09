@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import { useRef, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { editorGroups, readProfile } from '../../core/genre'
@@ -8,12 +8,15 @@ import { useStore } from '../../core/store/store'
 import { PHASES, type PhaseId } from '../../core/walkthrough/types'
 import type { WalkthroughProgress } from '../../core/walkthrough/evaluate'
 import { Icon } from '../Icon'
+import { useCountUp, useJustChanged, useStuck } from '../hooks'
 import type { WalkthroughView } from './useWalkthrough'
 
 const R = 34
 const C = 2 * Math.PI * R
 
-function Ring({ percent, label, size = 88 }: { percent: number; label: string; size?: number }) {
+/** The arc and the number count up together; the label always carries the real value. */
+function Ring({ percent: target, label, size = 88 }: { percent: number; label: string; size?: number }) {
+  const percent = useCountUp(target)
   return (
     <svg className="progress-ring" viewBox="0 0 80 80" width={size} height={size} role="img" aria-label={label}>
       <circle cx="40" cy="40" r={R} className="ring-track" />
@@ -21,6 +24,14 @@ function Ring({ percent, label, size = 88 }: { percent: number; label: string; s
       <text x="40" y="46" textAnchor="middle" className="ring-text">{percent}%</text>
     </svg>
   )
+}
+
+const grew = (prev: number, next: number) => next > prev
+
+/** One phase in the strip's track; a light sweeps across it when its share grows. */
+function PhaseSegment({ phase, percent, className }: { phase: PhaseId; percent: number; className: string }) {
+  const sweep = useJustChanged(percent, 900, grew)
+  return <li data-phase={phase} className={className + (sweep ? ' sweep' : '')}><span style={{ width: `${percent}%` }} /></li>
 }
 
 function Bar({ percent }: { percent: number }) {
@@ -137,8 +148,10 @@ export function ProgressStrip({ view, open, onOpen, detailsRef }: { view: Walkth
   const { progress } = view
   const line = useProgressLine(progress)
   const phase = progress.next?.phase
+  const strip = useRef<HTMLElement>(null)
+  useStuck(strip)
   return (
-    <section className="progress-strip" aria-label={t('workspace.stripLabel')}>
+    <section ref={strip} className="progress-strip" aria-label={t('workspace.stripLabel')}>
       <Ring percent={progress.percent} label={t('workspace.overall', { percent: progress.percent })} size={40} />
       <div className="progress-strip-text">
         <strong>{phase ? t(`walkthrough.phases.${phase}`) : t('workspace.allDone')}</strong>
@@ -147,7 +160,7 @@ export function ProgressStrip({ view, open, onOpen, detailsRef }: { view: Walkth
       <ol className="phase-track" aria-hidden="true">
         {PHASES.map((p) => {
           const s = phaseSummary(progress, p)
-          return <li key={p} data-phase={p} className={`${s.state}${p === phase ? ' current' : ''}`}><span style={{ width: `${s.percent}%` }} /></li>
+          return <PhaseSegment key={p} phase={p} percent={s.percent} className={`${s.state}${p === phase ? ' current' : ''}`} />
         })}
       </ol>
       <button ref={detailsRef} className="small" aria-expanded={open} aria-controls="workspace-progress" onClick={onOpen}>{t('workspace.details')}</button>

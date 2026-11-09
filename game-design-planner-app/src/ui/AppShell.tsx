@@ -14,6 +14,28 @@ import { BrandMark } from './BrandMark'
 import { ModuleIcon } from './ModuleIcon'
 import { flushSave, hasUnsyncedChanges, leaveLocalMode, signOut, useCloud } from '../core/cloud/session'
 import { CloudBanners, CloudSaveStatus } from './cloud/CloudBanners'
+import { CountBadge, Tick } from './motion'
+import { useJustChanged } from './hooks'
+import { useFlavor } from './flavor/Flavor'
+import { FlavorToast, useMilestones } from './flavor/moments'
+import { useEasterEggs } from './flavor/easter'
+
+const becameClean = (wasDirty: boolean, dirty: boolean) => wasDirty && !dirty
+
+/** "Unsaved" ↔ "All changes saved". The text crossfades on change, and a tick draws in on save. */
+function SaveStatus({ dirty, fileName }: { dirty: boolean; fileName?: string }) {
+  const { t } = useTranslation()
+  const swapped = useJustChanged(dirty, 300)
+  const saved = useJustChanged(dirty, 900, becameClean)
+  // The visible label stays factual; the aside only lives in the tooltip.
+  const aside = useFlavor({ keys: 'flavor.saved', ctx: fileName })
+  const title = [fileName, dirty ? null : aside].filter(Boolean).join(' · ') || undefined
+  return (
+    <span className={'status' + (dirty ? ' dirty' : '') + (swapped ? ' swap' : '') + (saved ? ' just-saved' : '')} title={title}>
+      {!dirty && <Tick />}{dirty ? t('status.unsaved') : t('status.saved')}
+    </span>
+  )
+}
 
 function Palette({ onClose }: { onClose: () => void }) {
   const { i18n } = useTranslation()
@@ -47,6 +69,8 @@ export function AppShell() {
   const canUndo = useStore((s) => s.past.length > 0)
   const canRedo = useStore((s) => s.future.length > 0)
   const [palette, setPalette] = useState(false)
+  useMilestones()
+  useEasterEggs()
   const nav = useNavigate()
   const readOnly = useStore((s) => s.readOnly)
   const cloudEnabled = useCloud((s) => s.enabled)
@@ -63,9 +87,9 @@ export function AppShell() {
   const hintCount = useHints().total
   const navLinks = (
     <>
-      <NavLink to="/issues" className="nav-link">{t('nav.issues')}{issues > 0 && <span className="badge">{issues}</span>}</NavLink>
+      <NavLink to="/issues" className="nav-link">{t('nav.issues')}<CountBadge count={issues} /></NavLink>
       <NavLink to="/settings/hints" className="nav-link" title={t('hints.projectWide', { count: hintCount })} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`}>
-        {t('nav.hints')}{hintCount > 0 && <span className="badge" aria-hidden="true">{hintCount}</span>}
+        {t('nav.hints')}<CountBadge count={hintCount} hidden />
       </NavLink>
       {/* All project settings (genre, hints, AI, definitions, sharing, data) live on one page. */}
       <NavLink to="/settings" className="nav-link"><Icon name="settings" /> {t('nav.settings')}</NavLink>
@@ -110,7 +134,7 @@ export function AppShell() {
           <Link to="/" className="brand" title={t('nav.home')}><BrandMark /><span className="brand-name">{t('app.title')}</span></Link>
           <input className="title-input" aria-label={t('app.projectName')} value={project.meta.name} readOnly={readOnly}
             onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
-          {cloudActive ? <CloudSaveStatus /> : <span className={'status' + (dirty ? ' dirty' : '')} title={fileName}>{dirty ? t('status.unsaved') : t('status.saved')}</span>}
+          {cloudActive ? <CloudSaveStatus /> : <SaveStatus dirty={dirty} fileName={fileName} />}
         </div>
         <nav className="topnav" aria-label={t('nav.main')}>{navLinks}</nav>
         <div className="topbar-right">
@@ -162,6 +186,7 @@ export function AppShell() {
       <CloudBanners />
       <div className="shell-body"><Outlet /></div>
       {palette && <Palette onClose={() => setPalette(false)} />}
+      <FlavorToast />
     </div>
   )
 }
