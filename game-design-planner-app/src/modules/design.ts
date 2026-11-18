@@ -756,6 +756,7 @@ export const designModules = [
           f.multi('enemies', 'Enemies', section('enemies', 'design.combat'), { group: 'Inhabitants' }),
           f.enm('footprint', 'Building', ['Hut', 'House', 'Manor', 'Tower'], { group: 'Dwelling' }),
           f.num('dwellingRooms', 'Rooms', { min: 1, group: 'Dwelling' }),
+          f.enm('privacy', 'Privacy', ['Low', 'Normal', 'Strict'], { group: 'Dwelling', help: 'Normal: bedrooms and studies open onto shared rooms, never onto a kitchen or store. Strict: also not onto the room the front door opens into, unless that is an entrance hall. Low: only the door rules. Empty is Normal.' }),
           f.ref('owner', 'Owner', section('archetypes', 'design.npc'), { group: 'Dwelling' }),
           f.enm('furnishing', 'Furnishing', ['Sparse', 'Lived-in', 'Rich'], { group: 'Dwelling' }),
         ],

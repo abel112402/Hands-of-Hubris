@@ -1,4 +1,5 @@
 import type { Entity } from '../../model/types'
+import { arrange, DOOR, houseRect, outerSides, planDoors, PRIVACY, programme, scorePlan, type Privacy } from '../architecture'
 import { blob, dist } from '../geometry'
 import type { Rng } from '../rng'
 import type { GenContext, LayerDef, LocationMap, LocationTypeDef, MapObject, MapPoint as Pt, NewMapObject } from '../types'
@@ -34,7 +35,7 @@ const STORES = ['barrel', 'chest', 'barrel', 'shelf', 'barrel', 'chest']
 const SIZES: Record<string, [number, number]> = { bed: [36, 22], table: [32, 20], hearth: [28, 16], chest: [17, 12], barrel: [13, 13], shelf: [36, 9], rug: [46, 30], stool: [9, 9] }
 const AGAINST_WALL = new Set(['bed', 'hearth', 'shelf', 'chest', 'barrel'])
 const LEVEL: Record<string, number> = { Sparse: 2, 'Lived-in': 4, Rich: 7 }
-const DOOR = 24
+export const privacyOf = (location: Entity): Privacy => (PRIVACY.includes(location.privacy as Privacy) ? (location.privacy as Privacy) : 'Normal')
 
 const rectOf = (o: MapObject): Rect => ({ x: o.x - (o.w ?? 0) / 2, y: o.y - (o.h ?? 0) / 2, w: o.w ?? 0, h: o.h ?? 0 })
 const roomsOf = (map: LocationMap) => objects(map, 'rooms', 'room')
@@ -52,76 +53,46 @@ function rooms({ location, map, rand }: GenContext): NewMapObject[] {
   const f = footprintOf(location)
   const count = clamp(Math.round(Number(location.dwellingRooms)) || f.rooms, 1, 12)
   const [w, h] = f.house
-  const cut = splitRects({ x: Math.round((map.w - w) / 20) * 10, y: Math.round((map.h - h) / 20) * 10, w, h }, count, rand, 70)
-  // The largest room is the main one; the rest take their use from the footprint's list in order of size.
-  return cut
-    .sort((a, b) => b.w * b.h - a.w * a.h)
-    .map((r, i) => ({ kind: 'room', x: r.x + r.w / 2, y: r.y + r.h / 2, w: r.w, h: r.h, label: f.uses[i % f.uses.length], props: { floor: f.floor } }))
-}
-
-/** The stretch of wall two rooms share, when it is long enough for a door. */
-function sharedWall(a: Rect, b: Rect, spare: number): { at: Pt; rot: number } | null {
-  const overlap = (a0: number, a1: number, b0: number, b1: number) => [Math.max(a0, b0), Math.min(a1, b1)]
-  for (const [p, q] of [[a, b], [b, a]]) {
-    if (Math.abs(p.x + p.w - q.x) < 1) {
-      const [lo, hi] = overlap(p.y, p.y + p.h, q.y, q.y + q.h)
-      if (hi - lo >= DOOR + spare) return { at: [q.x, (lo + hi) / 2], rot: 90 }
-    }
-    if (Math.abs(p.y + p.h - q.y) < 1) {
-      const [lo, hi] = overlap(p.x, p.x + p.w, q.x, q.x + q.w)
-      if (hi - lo >= DOOR + spare) return { at: [(lo + hi) / 2, q.y], rot: 0 }
-    }
+  const privacy = privacyOf(location)
+  // Which room is what is a search under the house rules (architecture.ts): an entrance hall by the front door,
+  // bedrooms off the shared rooms, the pantry by the kitchen, large uses in large rooms. Some cuts of the footprint
+  // cannot keep every rule, so a few are tried and the best kept; the first that breaks none wins.
+  let best: { slots: ReturnType<typeof arrange>; score: number } | null = null
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const cut = splitRects({ x: Math.round((map.w - w) / 20) * 10, y: Math.round((map.h - h) / 20) * 10, w, h }, count, rand, 70)
+    const slots = arrange(cut, programme(f.uses, cut.length), privacy, rand)
+    const plan = planDoors(slots, privacy)
+    const score = scorePlan(slots, privacy)
+    if (!best || score > best.score) best = { slots, score }
+    if (!plan.forced && !plan.unreached.length) break
   }
-  return null
+  return best!.slots.map(({ rect: r, use }) => ({
+    kind: 'room',
+    x: r.x + r.w / 2,
+    y: r.y + r.h / 2,
+    w: r.w,
+    h: r.h,
+    label: use,
+    props: { floor: f.floor },
+  }))
 }
 
-/** The sides of a room that are outside walls of the building, as wall midpoints. */
-function outerSides(room: Rect, house: Rect): { at: Pt; rot: number; length: number; side: string }[] {
-  const out: { at: Pt; rot: number; length: number; side: string }[] = []
-  if (Math.abs(room.y + room.h - (house.y + house.h)) < 1) out.push({ at: [room.x + room.w / 2, room.y + room.h], rot: 0, length: room.w, side: 'south' })
-  if (Math.abs(room.x - house.x) < 1) out.push({ at: [room.x, room.y + room.h / 2], rot: 90, length: room.h, side: 'west' })
-  if (Math.abs(room.x + room.w - (house.x + house.w)) < 1) out.push({ at: [room.x + room.w, room.y + room.h / 2], rot: 90, length: room.h, side: 'east' })
-  if (Math.abs(room.y - house.y) < 1) out.push({ at: [room.x + room.w / 2, room.y], rot: 0, length: room.w, side: 'north' })
-  return out
-}
-
-function houseRect(list: Rect[]): Rect {
-  const x = Math.min(...list.map((r) => r.x))
-  const y = Math.min(...list.map((r) => r.y))
-  return { x, y, w: Math.max(...list.map((r) => r.x + r.w)) - x, h: Math.max(...list.map((r) => r.y + r.h)) - y }
-}
-
-function doors({ map, rand }: GenContext): NewMapObject[] {
-  const list = roomsOf(map).map(rectOf)
+function doors({ location, map, rand }: GenContext): NewMapObject[] {
+  const list = roomsOf(map)
   if (!list.length) return []
-  const out: NewMapObject[] = []
-  // Doors along a spanning tree of the rooms, so every room can be reached from the first. Roomy walls are
-  // tried first; a wall with barely space for a door is the fallback.
-  const reached = new Set([0])
-  for (const spare of [16, 2]) {
-    for (let grew = true; grew; ) {
-      grew = false
-      for (let i = 0; i < list.length; i++) {
-        if (reached.has(i)) continue
-        const from = [...reached].map((j) => sharedWall(list[j], list[i], spare)).find(Boolean)
-        if (!from) continue
-        out.push({ kind: 'door', x: from.at[0], y: from.at[1], w: DOOR, h: 8, rot: from.rot })
-        reached.add(i)
-        grew = true
-      }
-    }
-  }
-  const house = houseRect(list)
-  // The entrance goes into the main room, on its south wall when it has one.
-  const entry = [...outerSides(list[0], house), ...list.slice(1).flatMap((r) => outerSides(r, house))][0]
-  if (entry) out.push({ kind: 'door', x: entry.at[0], y: entry.at[1], w: DOOR + 4, h: 8, rot: entry.rot, props: { entrance: true } })
-  for (const room of list) {
+  // Doors from the rules, for the rooms as they are now (also after rooms were moved or renamed by hand).
+  const plan = planDoors(list.map((r) => ({ rect: rectOf(r), use: String(r.label ?? '') })), privacyOf(location))
+  const out: NewMapObject[] = plan.doors.map((d) =>
+    d.entrance ? { kind: 'door', x: d.at[0], y: d.at[1], w: DOOR + 4, h: 8, rot: d.rot, props: { entrance: true } } : { kind: 'door', x: d.at[0], y: d.at[1], w: DOOR, h: 8, rot: d.rot },
+  )
+  const house = houseRect(list.map(rectOf))
+  for (const room of list.map(rectOf)) {
     for (const side of outerSides(room, house)) {
       if (side.length < 70) continue
       const shift = rand.range(-0.2, 0.2) * side.length
       const p: Pt = [side.at[0] + (side.rot === 0 ? shift : 0), side.at[1] + (side.rot === 90 ? shift : 0)]
-      // Not where the entrance already is.
-      if (entry && dist(p, entry.at) < DOOR + 22) continue
+      // Not where a door already is.
+      if (plan.doors.some((d) => dist(p, d.at) < DOOR + 22)) continue
       out.push({ kind: 'window', x: p[0], y: p[1], w: 22, h: 6, rot: side.rot })
     }
   }

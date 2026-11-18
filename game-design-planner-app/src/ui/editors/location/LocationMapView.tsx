@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Entity } from '../../../core/model/types'
 import { makeId } from '../../../core/model/project'
+import { mapChecks, type MapCheck } from '../../../core/location/analysis'
 import { addObject, duplicateObject, findObject, setLayerLocked } from '../../../core/location/edit'
 import { generateMap, regenerateLayer, regenerateStale, setLayerHidden, staleLayers } from '../../../core/location/generate'
 import { kindInfo } from '../../../core/location/objects'
@@ -15,6 +16,26 @@ import { MapStage } from './MapStage'
 import { ObjectPanel } from './ObjectPanel'
 
 const nameOf = (e: Entity) => String(e.name ?? '') || '(unnamed)'
+
+/** What the map's own rules say is wrong (house rules, locks, rooms nothing leads into); a click selects the room or door. */
+function MapChecks({ checks, onPick }: { checks: MapCheck[]; onPick: (id: string) => void }) {
+  return (
+    <section className="loc-checks" aria-label="Checks">
+      <strong>Checks</strong>
+      {checks.length ? (
+        <ul>
+          {checks.map((c) => (
+            <li key={c.id}>
+              {c.objects.length ? <button className="link" onClick={() => onPick(c.objects[0])}>{c.text}</button> : <span>{c.text}</span>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">The layout keeps its rules: every room can be reached and every lock opened.</p>
+      )}
+    </section>
+  )
+}
 const newSeed = () => Math.floor(Math.random() * 0x7fffffff)
 const newObjectId = () => `m-${makeId()}`
 const supported = LOCATION_TYPES.map((t) => t.id).join(', ')
@@ -48,6 +69,7 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
     }, key)
   }
   const stale = map ? staleLayers(map) : []
+  const checks = map ? mapChecks(location, map) : []
   const object = map ? findObject(map, picked) : null
   const addable = (type?.layers ?? []).flatMap((l) => (map?.layers[l.id]?.locked ? [] : (l.addable ?? []).map((kind) => ({ value: `${l.id}/${kind}`, label: kindInfo(kind)?.label ?? kind }))))
   const add = () => {
@@ -136,6 +158,7 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
               </ul>
               <p className="muted">↻ rolls one layer again and keeps the rest. Layers drawn from it are marked out of date instead of being overwritten.</p>
             </aside>
+            {type.topology && <MapChecks checks={checks} onPick={setPicked} />}
             {object ? (
               <ObjectPanel
                 map={map}

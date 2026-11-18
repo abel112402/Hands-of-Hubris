@@ -3,7 +3,9 @@ import { staleLayers } from './generate'
 import { buildNav, reachable, type NavGrid } from './nav'
 import { getLocationType } from './registry'
 import { mapOf } from './schema'
-import { buildGraph, checkLocks, nodeAt, type KeyAt, type LockCheck, type MapGraph } from './topology'
+import { checkPlan } from './architecture'
+import { buildGraph, checkLocks, metrics, nodeAt, type KeyAt, type LockCheck, type MapGraph } from './topology'
+import { privacyOf } from './types/dwelling'
 import type { LocationMap, MapObject, MapPoint as Pt, NavSpec } from './types'
 
 /** Questions about the Locations section as a whole, for hints and the guide. Pure reads of the project. */
@@ -84,6 +86,33 @@ export function keysOnMap(map: LocationMap): KeyAt[] {
 export function lockCheck(map: LocationMap): LockCheck | null {
   const g = mapGraph(map)
   return g && checkLocks(g, keysOnMap(map))
+}
+
+/** One problem with a map, and the objects it is about (the first is the one to select). */
+export type MapCheck = { id: string; text: string; objects: string[] }
+
+/**
+ * What a map's own rules say is wrong with it as it stands, hand edits included: house rules for a dwelling
+ * (architecture.ts), locks whose key cannot be reached in time, and rooms no way leads into. Empty when all is well.
+ */
+export function mapChecks(location: Entity, map: LocationMap): MapCheck[] {
+  const graph = mapGraph(map)
+  if (!graph) return []
+  const unreachable = metrics(graph).unreachable
+  const name = (id: string) => String(Object.values(map.layers).flatMap((l) => l.objects).find((o) => o.id === id)?.label ?? 'a room')
+  if (map.type === 'Dwelling') {
+    const rooms = Object.values(map.layers).flatMap((l) => l.objects).filter((o) => o.kind === 'room')
+    return checkPlan(graph, rooms, privacyOf(location), unreachable).map((issue, i) => ({ id: `${issue.rule}-${i}`, text: issue.text, objects: issue.rooms }))
+  }
+  const out: MapCheck[] = unreachable.map((id) => ({ id: `unreachable-${id}`, text: `Nothing leads into ${name(id) === 'a room' ? 'a room' : `the ${name(id)}`}.`, objects: [id] }))
+  const locks = lockCheck(map)
+  if (locks) {
+    for (const lock of locks.stuck) {
+      const doors = graph.edges.filter((e) => e.lock === lock).flatMap((e) => e.via)
+      out.push({ id: `lock-${lock}`, text: `The ${lock} lock cannot be opened: its key is missing or lies behind it.`, objects: doors })
+    }
+  }
+  return out
 }
 
 /**

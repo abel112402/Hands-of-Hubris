@@ -1465,6 +1465,11 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .loc-layers li{display:flex;align-items:center;gap:var(--space-2);padding:2px 0;border-top:1px solid var(--line)}
 .loc-layers li label{display:flex;align-items:center;gap:var(--space-2);flex:1;min-width:0}
 .loc-layers li.off label span{text-decoration:line-through;color:var(--muted)}
+.loc-checks{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-3);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel)}
+.loc-checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--space-1)}
+.loc-checks li{border-left:3px solid var(--warn);padding-left:var(--space-2)}
+.loc-checks li button.link{text-align:left;padding:0;background:none;border:none;color:inherit;cursor:pointer;font:inherit}
+.loc-checks li button.link:hover{text-decoration:underline}
 .loc-stale{font-size:var(--fs-xs);color:var(--warn);border:1px dashed var(--warn);border-radius:var(--radius-pill);padding:0 6px;white-space:nowrap}
 .loc-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:var(--space-4)}
 .loc-card{display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-2);text-align:left}
