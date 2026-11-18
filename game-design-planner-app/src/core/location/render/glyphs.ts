@@ -1,6 +1,7 @@
 import { polyPath, smoothPath, wobble } from '../geometry'
 import { hash, makeRng } from '../rng'
 import type { MapObject, MapPoint as Pt } from '../types'
+import { emits } from '../light'
 import { localOutline, scanline, shapeOf } from '../rooms'
 import { roadRank } from '../types/shared'
 import { zoneOf } from '../zoning'
@@ -22,10 +23,18 @@ const local = (o: MapObject, children: SvgNode[]) => el('g', { transform: `trans
 const box = (w: number, h: number): Pt[] => [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]
 const ink = (t: MapTheme, d: string, sw = 1.3, extra: Record<string, string | number> = {}) =>
   el('path', { d, fill: 'none', stroke: t.ink, 'stroke-width': sw, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', ...extra })
-/** A soft drop shadow towards the lower right, whatever the object's rotation. */
+/** Where a shadow falls, as an offset of `reach`: away from the sun (`t.sun`), else towards the lower right. */
+function shadowOffset(t: MapTheme, reach: number): [number, number] {
+  if (t.sun === undefined) return [reach * 0.7, reach]
+  const a = (t.sun * Math.PI) / 180
+  // The sun at angle a (clockwise from north) lies towards (sin a, −cos a); the shadow points the other way.
+  return [-Math.sin(a) * reach * 1.25, Math.cos(a) * reach * 1.25]
+}
+
+/** A soft drop shadow away from the light, whatever the object's rotation. */
 function shadow(o: MapObject, t: MapTheme, d: string, reach = 4): SvgNode {
   const a = (-(o.rot ?? 0) * Math.PI) / 180
-  const [dx, dy] = [reach * 0.7, reach]
+  const [dx, dy] = shadowOffset(t, reach)
   return el('path', { d, fill: t.shadow, opacity: 0.28, transform: `translate(${(dx * Math.cos(a) - dy * Math.sin(a)).toFixed(1)} ${(dx * Math.sin(a) + dy * Math.cos(a)).toFixed(1)})` })
 }
 const line = (o: MapObject) => smoothPath(o.points ?? [], false)
@@ -181,7 +190,7 @@ export const GLYPHS: Record<string, Glyph> = {
       })
       const d = smoothPath(crown, true)
       return [
-        el('path', { d, fill: t.shadow, opacity: 0.25, transform: `translate(${(r * 0.3).toFixed(1)} ${(r * 0.45).toFixed(1)})` }),
+        el('path', { d, fill: t.shadow, opacity: 0.25, transform: `translate(${shadowOffset(t, r * 0.45).map((v) => v.toFixed(1)).join(' ')})` }),
         el('path', { d, fill: pick(t.trees, o.props?.tone) }),
         el('circle', { cx: o.x - r * 0.25, cy: o.y - r * 0.3, r: r * 0.42, fill: '#fff', opacity: 0.16 }),
         ink(t, d, 1),
@@ -248,6 +257,31 @@ export const GLYPHS: Record<string, Glyph> = {
   },
   // A cave chamber is gameplay data (the room graph), not drawn: the cavern outline already shows it.
   hollow: { draw: () => [] },
+  light: {
+    // A soft pool of light under everything of its layer, and a small icon for the source.
+    under: (o, t) => {
+      const e = emits(o)
+      const g = t.glow ?? 1
+      return e && g > 0 ? [el('circle', { cx: o.x, cy: o.y, r: e.radius * 0.45, fill: e.color, opacity: 0.16 * g }), el('circle', { cx: o.x, cy: o.y, r: e.radius * 0.22, fill: e.color, opacity: 0.18 * g })] : []
+    },
+    draw: (o, t) => {
+      const type = String(o.props?.type ?? 'torch')
+      const color = emits(o)?.color ?? t.gilt
+      const flame = el('path', { d: 'M0,-6 C3,-2 3.5,1 0,4 C-3.5,1 -3,-2 0,-6 Z', fill: color, stroke: t.ink, 'stroke-width': 0.8 })
+      const parts: Record<string, SvgNode[]> = {
+        torch: [el('rect', { x: -1.3, y: 1, width: 2.6, height: 6, fill: t.wood, stroke: t.ink, 'stroke-width': 0.6 }), flame],
+        brazier: [el('circle', { r: 6.5, fill: t.stone, stroke: t.ink, 'stroke-width': 1 }), el('g', { transform: 'translate(0 1) scale(0.9)' }, [flame])],
+        lamp: [el('circle', { r: 4.5, fill: color, stroke: t.ink, 'stroke-width': 1 }), el('circle', { r: 1.6, fill: '#fff', opacity: 0.7 })],
+        candle: [el('rect', { x: -1.5, y: 0, width: 3, height: 5, fill: t.linen, stroke: t.ink, 'stroke-width': 0.5 }), el('g', { transform: 'translate(0 -1) scale(0.55)' }, [flame])],
+        hearth: [flame],
+        campfire: [el('path', { d: 'M-6,4 L6,-1 M-6,-1 L6,4', stroke: t.wood, 'stroke-width': 2.2, 'stroke-linecap': 'round' }), el('g', { transform: 'translate(0 -1)' }, [flame])],
+        crystal: [el('path', { d: 'M0,-7 L4,0 L0,7 L-4,0 Z', fill: color, stroke: t.ink, 'stroke-width': 0.9 })],
+        // Daylight through a window: only its glow, the window itself is drawn on the wall.
+        window: [],
+      }
+      return [el('g', { transform: `translate(${o.x} ${o.y})` }, parts[type] ?? parts.torch)]
+    },
+  },
   key: {
     draw: (o, t) => {
       const fill = lockColor(t, typeof o.key === 'string' ? o.key : String(o.props?.color ?? ''))
@@ -301,13 +335,19 @@ export const GLYPHS: Record<string, Glyph> = {
     draw: (o, t) => [el('circle', { cx: o.x + 1.5, cy: o.y + 2, r: 6, fill: t.shadow, opacity: 0.28 }), el('circle', { cx: o.x, cy: o.y, r: 6, fill: t.stone, stroke: t.ink, 'stroke-width': 1.3 })],
   },
   marker: {
+    // Foes are dark with a cross, the boss red with a crown; residents green with a head, merchants gold with a coin.
     draw: (o, t) => {
-      const boss = o.props?.type === 'boss'
+      const type = String(o.props?.type ?? 'enemy')
+      const boss = type === 'boss'
       const r = boss ? 12 : 8.5
-      const mark = boss
-        ? el('path', { d: `M-7,4L-7,-4L-3.5,0L0,-6L3.5,0L7,-4L7,4Z`, fill: t.bannerText, stroke: t.ink, 'stroke-width': 0.7 })
-        : el('path', { d: 'M-4,-4L4,4M4,-4L-4,4', stroke: t.bannerText, 'stroke-width': 1.8, 'stroke-linecap': 'round', fill: 'none' })
-      return [el('g', { transform: `translate(${o.x} ${o.y})` }, [el('circle', { cx: 1.5, cy: 2, r, fill: t.shadow, opacity: 0.3 }), el('circle', { r, fill: boss ? t.banner : t.foe, stroke: t.ink, 'stroke-width': 1.5 }), mark])]
+      const marks: Record<string, [string, SvgNode]> = {
+        boss: [t.banner, el('path', { d: `M-7,4L-7,-4L-3.5,0L0,-6L3.5,0L7,-4L7,4Z`, fill: t.bannerText, stroke: t.ink, 'stroke-width': 0.7 })],
+        enemy: [t.foe, el('path', { d: 'M-4,-4L4,4M4,-4L-4,4', stroke: t.bannerText, 'stroke-width': 1.8, 'stroke-linecap': 'round', fill: 'none' })],
+        npc: [t.friend, el('path', { d: 'M0,-5 a2.4,2.4 0 1 1 0.01,0 Z M-4.2,5 C-4,0.5 4,0.5 4.2,5 Z', fill: t.bannerText })],
+        merchant: [t.gilt, el('g', {}, [el('circle', { r: 4.4, fill: t.bannerText, stroke: t.ink, 'stroke-width': 0.7 }), el('path', { d: 'M0,-2.6 V2.6', stroke: t.ink, 'stroke-width': 1.1 })])],
+      }
+      const [fill, mark] = marks[type] ?? marks.enemy
+      return [el('g', { transform: `translate(${o.x} ${o.y})` }, [el('circle', { cx: 1.5, cy: 2, r, fill: t.shadow, opacity: 0.3 }), el('circle', { r, fill, stroke: t.ink, 'stroke-width': 1.5 }), mark])]
     },
   },
   stalagmite: {

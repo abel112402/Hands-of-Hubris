@@ -1,6 +1,7 @@
 import type { Entity } from '../../model/types'
 import { crossings, dist, pointAlong, polylineLength, toDeg } from '../geometry'
 import { MinHeap } from '../heap'
+import { lightOf } from '../light'
 import { LOCK_NAMES, planMission } from '../mission'
 import type { Rng } from '../rng'
 import { inRoom, roomAnchor, roomOutline, shapeOf, type RoomShape } from '../rooms'
@@ -88,6 +89,8 @@ function rooms({ location, map, rand }: GenContext): NewMapObject[] {
     const { shape, cut } = shapeFor(role, o.w ?? 0, o.h ?? 0, rand)
     return {
       ...o,
+      // A secret room is for the game master's map only.
+      ...(role === 'secret' ? { secret: true as const } : {}),
       props: {
         role,
         node: node(i),
@@ -279,6 +282,7 @@ function corridors({ location, map, rand }: GenContext): NewMapObject[] {
       y: corner[1],
       points,
       ctrl: points,
+      ...(l.secret ? { secret: true as const } : {}),
       props: {
         width: CORRIDOR,
         ...(nodeOf(l.a) ? { from: nodeOf(l.a)! } : {}),
@@ -317,7 +321,7 @@ function doors({ map, rand }: GenContext): NewMapObject[] {
         for (let i = k; i >= 0 && i < steps.length; i += inside ? -1 : 1) if (steps[i] && steps[i] !== room) { other = steps[i]; break }
         const lock = other && regionOf(room) > regionOf(other) ? LOCK_NAMES[regionOf(room) - 1] : undefined
         const style = roleOf(room) === 'secret' ? 'secret' : roleOf(room) === 'boss' ? 'gate' : lock ? 'door' : rand.chance(0.3) ? 'open' : 'door'
-        found.push({ kind: 'door', x: c.p[0], y: c.p[1], w: CORRIDOR + 2, h: 8, rot: toDeg(c.angle) + 90, props: { style }, ...(lock ? { lock } : {}) })
+        found.push({ kind: 'door', x: c.p[0], y: c.p[1], w: CORRIDOR + 2, h: 8, rot: toDeg(c.angle) + 90, props: { style }, ...(lock ? { lock } : {}), ...(style === 'secret' ? { secret: true as const } : {}) })
       }
     }
   }
@@ -383,7 +387,8 @@ function features({ location, map, rand }: GenContext): NewMapObject[] {
       if (!room || !rand.chance(0.3)) continue
       const towards = Math.atan2(room.y - d.y, room.x - d.x)
       const p: Pt = [d.x + Math.cos(towards) * 18, d.y + Math.sin(towards) * 18]
-      if (inRoom(room, p, -4) && !touches(p, 10, out)) out.push({ kind: 'trap', x: p[0], y: p[1], w: 14, h: 14 })
+      // Traps are hidden from the players.
+      if (inRoom(room, p, -4) && !touches(p, 10, out)) out.push({ kind: 'trap', x: p[0], y: p[1], w: 14, h: 14, secret: true })
     }
   }
   return out
@@ -407,7 +412,7 @@ function contents({ project, location, map, rand }: GenContext): NewMapObject[] 
     } else if (role === 'treasure' || role === 'secret') {
       const p = spot(room, 12)
       const item = loot.length ? loot[nextLoot++ % loot.length] : undefined
-      if (p) out.push({ kind: 'furniture', x: p[0], y: p[1], w: 20, h: 14, rot: 0, props: { type: 'chest' }, ...(item ? { label: item.name, refId: item.id } : {}) })
+      if (p) out.push({ kind: 'furniture', x: p[0], y: p[1], w: 20, h: 14, rot: 0, props: { type: 'chest' }, ...(item ? { label: item.name, refId: item.id } : {}), ...(role === 'secret' ? { secret: true as const } : {}) })
     } else if (role === 'room' && enemies.length && rand.chance(0.7)) {
       const foe = rand.pick(enemies)
       const p = spot(room, 12)
@@ -440,13 +445,41 @@ function contents({ project, location, map, rand }: GenContext): NewMapObject[] 
   return out
 }
 
+/**
+ * Torches just inside most doors and at some corridor bends, braziers either side of the boss; secret rooms stay
+ * dark. Each light keeps clear of the others, so rooms far from any door are left in shadow.
+ */
+function lights({ map, rand }: GenContext): NewMapObject[] {
+  const out: NewMapObject[] = []
+  const free = (p: Pt) => !out.some((o) => dist(pos(o), p) < 46)
+  for (const d of objects(map, 'doors', 'door')) {
+    const room = chambers(map).find((r) => inRoom(r, pos(d), 8))
+    if (!room || room.secret || !rand.chance(0.7)) continue
+    const a = Math.atan2(room.y - d.y, room.x - d.x)
+    const p: Pt = [d.x + Math.cos(a) * 16, d.y + Math.sin(a) * 16]
+    if (inRoom(room, p, -4) && free(p)) out.push(lightOf('torch', p[0], p[1]))
+  }
+  for (const run of objects(map, 'corridors', 'corridor')) {
+    if (run.secret) continue
+    for (const bend of (run.points ?? []).slice(1, -1)) if (rand.chance(0.4) && free(bend) && !chambers(map).some((r) => inRoom(r, bend, 6))) out.push(lightOf('torch', bend[0], bend[1]))
+  }
+  const boss = chambers(map).find((r) => roleOf(r) === 'boss')
+  if (boss) {
+    for (const side of [-1, 1]) {
+      const p: Pt = [boss.x + side * (boss.w ?? 0) * 0.3, boss.y]
+      if (inRoom(boss, p, -8)) out.push(lightOf('brazier', p[0], p[1]))
+    }
+  }
+  return out
+}
+
 const ROLE_LABEL: Record<string, string> = { entrance: 'Entrance', treasure: 'Treasury', secret: 'Secret room' }
 
 function labels({ map }: GenContext): NewMapObject[] {
   const out: NewMapObject[] = []
   for (const room of chambers(map)) {
     const text = ROLE_LABEL[roleOf(room)]
-    if (text) out.push({ kind: 'label', x: room.x, y: room.y - (room.h ?? 0) / 2 + 18, label: text })
+    if (text) out.push({ kind: 'label', x: room.x, y: room.y - (room.h ?? 0) / 2 + 18, label: text, ...(room.secret ? { secret: true as const } : {}) })
   }
   for (const o of objects(map, 'contents')) if (o.label) out.push({ kind: 'label', x: o.x, y: o.y + (o.h ?? 16) / 2 + 14, label: o.label, ...(o.props?.type === 'boss' ? { props: { size: 'large' } } : {}) })
   return out
@@ -459,6 +492,7 @@ const LAYERS: LayerDef[] = [
   { id: 'doors', label: 'Doors', dependsOn: ['rooms', 'corridors'], generate: doors, addable: ['door'] },
   { id: 'features', label: 'Stairs, pillars, traps', dependsOn: ['rooms', 'doors'], generate: features, addable: ['stairs', 'pillar', 'trap'] },
   { id: 'contents', label: 'Boss, enemies, loot, keys', dependsOn: ['rooms', 'corridors', 'doors', 'features'], generate: contents, addable: ['marker', 'furniture', 'key'] },
+  { id: 'lights', label: 'Lights', dependsOn: ['rooms', 'corridors', 'doors'], generate: lights, addable: ['light'] },
   { id: 'labels', label: 'Labels', dependsOn: ['rooms', 'contents'], generate: labels, addable: ['label'] },
 ]
 

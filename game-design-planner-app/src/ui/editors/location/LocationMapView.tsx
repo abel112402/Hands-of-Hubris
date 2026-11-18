@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { Entity } from '../../../core/model/types'
 import { makeId } from '../../../core/model/project'
-import { mapChecks, type MapCheck } from '../../../core/location/analysis'
+import { mapChecks, mapLight, mapNav, type MapCheck } from '../../../core/location/analysis'
+import { lightOverlay, navOverlay } from '../../../core/location/render/overlays'
 import { addObject, duplicateObject, findObject, setLayerLocked } from '../../../core/location/edit'
 import { generateMap, regenerateLayer, regenerateStale, setLayerHidden, staleLayers } from '../../../core/location/generate'
 import { kindInfo } from '../../../core/location/objects'
@@ -16,6 +17,17 @@ import { MapStage } from './MapStage'
 import { ObjectPanel } from './ObjectPanel'
 
 const nameOf = (e: Entity) => String(e.name ?? '') || '(unnamed)'
+type Overlay = 'none' | 'nav' | 'light'
+/** Where the sun can stand, as degrees clockwise from north. */
+const SUN: [string, number][] = [['North', 0], ['North-east', 45], ['East', 90], ['South-east', 135], ['South', 180], ['South-west', 225], ['West', 270], ['North-west', 315]]
+/** The map with some of its lighting settings changed; a setting set to undefined is removed. */
+function withEnv(map: LocationMap, change: Partial<NonNullable<LocationMap['env']>>): LocationMap {
+  const env: NonNullable<LocationMap['env']> = { ...map.env, ...change }
+  for (const k of Object.keys(env) as (keyof typeof env)[]) if (env[k] === undefined) delete env[k]
+  const next: LocationMap = { ...map, env }
+  if (!Object.keys(env).length) delete next.env
+  return next
+}
 
 /** What the map's own rules say is wrong (house rules, locks, rooms nothing leads into); a click selects the room or door. */
 function MapChecks({ checks, onPick }: { checks: MapCheck[]; onPick: (id: string) => void }) {
@@ -51,6 +63,8 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
   const [picked, setPicked] = useState<string | null>(null)
   const [pickedFor, setPickedFor] = useState(location?.id)
   const [adding, setAdding] = useState('')
+  const [overlay, setOverlay] = useState<Overlay>('none')
+  const [player, setPlayer] = useState(false)
   // A selection belongs to one location: switching locations starts with nothing selected.
   if (location && pickedFor !== location.id) {
     setPickedFor(location.id)
@@ -70,6 +84,7 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
   }
   const stale = map ? staleLayers(map) : []
   const checks = map ? mapChecks(location, map) : []
+  const overlayNode = !map || overlay === 'none' ? null : overlay === 'nav' ? navOverlay(mapNav(map)) : lightOverlay(mapLight(map), mapNav(map))
   const object = map ? findObject(map, picked) : null
   const addable = (type?.layers ?? []).flatMap((l) => (map?.layers[l.id]?.locked ? [] : (l.addable ?? []).map((kind) => ({ value: `${l.id}/${kind}`, label: kindInfo(kind)?.label ?? kind }))))
   const add = () => {
@@ -110,6 +125,7 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
               />
             </label>
             <button className="small ghost" onClick={() => { const svg = locationSvg(project, location); if (svg) downloadText(`${nameOf(location)}.svg`, svg, 'image/svg+xml') }}>Export SVG</button>
+            <button className="small ghost" title="Without secrets, creatures, traps and keys" onClick={() => { const svg = locationSvg(project, location, { player: true }); if (svg) downloadText(`${nameOf(location)} (player).svg`, svg, 'image/svg+xml') }}>Export player SVG</button>
           </>
         )}
         {type && <button className="primary" data-guide="generate-map" onClick={() => { commit(generateMap(project, location, newSeed(), map)); setPicked(null) }}>{map ? 'New map' : 'Generate map'}</button>}
@@ -128,8 +144,41 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
       )}
 
       {type && map && (
+        <div className="loc-bar loc-view" aria-label="View">
+          <label className="loc-pick">
+            <span className="muted">Show</span>
+            <select aria-label="Overlay" value={overlay} onChange={(e) => setOverlay(e.target.value as Overlay)}>
+              <option value="none">Map only</option>
+              <option value="nav">Walkable ground</option>
+              <option value="light">Light and shadow</option>
+            </select>
+          </label>
+          <label className="loc-pick">
+            <input type="checkbox" checked={player} onChange={(e) => setPlayer(e.target.checked)} />
+            <span>Player view</span>
+          </label>
+          <span className="spacer" />
+          <label className="loc-pick">
+            <span className="muted">Time</span>
+            <select aria-label="Time of day" value={map.env?.time ?? 'day'} onChange={(e) => commit(withEnv(map, { time: e.target.value as 'day' | 'dusk' | 'night' }))}>
+              <option value="day">Day</option>
+              <option value="dusk">Dusk</option>
+              <option value="night">Night</option>
+            </select>
+          </label>
+          <label className="loc-pick">
+            <span className="muted">Sun from</span>
+            <select aria-label="Sun direction" value={map.env?.sun ?? ''} onChange={(e) => commit(withEnv(map, { sun: e.target.value === '' ? undefined : Number(e.target.value) }))}>
+              <option value="">Default</option>
+              {SUN.map(([label, deg]) => <option key={deg} value={deg}>{label}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {type && map && (
         <div className="loc-body">
-          <MapStage project={project} location={location} map={map} selected={object ? picked : null} onSelect={setPicked} commit={commit} onDuplicate={duplicate} />
+          <MapStage project={project} location={location} map={map} selected={object ? picked : null} onSelect={setPicked} commit={commit} onDuplicate={duplicate} overlay={overlayNode} player={player} />
           <div className="loc-side">
             <aside className="loc-layers" aria-label="Layers">
               <div className="row">
@@ -158,7 +207,7 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
               </ul>
               <p className="muted">↻ rolls one layer again and keeps the rest. Layers drawn from it are marked out of date instead of being overwritten.</p>
             </aside>
-            {type.topology && <MapChecks checks={checks} onPick={setPicked} />}
+            <MapChecks checks={checks} onPick={setPicked} />
             {object ? (
               <ObjectPanel
                 map={map}

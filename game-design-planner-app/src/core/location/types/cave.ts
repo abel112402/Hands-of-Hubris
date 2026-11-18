@@ -1,5 +1,7 @@
 import type { Entity } from '../../model/types'
 import { blob, dist, distToPolyline, inPolygon, toDeg } from '../geometry'
+import { MinHeap } from '../heap'
+import { lightOf } from '../light'
 import { fractal, simplex2 } from '../noise'
 import { fieldOf, gridOf } from '../raster'
 import type { Rng } from '../rng'
@@ -373,6 +375,73 @@ function openSpots(s: Scene, map: LocationMap, rand: Rng, count: number, min: nu
   return out
 }
 
+/**
+ * The shortest walk along the floor from one point to another (eight directions), as cell centres, preferring cells
+ * away from the walls so a river runs down the middle of a passage. Straight from a to b when no walk exists.
+ */
+export function floorWalk(g: Grid, a: Pt, b: Pt): Pt[] {
+  const cellOf = (p: Pt) => clamp(Math.floor(p[1] / g.cell), 0, g.rows - 1) * g.cols + clamp(Math.floor(p[0] / g.cell), 0, g.cols - 1)
+  const centre = (i: number): Pt => [((i % g.cols) + 0.5) * g.cell, (Math.floor(i / g.cols) + 0.5) * g.cell]
+  const [start, goal] = [cellOf(a), cellOf(b)]
+  if (!g.floor[start] || !g.floor[goal]) return [a, b]
+  const n = g.floor.length
+  const cost = new Float64Array(n).fill(Infinity)
+  const came = new Int32Array(n).fill(-1)
+  const open = new MinHeap()
+  cost[start] = 0
+  open.push(start, 0)
+  while (open.size) {
+    const [c, i] = open.pop()
+    if (i === goal) break
+    if (c > cost[i]) continue
+    const [x, y] = [i % g.cols, Math.floor(i / g.cols)]
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if ((!dx && !dy) || !at(g, x + dx, y + dy)) continue
+        const j = (y + dy) * g.cols + x + dx
+        // Next to a wall costs more, so the walk keeps to the middle.
+        const step = Math.hypot(dx, dy) * (1 + wallsAround(g, x + dx, y + dy) * 0.6)
+        if (cost[i] + step < cost[j]) {
+          cost[j] = cost[i] + step
+          came[j] = i
+          open.push(j, cost[j])
+        }
+      }
+    }
+  }
+  if (came[goal] < 0) return [a, b]
+  const cells: number[] = []
+  for (let i = goal; i >= 0; i = came[i]) cells.push(i)
+  return cells.reverse().map(centre)
+}
+
+/** Glowing crystals near the walls, and a campfire beside about half of the creatures. */
+function lights({ map, rand }: GenContext): NewMapObject[] {
+  const s = sceneOf(map)
+  if (!s) return []
+  const out: NewMapObject[] = []
+  for (const m of objects(map, 'contents', 'marker')) {
+    if (!rand.chance(0.5)) continue
+    for (let tries = 0; tries < 12; tries++) {
+      const a = rand.range(0, Math.PI * 2)
+      const p: Pt = [m.x + Math.cos(a) * 24, m.y + Math.sin(a) * 24]
+      if (clearance(s, p) > 12) {
+        out.push(lightOf('campfire', p[0], p[1]))
+        break
+      }
+    }
+  }
+  const crystals = rand.int(3, 6)
+  for (let tries = 0, made = 0; tries < crystals * 40 && made < crystals; tries++) {
+    const p: Pt = [rand.range(0, map.w), rand.range(0, map.h)]
+    const room = clearance(s, p)
+    if (room < 6 || room > 18 || out.some((o) => dist(pos(o), p) < 120)) continue
+    out.push(lightOf('crystal', p[0], p[1]))
+    made++
+  }
+  return out
+}
+
 function rock({ map }: GenContext): NewMapObject[] {
   return [{ kind: 'rock', x: map.w / 2, y: map.h / 2, w: map.w, h: map.h }]
 }
@@ -454,10 +523,15 @@ function water({ location, map, rand }: GenContext): NewMapObject[] {
     })
   }
   if (location.caveWater === 'Underground river') {
-    // Through the roomiest parts of the cave, left to right.
+    // Through the roomiest parts of the cave, left to right, following the floor between them.
     const stops = openSpots(s, map, rand, 4, 26, 160).map((c) => c.p).sort((a, b) => a[0] - b[0])
-    if (stops.length < 2) return []
-    return [{ kind: 'river', x: stops[0][0], y: stops[0][1], ...path(rand, stops, 0), props: { width: 16 } }]
+    const g = floorOf(map)
+    if (stops.length < 2 || !g) return []
+    const course = stops.slice(1).flatMap((to, i) => floorWalk(g, stops[i], to).slice(i ? 1 : 0))
+    // Every few cells is enough for a smooth curve; the walk itself keeps it on the floor.
+    const ctrl = course.filter((_, i) => i % 4 === 0 || i === course.length - 1)
+    if (ctrl.length < 2) return []
+    return [{ kind: 'river', x: ctrl[0][0], y: ctrl[0][1], ...path(rand, ctrl, 0), props: { width: 16 } }]
   }
   return []
 }
@@ -527,6 +601,7 @@ const LAYERS: LayerDef[] = [
   { id: 'water', label: 'Water', dependsOn: ['cavern'], generate: water },
   { id: 'features', label: 'Stalagmites and ore', dependsOn: ['cavern', 'water'], generate: features, addable: ['stalagmite', 'ore'] },
   { id: 'contents', label: 'Enemies', dependsOn: ['cavern', 'chambers', 'water', 'features'], generate: contents, addable: ['marker'] },
+  { id: 'lights', label: 'Lights', dependsOn: ['cavern', 'contents'], generate: lights, addable: ['light'] },
   { id: 'labels', label: 'Labels', dependsOn: ['entrances', 'features', 'contents'], generate: labels, addable: ['label'] },
 ]
 

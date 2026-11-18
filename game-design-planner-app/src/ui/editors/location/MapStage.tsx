@@ -4,6 +4,7 @@ import { ctrlMoved, findObject, moved, putObject, removeObject, resizedTo, rotat
 import { polyPath } from '../../../core/location/geometry'
 import { kindInfo, selectable } from '../../../core/location/objects'
 import { CARD, cardSize } from '../../../core/location/render/frame'
+import type { SvgNode } from '../../../core/location/render/node'
 import { renderMap } from '../../../core/location/render/svg'
 import type { LocationMap, MapObject, MapPoint as Pt } from '../../../core/location/types'
 import { SvgNodeView } from './SvgNodeView'
@@ -47,7 +48,7 @@ function Selection({ object }: { object: MapObject }) {
  * The map with direct manipulation: click to select, drag to move, drag a handle to resize, rotate or bend.
  * Every change goes out through `commit`; one gesture is one undo step.
  */
-export function MapStage({ project, location, map, selected, onSelect, commit, onDuplicate }: {
+export function MapStage({ project, location, map, selected, onSelect, commit, onDuplicate, overlay, player }: {
   project: Project
   location: Entity
   map: LocationMap
@@ -55,6 +56,10 @@ export function MapStage({ project, location, map, selected, onSelect, commit, o
   onSelect: (id: string | null) => void
   commit: (next: LocationMap, key?: string) => void
   onDuplicate: (id: string) => void
+  /** Drawn over the map in map units (walkability, light). */
+  overlay?: SvgNode | null
+  /** Show the players' version of the map. */
+  player?: boolean
 }) {
   const box = useRef<HTMLDivElement>(null)
   const [gesture, setGesture] = useState<Gesture | null>(null)
@@ -134,9 +139,18 @@ export function MapStage({ project, location, map, selected, onSelect, commit, o
   return (
     <div ref={box} className={'loc-stage' + (gesture ? ' dragging' : '')} tabIndex={0} aria-label="Map" onPointerDown={onPointerDown} onKeyDown={onKeyDown}>
       <SvgNodeView
-        node={renderMap(project, location, map).node}
+        node={renderMap(project, location, map, { player }).node}
         className="loc-svg"
-        extra={picked ? <g key="selection" transform={`translate(${CARD.side} ${CARD.top})`} data-testid="loc-selection"><Selection object={picked.object} /></g> : undefined}
+        extra={
+          <>
+            {overlay && (
+              <g key="overlay" transform={`translate(${CARD.side} ${CARD.top})`} data-testid="loc-overlay">
+                <SvgNodeView node={overlay} />
+              </g>
+            )}
+            {picked && <g key="selection" transform={`translate(${CARD.side} ${CARD.top})`} data-testid="loc-selection"><Selection object={picked.object} /></g>}
+          </>
+        }
       />
     </div>
   )

@@ -1,6 +1,7 @@
 import type { Entity } from '../../model/types'
 import { arrange, DOOR, houseRect, outerSides, planDoors, PRIVACY, programme, scorePlan, type Privacy } from '../architecture'
 import { blob, dist } from '../geometry'
+import { lightOf } from '../light'
 import type { Rng } from '../rng'
 import type { GenContext, LayerDef, LocationMap, LocationTypeDef, MapObject, MapPoint as Pt, NewMapObject } from '../types'
 import { biomeTint, clamp, objects, outlineOf, path, pos, refsOf, splitRects, touches, type Rect } from './shared'
@@ -160,6 +161,51 @@ function furniture({ location, map, rand }: GenContext): NewMapObject[] {
   return out.sort((a, b) => Number(b.props?.type === 'rug') - Number(a.props?.type === 'rug'))
 }
 
+const STORE_ROOMS = new Set(['Storage', 'Store', 'Pantry'])
+
+/**
+ * Light inside the house: each hearth glows, a living room without one gets a candle, and every window lets in
+ * daylight (which fades at dusk and is gone at night).
+ */
+function lights({ map }: GenContext): NewMapObject[] {
+  const out: NewMapObject[] = []
+  const furniture = objects(map, 'furniture', 'furniture')
+  const hearths = furniture.filter((f) => f.props?.type === 'hearth')
+  for (const h of hearths) out.push(lightOf('hearth', h.x, h.y))
+  for (const room of roomsOf(map)) {
+    if (STORE_ROOMS.has(String(room.label)) || hearths.some((h) => Math.abs(h.x - room.x) < (room.w ?? 0) / 2 && Math.abs(h.y - room.y) < (room.h ?? 0) / 2)) continue
+    const table = furniture.find((f) => f.props?.type === 'table' && Math.abs(f.x - room.x) < (room.w ?? 0) / 2 && Math.abs(f.y - room.y) < (room.h ?? 0) / 2)
+    out.push(lightOf('candle', table?.x ?? room.x, table?.y ?? room.y))
+  }
+  const list = roomsOf(map).map(rectOf)
+  if (list.length) {
+    const house = houseRect(list)
+    const [cx, cy] = [house.x + house.w / 2, house.y + house.h / 2]
+    for (const w of objects(map, 'doors', 'window')) {
+      // Just inside the window, towards the middle of the house.
+      const p: Pt = w.rot === 90 ? [w.x + Math.sign(cx - w.x) * 10, w.y] : [w.x, w.y + Math.sign(cy - w.y) * 10]
+      out.push(lightOf('window', p[0], p[1]))
+    }
+  }
+  return out
+}
+
+/** The owner, at home in the main shared room. */
+function people({ project, location, map, rand }: GenContext): NewMapObject[] {
+  const owner = refsOf(project, location.owner, 'design.npc', 'archetypes')[0]
+  if (!owner) return []
+  const shared = roomsOf(map).filter((r) => ['Main room', 'Great hall', 'Living room', 'Hall'].includes(String(r.label)))
+  const room = [...shared, ...roomsOf(map)].sort((a, b) => (b.w ?? 0) * (b.h ?? 0) - (a.w ?? 0) * (a.h ?? 0))[0]
+  if (!room) return []
+  const solid = objects(map, 'furniture').filter((f) => f.props?.type !== 'rug')
+  const r = rectOf(room)
+  for (let tries = 0; tries < 40; tries++) {
+    const p: Pt = [rand.range(r.x + 20, r.x + r.w - 20), rand.range(r.y + 20, r.y + r.h - 20)]
+    if (!touches(p, 12, solid)) return [{ kind: 'marker', x: p[0], y: p[1], w: 18, h: 18, label: owner.name, refId: owner.id, props: { type: 'npc' }, spawn: { role: 'npc', refId: owner.id } }]
+  }
+  return []
+}
+
 function labels({ project, location, map }: GenContext): NewMapObject[] {
   const owner = refsOf(project, location.owner, 'design.npc', 'archetypes')[0]
   const out: NewMapObject[] = roomsOf(map)
@@ -175,6 +221,8 @@ const LAYERS: LayerDef[] = [
   { id: 'rooms', label: 'Walls and rooms', dependsOn: [], generate: rooms, addable: ['room'] },
   { id: 'doors', label: 'Doors and windows', dependsOn: ['rooms'], generate: doors, addable: ['door', 'window'] },
   { id: 'furniture', label: 'Furniture', dependsOn: ['rooms', 'doors'], generate: furniture, addable: ['furniture'] },
+  { id: 'people', label: 'People', dependsOn: ['rooms', 'furniture'], generate: people, addable: ['marker'] },
+  { id: 'lights', label: 'Lights', dependsOn: ['rooms', 'doors', 'furniture'], generate: lights, addable: ['light'] },
   { id: 'labels', label: 'Labels', dependsOn: ['rooms'], generate: labels, addable: ['label'] },
 ]
 

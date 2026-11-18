@@ -148,7 +148,8 @@ describe('editing by hand', () => {
     const got = findObject(next, house.id)!
     expect(got.layerId).toBe('buildings')
     expect([got.object.x, got.object.y, got.object.pinned]).toEqual([house.x + 12, house.y - 7, true])
-    expect(staleLayers(next)).toEqual(['vegetation'])
+    // Trees, people and street lamps are placed around the houses.
+    expect(staleLayers(next).sort()).toEqual(['lights', 'people', 'vegetation'])
     expect(findObject(map, house.id)!.object.pinned).toBeUndefined()
     expect(regenerateLayer(project, location, next, 'buildings').layers.buildings.objects).toContainEqual(got.object)
   })

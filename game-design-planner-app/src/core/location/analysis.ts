@@ -1,6 +1,8 @@
 import type { Entity, Project } from '../model/types'
 import { staleLayers } from './generate'
+import { lightGrid, type LightGrid } from './light'
 import { buildNav, reachable, type NavGrid } from './nav'
+import { inRoom } from './rooms'
 import { getLocationType } from './registry'
 import { mapOf } from './schema'
 import { checkPlan } from './architecture'
@@ -52,6 +54,14 @@ export function mapNav(map: LocationMap): NavGrid {
   return g
 }
 
+const lightCache = new WeakMap<LocationMap, LightGrid>()
+/** Light over the map's walkability grid (light.ts). Cached per map object. */
+export function mapLight(map: LocationMap): LightGrid {
+  let g = lightCache.get(map)
+  if (!g) lightCache.set(map, (g = lightGrid(map, mapNav(map))))
+  return g
+}
+
 /** The map's room graph; null for types that are not made of rooms. */
 export function mapGraph(map: LocationMap): MapGraph | null {
   if (!graphCache.has(map)) {
@@ -96,15 +106,28 @@ export type MapCheck = { id: string; text: string; objects: string[] }
  * (architecture.ts), locks whose key cannot be reached in time, and rooms no way leads into. Empty when all is well.
  */
 export function mapChecks(location: Entity, map: LocationMap): MapCheck[] {
+  const all = Object.values(map.layers).flatMap((l) => l.objects)
+  // Creatures, people and keys one cannot walk to (locks open, secrets known), on every kind of map.
+  const stranded: MapCheck[] = unreachableObjects(map, ['marker', 'key']).map((o) => ({
+    id: `reach-${o.id}`,
+    text: `${o.label ?? (o.kind === 'key' ? 'A key' : 'A creature')} cannot be reached from the entrance.`,
+    objects: [o.id],
+  }))
   const graph = mapGraph(map)
-  if (!graph) return []
+  if (!graph) return stranded
   const unreachable = metrics(graph).unreachable
-  const name = (id: string) => String(Object.values(map.layers).flatMap((l) => l.objects).find((o) => o.id === id)?.label ?? 'a room')
+  const name = (id: string) => String(all.find((o) => o.id === id)?.label ?? 'a room')
   if (map.type === 'Dwelling') {
-    const rooms = Object.values(map.layers).flatMap((l) => l.objects).filter((o) => o.kind === 'room')
-    return checkPlan(graph, rooms, privacyOf(location), unreachable).map((issue, i) => ({ id: `${issue.rule}-${i}`, text: issue.text, objects: issue.rooms }))
+    const rooms = all.filter((o) => o.kind === 'room')
+    return [...checkPlan(graph, rooms, privacyOf(location), unreachable).map((issue, i) => ({ id: `${issue.rule}-${i}`, text: issue.text, objects: issue.rooms })), ...stranded]
   }
   const out: MapCheck[] = unreachable.map((id) => ({ id: `unreachable-${id}`, text: `Nothing leads into ${name(id) === 'a room' ? 'a room' : `the ${name(id)}`}.`, objects: [id] }))
+  out.push(...stranded)
+  // The boss waits in the boss room.
+  const bossRoom = all.find((o) => o.kind === 'chamber' && o.props?.role === 'boss')
+  for (const boss of all.filter((o) => o.kind === 'marker' && o.props?.type === 'boss')) {
+    if (bossRoom && !inRoom(bossRoom, [boss.x, boss.y])) out.push({ id: `boss-${boss.id}`, text: `${boss.label ?? 'The boss'} is not in the boss room.`, objects: [boss.id, bossRoom.id] })
+  }
   const locks = lockCheck(map)
   if (locks) {
     for (const lock of locks.stuck) {

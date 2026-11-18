@@ -754,6 +754,8 @@ export const designModules = [
           f.num('entrances', 'Entrances', { min: 1, group: 'Cave' }),
           f.multi('resources', 'Resources', catalog('resources'), { group: 'Cave' }),
           f.multi('enemies', 'Enemies', section('enemies', 'design.combat'), { group: 'Inhabitants' }),
+          f.multi('residents', 'Residents', section('archetypes', 'design.npc'), { group: 'People', help: 'NPC archetypes placed by the landmarks and houses, as spawn points.' }),
+          f.multi('merchants', 'Merchants', section('merchants', 'design.trade'), { group: 'People', help: 'Placed at market stalls, else along the trade route.' }),
           f.enm('footprint', 'Building', ['Hut', 'House', 'Manor', 'Tower'], { group: 'Dwelling' }),
           f.num('dwellingRooms', 'Rooms', { min: 1, group: 'Dwelling' }),
           f.enm('privacy', 'Privacy', ['Low', 'Normal', 'Strict'], { group: 'Dwelling', help: 'Normal: bedrooms and studies open onto shared rooms, never onto a kitchen or store. Strict: also not onto the room the front door opens into, unless that is an entrance hall. Low: only the door rules. Empty is Normal.' }),
@@ -766,8 +768,8 @@ export const designModules = [
           // Only the inputs of the chosen type apply; the others fold away.
           groupFilter: {
             field: 'type',
-            static: { City: ['settlement'], Village: ['settlement'], Dungeon: ['dungeon', 'hostile'], Cave: ['cave', 'hostile'], Dwelling: ['dwelling'] },
-            groups: { Settlement: 'settlement', Dungeon: 'dungeon', Cave: 'cave', Inhabitants: 'hostile', Dwelling: 'dwelling' },
+            static: { City: ['settlement', 'people'], Village: ['settlement', 'people'], Dungeon: ['dungeon', 'hostile'], Cave: ['cave', 'hostile'], Dwelling: ['dwelling'] },
+            groups: { Settlement: 'settlement', Dungeon: 'dungeon', Cave: 'cave', Inhabitants: 'hostile', People: 'people', Dwelling: 'dwelling' },
           },
         },
       ),

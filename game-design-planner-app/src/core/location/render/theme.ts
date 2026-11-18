@@ -29,6 +29,12 @@ export type MapTheme = {
   linen: string
   ores: string[]
   foe: string
+  /** Residents and other friendly people. */
+  friend: string
+  /** Direction sunlight comes from, degrees clockwise from north; shadows fall away from it. Default: from the upper left. */
+  sun?: number
+  /** How strongly lamps and torches glow, 0–1: faint in daylight, full in the dark. Default 1. */
+  glow?: number
   /** Wash over each kind of district. */
   zones: Record<ZoneKind, string>
   /** Stripes of a market stall's awning. */
@@ -66,6 +72,7 @@ export const PARCHMENT: MapTheme = {
   linen: '#efe8d6',
   ores: ['#6fa3b8', '#c9a13a', '#9a6fb0'],
   foe: '#4a3b2c',
+  friend: '#4f7a45',
   zones: { residential: '#c9b07a', market: '#d9a441', industrial: '#8a7a6a', military: '#9c4a3a', sacred: '#6f7fa8' },
   awning: ['#b5533c', '#f3e6c4'],
   locks: { red: '#b3362a', blue: '#3d68a8', green: '#4f8a3c', gold: '#d1a52b' },

@@ -1,5 +1,6 @@
 import type { Entity } from '../../model/types'
 import { blob, crossings, dist, distToPolyline, inPolygon, pointAlong, polylineLength, radiusOf, toDeg } from '../geometry'
+import { lightOf } from '../light'
 import type { GenContext, LayerDef, LocationMap, LocationTypeDef, MapObject, MapPoint as Pt, NewMapObject, RoadRank, ZoneKind } from '../types'
 import { area, assignZones, centroid, clipToBox, convexHull, districtAt, districtsOf, neighbours, relax, voronoi, ZONE_LABEL, zoneCounts, zoneOf, type Ward, type ZoneShares } from '../zoning'
 import { between, biomeTint, clamp, objects, outlineOf, path, pos, refsOf, roadRank, sizeKey, touches, widthOf } from './shared'
@@ -475,6 +476,84 @@ function layersOf(plan: Plan): LayerDef[] {
     return out
   }
 
+  /** Lamps along the trade routes and round the square (fewer in a village), braziers either side of each gate. */
+  function lights({ map }: GenContext): NewMapObject[] {
+    const s = sceneOf(map)
+    const out: NewMapObject[] = []
+    const free = (p: Pt) => inBounds(s, p, 10) && !wet(s, p, 4) && !out.some((o) => dist(pos(o), p) < 60)
+    const solid = [...objects(map, 'buildings'), ...objects(map, 'landmarks')]
+    const spacing = plan.streets ? 120 : 190
+    for (const road of s.roads.filter((r) => r.rank === 'main')) {
+      const len = polylineLength(road.pts)
+      for (let d = spacing / 2, side = 1; d < len; d += spacing, side = -side) {
+        const at = pointAlong(road.pts, d)
+        const off = road.width / 2 + 6
+        const p: Pt = [at.p[0] - Math.sin(at.angle) * off * side, at.p[1] + Math.cos(at.angle) * off * side]
+        if (free(p) && withinWall(s, p, 6) && !touches(p, 6, solid)) out.push(lightOf('lamp', p[0], p[1]))
+      }
+    }
+    if (s.plaza) {
+      const r = (s.plaza.w ?? 60) / 2 - 6
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2 + Math.PI / 4
+        out.push(lightOf('lamp', s.centre[0] + Math.cos(a) * r, s.centre[1] + Math.sin(a) * r))
+      }
+    }
+    for (const g of objects(map, 'walls', 'gate')) {
+      for (const side of [-1, 1]) {
+        const a = ((g.rot ?? 0) * Math.PI) / 180 + Math.PI / 2
+        const reach = (g.h ?? 18) / 2 + 12
+        out.push(lightOf('brazier', g.x + Math.cos(a) * reach * side, g.y + Math.sin(a) * reach * side))
+      }
+    }
+    return out
+  }
+
+  /**
+   * People as spawn points: merchants at the market stalls (else on the trade route in the market), residents by
+   * the landmarks and in front of houses spread over the town.
+   */
+  function people({ project, location, map, rand }: GenContext): NewMapObject[] {
+    const s = sceneOf(map)
+    const merchants = refsOf(project, location.merchants, 'design.trade', 'merchants')
+    const residents = refsOf(project, location.residents, 'design.npc', 'archetypes')
+    if (!merchants.length && !residents.length) return []
+    const out: NewMapObject[] = []
+    const solid = [...objects(map, 'buildings'), ...objects(map, 'landmarks')]
+    /** A walkable spot beside a building, on its road side when it can. */
+    const beside = (o: MapObject): Pt | null => {
+      for (let tries = 0; tries < 16; tries++) {
+        const a = rand.range(0, Math.PI * 2)
+        const reach = Math.max(o.w ?? 20, o.h ?? 20) / 2 + 12
+        const p: Pt = [o.x + Math.cos(a) * reach, o.y + Math.sin(a) * reach]
+        if (inBounds(s, p, EDGE) && !wet(s, p, 4) && !touches(p, 9, solid) && !touches(p, 9, out)) return p
+      }
+      return null
+    }
+    const stalls = objects(map, 'buildings', 'house').filter((h) => h.props?.use === 'stall')
+    const market = districtsOf(map).filter((d) => zoneOf(d) === 'market')
+    const roadside = s.roads.filter((r) => r.rank === 'main').flatMap((r) => {
+      const len = polylineLength(r.pts)
+      return Array.from({ length: Math.floor(len / 30) }, (_, i) => {
+        const at = pointAlong(r.pts, i * 30 + 15)
+        return [at.p[0] - Math.sin(at.angle) * (r.width / 2 + 8), at.p[1] + Math.cos(at.angle) * (r.width / 2 + 8)] as Pt
+      })
+    }).filter((p) => !market.length || market.some((d) => inPolygon(p, d.points!)))
+    merchants.forEach((m, i) => {
+      const p = stalls[i] ? beside(stalls[i]) : roadside.length ? rand.pick(roadside) : null
+      if (p) out.push({ kind: 'marker', x: p[0], y: p[1], w: 18, h: 18, label: m.name, refId: m.id, props: { type: 'merchant' }, spawn: { role: 'merchant', refId: m.id } })
+    })
+    const homes = [...objects(map, 'landmarks', 'landmark'), ...objects(map, 'buildings', 'house').filter((h) => h.props?.use !== 'stall')]
+    const per = clamp(Math.round(homes.length / 12), 1, 4)
+    for (const r of residents) {
+      for (let k = 0; k < per && homes.length; k++) {
+        const p = beside(k === 0 && objects(map, 'landmarks', 'landmark').length ? rand.pick(objects(map, 'landmarks', 'landmark')) : rand.pick(homes))
+        if (p) out.push({ kind: 'marker', x: p[0], y: p[1], w: 18, h: 18, label: r.name, refId: r.id, props: { type: 'npc' }, spawn: { role: 'npc', refId: r.id } })
+      }
+    }
+    return out
+  }
+
   // Drawing order. Districts are drawn under the roads but made from them; alleys come off the streets.
   return [
     { id: 'ground', label: 'Ground', dependsOn: [], generate: ground },
@@ -487,6 +566,8 @@ function layersOf(plan: Plan): LayerDef[] {
     { id: 'fields', label: 'Fields', dependsOn: ['water', 'roads', 'alleys', 'walls', 'landmarks'], generate: fields, addable: ['field'] },
     { id: 'buildings', label: 'Houses', dependsOn: ['water', 'roads', 'alleys', 'walls', 'districts', 'landmarks', 'fields'], generate: buildings, addable: ['house'] },
     { id: 'vegetation', label: 'Trees', dependsOn: ['water', 'roads', 'alleys', 'walls', 'landmarks', 'fields', 'buildings'], generate: vegetation, addable: ['tree'] },
+    { id: 'people', label: 'People', dependsOn: ['roads', 'alleys', 'districts', 'landmarks', 'buildings'], generate: people, addable: ['marker'] },
+    { id: 'lights', label: 'Lights', dependsOn: ['roads', 'walls', 'landmarks', 'buildings'], generate: lights, addable: ['light'] },
     { id: 'labels', label: 'Labels', dependsOn: ['roads', 'districts', 'landmarks'], generate: labels, addable: ['label'] },
   ]
 }
