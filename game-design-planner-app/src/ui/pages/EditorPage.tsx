@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getModule, getSections } from '../../core/modules/registry'
 import { exportAssets, exportPath, moduleToMarkdown } from '../../core/export/markdown'
 import { useStore } from '../../core/store/store'
 import { HintPanel } from '../hints/HintPanel'
+import { MascotCompanion } from '../mascots/MascotCompanion'
+import { MASCOTS_ENABLED } from '../../core/mascots/config'
 import { HelpPopup } from '../HelpPopup'
 import { SectionRenderer } from '../editors/SectionRenderer'
 import { MarkdownPreview } from '../editors/simple'
@@ -89,6 +91,19 @@ export function EditorPage() {
   const project = useStore((s) => s.project)
   const mod = getModule(docId)
   const [help, setHelp] = useState(false)
+  // Narrow screens (<768px): the section list is a drawer opened from the toolbar.
+  const [sectionsOpen, setSectionsState] = useState(false)
+  const sectionsBtn = useRef<HTMLButtonElement>(null)
+  const setSectionsOpen = (open: boolean) => {
+    setSectionsState(open)
+    // Opening focuses the current section; closing returns focus to the button that opened it.
+    requestAnimationFrame(() =>
+      (open
+        ? document.querySelector<HTMLElement>('#editor-sections button.active') ?? document.querySelector<HTMLElement>('#editor-sections a')
+        : sectionsBtn.current && getComputedStyle(sectionsBtn.current).display !== 'none' ? sectionsBtn.current : null
+      )?.focus(),
+    )
+  }
   useEffect(() => {
     if (mod) useStore.getState().ensureDoc(docId)
   }, [docId, mod])
@@ -104,16 +119,33 @@ export function EditorPage() {
   }
 
   return (
-    <div className="editor-page">
+    <div className={'editor-page' + (sectionsOpen ? ' sections-open' : '')}>
       <SideRail />
-      <nav className="sidebar">
+      <nav className="sidebar" id="editor-sections" aria-label={t('editor.sections')} onKeyDown={(e) => e.key === 'Escape' && sectionsOpen && setSectionsOpen(false)}>
         <Link to="/" className="muted">← {t('nav.home')}</Link>
         <h3 className="sidebar-title"><ModuleIcon id={mod.id} /> {mod.title}</h3>
         {sections.map((s) => (
-          <button key={s.id} className={s.id === sec?.id ? 'active' : ''} onClick={() => setParam('s', s.id)}>{s.title}</button>
+          <button
+            key={s.id}
+            className={s.id === sec?.id ? 'active' : ''}
+            aria-current={s.id === sec?.id ? 'true' : undefined}
+            onClick={() => {
+              setParam('s', s.id)
+              if (sectionsOpen) setSectionsOpen(false)
+            }}
+          >
+            {s.title}
+          </button>
         ))}
       </nav>
+      {sectionsOpen && <div className="sections-backdrop" aria-hidden="true" onClick={() => setSectionsOpen(false)} />}
       <main className="content">
+        {/* Narrow screens: the section list is a drawer; this button shows where you are and opens it. */}
+        <button ref={sectionsBtn} className="sections-drawer-btn" aria-expanded={sectionsOpen} aria-controls="editor-sections" onClick={() => setSectionsOpen(!sectionsOpen)}>
+          <ModuleIcon id={mod.id} />
+          <span className="sections-drawer-label"><span className="muted">{mod.title} ›</span> {sec?.title ?? t('editor.sections')}</span>
+          <Icon name="chevronDown" />
+        </button>
         <div className="toolbar">
           <Segmented role="group" aria-label={t('editor.viewLabel')}>
             <button aria-pressed={!preview} onClick={() => setParam('v', null)}>{t('editor.visual')}</button>
@@ -146,6 +178,7 @@ export function EditorPage() {
             <SectionRenderer docId={docId} sec={sec} />
           </div>
         ) : null}
+        {MASCOTS_ENABLED && <MascotCompanion docId={docId} />}
       </main>
       <HintPanel docId={docId} sectionId={sec?.id} />
       {guide && <Spotlight docId={docId} guide={guide} sectionId={sec?.id} />}

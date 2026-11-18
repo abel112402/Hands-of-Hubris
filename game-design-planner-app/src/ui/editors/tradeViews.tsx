@@ -313,10 +313,10 @@ export function MoneyFlowView() {
             <Tooltip formatter={(v) => fmt(Number(v))} />
             <Legend />
             <ReferenceLine y={0} stroke="var(--muted)" />
-            <Bar dataKey="sources" name="Money in" stackId="f" fill="#53c28b" />
-            <Bar dataKey="sinks" name="Money out" stackId="f" fill="#e5707e" />
-            <Line dataKey="net" name="Net" stroke="#f2c94c" dot={false} />
-            <Line dataKey="wallet" name="Wallet" stroke="#4f9cf9" dot={false} />
+            <Bar dataKey="sources" name="Money in" stackId="f" fill="var(--c-green)" />
+            <Bar dataKey="sinks" name="Money out" stackId="f" fill="var(--c-red)" />
+            <Line dataKey="net" name="Net" stroke="var(--c-yellow)" dot={false} />
+            <Line dataKey="wallet" name="Wallet" stroke="var(--c-blue)" dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

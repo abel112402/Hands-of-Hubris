@@ -1,3 +1,4 @@
+import { Flavor } from '../flavor/Flavor'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { defaultHintPrefs, type DeclarativeHintRule, type HintCondition, type HintSeverity, type HintThresholds } from '../../core/model/types'
@@ -82,6 +83,7 @@ export function HintsPage() {
   return (
     <div className="page">
       <h1>{t('hints.settings.title')}</h1>
+      <Flavor keys="flavor.hintsSettings" costume="zombie" />
       <label className="row">
         <input type="checkbox" checked={prefs.enabled} onChange={(e) => set((h) => void (h.enabled = e.target.checked))} />
         {t('hints.settings.enabled')}

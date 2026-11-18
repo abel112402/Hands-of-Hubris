@@ -15,6 +15,9 @@ import {
   WORLD_DOC,
   worldList,
 } from '../../core/world'
+import { hasHandEdits, locationsOf, unmappedLocations } from '../../core/location/analysis'
+import { generateMap } from '../../core/location/generate'
+import { getLocationType } from '../../core/location/registry'
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const filled = (v: unknown) => typeof v === 'string' && v.trim() !== ''
@@ -124,6 +127,32 @@ const CORRIDOR: BiomeSpec[] = [
 const biomes = biomeList
 const nonStarters = (p: Project) => biomes(p).filter((b) => b.role !== 'Starter')
 
+/**
+ * Adds one location with its inputs and a map generated from them with a fixed seed, so the preview and the
+ * inserted result are the same map. Skipped when a location of that name exists.
+ */
+function addLocation(p: Project, seed: number, input: (p: Project) => Record<string, unknown> & { name: string }) {
+  const list = ensure(p, WORLD_DOC, 'locations')
+  const fields = input(p)
+  if (list.some((l) => String(l.name ?? '').toLowerCase() === fields.name.toLowerCase())) return
+  const location: Entity = { id: makeId(), ...fields }
+  const map = generateMap(p, location, seed)
+  list.push(map ? { ...location, map } : location)
+}
+/** Ids of Town buildings with these names, for landmark fields; buildings that are not there are skipped. */
+const townBuildings = (p: Project, names: string[]): string[] => {
+  const all: Entity[] = p.documents['design.town']?.data.buildings ?? []
+  return names.flatMap((n) => all.filter((b) => b.name === n).map((b) => b.id)).slice(0, names.length)
+}
+const locationExample = (id: string, title: string, description: string, seed: number, input: (p: Project) => Record<string, unknown> & { name: string }): GuideExample => ({
+  id,
+  section: 'locations',
+  title,
+  description: `${description} Adds one location with its map; one undo removes it.`,
+  preview: 'locationMap',
+  apply: (p) => addLocation(p, seed, input),
+})
+
 export const WORLD_GUIDE: ModuleGuide = {
   map: {
     width: 800,
@@ -139,6 +168,7 @@ export const WORLD_GUIDE: ModuleGuide = {
       { id: 'map', label: 'Map sketch', section: 'map', x: 430, y: 102 },
       { id: 'outposts', label: 'Outposts', section: 'outposts', x: 430, y: 190 },
       { id: 'town', label: 'Town', doc: 'design.town', x: 640, y: 190 },
+      { id: 'locations', label: 'Locations', section: 'locations', x: 640, y: 102 },
     ],
     edges: [
       { from: 'combat', to: 'biomes', label: 'enemies, boss gates' },
@@ -150,6 +180,7 @@ export const WORLD_GUIDE: ModuleGuide = {
       { from: 'biomes', to: 'map', label: 'zones' },
       { from: 'biomes', to: 'outposts', label: 'garrisons' },
       { from: 'outposts', to: 'town', label: 'founds' },
+      { from: 'town', to: 'locations', label: 'landmarks' },
     ],
   },
   steps: [
@@ -242,11 +273,64 @@ export const WORLD_GUIDE: ModuleGuide = {
       target: 'add',
       done: (p) => worldList(p, 'outposts').some((o) => o.biome && (o.rewardRefs?.length || filled(o.reward))),
     },
+    {
+      id: 'locations',
+      title: 'Add the places the player visits',
+      body: 'One entry per city, village, dungeon, cave or dwelling. Pick the type first: it decides which inputs apply. An example is a quick start.',
+      section: 'locations',
+      target: 'add',
+      done: (p) => locationsOf(p).some((l) => getLocationType(l.type)),
+      action: { label: 'Insert example location…', examples: 'locations' },
+    },
+    {
+      id: 'maps',
+      title: 'Generate a map for each location',
+      body: 'Open Map and press Generate map. Change the inputs or the seed and generate again until the place fits; ↻ rerolls a single layer.',
+      section: 'locations',
+      target: 'view-locationMap',
+      done: (p) => locationsOf(p).some((l) => getLocationType(l.type)) && unmappedLocations(p).length === 0,
+    },
+    {
+      id: 'handEdit',
+      title: 'Adjust a map by hand',
+      body: 'Click something on the map and drag it, or add an object. What you touch is pinned: it stays when its layer is regenerated.',
+      section: 'locations',
+      target: 'view-locationMap',
+      done: (p) => locationsOf(p).some(hasHandEdits),
+    },
   ],
   examples: [
     worldExample('tiered', 'Six-biome tiered world', 'Starter meadow, two Early biomes (one boss-gated, one faction-gated), a Mid swamp, a Late peak and the Final spire, each opened by the guardian of the previous one.', TIERED),
     worldExample('hub', 'Hub and spokes', 'A central town with four regions around it: two faction-gated, then a chain of boss gates outward.', HUB),
     worldExample('corridor', 'Linear corridor', 'Four biomes in a row, each opened by the boss of the one before. Easy to pace, little freedom.', CORRIDOR),
+    locationExample('riverVillage', 'Walled river village', 'A palisaded village on a river, with the Tavern and School from the Town planner as landmarks when they exist.', 1207, (p) => ({
+      name: 'Oakham',
+      type: 'Village',
+      size: 'Medium',
+      walls: 'Palisade',
+      water: 'River',
+      population: 140,
+      landmarks: townBuildings(p, ['Tavern', 'School']),
+      description: 'A farming village at a river crossing.',
+    })),
+    locationExample('crypt', 'Crypt with a boss room', 'Ten rooms and two secret ones, with traps at the doors. The boss waits in the room farthest from the entrance.', 4410, () => ({
+      name: 'The Old Crypt',
+      type: 'Dungeon',
+      size: 'Medium',
+      rooms: 10,
+      secretRooms: 2,
+      traps: true,
+      layoutStyle: 'Rooms and corridors',
+      description: 'Burial halls under a ruined chapel.',
+    })),
+    locationExample('cottage', 'Furnished cottage', 'A four-room house with doors, windows and furniture for each room.', 77, () => ({
+      name: 'Miller’s cottage',
+      type: 'Dwelling',
+      footprint: 'House',
+      dwellingRooms: 4,
+      furnishing: 'Lived-in',
+      description: 'A family home by the mill.',
+    })),
   ],
   concepts: {
     biomes: {
@@ -259,9 +343,15 @@ export const WORLD_GUIDE: ModuleGuide = {
       body: 'The Map sketch holds the shapes: one zone per biome plus capitals, outposts and landmarks. The Biomes › Atlas tab draws the same layout with data layers on top (borders, unlock arrows, threat or coverage colours).',
       diagram: 'atlasLayers',
     },
+    locations: {
+      title: 'How a location map is built',
+      body: 'A map is generated in layers, each drawn from the inputs and from the layers it reads: houses follow roads, trees avoid houses. Rerolling one layer keeps the others and marks the layers that read it as out of date, so nothing is overwritten behind your back. Anything you move, change or add is pinned and survives regeneration. Maps are planning sketches, not level data.',
+      diagram: 'mapLayers',
+    },
   },
   empty: {
     biomes: 'Biomes are the world’s areas: what lives there, how the player gets in and what it opens next.',
     outposts: 'Outposts are bases the player can capture in a biome, with defenders, a capture method and a reward.',
+    locations: 'Locations are the places the player visits: cities, villages, dungeons, caves and dwellings, each with inputs and a generated map you can edit.',
   },
 }

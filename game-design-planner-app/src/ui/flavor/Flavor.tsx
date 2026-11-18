@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { useTranslation } from 'react-i18next'
 import type { i18n as I18n } from 'i18next'
+import type { CostumeId } from '../../core/mascots/cast'
+import { HubiSays, type Pose } from '../mascots/Mascot'
 import { asLines, daySeed, DEFAULT_FLAVOR_LEVEL, flavorAllowed, isFlavorLevel, pickLine, type FlavorLevel } from '../../core/flavor/pick'
 
 const STORAGE_KEY = 'hohplan:flavor'
@@ -56,8 +58,13 @@ export function resolveFlavor(i18n: I18n, level: FlavorLevel, { keys, ctx = '', 
   return null
 }
 
-/** A quiet aside under the factual text. Decorative: the factual text next to it stays the primary message. */
-export function Flavor({ as: Tag = 'p', ...opts }: FlavorOpts & { as?: 'p' | 'span' }) {
+/**
+ * A quiet aside under the factual text. Decorative: the factual text next to it stays the primary message.
+ * With `costume`, Hubi says it in a speech bubble (block spots only; inline `span` asides stay text).
+ */
+export function Flavor({ as: Tag = 'p', costume, pose, ...opts }: FlavorOpts & { as?: 'p' | 'span'; costume?: CostumeId; pose?: Pose }) {
   const line = useFlavor(opts)
-  return line ? <Tag className="flavor">{line}</Tag> : null
+  if (!line) return null
+  if (costume && Tag === 'p') return <HubiSays costume={costume} pose={pose}>{line}</HubiSays>
+  return <Tag className="flavor">{line}</Tag>
 }

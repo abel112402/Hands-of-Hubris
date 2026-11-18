@@ -17,7 +17,7 @@ import {
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
-const TYPE_COLOR: Record<string, string> = { Main: '#f2c94c', Faction: '#4f9cf9', 'Tavern random': '#53c28b', Event: '#d86be0' }
+const TYPE_COLOR: Record<string, string> = { Main: 'var(--c-yellow)', Faction: 'var(--c-blue)', 'Tavern random': 'var(--c-green)', Event: 'var(--c-pink)' }
 const fmt = (n: number) => (Math.abs(n) >= 100 ? Math.round(n).toString() : (Math.round(n * 100) / 100).toString())
 const nameOf = (e?: Entity) => (e ? String(e.name ?? '') || '(unnamed)' : '—')
 
@@ -89,7 +89,7 @@ export function QuestFlowCanvas({ project, typeFilter = '', selected, onSelect }
           return (
             <g key={q.id} transform={`translate(${p.x},${p.y})`} className={'qf-node' + cls + (q.id === selected ? ' selected' : '') + (main.has(q.id) ? ' main' : '')} onClick={() => onSelect?.(q.id)} data-testid={cycle.has(q.id) ? 'qf-cycle' : bad.has(q.id) ? 'qf-unreachable' : undefined}>
               <rect width={NODE_W} height={NODE_H} rx="6" />
-              <rect width="5" height={NODE_H} rx="2" fill={TYPE_COLOR[q.type] ?? '#8b93a5'} />
+              <rect width="5" height={NODE_H} rx="2" fill={TYPE_COLOR[q.type] ?? 'var(--c-grey)'} />
               <text x="12" y="17" className="qf-name">{nameOf(q).slice(0, 20)}</text>
               <text x="12" y="32" className="qf-meta">{[q.type, typeof q.rewardXp === 'number' ? `${q.rewardXp} XP` : ''].filter(Boolean).join(' · ')}</text>
               <title>{`${nameOf(q)}${cycle.has(q.id) ? ' — in a requirement loop' : bad.has(q.id) ? ' — can never start' : ''}`}</title>
@@ -156,11 +156,11 @@ export function ActPacingView({ selected, onSelect }: ViewProps) {
             <YAxis yAxisId="l" orientation="right" allowDecimals={false} />
             <Tooltip formatter={(v) => fmt(Number(v))} />
             <Legend />
-            <Bar yAxisId="h" dataKey="questHours" name="Quest hours" fill="#4f9cf9" />
-            <Bar yAxisId="h" dataKey="actHours" name="Act hours" fill="#8b93a5" />
-            <Line yAxisId="l" dataKey="level" name="Level at end" stroke="#f2c94c" />
-            <Line yAxisId="l" dataKey="levelMin" name="Level from" stroke="#53c28b" strokeDasharray="4 3" dot={false} />
-            <Line yAxisId="l" dataKey="levelMax" name="Level to" stroke="#e5707e" strokeDasharray="4 3" dot={false} />
+            <Bar yAxisId="h" dataKey="questHours" name="Quest hours" fill="var(--c-blue)" />
+            <Bar yAxisId="h" dataKey="actHours" name="Act hours" fill="var(--c-grey)" />
+            <Line yAxisId="l" dataKey="level" name="Level at end" stroke="var(--c-yellow)" />
+            <Line yAxisId="l" dataKey="levelMin" name="Level from" stroke="var(--c-green)" strokeDasharray="4 3" dot={false} />
+            <Line yAxisId="l" dataKey="levelMax" name="Level to" stroke="var(--c-red)" strokeDasharray="4 3" dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -210,9 +210,9 @@ export function RewardBudgetView() {
             <YAxis />
             <Tooltip formatter={(v) => fmt(Number(v))} />
             <Legend />
-            <Bar dataKey="xp" name="XP" fill="#f2c94c" />
-            <Bar dataKey="money" name="Money" fill="#53c28b" />
-            <Bar dataKey="itemValue" name="Item value" fill="#4f9cf9" />
+            <Bar dataKey="xp" name="XP" fill="var(--c-yellow)" />
+            <Bar dataKey="money" name="Money" fill="var(--c-green)" />
+            <Bar dataKey="itemValue" name="Item value" fill="var(--c-blue)" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -234,7 +234,7 @@ export function RewardBudgetView() {
                 {levels.filter((l) => typeof l.min === 'number').map((l) => (
                   <ReferenceLine key={l.id} y={l.min} stroke="var(--muted)" strokeDasharray="3 3" label={{ value: nameOf(l), position: 'insideTopLeft', fill: 'var(--muted)', fontSize: 11 }} />
                 ))}
-                <Line dataKey="rep" name="Reputation" stroke="#d86be0" />
+                <Line dataKey="rep" name="Reputation" stroke="var(--c-pink)" />
               </LineChart>
             </ResponsiveContainer>
           </div>

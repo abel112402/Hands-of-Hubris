@@ -7,8 +7,10 @@ import { makeId } from '../../core/model/project'
 import { getModule, getSection } from '../../core/modules/registry'
 import { useStore } from '../../core/store/store'
 import { useHints, useSnooze } from './useHints'
-import { Flavor } from '../flavor/Flavor'
+import { Flavor, useFlavor } from '../flavor/Flavor'
+import { Mascot } from '../mascots/Mascot'
 import { hintFlavorKey } from '../../core/flavor/pick'
+import { costumeFor } from '../../core/mascots/cast'
 import { AiPanel } from '../ai/AiPanel'
 import { useAiUi } from '../ai/aiStore'
 import { useAiSession, useAiSettings } from '../../core/ai/session'
@@ -37,6 +39,8 @@ const writeFlag = (key: string, on: boolean) => {
     /* not remembered */
   }
 }
+/** Phone widths, where the editor layout stacks (matches the 767px breakpoint in styles.css). */
+const isNarrow = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767px)').matches
 export const SEVERITY_ICON = { info: 'ℹ️', suggest: '💡', important: '❗' } as const
 const ICON = SEVERITY_ICON
 
@@ -48,6 +52,8 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
   const a = hint.action
   const title = hint.title ?? t(hint.titleKey!, hint.params)
   const body = hint.body ?? t(hint.bodyKey!, hint.params)
+  // Hubi's aside, in the costume of the planner the hint is about. No key (user hints) → no aside.
+  const aside = useFlavor({ keys: hint.titleKey ? `flavor.hint.${hintFlavorKey(hint.titleKey)}` : [], ctx: hint.id })
 
   const run = () => {
     if (!a) return
@@ -70,7 +76,12 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
       <strong>{ICON[hint.severity]} {title}</strong>
       <p>{body}</p>
       {/* Built-in hints may have an aside under the same key (hints.<key>.title → flavor.hint.<key>); the body stays the message. */}
-      {hint.titleKey && <Flavor keys={`flavor.hint.${hintFlavorKey(hint.titleKey)}`} ctx={hint.id} />}
+      {aside && (
+        <p className="flavor hint-aside">
+          <Mascot costume={costumeFor(hint.target.docId)} pose="think" size={34} />
+          <span>{aside}</span>
+        </p>
+      )}
       {confirming ? (
         <div className="hint-actions">
           <span>{t('hints.confirm')}</span>
@@ -102,7 +113,8 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
 
 export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: string }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(true)
+  // Below 768px the panel sits under the editor (see styles.css), so it starts collapsed there.
+  const [open, setOpen] = useState(() => !isNarrow())
   const { all } = useHints(docId, sectionId)
   const { here, elsewhere } = splitByScope(all, { docId })
   const [showAll, setShowAll] = useState(false)
@@ -113,6 +125,11 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
     writeFlag(ELSEWHERE_KEY, o)
   }
   const { tab, setTab, explain } = useAiUi()
+  // Picking a tab on a collapsed panel opens it (on phones it starts collapsed, as a bar under the editor).
+  const openTab = (next: typeof tab) => {
+    setTab(next)
+    setOpen(true)
+  }
   const provider = useAiSettings((s) => s.settings.provider)
   const aiReady = useAiSession((s) => s.hasKey[provider])
   const guide = guideOf(docId)
@@ -171,12 +188,12 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
           <button
             className={!showAi && !showGuide ? 'active' : ''}
             title={t('hints.thisPageCount', { count: here.length })}
-            onClick={() => setTab('hints')}
+            onClick={() => openTab('hints')}
           >
             <Icon name="bulb" /> {t('hints.panel')}<CountBadge count={here.length} hidden />
           </button>
-          {guide && <button className={showGuide ? 'active' : ''} onClick={() => setTab('guide')}><Icon name="compass" /> {t('guide.tab')}</button>}
-          <button className={showAi ? 'active' : ''} onClick={() => setTab('ai')}><Icon name="sparkle" /> AI</button>
+          {guide && <button className={showGuide ? 'active' : ''} onClick={() => openTab('guide')}><Icon name="compass" /> {t('guide.tab')}</button>}
+          <button className={showAi ? 'active' : ''} onClick={() => openTab('ai')}><Icon name="sparkle" /> AI</button>
         </div>
         <button
           className="hint-toggle"
@@ -193,7 +210,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
       {open && !showAi && !showGuide && (
         <>
           <h4 className="hint-group">{t('hints.thisPage')}</h4>
-          {here.length === 0 && <><p className="muted">{t('hints.allClear')}</p><Flavor keys="flavor.allClear" ctx={docId} /></>}
+          {here.length === 0 && <><p className="muted">{t('hints.allClear')}</p><Flavor keys="flavor.allClear" ctx={docId} costume={costumeFor(docId)} /></>}
           <ul className="list">{shownHere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
           {here.length > MAX_ACTIVE_HINTS && (
             <button className="small" onClick={() => setShowAll(!showAll)}>

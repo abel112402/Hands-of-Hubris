@@ -6,6 +6,7 @@ import { validateProject } from '../core/references/refs'
 import { useHints } from './hints/useHints'
 import { MODULES } from '../core/modules/registry'
 import { SETTINGS_TABS } from './settings/SettingsPage'
+import { ThemeSwitch } from './ThemeSwitch'
 import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
 import { Icon } from './Icon'
@@ -174,6 +175,8 @@ export function AppShell() {
               <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
               <button onClick={downloadJson}>{t('actions.exportJson')}</button>
               <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
+              <hr />
+              <ThemeSwitch showLabels />
               {/* On narrow screens the nav row is hidden and its links appear here instead. */}
               <div className="menu-nav">
                 <hr />

@@ -5,16 +5,25 @@ import i18n from '../../core/i18n'
 import { useStore } from '../../core/store/store'
 import { crossedMilestones, momentAllowed } from '../../core/flavor/milestones'
 import { resolveFlavor, useFlavorLevel, type FlavorOpts } from './Flavor'
+import { costumeForMoment, type CostumeId } from '../../core/mascots/cast'
+import { Mascot, type Pose } from '../mascots/Mascot'
+import { CostumeParade } from '../mascots/Lineup'
 
 /**
  * Moments: a short-lived aside for something that just happened (a finished phase, a milestone).
  * One at a time, rate-limited, and never stored in the project.
  */
+type MomentOpts = FlavorOpts & {
+  /** Planner the moment belongs to: Hubi wears its costume (milestones, finished steps). */
+  docId?: string
+}
+
 type MomentState = {
-  moment: { id: number; text: string } | null
+  /** `parade`: Hubi runs through all his costumes instead of wearing one (the Konami code). */
+  moment: { id: number; key: string; text: string; costume: CostumeId; parade?: boolean } | null
   lastAt: number | null
   /** Shows the line for these keys. `force` skips the rate limit (reserved for the phase-complete moment). */
-  announce: (opts: FlavorOpts, force?: boolean) => boolean
+  announce: (opts: MomentOpts, force?: boolean) => boolean
   dismiss: () => void
 }
 
@@ -22,18 +31,22 @@ let seq = 0
 export const useMoments = create<MomentState>((set, get) => ({
   moment: null,
   lastAt: null,
-  announce: (opts, force = false) => {
+  announce: ({ docId, ...opts }, force = false) => {
     const now = Date.now()
     if (!momentAllowed(now, get().lastAt, force)) return false
     const text = resolveFlavor(i18n, useFlavorLevel.getState().level, opts)
     if (!text) return false
-    set({ moment: { id: ++seq, text }, lastAt: now })
+    const first = Array.isArray(opts.keys) ? opts.keys[0] : opts.keys
+    set({ moment: { id: ++seq, key: first, text, costume: costumeForMoment(first, docId), parade: first === 'flavor.konami' }, lastAt: now })
     return true
   },
   dismiss: () => set({ moment: null }),
 }))
 
 const SHOW_MS = 6000
+
+/** Celebrations cheer; the zombie moments (welcome back, undo spree, logo clicks) keep his usual shuffle. */
+const momentPose = (key: string): Pose => (key.startsWith('flavor.milestone.') || key === 'flavor.phaseDone' || key === 'flavor.stepDone' ? 'cheer' : 'idle')
 
 /** Bottom corner bubble. Polite live region, so a screen reader hears it once without interruption. */
 export function FlavorToast() {
@@ -48,6 +61,7 @@ export function FlavorToast() {
     <div className="flavor-toast-region" role="status" aria-live="polite">
       {moment && (
         <div key={moment.id} className="flavor-toast">
+          {moment.parade ? <CostumeParade /> : <Mascot costume={moment.costume} pose={momentPose(moment.key)} size={56} />}
           <span>{moment.text}</span>
           <button className="banner-close" aria-label={t('flavor.dismiss')} onClick={() => useMoments.getState().dismiss()}>×</button>
         </div>
@@ -89,7 +103,7 @@ export function useMilestones() {
         const hits = crossedMilestones(prev.project, s.project, readSeen(createdAt))
         if (!hits.length) return
         const m = hits[hits.length - 1]
-        if (useMoments.getState().announce({ keys: `flavor.milestone.${m.id}`, ctx: createdAt, min: 'full' })) markSeen(createdAt, [m.id])
+        if (useMoments.getState().announce({ keys: `flavor.milestone.${m.id}`, ctx: createdAt, min: 'full', docId: m.docId })) markSeen(createdAt, [m.id])
       }),
     [],
   )

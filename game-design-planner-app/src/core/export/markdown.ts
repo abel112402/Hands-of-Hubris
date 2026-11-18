@@ -31,6 +31,8 @@ import { CORE_LOOP_DOC, formatMinutes, loopList, loopPacing, pillarLoops } from 
 import { CATEGORIES as DIFFICULTY_CATEGORIES, DIFFICULTY_DOC, levelPressure, levelsOf, levelSteps } from '../difficulty'
 import { difficultyImpact } from '../difficultyImpact'
 import { DIPLOMACY_DOC, factionStandings, relationPairs, startValue, levelAt } from '../diplomacy'
+import { locationSvg } from '../location/render/svg'
+import { mapOf } from '../location/schema'
 import { biomeCoverage, biomesInOrder, biomeThreat, COVERAGE_COLUMNS, unlockPath, WORLD_DOC } from '../world'
 import { factionFootprints } from '../diplomacyFootprint'
 import { arbitrage, dailyAmount, merchantsOf, moneyFlow, priceOf, reputationLevels, stockCoverage, TRADE_DOC, wanderingOdds } from '../trade'
@@ -809,6 +811,15 @@ function worldSummaryMd(project: Project, sec: Extract<SectionDef, { kind: 'coll
   return out
 }
 
+/** Where a location's map goes in the export zip, relative to world_biomes.md. */
+export const locationMapPath = (location: Entity) => `location_maps/${String(location.id).replace(/[^\w-]/g, '_')}.svg`
+const mappedLocations = (project: Project): Entity[] => ((project.documents[WORLD_DOC]?.data.locations ?? []) as Entity[]).filter((l) => mapOf(l))
+
+/** The generated map of each location, after the location sheets. */
+function locationMapsMd(project: Project): string {
+  return mappedLocations(project).map((l) => `\n#### ${esc(entityLabel(l))}: map\n\n![${esc(entityLabel(l))}](${locationMapPath(l)})\n`).join('')
+}
+
 /** Loop pacing and pillar coverage, written under the Core Loop's "Rewards and progression" chapter (doc ch. 5). */
 function coreLoopSummaryMd(project: Project): string {
   let out = ''
@@ -889,7 +900,7 @@ export function sectionMd(project: Project, mod: PlannerModule, sec: SectionDef)
     }
     case 'collection':
       if (mod.id === OPEN_QUESTIONS_DOC) return openQuestionsMd(project, mod.id, sec, data)
-      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + (mod.id === ARCH_DOC ? architectureSummaryMd(project, sec, data) : '') + (mod.id === CODING_DOC ? codingSummaryMd(project, sec, data) : '') + (mod.id === DATA_DOC ? dataDrivenSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
+      return collectionMd(project, mod.id, sec, data) + scheduleSummaryMd(project, mod.id, sec, data) + needsBalanceMd(project, sec, data) + (mod.id === NPC_DOC ? npcSummaryMd(project, sec, data) : '') + (mod.id === ARCH_DOC ? architectureSummaryMd(project, sec, data) : '') + (mod.id === CODING_DOC ? codingSummaryMd(project, sec, data) : '') + (mod.id === DATA_DOC ? dataDrivenSummaryMd(project, sec, data) : '') + playerSummaryMd(project, sec) + itemsSummaryMd(project, sec, data) + (mod.id === COMBAT_DOC ? combatSummaryMd(project, sec, data) : '') + (mod.id === TIME_DOC ? timeWeatherSummaryMd(project, sec, data) : '') + (mod.id === TRADE_DOC ? tradeSummaryMd(project, sec, data) : '') + (mod.id === STORY_DOC ? storySummaryMd(project, sec, data) : '') + (mod.id === UI_DOC ? uiSummaryMd(project, sec, data) : '') + (mod.id === VISION_DOC ? visionSummaryMd(project, sec, data) : '') + (mod.id === ROADMAP_DOC ? roadmapSummaryMd(project, sec, data) : '') + (mod.id === WORLD_DOC && sec.id === 'biomes' ? worldSummaryMd(project, sec) : '') + (mod.id === WORLD_DOC && sec.id === 'locations' ? locationMapsMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'factions' ? diplomacyFootprintMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'thresholds' && data.length ? diplomacyStartMd(project) : '')
     case 'matrix':
       return matrixMd(project, mod.id, sec, data) + (mod.id === DIFFICULTY_DOC && sec.id === 'values' ? difficultySummaryMd(project) : '') + (mod.id === DIPLOMACY_DOC && sec.id === 'relations' ? diplomacyRelationsMd(project) : '')
     case 'graph':
@@ -955,6 +966,7 @@ export type ExportAsset = { path: string; mime: string; content: string }
  */
 export function exportAssets(project: Project, mod: PlannerModule): ExportAsset[] {
   if (mod.id === UI_DOC) return screensOf(project).filter((s) => layoutOf(s).length).map((s) => ({ path: wireframePath(s), mime: 'image/svg+xml', content: layoutSvg(project, s) }))
+  if (mod.id === WORLD_DOC) return mappedLocations(project).map((l) => ({ path: locationMapPath(l), mime: 'image/svg+xml', content: locationSvg(project, l) ?? '' }))
   return []
 }
 

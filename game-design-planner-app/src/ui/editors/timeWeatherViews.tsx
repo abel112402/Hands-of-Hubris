@@ -4,7 +4,7 @@ import { biomeWeather, conditions, dayCoverage, eventCalendar, realMinutes, seas
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
-const PALETTE = ['#4f9cf9', '#f2c94c', '#f97b4f', '#5ad1d1', '#d86be0', '#53c28b', '#e5707e']
+const PALETTE = ['var(--c-blue)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-cyan)', 'var(--c-pink)', 'var(--c-green)', 'var(--c-red)']
 const fmt = (n: number) => (Math.round(n * 100) / 100).toString()
 const hh = (h: number) => {
   const m = Math.round(h * 60)

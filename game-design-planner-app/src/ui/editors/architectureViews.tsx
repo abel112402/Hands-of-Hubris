@@ -20,7 +20,7 @@ import type { ViewProps } from './CollectionEditor'
 import { countOf } from '../../core/text'
 
 /** Series palette (the only hard-coded colours, as in the other planners). */
-export const ARCH_COLORS = ['#4f9cf9', '#53c28b', '#f2c94c', '#f97b4f', '#d86be0', '#5ad1d1', '#e5707e', '#a3a8ff']
+export const ARCH_COLORS = ['var(--c-blue)', 'var(--c-green)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-pink)', 'var(--c-cyan)', 'var(--c-red)', 'var(--c-lavender)']
 const fmt = (n: number) => (Math.round(n * 100) / 100).toString()
 const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 const short = (s: string, n = 18) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
@@ -284,7 +284,7 @@ export function CouplingView({ items, selected, onSelect }: ViewProps) {
   )
 }
 
-const KIND_COLOR: Record<string, string> = { 'Event bus': '#4f9cf9', 'ScriptableObject channel': '#d86be0', 'Direct call': '#f97b4f', 'DI service': '#53c28b', 'Message queue': '#f2c94c' }
+const KIND_COLOR: Record<string, string> = { 'Event bus': 'var(--c-blue)', 'ScriptableObject channel': 'var(--c-pink)', 'Direct call': 'var(--c-orange)', 'DI service': 'var(--c-green)', 'Message queue': 'var(--c-yellow)' }
 
 /** Publisher → channel → subscriber lanes. */
 export function MessageFlowView({ items, selected, onSelect }: ViewProps) {

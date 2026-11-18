@@ -21,7 +21,7 @@ import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
 /** Series palette (the only hard-coded colours, as in the other planners). */
-const COLORS = ['#4f9cf9', '#53c28b', '#f2c94c', '#f97b4f', '#d86be0', '#5ad1d1', '#e5707e', '#a3a8ff']
+const COLORS = ['var(--c-blue)', 'var(--c-green)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-pink)', 'var(--c-cyan)', 'var(--c-red)', 'var(--c-lavender)']
 const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const fmt = (n: number) => (n >= 10 ? Math.round(n).toString() : (Math.round(n * 100) / 100).toString())

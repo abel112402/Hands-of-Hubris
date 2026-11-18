@@ -18,6 +18,7 @@ Browser planner for the Hands of Hubris design docs (`../docs`). Vite 8 · React
 | `src/core/persistence/` | `serialize.ts` (`MIGRATIONS`), `file.ts` (`*.hohplan.json`), `autosave.ts` (IndexedDB) |
 | `src/core/export/markdown.ts` | MD/CSV/JSON/ZIP export, ordered like the docs |
 | `src/core/<domain>.ts` | Pure domain logic per planner (combat, items, npc, player, story, trade, timeWeather, town, world, ui, …) |
+| `src/core/location/` | Location maps (World › Locations): `registry.ts` + `types/` (one generator per location type), `generate.ts` (layers, reroll, stale), `edit.ts` (manual edits, pinning), `objects.ts` (`KINDS`: how each object kind is handled), `render/` (`glyphs.ts`, `theme.ts`, `svg.ts`), `schema.ts` (Zod for stored maps), `analysis.ts`. UI in `src/ui/editors/location/` |
 | `src/core/hints/`, `guides/`, `references/` | Hint engine + rules, guide types, cross-module refs |
 | `src/core/walkthrough/` | Walkthrough engine: `types`, `schema` (Zod), `compose` (base + packs, localize), `evaluate` (done rules, progress, `meta.guide` edits), `project` (per-project walkthrough, content validation), `focus` (step hints, page steps, AI data) |
 | `src/core/genre.ts`, `progress.ts` | Genre profile → `editorGroups`; planner fill and next milestone |
@@ -42,6 +43,8 @@ Data flow: module def → registry → project creation → `SectionRenderer` �
 | `EDITOR_UPGRADE_GUIDE.md` (8K) | guide | **Start here** for any v1→v2 planner upgrade |
 | `MARKDOWN_PREVIEW_GUIDE.md` (15K) | guide | per-doc markdown preview work |
 | `STORY_QUESTS_PLAN.md`, `TRADE_ECONOMY_PLAN.md`, `UI_UX_PLAN.md` | implemented | reference for finished v2 planners |
+| `LOCATIONS_MAP_PLAN.md` | implemented | location types, layered map generation, map editing, how to add a type, glyph or theme |
+| `LOCATIONS_V2_PLAN.md` | proposed | zoning, topology/lock-and-key, floor-plan rules, nav/light metadata, heal/masks/brushes, linked maps, world map, sliders, themes, engine/VTT export |
 | `COMBAT_PLAN.md`, `ITEMS_CRAFTING_PLAN.md`, `PLAYER_CHARACTER_PLAN.md`, `TIME_WEATHER_PLAN.md`, `OPEN_QUESTIONS_UPGRADE_PLAN.md` | marked proposed (check source; may be partly done) | planner-specific upgrade work |
 | `IMPLEMENTATION_PLAN.md` (48K, Hungarian, historical) | partly outdated | avoid; README "Deviations" summarises it |
 | `AI_PROJECT_REVIEW_PROMPT.md`, `templates/` | review prompts | used by `game-planner-review` |

@@ -8,6 +8,8 @@ import { useStore } from '../../core/store/store'
 import { PHASES, type PhaseId } from '../../core/walkthrough/types'
 import type { WalkthroughProgress } from '../../core/walkthrough/evaluate'
 import { Icon } from '../Icon'
+import { StatusCard } from '../mascots/StatusCard'
+import { MASCOTS_ENABLED } from '../../core/mascots/config'
 import { useCountUp, useJustChanged, useStuck } from '../hooks'
 import type { WalkthroughView } from './useWalkthrough'
 
@@ -83,6 +85,7 @@ export function ProgressPanel({ view, onClose }: { view: WalkthroughView; onClos
           <p className="muted">{line}</p>
         </div>
       </div>
+      {MASCOTS_ENABLED && <StatusCard />}
 
       <h3>{t('workspace.phases')}</h3>
       <ol className="walk-phases" aria-label={t('workspace.phases')}>

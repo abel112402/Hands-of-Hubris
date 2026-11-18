@@ -7,6 +7,7 @@ import { siteLinks } from '../../core/cloud/config'
 import { APP_VERSION } from '../../core/model/types'
 import { Icon, type IconName } from '../Icon'
 import { LanguageSwitch } from '../LanguageSwitch'
+import { ThemeSwitch } from '../ThemeSwitch'
 import { AutoHeight, Segmented } from '../motion'
 import { SignInForm } from './SignInForm'
 import { WorkspaceIllustration } from './WorkspaceIllustration'
@@ -57,6 +58,7 @@ export function Landing() {
       <header className="landing-top">
         <strong className="brand"><BrandMark size={24} /><span className="brand-name">{t('app.title')}</span></strong>
         <span className="spacer" />
+        <ThemeSwitch />
         <LanguageSwitch />
       </header>
       <main className="landing-main">

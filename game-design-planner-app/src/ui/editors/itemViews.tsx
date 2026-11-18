@@ -6,7 +6,7 @@ import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 import { countOf } from '../../core/text'
 
-const PALETTE = ['#8b93a5', '#53c28b', '#4f9cf9', '#d86be0', '#f2c94c', '#f97b4f', '#5ad1d1']
+const PALETTE = ['var(--c-grey)', 'var(--c-green)', 'var(--c-blue)', 'var(--c-pink)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-cyan)']
 const fmt = (n: number) => (Math.abs(n) >= 100 ? Math.round(n).toString() : (Math.round(n * 100) / 100).toString())
 const pct = (p: number) => `${p >= 0.1 ? Math.round(p * 1000) / 10 : Math.round(p * 10000) / 100}%`
 
@@ -15,7 +15,7 @@ function rarityColor(project: Project, rarityId?: string) {
   const tier = itemList(project, 'rarityTiers').find((t) => t.rarity === rarityId)
   if (tier?.color) return tier.color as string
   const idx = (project.registry.catalogs.rarities?.items ?? []).findIndex((r) => r.id === rarityId)
-  return idx >= 0 ? PALETTE[idx % PALETTE.length] : '#666'
+  return idx >= 0 ? PALETTE[idx % PALETTE.length] : 'var(--c-grey)'
 }
 
 /** Items per type × rarity; empty cells inside a type's used range are holes. */
@@ -121,7 +121,7 @@ export function ValuePreviewView({ items, selected, onSelect }: ViewProps) {
         <div style={{ height: Math.max(160, Math.min(420, data.length * 22)) }}>
           <ResponsiveContainer>
             <BarChart data={data} layout="vertical" margin={{ left: 20 }} onClick={(e) => { const id = (e as { activePayload?: { payload: { id: string } }[] })?.activePayload?.[0]?.payload.id; if (id) onSelect(id) }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
               <XAxis type="number" />
               <YAxis type="category" dataKey="name" width={120} />
               <Tooltip />
@@ -253,7 +253,7 @@ export function RarityCurveView({ items, onSelect }: ViewProps) {
       <div style={{ height: 260 }}>
         <ResponsiveContainer>
           <ComposedChart data={data} onClick={(e) => { const id = (e as { activePayload?: { payload: { id: string } }[] })?.activePayload?.[0]?.payload.id; if (id) onSelect(id) }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis dataKey="name" />
             <YAxis yAxisId="w" />
             <YAxis yAxisId="m" orientation="right" />
@@ -262,7 +262,7 @@ export function RarityCurveView({ items, onSelect }: ViewProps) {
             <Bar yAxisId="w" dataKey="dropWeight" name="Drop weight">
               {data.map((d) => <Cell key={d.id} fill={d.color} />)}
             </Bar>
-            <Line yAxisId="m" dataKey="statMultiplier" name="Stat multiplier" stroke="#f2c94c" />
+            <Line yAxisId="m" dataKey="statMultiplier" name="Stat multiplier" stroke="var(--c-yellow)" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

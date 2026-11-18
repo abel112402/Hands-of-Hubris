@@ -4,6 +4,8 @@ import { brandClicks, isAprilFools, isLongAbsence, konamiStep, KONAMI, timeBucke
 import { daySeed } from '../../core/flavor/pick'
 import { useFlavor, useFlavorLevel } from './Flavor'
 import { useMoments } from './moments'
+import { HubiSays } from '../mascots/Mascot'
+import { costumeForSeed, costumeForTime } from '../../core/mascots/cast'
 
 const GREETED_KEY = 'hohplan:flavor:greetedOn'
 const LAST_VISIT_KEY = 'hohplan:flavor:lastVisit'
@@ -38,9 +40,18 @@ function shouldGreet(): boolean {
 /** First workspace visit of the day: a line for the time of day. Full personality only. */
 export function Greeting() {
   const full = useFlavorLevel((s) => s.level === 'full')
-  const line = useFlavor({ keys: `flavor.greeting.${timeBucket(new Date())}`, min: 'full' })
+  const bucket = timeBucket(new Date())
+  const line = useFlavor({ keys: `flavor.greeting.${bucket}`, min: 'full' })
   if (!full || !line || !shouldGreet()) return null
-  return <p className="flavor intro-greeting">{line}</p>
+  // Hubi dresses for the time of day: zombie at night, farmer in the morning, suit on Friday afternoon…
+  return <HubiSays costume={costumeForTime(bucket)} size={64} className="intro-greeting">{line}</HubiSays>
+}
+
+/** Loading screen: the loading line said by Hubi in today's costume (plain text when flavor is off). */
+export function LoadingLine({ fallback }: { fallback: string }) {
+  const line = useLoadingLine()
+  if (!line) return <>{fallback}</>
+  return <HubiSays costume={costumeForSeed(daySeed())} pose="think" size={72} className="hubi-loading">{line}</HubiSays>
 }
 
 /** Loading text; on April Fools' Day (Full personality) it gets suitably grandiose. */

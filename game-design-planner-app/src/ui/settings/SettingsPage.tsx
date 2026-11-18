@@ -15,6 +15,9 @@ import { ProjectSettings } from '../cloud/ProjectSettings'
 import { WalkthroughSettings } from './WalkthroughSettings'
 import { FLAVOR_LEVELS, type FlavorLevel } from '../../core/flavor/pick'
 import { useFlavorLevel } from '../flavor/Flavor'
+import { Wardrobe } from '../mascots/Wardrobe'
+import { MASCOTS_ENABLED } from '../../core/mascots/config'
+import { ThemeSwitch } from '../ThemeSwitch'
 
 /**
  * Every project setting in one place. Each tab reuses the existing page or panel, so behaviour and
@@ -83,6 +86,11 @@ function GeneralSettings() {
         </select>
       </label>
       <p className="muted">{t('settingsPage.languageHint')}</p>
+      <div className="settings-field">
+        <span>{t('theme.label')}</span>
+        <ThemeSwitch showLabels />
+      </div>
+      <p className="muted">{t('theme.hint')}</p>
       <label className="settings-field">
         <span>{t('flavor.settings.label')}</span>
         <select value={flavorLevel} onChange={(e) => setFlavorLevel(e.target.value as FlavorLevel)}>
@@ -90,6 +98,7 @@ function GeneralSettings() {
         </select>
       </label>
       <p className="muted">{t('flavor.settings.hint')}</p>
+      {MASCOTS_ENABLED && <Wardrobe />}
       <dl className="settings-meta">
         <dt>{t('settingsPage.created')}</dt>
         <dd>{new Date(meta.createdAt).toLocaleString()}</dd>

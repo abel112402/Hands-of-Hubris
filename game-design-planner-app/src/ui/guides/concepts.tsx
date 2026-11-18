@@ -94,8 +94,8 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
         <svg viewBox="0 0 330 100" className="concept-svg" role="img" aria-label="Weights become a chance per roll; more rolls and more kills raise the chance">
           <rect x="5" y="15" width="180" height="20" className="c-box" />
           <rect x="5" y="15" width="120" height="20" className="c-accent" />
-          <rect x="125" y="15" width="50" height="20" fill="#53c28b55" />
-          <rect x="175" y="15" width="10" height="20" fill="#f2c94c99" />
+          <rect x="125" y="15" width="50" height="20" fill="color-mix(in srgb, var(--c-green) 33%, transparent)" />
+          <rect x="175" y="15" width="10" height="20" fill="color-mix(in srgb, var(--c-yellow) 60%, transparent)" />
           <text x="65" y="29" textAnchor="middle" className="c-small">common 100</text>
           <text x="150" y="29" textAnchor="middle" className="c-small">rare 40</text>
           <text x="5" y="52" className="c-small">chance per roll = weight ÷ total</text>
@@ -170,9 +170,9 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
     case 'phaseBar':
       return (
         <svg viewBox="0 0 330 70" className="concept-svg" role="img" aria-label="A boss HP bar from 100% to 0% split into three phases">
-          <rect x="10" y="18" width="120" height="24" fill="#53c28b88" />
-          <rect x="130" y="18" width="90" height="24" fill="#4f9cf988" />
-          <rect x="220" y="18" width="100" height="24" fill="#f97b4f88" />
+          <rect x="10" y="18" width="120" height="24" fill="color-mix(in srgb, var(--c-green) 53%, transparent)" />
+          <rect x="130" y="18" width="90" height="24" fill="color-mix(in srgb, var(--c-blue) 53%, transparent)" />
+          <rect x="220" y="18" width="100" height="24" fill="color-mix(in srgb, var(--c-orange) 53%, transparent)" />
           <text x="70" y="34" textAnchor="middle" className="c-small">100–60 %</text>
           <text x="175" y="34" textAnchor="middle" className="c-small">60–30 %</text>
           <text x="270" y="34" textAnchor="middle" className="c-small">30–0 %</text>
@@ -183,8 +183,8 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
     case 'dayClock':
       return (
         <svg viewBox="0 0 330 120" className="concept-svg" role="img" aria-label="A 24-hour dial with midnight at the top and phases as arcs, night crossing midnight">
-          <circle cx="60" cy="60" r="45" fill="none" stroke="#5ad1d188" strokeWidth="18" />
-          <path d="M60,15 A45,45 0 0 1 99,82" fill="none" stroke="#4f5b9c" strokeWidth="18" transform="rotate(-80 60 60)" />
+          <circle cx="60" cy="60" r="45" fill="none" stroke="color-mix(in srgb, var(--c-cyan) 53%, transparent)" strokeWidth="18" />
+          <path d="M60,15 A45,45 0 0 1 99,82" fill="none" stroke="var(--c-slate)" strokeWidth="18" transform="rotate(-80 60 60)" />
           <text x="60" y="10" textAnchor="middle" className="c-small">00</text>
           <text x="60" y="118" textAnchor="middle" className="c-small">12</text>
           <text x="60" y="64" textAnchor="middle" className="c-small">24 h</text>
@@ -213,9 +213,9 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
     case 'weatherMix':
       return (
         <svg viewBox="0 0 330 70" className="concept-svg" role="img" aria-label="A biome bar split into rain, fog, storm and the clear remainder">
-          <rect x="10" y="18" width="78" height="24" fill="#4f9cf999" />
-          <rect x="88" y="18" width="31" height="24" fill="#8b93a599" />
-          <rect x="119" y="18" width="25" height="24" fill="#d86be099" />
+          <rect x="10" y="18" width="78" height="24" fill="color-mix(in srgb, var(--c-blue) 60%, transparent)" />
+          <rect x="88" y="18" width="31" height="24" fill="color-mix(in srgb, var(--muted) 60%, transparent)" />
+          <rect x="119" y="18" width="25" height="24" fill="color-mix(in srgb, var(--c-pink) 60%, transparent)" />
           <rect x="144" y="18" width="176" height="24" className="c-box" />
           <text x="49" y="34" textAnchor="middle" className="c-small">rain 25%</text>
           <text x="232" y="34" textAnchor="middle" className="c-small">clear: the rest (57%)</text>
@@ -225,13 +225,13 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
     case 'eventCalendar':
       return (
         <svg viewBox="0 0 330 90" className="concept-svg" role="img" aria-label="A year with seasons, repeating event ticks and one coincidence">
-          <rect x="10" y="10" width="78" height="14" fill="#53c28b88" />
-          <rect x="88" y="10" width="78" height="14" fill="#f2c94c88" />
-          <rect x="166" y="10" width="78" height="14" fill="#f97b4f88" />
-          <rect x="244" y="10" width="78" height="14" fill="#5ad1d188" />
+          <rect x="10" y="10" width="78" height="14" fill="color-mix(in srgb, var(--c-green) 53%, transparent)" />
+          <rect x="88" y="10" width="78" height="14" fill="color-mix(in srgb, var(--c-yellow) 53%, transparent)" />
+          <rect x="166" y="10" width="78" height="14" fill="color-mix(in srgb, var(--c-orange) 53%, transparent)" />
+          <rect x="244" y="10" width="78" height="14" fill="color-mix(in srgb, var(--c-cyan) 53%, transparent)" />
           {[36, 62, 88, 114, 140, 166, 192, 218, 244, 270, 296].map((x) => <rect key={x} x={x} y="34" width="3" height="12" className="c-accent" />)}
-          {[88, 166, 244].map((x) => <rect key={x} x={x} y="52" width="3" height="12" fill="#e5586b" />)}
-          <circle cx="167" cy="52" r="12" fill="none" stroke="#e5586b" />
+          {[88, 166, 244].map((x) => <rect key={x} x={x} y="52" width="3" height="12" fill="var(--danger)" />)}
+          <circle cx="167" cy="52" r="12" fill="none" stroke="var(--danger)" />
           <text x="10" y="84" className="c-small">full moon every cycle · blood moon every 3rd · circled: they coincide</text>
         </svg>
       )
@@ -264,7 +264,7 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="20" y="14" className="c-small">player buys</text>
           <text x="20" y="68" className="c-small">player sells</text>
           <line x1="190" y1="54" x2="310" y2="54" className="c-line" />
-          <line x1="190" y1="22" x2="310" y2="22" stroke="#e5586b" />
+          <line x1="190" y1="22" x2="310" y2="22" stroke="var(--danger)" />
           <rect x="230" y="22" width="40" height="32" className="c-danger-band" />
           <text x="190" y="16" className="c-small">sells for more elsewhere</text>
           <text x="190" y="68" className="c-small">buys here</text>
@@ -309,7 +309,7 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
               <rect width="95" height="18" className="c-box" />
               <rect width={[70, 85, 40][i]} height="18" className="c-accent" />
               <rect y="34" width="95" height="14" className="c-danger-band" opacity="0.4" />
-              <circle cx={[60, 50, 88][i]} cy="41" r="4" fill={i === 2 ? '#e5586b' : '#f2c94c'} />
+              <circle cx={[60, 50, 88][i]} cy="41" r="4" fill={i === 2 ? 'var(--danger)' : 'var(--c-yellow)'} />
             </g>
           ))}
           <text x="10" y="76" className="c-small">bar: quest time inside the act · dot: level at the end vs. the intended band</text>
@@ -357,7 +357,7 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
               <g key={i}>
                 {h.map((v, j) => {
                   y -= v
-                  return <rect key={j} x={30 + i * 90} y={y} width="40" height={v} fill={['#f2c94c99', '#53c28b99', '#d86be099'][j]} />
+                  return <rect key={j} x={30 + i * 90} y={y} width="40" height={v} fill={['color-mix(in srgb, var(--c-yellow) 60%, transparent)', 'color-mix(in srgb, var(--c-green) 60%, transparent)', 'color-mix(in srgb, var(--c-pink) 60%, transparent)'][j]} />
                 })}
                 <text x={50 + i * 90} y="78" textAnchor="middle" className="c-small">act {i + 1}</text>
               </g>
@@ -371,10 +371,10 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
         <svg viewBox="0 0 330 110" className="concept-svg" role="img" aria-label="A screen with its dashed safe area, a grid, an element inside and a too-small button flagged">
           <rect x="10" y="8" width="200" height="94" className="c-box" />
           {[30, 50, 70, 90, 110, 130, 150, 170, 190].map((x) => <line key={x} x1={x} y1="8" x2={x} y2="102" className="c-axis" opacity="0.25" />)}
-          <rect x="20" y="16" width="180" height="78" fill="none" stroke="#5b9cff" strokeDasharray="4 3" />
+          <rect x="20" y="16" width="180" height="78" fill="none" stroke="var(--accent)" strokeDasharray="4 3" />
           <rect x="28" y="70" width="70" height="16" rx="8" className="c-accent" />
-          <rect x="160" y="22" width="12" height="8" rx="2" fill="none" stroke="#e5b455" strokeWidth="2" />
-          <text x="176" y="20" className="c-small" fill="#e5b455">⚑</text>
+          <rect x="160" y="22" width="12" height="8" rx="2" fill="none" stroke="var(--warn)" strokeWidth="2" />
+          <text x="176" y="20" className="c-small" fill="var(--warn)">⚑</text>
           <text x="220" y="24" className="c-small">dashed: safe area</text>
           <text x="220" y="44" className="c-small">grid: snapping</text>
           <text x="220" y="64" className="c-small">⚑: below the</text>
@@ -417,7 +417,7 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
     case 'keyConflict':
       return (
         <svg viewBox="0 0 330 80" className="concept-svg" role="img" aria-label="E bound to two actions in gameplay is a conflict; Esc in two contexts is fine">
-          <rect x="10" y="10" width="34" height="30" rx="5" fill="#e5586b55" stroke="#e5586b" />
+          <rect x="10" y="10" width="34" height="30" rx="5" fill="color-mix(in srgb, var(--danger) 33%, transparent)" stroke="var(--danger)" />
           <text x="27" y="30" textAnchor="middle" className="c-small">E</text>
           <text x="54" y="22" className="c-small">Interact · gameplay</text>
           <text x="54" y="36" className="c-small">Inventory · gameplay  → clash</text>
@@ -533,16 +533,16 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <rect x="10" y="18" width="300" height="12" rx="6" className="c-box" />
           <line x1="130" y1="14" x2="130" y2="34" className="c-line" />
           {[
-            [70, '#53c28b'],
-            [130, '#4f9cf9'],
-            [230, '#f97b4f'],
+            [70, 'var(--c-green)'],
+            [130, 'var(--c-blue)'],
+            [230, 'var(--c-orange)'],
           ].map(([x, c]) => <circle key={`a${x}`} cx={x as number} cy="24" r="7" fill={c as string} />)}
           <text x="10" y="54" className="c-small">Morale threshold %   (higher = easier: flipped)</text>
           <rect x="10" y="60" width="300" height="12" rx="6" className="c-box" />
           {[
-            [90, '#53c28b'],
-            [160, '#4f9cf9'],
-            [250, '#f97b4f'],
+            [90, 'var(--c-green)'],
+            [160, 'var(--c-blue)'],
+            [250, 'var(--c-orange)'],
           ].map(([x, c]) => <circle key={`b${x}`} cx={x as number} cy="66" r="7" fill={c as string} />)}
           <text x="10" y="88" className="c-small">easy</text>
           <text x="285" y="88" className="c-small">hard</text>
@@ -556,7 +556,7 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <line x1="270" y1="25" x2="270" y2="85" stroke="rgb(139,147,165)" strokeWidth="1.5" />
           <path d="M60,85 Q165,65 245,85" fill="none" stroke="rgb(83,194,139)" strokeWidth="2" />
           <path d="M270,85 Q165,110 85,87" fill="none" stroke="rgb(229,112,126)" strokeWidth="3" />
-          {[[60, 25, '#4f9cf9'], [270, 25, '#f2c94c'], [60, 85, '#f97b4f'], [270, 85, '#d86be0']].map(([x, y, c]) => <circle key={`${x}${y}`} cx={x as number} cy={y as number} r="11" fill={c as string} />)}
+          {[[60, 25, 'var(--c-blue)'], [270, 25, 'var(--c-yellow)'], [60, 85, 'var(--c-orange)'], [270, 85, 'var(--c-pink)']].map(([x, y, c]) => <circle key={`${x}${y}`} cx={x as number} cy={y as number} r="11" fill={c as string} />)}
           <text x="165" y="18" textAnchor="middle" className="c-small">allied</text>
           <text x="20" y="58" className="c-small">hostile</text>
           <text x="278" y="58" className="c-small">neutral</text>
@@ -591,6 +591,18 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
           <text x="272" y="94" textAnchor="middle" className="c-small">markers</text>
         </svg>
       )
+    case 'mapLayers':
+      return (
+        <svg viewBox="0 0 330 100" className="concept-svg" role="img" aria-label="Three map layers stacked bottom to top: roads, houses, trees. Rerolling the roads layer marks the two layers above it out of date; a pinned house stays where it is">
+          <path d="M20 78 L150 78 L176 58 L46 58 Z" className="c-box" /><path d="M52 68 Q98 60 150 68" className="c-line" />
+          <path d="M20 54 L150 54 L176 34 L46 34 Z" className="c-box" /><rect x="70" y="40" width="12" height="8" className="c-accent" /><rect x="104" y="40" width="12" height="8" className="c-accent" />
+          <path d="M20 30 L150 30 L176 10 L46 10 Z" className="c-box" /><circle cx="80" cy="20" r="4" className="c-accent" /><circle cx="120" cy="20" r="4" className="c-accent" />
+          <text x="186" y="74" className="c-small">roads  ↻ rerolled</text>
+          <text x="186" y="50" className="c-small">houses  out of date</text>
+          <text x="186" y="26" className="c-small">trees  out of date</text>
+          <text x="20" y="96" className="c-small">a house you moved is pinned and stays</text>
+        </svg>
+      )
     case 'repScale':
       return (
         <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="A scale from -100 to 100 split into Hostile, Neutral and Allied, with the start marker at 0 and an action pushing the value across a boundary">
@@ -621,7 +633,7 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
               <g key={label as string}>
                 <text x="10" y={20 + i * 24} className="c-small">{label}</text>
                 {(parts as number[]).map((w, k) => {
-                  const r = <rect key={k} x={x} y={10 + i * 24} width={w} height="14" fill={['#f97b4f', '#53c28b', '#f2c94c'][k]} />
+                  const r = <rect key={k} x={x} y={10 + i * 24} width={w} height="14" fill={['var(--c-orange)', 'var(--c-green)', 'var(--c-yellow)'][k]} />
                   x += w
                   return r
                 })}
@@ -635,10 +647,10 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
       return (
         <svg viewBox="0 0 330 70" className="concept-svg" role="img" aria-label="A bar split into Farmer 40%, Builder 30%, Innkeeper 15% and Merchant 15%, adding up to 100%">
           {[
-            ['Farmer 40%', 0, 132, '#4f9cf9'],
-            ['Builder 30%', 132, 99, '#53c28b'],
-            ['Inn 15%', 231, 49.5, '#f2c94c'],
-            ['Trade 15%', 280.5, 49.5, '#f97b4f'],
+            ['Farmer 40%', 0, 132, 'var(--c-blue)'],
+            ['Builder 30%', 132, 99, 'var(--c-green)'],
+            ['Inn 15%', 231, 49.5, 'var(--c-yellow)'],
+            ['Trade 15%', 280.5, 49.5, 'var(--c-orange)'],
           ].map(([t, x, w, c]) => (
             <g key={t as string}>
               <rect x={x as number} y="14" width={w as number} height="24" fill={c as string} />
@@ -671,9 +683,9 @@ function Diagram({ kind }: { kind: GuideConcept['diagram'] }) {
     case 'lifespanBands':
       return (
         <svg viewBox="0 0 330 74" className="concept-svg" role="img" aria-label="An age axis from 0 to the maximum age covered by Child, Adult and Elder bands; only Adult is marked as working age">
-          <rect x="10" y="12" width="60" height="24" fill="#4f9cf9" /><text x="40" y="28" textAnchor="middle" className="c-small">Child</text>
-          <rect x="70" y="12" width="160" height="24" fill="#53c28b" /><text x="150" y="28" textAnchor="middle" className="c-small">Adult</text>
-          <rect x="230" y="12" width="90" height="24" fill="#f2c94c" /><text x="275" y="28" textAnchor="middle" className="c-small">Elder</text>
+          <rect x="10" y="12" width="60" height="24" fill="var(--c-blue)" /><text x="40" y="28" textAnchor="middle" className="c-small">Child</text>
+          <rect x="70" y="12" width="160" height="24" fill="var(--c-green)" /><text x="150" y="28" textAnchor="middle" className="c-small">Adult</text>
+          <rect x="230" y="12" width="90" height="24" fill="var(--c-yellow)" /><text x="275" y="28" textAnchor="middle" className="c-small">Elder</text>
           <rect x="70" y="40" width="160" height="10" className="c-accent" />
           <text x="150" y="64" textAnchor="middle" className="c-small">working age</text>
           <text x="10" y="64" className="c-small">0</text>

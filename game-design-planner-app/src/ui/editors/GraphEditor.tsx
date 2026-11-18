@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { addMissingArrows, flowAnalysis, UI_DOC } from '../../core/ui'
 import {
   Background,
@@ -18,6 +18,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import type { Entity, GraphData, SectionDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
+import { useTheme } from '../../core/theme'
 import { resolveSource } from '../../core/references/refs'
 import { useStore } from '../../core/store/store'
 import { useNewlyAdded, useProject, useSection } from '../hooks'
@@ -33,9 +34,9 @@ const hue = (s: string) => {
 function CardNode({ data, selected }: NodeProps) {
   const d = data as { label: string; kind: string; tag?: string; dim?: boolean }
   return (
-    <div className={'gnode' + (selected ? ' selected' : '') + (d.dim ? ' dim' : '')} style={{ borderColor: `hsl(${hue(d.kind)},60%,55%)` }}>
+    <div className={'gnode' + (selected ? ' selected' : '') + (d.dim ? ' dim' : '')} style={{ ['--kind-hue' as string]: hue(d.kind) } as CSSProperties}>
       <Handle type="target" position={Position.Left} />
-      <div className="gnode-kind" style={{ color: `hsl(${hue(d.kind)},70%,70%)` }}>{d.kind}{d.tag ? ` · ${d.tag}` : ''}</div>
+      <div className="gnode-kind">{d.kind}{d.tag ? ` · ${d.tag}` : ''}</div>
       <div className="gnode-label">{d.label}</div>
       <Handle type="source" position={Position.Right} />
     </div>
@@ -73,6 +74,7 @@ function autoLayout(g: GraphData): Record<string, { x: number; y: number }> {
 export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
   const { data, update } = useSection<GraphData>(docId, sec.id)
   const project = useProject()
+  const theme = useTheme()
   const g = data ?? { nodes: [], edges: [] }
   const [sel, setSel] = useState<{ type: 'node' | 'edge'; id: string } | null>(null)
   const [newKind, setNewKind] = useState(sec.nodeKinds[0])
@@ -216,7 +218,7 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
             onPaneClick={() => setSel(null)}
             onNodesDelete={(ns) => ns.forEach((n) => removeNode(n.id))}
             onEdgesDelete={(es) => es.forEach((e) => removeEdge(e.id))}
-            colorMode="dark"
+            colorMode={theme}
             fitView
             deleteKeyCode={['Delete', 'Backspace']}
           >

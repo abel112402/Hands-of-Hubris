@@ -15,6 +15,8 @@ import { HintCard } from '../hints/HintPanel'
 import { useProgressLine } from './ProgressPanel'
 import { Flavor } from '../flavor/Flavor'
 import { useMoments } from '../flavor/moments'
+import { HubiLineup } from '../mascots/Lineup'
+import { MASCOTS_ENABLED } from '../../core/mascots/config'
 import { useHints } from '../hints/useHints'
 import { AiPanel } from '../ai/AiPanel'
 import { Icon, type IconName } from '../Icon'
@@ -144,6 +146,7 @@ function CurrentStep({ view, onAsk }: { view: WalkthroughView; onAsk: (s: Compos
       <section className="step-hero done" aria-label={t('workspace.currentStep')}>
         <h2>{t('workspace.allDone')}</h2>
         <p className="muted">{t('workspace.allDoneHint')}</p>
+        {MASCOTS_ENABLED && <HubiLineup />}
       </section>
     )
   }
@@ -292,7 +295,7 @@ function HintsTab({ focus }: { focus?: ComposedStep }) {
   const visible = focusHints(useHints().visible, focus)
   const [all, setAll] = useState(false)
   const shown = all ? visible : visible.slice(0, HINTS_SHOWN)
-  if (!visible.length) return <><p className="muted">{t('hints.none')}</p><Flavor keys="flavor.noHints" /></>
+  if (!visible.length) return <><p className="muted">{t('hints.none')}</p><Flavor keys="flavor.noHints" costume="suit" /></>
   return (
     <section className="next-steps" aria-label={t('hints.nextSteps')}>
       <ul className="list">{shown.map((h) => <HintCard key={h.id} hint={h} />)}</ul>

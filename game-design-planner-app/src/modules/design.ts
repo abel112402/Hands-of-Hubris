@@ -3,6 +3,7 @@ import { DEFAULT_DAMAGE_FORMULA } from '../core/combatFormula'
 import type { GraphSource } from '../core/model/types'
 import { RESOLUTIONS, SCREEN_KINDS, UI_SYSTEMS } from '../core/ui'
 import { QUESTION_AREAS, QUESTION_STATUSES } from '../core/openQuestions'
+import { LOCATION_TYPES_ALL } from '../core/location/types'
 import { catalog, f, mod, s, section, v } from './helpers'
 
 const FACTIONS = section('factions', 'design.factions')
@@ -713,6 +714,61 @@ export const designModules = [
           f.long('founding', 'Town founding requirements'),
         ],
         [v.table(['name', 'biome', 'method', 'rewardRefs']), v.cards()],
+      ),
+      s.collection(
+        'locations',
+        'Locations',
+        'location',
+        [
+          f.enm('type', 'Type', [...LOCATION_TYPES_ALL], { group: 'Identity', help: 'Decides which inputs below apply and which map generator runs.' }),
+          f.ref('biome', 'Biome', BIOMES, { group: 'Identity', help: 'Tints the ground of the map and names it in the footer.' }),
+          f.enm('size', 'Size', ['Small', 'Medium', 'Large'], { group: 'Identity', help: 'Sets the map area and how much is generated. Empty counts as Medium.' }),
+          f.ref('faction', 'Controlled by', FACTIONS, { group: 'Identity' }),
+          f.multi('quests', 'Quests here', section('quests', 'design.story'), { group: 'Identity' }),
+          f.long('description', 'Description', { group: 'Identity' }),
+          f.num('population', 'Population', { min: 0, group: 'Settlement', help: 'About one house per five people. Empty uses the size.' }),
+          f.enm('density', 'Building density', ['Sparse', 'Normal', 'Dense'], { group: 'Settlement' }),
+          f.enm('walls', 'Walls', ['None', 'Palisade', 'Stone'], { group: 'Settlement' }),
+          f.enm('water', 'Water', ['None', 'River', 'Coast'], { group: 'Settlement' }),
+          f.multi('landmarks', 'Landmark buildings', section('buildings', 'design.town'), { group: 'Settlement', help: 'Each one is drawn as a larger, labelled building near the centre.' }),
+          f.list('districts', 'Districts', { group: 'Settlement', help: 'Names for the districts, largest first.' }),
+          f.num('zoneMarket', 'Market share %', { min: 0, max: 100, group: 'Settlement', help: 'Share of districts given to the market, on the trade route. Empty uses the default (City 15, Village 25).' }),
+          f.num('zoneIndustry', 'Craft quarter share %', { min: 0, max: 100, group: 'Settlement', help: 'Workshops and mills, by the water or at the edge, away from temples. Empty uses the default (City 15, Village 0).' }),
+          f.num('zoneMilitary', 'Garrison share %', { min: 0, max: 100, group: 'Settlement', help: 'Barracks by a gate and the wall. Empty uses the default (City 10, Village 0).' }),
+          f.num('zoneSacred', 'Temple quarter share %', { min: 0, max: 100, group: 'Settlement', help: 'Quiet, central, off the main road. Empty uses the default (City 10, Village 25).' }),
+          f.num('rooms', 'Rooms', { min: 1, group: 'Dungeon' }),
+          f.enm('layoutStyle', 'Layout', ['Rooms and corridors', 'Labyrinth'], { group: 'Dungeon' }),
+          f.num('secretRooms', 'Secret rooms', { min: 0, group: 'Dungeon' }),
+          f.enm('branching', 'Branching', ['Linear', 'Balanced', 'Branching'], { group: 'Dungeon', help: 'Linear: one long way with few side rooms. Branching: many forks. Empty is Balanced.' }),
+          f.num('loops', 'Loops', { min: 0, max: 20, group: 'Dungeon', help: 'Extra links that make circuits. Loops never go round a lock. Empty uses the layout (a labyrinth has more).' }),
+          f.enm('deadEnds', 'Dead ends', ['Few', 'Some', 'Many'], { group: 'Dungeon', help: 'Few: loops close dead ends. Many: loops avoid them, leaving room for treasure and keys.' }),
+          f.num('keyLocks', 'Locked doors', { min: 0, max: 4, group: 'Dungeon', help: 'Locks on the way to the boss, the last on the boss door. Each key lies before its lock. Empty: Small 0, Medium 1, Large 2.' }),
+          f.bool('traps', 'Traps', { group: 'Dungeon' }),
+          f.ref('boss', 'Boss', section('bosses', 'design.combat'), { group: 'Dungeon' }),
+          f.multi('loot', 'Loot', ITEMS, { group: 'Dungeon' }),
+          f.enm('caveMethod', 'Shape method', ['Cellular automata', 'Simplex noise', 'Chambers and tunnels'], { group: 'Cave', help: 'Cellular automata: rounded halls and winding passages. Simplex noise: long meandering galleries. Chambers and tunnels: oval rooms joined by tunnels. Empty is Cellular automata.' }),
+          f.num('chambers', 'Chambers', { min: 1, group: 'Cave', help: 'Clearings opened in every method; the chamber graph is read from the finished floor.' }),
+          f.num('smoothing', 'Smoothing passes', { min: 1, max: 10, group: 'Cave', help: 'Cellular automata only: more passes give rounder, simpler walls. Empty is 5.' }),
+          f.enm('openness', 'Openness', ['Tight', 'Normal', 'Open'], { group: 'Cave' }),
+          f.enm('caveWater', 'Water', ['None', 'Pools', 'Underground river'], { group: 'Cave' }),
+          f.num('entrances', 'Entrances', { min: 1, group: 'Cave' }),
+          f.multi('resources', 'Resources', catalog('resources'), { group: 'Cave' }),
+          f.multi('enemies', 'Enemies', section('enemies', 'design.combat'), { group: 'Inhabitants' }),
+          f.enm('footprint', 'Building', ['Hut', 'House', 'Manor', 'Tower'], { group: 'Dwelling' }),
+          f.num('dwellingRooms', 'Rooms', { min: 1, group: 'Dwelling' }),
+          f.ref('owner', 'Owner', section('archetypes', 'design.npc'), { group: 'Dwelling' }),
+          f.enm('furnishing', 'Furnishing', ['Sparse', 'Lived-in', 'Rich'], { group: 'Dwelling' }),
+        ],
+        [v.locationGallery(), v.locationMap(), v.table(['name', 'type', 'biome', 'size', 'faction']), v.kanban('type')],
+        {
+          description: 'Places the player visits: cities, villages, dungeons, caves and dwellings. Fill in the inputs, then open Map to generate a layered map you can regenerate layer by layer.',
+          // Only the inputs of the chosen type apply; the others fold away.
+          groupFilter: {
+            field: 'type',
+            static: { City: ['settlement'], Village: ['settlement'], Dungeon: ['dungeon', 'hostile'], Cave: ['cave', 'hostile'], Dwelling: ['dwelling'] },
+            groups: { Settlement: 'settlement', Dungeon: 'dungeon', Cave: 'cave', Inhabitants: 'hostile', Dwelling: 'dwelling' },
+          },
+        },
       ),
     ]),
     version: 3,
