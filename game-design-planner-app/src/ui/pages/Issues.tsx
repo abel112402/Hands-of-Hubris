@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { validateProject } from '../../core/references/refs'
 import { useStore } from '../../core/store/store'
+import { Flavor } from '../flavor/Flavor'
 
 export function Issues() {
   const project = useStore((s) => s.project)
@@ -8,7 +9,7 @@ export function Issues() {
   return (
     <div className="page">
       <h1>Issues ({issues.length})</h1>
-      {issues.length === 0 && <p className="muted">No problems found.</p>}
+      {issues.length === 0 && <><p className="muted">No problems found.</p><Flavor keys="flavor.issuesNone" costume="zombie" /></>}
       <ul className="list">
         {issues.map((i, n) => (
           <li key={n}>

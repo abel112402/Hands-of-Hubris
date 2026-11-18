@@ -16,6 +16,7 @@ import { looksLikeSecret } from '../../core/ai/security'
 import { useStore } from '../../core/store/store'
 import { useAiUi } from './aiStore'
 import { useFlavor } from '../flavor/Flavor'
+import { HubiSays } from '../mascots/Mascot'
 
 type Prepared = { system: string; messages: ChatMessage[]; json: boolean; payload: string; sources: string[] }
 type Scope = ContextScope['mode'] | 'none'
@@ -288,7 +289,7 @@ export function AiPanel({
 
       {task === 'chat' && chat.map((m, i) => <div key={i} className={`ai-msg ${m.role}`}><b>{m.role === 'user' ? t('ai.you') : '🤖'}</b><div className="ai-text">{m.content}</div></div>)}
       {error && <p className="error-text" role="alert">{error}</p>}
-      {(busy || (output && !diff && !findings && task !== 'chat')) && <div className="ai-msg assistant"><b>🤖 AI</b><div className="ai-text">{output || (busy && thinking && <span className="flavor">{thinking}</span>)}</div></div>}
+      {(busy || (output && !diff && !findings && task !== 'chat')) && <div className="ai-msg assistant"><b>🤖 AI</b><div className="ai-text">{output || (busy && thinking && <HubiSays costume="wizard" size={64} className="ai-thinking">{thinking}</HubiSays>)}</div></div>}
       {sources.length > 0 && <ul className="ai-sources">{sources.map((s) => <li key={s}>{s}</li>)}</ul>}
 
       {task === 'summary' && output && !busy && richSections.length > 0 && (

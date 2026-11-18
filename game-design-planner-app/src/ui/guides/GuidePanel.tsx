@@ -5,6 +5,7 @@ import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
 import { stepDone, toggleManual, useGuideUi, useManualDone } from './guideStore'
 import { Flavor } from '../flavor/Flavor'
+import { costumeFor } from '../../core/mascots/cast'
 
 /** Opens a step: goes to its section and spotlights its control. */
 export function useOpenStep(docId: string) {
@@ -74,7 +75,7 @@ export function GuidePanel({ docId, guide }: { docId: string; guide: ModuleGuide
           )
         })}
       </ol>
-      {next === -1 && <><p className="muted">{t('guide.allDone')}</p><Flavor keys="flavor.allDone" ctx={docId} /></>}
+      {next === -1 && <><p className="muted">{t('guide.allDone')}</p><Flavor keys="flavor.allDone" ctx={docId} costume={costumeFor(docId)} pose="cheer" /></>}
     </div>
   )
 }

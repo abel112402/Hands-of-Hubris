@@ -28,8 +28,8 @@ import type { ViewProps } from './CollectionEditor'
 import { countOf } from '../../core/text'
 
 /** One colour per difficulty level (catalog order) and per parameter category; the only hard-coded colours. */
-export const LEVEL_COLORS = ['#53c28b', '#4f9cf9', '#f97b4f', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e']
-export const CATEGORY_COLORS: Record<string, string> = { Combat: '#f97b4f', Survival: '#53c28b', Economy: '#f2c94c', NPC: '#4f9cf9', Other: '#8b93a5' }
+export const LEVEL_COLORS = ['var(--c-green)', 'var(--c-blue)', 'var(--c-orange)', 'var(--c-pink)', 'var(--c-yellow)', 'var(--c-cyan)', 'var(--c-red)']
+export const CATEGORY_COLORS: Record<string, string> = { Combat: 'var(--c-orange)', Survival: 'var(--c-green)', Economy: 'var(--c-yellow)', NPC: 'var(--c-blue)', Other: 'var(--c-grey)' }
 
 const pct = (n: number) => Math.round(n * 100)
 const fmt = (n: number) => (Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 100) / 100).toString()

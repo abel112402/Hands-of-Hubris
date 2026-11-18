@@ -1,4 +1,6 @@
 import { biomesWithoutEnemies, biomesWithoutEntry, biomesWithoutZone, graphDisagreements, levelInversions, outpostsMissing, unlinkedZones, unlockPath, unreachedBiomes, WORLD_DOC as DOC } from '../../world'
+import { locationsOf, locationsWithoutBiome, staleLocations, unmappedLocations, untypedLocations } from '../../location/analysis'
+import type { Entity, Project } from '../../model/types'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, hintId, shortList } from '../util'
 
@@ -64,4 +66,22 @@ export const worldRules: HintRule[] = [
     const l = levelInversions(project)
     return l.length ? [hint({ key: 'worldLevels', ruleId: 'world.levels', severity: 'info', sectionId: 'biomes', entityId: l[0].id, params: { count: l.length, names: names(l) } })] : []
   }),
+  // Locations: a place may well stay a text-only entry, so these only point out what is still open.
+  located('world.locType', (project) => untypedLocations(project), 'worldLocType', 'info'),
+  located('world.locMap', (project) => unmappedLocations(project), 'worldLocMap', 'info'),
+  located('world.locStale', (project) => staleLocations(project), 'worldLocStale', 'suggest'),
+  located('world.locBiome', (project) => (entitiesOf(project, DOC, 'biomes').length ? locationsWithoutBiome(project) : []), 'worldLocBiome', 'info'),
 ]
+
+/** A rule about the Locations section; quiet until there is a location. */
+function located(id: string, find: (project: Project) => Entity[], key: string, severity: Hint['severity']): HintRule {
+  return {
+    id,
+    scope: 'section',
+    appliesTo: ({ project, docId }) => docId === DOC && locationsOf(project).length > 0,
+    evaluate: ({ project }) => {
+      const l = find(project)
+      return l.length ? [hint({ key, ruleId: id, severity, sectionId: 'locations', entityId: l[0].id, params: { count: l.length, names: names(l) } })] : []
+    },
+  }
+}

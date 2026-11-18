@@ -22,7 +22,7 @@ import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 import { countOf } from '../../core/text'
 
-const STAGE_COLORS = ['#53c28b', '#4f9cf9', '#f2c94c', '#f97b4f', '#e5707e', '#8b93a5']
+const STAGE_COLORS = ['var(--c-green)', 'var(--c-blue)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-red)', 'var(--c-grey)']
 const fmt = (n: number) => (n >= 100 ? Math.round(n).toString() : (Math.round(n * 10) / 10).toString())
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
@@ -140,13 +140,13 @@ export function ThreatCurveView({ selected, onSelect }: ViewProps) {
       <div style={{ height: 280 }}>
         <ResponsiveContainer>
           <BarChart data={data} onClick={(e) => { const id = (e as { activePayload?: { payload: { id: string } }[] })?.activePayload?.[0]?.payload.id; if (id) onSelect(id) }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip formatter={(v, _n, p) => [v, `Threat (${(p as { payload: { stageLabel: string } }).payload.stageLabel})`]} />
             <Bar dataKey="threat" name="Threat">
               {data.map((d) => (
-                <Cell key={d.id} fill={STAGE_COLORS[d.stage ?? 5]} stroke={dips.has(d.id) ? '#e5586b' : d.id === selected ? '#fff' : undefined} strokeWidth={dips.has(d.id) || d.id === selected ? 3 : 0} />
+                <Cell key={d.id} fill={STAGE_COLORS[d.stage ?? 5]} stroke={dips.has(d.id) ? 'var(--danger)' : d.id === selected ? 'var(--text)' : undefined} strokeWidth={dips.has(d.id) || d.id === selected ? 3 : 0} />
               ))}
             </Bar>
           </BarChart>

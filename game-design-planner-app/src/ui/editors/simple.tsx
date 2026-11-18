@@ -327,11 +327,11 @@ function FormulaCard({ item, onChange, onDelete }: { item: FormulaData['items'][
           <div style={{ height: 180 }}>
             <ResponsiveContainer>
               <LineChart data={series}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
                 <XAxis dataKey="x" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="y" stroke="#4f9cf9" dot={false} connectNulls />
+                <Line type="monotone" dataKey="y" stroke="var(--c-blue)" dot={false} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>

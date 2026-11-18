@@ -137,6 +137,9 @@ export type CollectionView =
   | { kind: 'unlockPath' }
   | { kind: 'biomeThreat' }
   | { kind: 'biomeCoverage' }
+  /** Location views (see core/location). The map view generates and edits each location's `map`. */
+  | { kind: 'locationGallery' }
+  | { kind: 'locationMap' }
   | { kind: 'grid2d'; xField: string; yField: string; max: number }
   | { kind: 'ladder'; orderField: string; linkFields?: string[] }
   | {

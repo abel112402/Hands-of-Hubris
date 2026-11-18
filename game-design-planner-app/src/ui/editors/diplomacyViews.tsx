@@ -27,10 +27,7 @@ import type { ViewProps } from './CollectionEditor'
 import { countOf } from '../../core/text'
 
 /** Fallback faction colours (when a faction has none) and the hostile → neutral → allied ramp; the only fixed colours. */
-const FACTION_COLORS = ['#4f9cf9', '#f97b4f', '#53c28b', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e', '#a3a8ff']
-const HOSTILE = [229, 112, 126]
-const NEUTRAL = [139, 147, 165]
-const ALLIED = [83, 194, 139]
+const FACTION_COLORS = ['var(--c-blue)', 'var(--c-orange)', 'var(--c-green)', 'var(--c-pink)', 'var(--c-yellow)', 'var(--c-cyan)', 'var(--c-red)', 'var(--c-lavender)']
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const colorOf = (f: Entity, i: number) => (typeof f.color === 'string' && f.color ? f.color : FACTION_COLORS[i % FACTION_COLORS.length])
@@ -40,10 +37,10 @@ const signed = (n: number) => (n > 0 ? `+${Math.round(n)}` : String(Math.round(n
 export function relationColor(v: number, [lo, hi]: [number, number]): string {
   const mid = lo <= 0 && hi >= 0 ? 0 : (lo + hi) / 2
   const t = v >= mid ? (hi === mid ? 0 : (v - mid) / (hi - mid)) : lo === mid ? 0 : -(mid - v) / (mid - lo)
-  const to = t >= 0 ? ALLIED : HOSTILE
+  const to = t >= 0 ? '--c-green' : '--c-red'
   const k = Math.min(1, Math.abs(t))
-  const c = NEUTRAL.map((n, i) => Math.round(n + (to[i] - n) * k))
-  return `rgb(${c.join(',')})`
+  // Mixed from theme tokens so the scale stays readable in light and dark.
+  return `color-mix(in srgb, var(--c-grey), var(${to}) ${Math.round(k * 100)}%)`
 }
 
 function mutateDoc(fn: (d: Record<string, any>) => void, key: string) {

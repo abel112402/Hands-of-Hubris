@@ -206,7 +206,8 @@
     "document": "Dokumentum",
     "docMenu": "Dokumentum-műveletek: letöltés, export, import",
     "downloadMd": "Markdown letöltése (.md)",
-    "help": "Súgó"
+    "help": "Súgó",
+    "sections": "Szakaszok"
   },
   "status": {
     "unsaved": "Nem mentett változások",
@@ -609,6 +610,22 @@
     "worldLevels": {
       "title": "Visszafelé haladó szintsávok",
       "body": "{{count}} biom alacsonyabb játékosszinten kezdődik, mint egy korábbi szerepű biom: {{names}}. Nézd meg a Fenyegetés nézetet."
+    },
+    "worldLocType": {
+      "title": "Típus nélküli helyszínek",
+      "body": "{{count}} helyszínnek nincs típusa, ezért nem generálható hozzá térkép: {{names}}."
+    },
+    "worldLocMap": {
+      "title": "Térkép nélküli helyszínek",
+      "body": "{{count}} helyszínnek még nincs térképe: {{names}}. Nyisd meg a Map nézetet, és nyomd meg a Generate map gombot."
+    },
+    "worldLocStale": {
+      "title": "Elavult rétegek a térképeken",
+      "body": "{{count}} térképen vannak rétegek, amelyek már nem illeszkednek az alattuk lévőkhöz: {{names}}. A Map nézetben nyomd meg az „Update out of date” gombot, vagy hagyd őket így."
+    },
+    "worldLocBiome": {
+      "title": "Biom nélküli helyszínek",
+      "body": "{{count}} helyszínnek nincs biomja: {{names}}. A biom színezi a térképet, és megmutatja, melyik területhez tartozik a hely."
     },
     "npcStatCoverage": {
       "title": "Szabály nélküli statok",
@@ -1395,7 +1412,204 @@
       "restored": "A(z) {{rev}}. revízió visszaállítva és új verzióként mentve."
     }
   },
+  "mascot": {
+    "alt": "Hubi, {{costume}} jelmezben",
+    "costume": {
+      "wizard": "varázsló",
+      "scientist": "tudós",
+      "knight": "lovag",
+      "farmer": "farmer",
+      "smith": "kovács",
+      "pirate": "kalóz",
+      "suit": "üzletember",
+      "zombie": "zombi"
+    },
+    "aprilFools": ["Ma ebben a jelmezben jöttem. Ne kérdezz semmit.", "Ez a rész? Én úgy tudtam, ez a jelmezbál.", "A szakértőt kiszerveztük. Én vagyok a helyettes."],
+    "status": { "title": "Hubi helyzetjelentése" },
+    "wardrobe": {
+      "title": "Hubi gardróbja",
+      "hint": "Hubi, a kabalánk, a területhez illő jelmezben szól hozzád. Ha egy jelmezt kikapcsolsz, ott nem jelenik meg, a megjegyzés sima szövegként marad.",
+      "hintOff": "A személyiség ki van kapcsolva, így Hubi most sehol sem jelenik meg. A jelmezeket attól még itt beállíthatod.",
+      "on": "Be",
+      "off": "Ki",
+      "turnOff": "{{costume}} jelmez: bekapcsolva. Kattints a kikapcsoláshoz.",
+      "turnOn": "{{costume}} jelmez: kikapcsolva. Kattints a bekapcsoláshoz.",
+      "when": {
+        "wizard": "Vízió, történet, nyitott kérdések, szójegyzék",
+        "scientist": "Nehézség, adatok, teljesítmény, UI, QA",
+        "knight": "Harc, játékos karakter, frakciók",
+        "farmer": "Core loop, város, NPC-k, idő és időjárás",
+        "smith": "Tárgyak és crafting, architektúra, kód, eszközök",
+        "pirate": "Kereskedelem, világ, art & audio, kiadás",
+        "suit": "Ütemterv, production, helyzetjelentés",
+        "zombie": "Sok tipp, visszatérés, visszavonás-sorozat"
+      }
+    },
+    "companion": {
+      "open": "Hubi, {{costume}} jelmezben: kérj tőle tippet",
+      "more": "Még egyet",
+      "notNow": "Most ne",
+      "close": "Bezárás",
+      "kind": { "tip": "Tipp", "joke": "Vicc", "reflect": "Helyzetjelentés", "dressUp": "Átöltözés" }
+    },
+    "wizard": {
+      "dressUp": ["Köpeny fel, kalap fel. Jöhetnek a nagy kérdések.", "Megvan a botom. Most már csak egy vízió kell hozzá."],
+      "tip": [
+        "Egy jó vízió elfér egy mondatban. Ha háromban sem, az még csak köd.",
+        "Minden pillér egy ígéret a játékosnak. Amit nem szolgál egyik sem, az kivágható.",
+        "Egy nyitott kérdéshez mindig írj határidőt. A jóslatok is lejárnak.",
+        "A történet akkor erős, ha a játékos döntése megváltoztat benne valamit.",
+        "A küldetés célja legyen egy mondat. A varázsige is rövid.",
+        "Ha egy fogalmat kétféleképp hívtok, vedd fel a Szójegyzékbe. A nevek hatalommal bírnak."
+      ],
+      "joke": [
+        "Nem varázslat ez, csak jól elnevezett változók.",
+        "Látom a jövőt: valaki még ma átnevezi a főhőst.",
+        "A kristálygömböm szerint a 2. felvonás túl hosszú. Mindig az.",
+        "Egyszer elvarázsoltam egy bugot. Most feature."
+      ]
+    },
+    "scientist": {
+      "dressUp": ["Köpeny, szemüveg, lombik. Kezdődhet a mérés.", "Átöltöztem. Most már minden számra gyanakszom."],
+      "tip": [
+        "Egyszerre egy számot hangolj. Különben nem tudod, mi robbant fel.",
+        "Minden képlet mellé írj egy példát számokkal. Ellenőrizni csak azt lehet.",
+        "A nehézségi görbe legyen fűrészfog: feszültség, levegővétel, feszültség.",
+        "Ami táblázatba fér, az kerüljön adatba, ne kódba. A kísérletek gyorsabbak lesznek.",
+        "Mérd, amit hangolni akarsz. Érzésre balanszolni olyan, mint mérleg nélkül főzni.",
+        "A teljesítmény-keretet előbb tűzd ki, mint ahogy kifutsz belőle."
+      ],
+      "joke": [
+        "Kísérlet: 100 játékos, 1 boss. Eredmény: a boss nem élte túl a nerfet.",
+        "Hipotézisem szerint ez a szám rossz. A kontrollcsoport szerint is.",
+        "Nem robbant fel. Ez a legnyugtalanítóbb eredmény.",
+        "A lombikban kék a folyadék, mert a zöld már a hitbox-debughoz kell."
+      ]
+    },
+    "knight": {
+      "dressUp": ["Páncél fel, jöhet a harc.", "Leteszem a vasvillát, felveszem a kardot."],
+      "tip": [
+        "Minden támadásnak legyen ellenjátéka. Így kívánja a becsület és a balansz.",
+        "Egy ellenfél akkor emlékezetes, ha a játékos kitanulja és legyőzi.",
+        "A játékos hőse legyen egy mondatban leírható: ki ő, és mit akar.",
+        "Frakciót ne csak a zászló különböztessen meg, hanem az, hogy mit akar.",
+        "A bossnak legyen legalább egy tanulható mintája. A lovagi torna is szabályokkal megy.",
+        "Ha egy fegyver mindenben jobb, a többi csak dísz a falon."
+      ],
+      "joke": [
+        "Van kardom, van pajzsom… csak hitboxom nincs még.",
+        "Esküt tettem, hogy megvédem a balanszot. Már a harmadik patch-nél tartok.",
+        "A páncél nehéz. A design-dokumentum nehezebb.",
+        "Párbajra hívtam a scope creepet. Ő hozott még három barátot."
+      ]
+    },
+    "farmer": {
+      "dressUp": ["Csizma fel, vasvilla a kézben. Irány a falu.", "Kantáros nadrág: a game design legkényelmesebb jelmeze."],
+      "tip": [
+        "A jó loop olyan, mint a vetés: beleteszel, vársz, aratsz, kezded újra.",
+        "Minden NPC-nek legyen napirendje. A falu attól él, hogy mindenki megy valahova.",
+        "Az időjárás akkor jó, ha a játékos döntésein is változtat, nem csak a színeken.",
+        "Egy épület célja egy mondat: mit termel, mit fogyaszt.",
+        "Az évszakok adjanak ritmust: legyen mire készülni és miért sietni.",
+        "Kezdd kicsiben: egy falu, egy loop, egy évszak. Aztán bővíts."
+      ],
+      "joke": [
+        "Az időjárás-rendszered jobb, mint a miénk a faluban. Nálunk csak eső van.",
+        "A tehén is egy NPC, csak kevesebb dialógussal.",
+        "Vasvilla: a falu legsokoldalúbb UI-eleme.",
+        "Elvetettem egy ötletet. Jövő tavasszal kiderül, mi kel ki belőle."
+      ]
+    },
+    "smith": {
+      "dressUp": ["Kötény fel, kesztyű fel. Mit kovácsolunk ma?", "Begyújtottam a kohót. Jöhetnek a receptek."],
+      "tip": [
+        "Előbb a recept, aztán a kalapács. Minden craftolt tárgynak legyen forrása.",
+        "Egy tárgy legyen jó valamiben, és rossz valami másban. Különben nincs döntés.",
+        "Rétegezd az architektúrát: a mag ne tudjon a UI-ról.",
+        "A mentést kezdettől tervezd, ne a végén kalapáld rá.",
+        "Ha egy rendszert kétszer írsz meg, harmadszorra kovácsolj belőle eszközt.",
+        "Kis, egyértelmű nevek a kódban. Az üllőn sincs felesleges dísz."
+      ],
+      "joke": [
+        "Refaktorálni olyan, mint újrakovácsolni: forró, hangos, és utána jobb.",
+        "Kalapáccsal minden probléma szögnek látszik. Kivéve a merge conflictot.",
+        "Ötven kardot kovácsoltam. Az ötvenegyedik is +2 sebzés lett.",
+        "A tech debt is vas. Csak rozsdás."
+      ]
+    },
+    "pirate": {
+      "dressUp": ["Szemkötő fel, irány a nyílt tenger! Vagy legalább a piac.", "Kalóz módba váltottam. Az árakat ezentúl alkudjuk."],
+      "tip": [
+        "Minden pénzforráshoz kell egy lefolyó, különben inflációs tengerre futunk.",
+        "A világtérkép legyen kíváncsiságkeltő: minden régió ígérjen valamit.",
+        "Az árak mozogjanak, de ne kiszámíthatatlanul. A kincskeresés is térképpel megy.",
+        "A kiadás előtt legyen egy listád arról, mit vágsz ki, ha szorul a hurok.",
+        "A hang és a zene mondja el a hangulatot akkor is, ha a játékos nem olvas.",
+        "Egy kereskedelmi útvonal akkor érdekes, ha kockázata is van."
+      ],
+      "joke": [
+        "A határidő? Az inkább amolyan iránymutatás, pajtás.",
+        "Elveszett az arany? Semmi baj, a loot table-ben van még.",
+        "Egy szemmel is látom, hogy ez az ár túl alacsony.",
+        "A térképen az X jelöli a kincset. A Y a scope creepet."
+      ]
+    },
+    "suit": {
+      "dressUp": ["Öltöny, nyakkendő, napszemüveg. Beszéljünk a határidőkről.", "Felvettem a tárgyalós öltönyt. Ez komoly lesz."],
+      "tip": [
+        "Minden mérföldkő végén legyen valami, amit meg lehet mutatni. Ami nem demózható, nem kész.",
+        "A backlog nem kívánságlista. Ha mindennek magas a prioritása, semminek sincs.",
+        "Kockázatot az elején írj fel, amikor még olcsó. Később kamatostul fizetsz.",
+        "Tervezz puffert. Nem azért, mert lassú vagy, hanem mert a játékfejlesztés ilyen.",
+        "Egy ütemterv akkor jó, ha bele van írva, mit vágunk ki, ha csúszunk.",
+        "Ne csak azt tervezd meg, mit csinálsz. Azt is, mit nem."
+      ],
+      "joke": [
+        "A határidő olyan, mint a részvény: néha csak papíron létezik.",
+        "Ez a meeting is lehetett volna egy e-mail. Ez a feature is lehetett volna egy DLC.",
+        "Agilisak vagyunk: minden sprintben máshogy késünk.",
+        "A napszemüveg nem stílus. A burndown chart túl fényes."
+      ]
+    },
+    "zombie": {
+      "dressUp": ["Mmm… átöltöztem. Vagy csak így ébredtem.", "Ez nem jelmez. Ez a harmadik éjszakai tervezés."],
+      "tip": [
+        "Az árva elemek egyszer visszajönnek kísérteni. Kösd be őket, vagy temesd el rendesen.",
+        "A kivágott tartalmat írd fel. Egyszer még feltámadhat egy DLC-ben.",
+        "Egy tipp, amit hetek óta halogatsz, már nem tipp. Hanem lakótárs.",
+        "Éjfél után ne nevezz át semmit. Hidd el, én tudom."
+      ],
+      "joke": [
+        "Agyat! …mármint game design dokumentumot.",
+        "Mmm… friss bugok.",
+        "Lassú vagyok, de mindig odaérek. Mint a régi buildek.",
+        "Nem halott. Csak nincs benne a sprintben."
+      ]
+    },
+    "reflect": {
+      "docEmpty": ["Ez a rész még teljesen üres. Kezdjük a legkisebbel?", "Tiszta lap. Az első bejegyzés mindig a legnehezebb, aztán megy."],
+      "docStarted": ["{{pct}}% kész ebből a részből. Elindult, és ez a lényeg.", "{{pct}}%-on áll ez a rész. Lépésről lépésre."],
+      "docHalf": ["Már {{pct}}% kész ebből a részből. Félúton túl!", "{{pct}}%. A dombtetőről már lefelé visz az út."],
+      "docDone": ["Ez a rész kész. Szép munka! Nézzünk át egy másikat?", "Minden szekció ki van töltve. Ezt ünnepelni kell."],
+      "hintsHere": ["{{count}} tipp vár ebben a részben. Nézzünk rá egyre?", "Ebben a részben {{count}} nyitott tipp van. Egyet most is el lehet intézni."],
+      "hintsClear": ["Ebben a részben nincs nyitott tipp. Gyanúsan tiszta.", "Itt minden rendben. Megyünk tovább?"],
+      "hintsTotal": ["{{count}} megoldatlan tipp a projektben… mmm, friss bugok.", "{{count}} tipp vár rád. Nem sietek, de ők sem mennek el."],
+      "overallLow": ["A teljes terv {{pct}}%-on áll. Minden nagy játék innen indult.", "{{pct}}% az egész projekt. A befektetőknek: korai fázis, nagy potenciál."],
+      "overallMid": ["A teljes terv {{pct}}%-on. A befektetőknek ezt úgy mondjuk: erős lendület.", "{{pct}}% kész. A középső szakasz a leghosszabb, ezt minden projekt tudja."],
+      "overallHigh": ["{{pct}}%-on a teljes terv. Ideje a demóra gondolni.", "{{pct}}%. Ezt már be lehet mutatni a boardnak."],
+      "nextMilestone": ["Következő mérföldkő: „{{name}}”. Mi kell még hozzá?", "A „{{name}}” mérföldkő a következő. Legyen demózható a végén."],
+      "roadmapOverload": ["Az ütemterv {{weeks}} emberhéttel túl van töltve. Ezt hívjuk stratégiai rugalmasságnak.", "{{weeks}} emberhét túlterhelés. Vágjunk, mielőtt a csúszás vág minket."],
+      "questionsOpen": ["{{count}} nyitott kérdés lebeg a levegőben. A jövő ködös, de a döntések határidőt kérnek.", "{{count}} kérdés vár válaszra. Válasszunk ki egyet ma?"],
+      "questionsOverdue": ["{{count}} kérdés határideje lejárt. A jóslatok is megromlanak.", "{{count}} lejárt kérdés. Ideje dönteni, vagy új határidőt adni."],
+      "itemsNoRecipes": ["{{items}} tárgy, de csak {{recipes}} recept. Ki fogja ezt mind kikovácsolni?", "{{items}} tárgy vár forrásra. Lehet loot, bolt vagy recept, de valahonnan jönnie kell."],
+      "npcCrowd": ["{{count}} NPC-típus lakik a faluban. Mindegyiknek van dolga?", "{{count}} féle lakos. Ki fogja megetetni a teheneket?"],
+      "factionsMany": ["{{count}} frakció a térképen. Mindegyiknek van oka harcolni?", "{{count}} zászló leng. A szövetségeket is megtervezted?"],
+      "questsMany": ["{{count}} küldetés a naplóban. Van köztük, amelyik a fő szálat viszi?", "{{count}} quest. A legjobb történetek is kivágnak néhányat."]
+    }
+  },
   "flavor": {
+    "issuesNone": ["Egyetlen hiba sincs? Akkor miből élek?", "Tiszta projekt. Én azért itt maradok, hátha."],
+    "hintsSettings": ["Itt hangolhatod, mennyit morogjak. Ne légy túl szigorú.", "Tippek be, tippek ki. Én úgyis visszajövök."],
     "settings": {
       "label": "Személyiség",
       "hint": "Apró, kedves (és néha vicces) megjegyzések az üres oldalakon, betöltéskor és mentéskor. Hibaüzenetekben és megerősítéseknél sosem jelennek meg.",
@@ -1690,5 +1904,12 @@
       "Battle royale mód hozzáadása…",
       "Élő szolgáltatás monetizálásának tervezése… vicc."
     ]
+  },
+  "theme": {
+    "label": "Téma",
+    "system": "Rendszer",
+    "light": "Világos",
+    "dark": "Sötét",
+    "hint": "A Rendszer beállítás az eszköz világos vagy sötét módját követi. Csak ebben a böngészőben mentjük."
   }
 }

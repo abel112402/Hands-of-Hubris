@@ -35,6 +35,8 @@ import { LoopPacingView } from './coreLoopViews'
 import { CustomSimulatorView, DifficultyImpactView, PressureOverviewView, TuningBoardView } from './difficultyViews'
 import { ActionSimulatorView, FactionFootprintView, RelationsWebView, ReputationScaleView } from './diplomacyViews'
 import { BiomeCoverageView, BiomeDossierView, BiomeThreatView, UnlockPathView, WorldAtlasView } from './worldViews'
+import { LocationGalleryView } from './locationViews'
+import { LocationMapView } from './location/LocationMapView'
 import { Icon } from '../Icon'
 import { countOf } from '../../core/text'
 
@@ -125,6 +127,8 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   unlockPath: 'Unlock path',
   biomeThreat: 'Threat',
   biomeCoverage: 'Coverage',
+  locationGallery: 'Gallery',
+  locationMap: 'Map',
 }
 
 export type ViewProps = {
@@ -274,6 +278,8 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'unlockPath' && <UnlockPathView {...props} />}
           {view.kind === 'biomeThreat' && <BiomeThreatView {...props} />}
           {view.kind === 'biomeCoverage' && <BiomeCoverageView {...props} />}
+          {view.kind === 'locationGallery' && <LocationGalleryView {...props} />}
+          {view.kind === 'locationMap' && <LocationMapView {...props} />}
           {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
           {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
           {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}

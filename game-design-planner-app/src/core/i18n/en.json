@@ -206,7 +206,8 @@
     "document": "Document",
     "docMenu": "Document actions: download, export, import",
     "downloadMd": "Download Markdown (.md)",
-    "help": "Help"
+    "help": "Help",
+    "sections": "Sections"
   },
   "status": {
     "unsaved": "Unsaved changes",
@@ -715,6 +716,30 @@
       "body": "{{count}} biomes start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view.",
       "body_one": "{{count}} biome starts at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view.",
       "body_other": "{{count}} biomes start at a lower player level than a biome of an earlier role: {{names}}. Check the Threat view."
+    },
+    "worldLocType": {
+      "title": "Locations without a type",
+      "body": "{{count}} locations have no type, so no map can be generated for them: {{names}}.",
+      "body_one": "{{count}} location has no type, so no map can be generated for it: {{names}}.",
+      "body_other": "{{count}} locations have no type, so no map can be generated for them: {{names}}."
+    },
+    "worldLocMap": {
+      "title": "Locations without a map",
+      "body": "{{count}} locations have no map yet: {{names}}. Open the Map view and press Generate map.",
+      "body_one": "{{count}} location has no map yet: {{names}}. Open the Map view and press Generate map.",
+      "body_other": "{{count}} locations have no map yet: {{names}}. Open the Map view and press Generate map."
+    },
+    "worldLocStale": {
+      "title": "Maps with layers out of date",
+      "body": "{{count}} maps have layers that no longer fit the layers below them: {{names}}. In the Map view, press “Update out of date”, or keep them as they are.",
+      "body_one": "{{count}} map has layers that no longer fit the layers below them: {{names}}. In the Map view, press “Update out of date”, or keep them as they are.",
+      "body_other": "{{count}} maps have layers that no longer fit the layers below them: {{names}}. In the Map view, press “Update out of date”, or keep them as they are."
+    },
+    "worldLocBiome": {
+      "title": "Locations not placed in a biome",
+      "body": "{{count}} locations have no biome: {{names}}. The biome tints the map and tells you which area the place belongs to.",
+      "body_one": "{{count}} location has no biome: {{names}}. The biome tints the map and tells you which area the place belongs to.",
+      "body_other": "{{count}} locations have no biome: {{names}}. The biome tints the map and tells you which area the place belongs to."
     },
     "npcStatCoverage": {
       "title": "Stats without a rule",
@@ -1632,7 +1657,204 @@
       "restored": "Revision {{rev}} restored and saved as a new version."
     }
   },
+  "mascot": {
+    "alt": "Hubi in a {{costume}} costume",
+    "costume": {
+      "wizard": "wizard",
+      "scientist": "scientist",
+      "knight": "knight",
+      "farmer": "farmer",
+      "smith": "blacksmith",
+      "pirate": "pirate",
+      "suit": "business suit",
+      "zombie": "zombie"
+    },
+    "aprilFools": ["I came in this costume today. Don't ask.", "This planner? I was told it was a costume party.", "We outsourced the expert. I'm the stand-in."],
+    "status": { "title": "Hubi's status report" },
+    "wardrobe": {
+      "title": "Hubi's wardrobe",
+      "hint": "Hubi, our mascot, talks to you in the costume that fits the area. Switch a costume off and he won't appear there; his remark stays as plain text.",
+      "hintOff": "Personality is off, so Hubi doesn't appear anywhere right now. You can still set up his costumes here.",
+      "on": "On",
+      "off": "Off",
+      "turnOff": "{{costume}} costume: on. Click to switch it off.",
+      "turnOn": "{{costume}} costume: off. Click to switch it on.",
+      "when": {
+        "wizard": "Vision, story, open questions, glossary",
+        "scientist": "Difficulty, data, performance, UI, QA",
+        "knight": "Combat, player character, factions",
+        "farmer": "Core loop, town, NPCs, time and weather",
+        "smith": "Items and crafting, architecture, code, tools",
+        "pirate": "Trade, world, art & audio, release",
+        "suit": "Roadmap, production, status reports",
+        "zombie": "Lots of hints, coming back, undo sprees"
+      }
+    },
+    "companion": {
+      "open": "Hubi in a {{costume}} costume: ask for a tip",
+      "more": "Another one",
+      "notNow": "Not now",
+      "close": "Close",
+      "kind": { "tip": "Tip", "joke": "Joke", "reflect": "Status report", "dressUp": "Costume change" }
+    },
+    "wizard": {
+      "dressUp": ["Robe on, hat on. Bring on the big questions.", "Got my staff. Now all I need is a vision."],
+      "tip": [
+        "A good vision fits in one sentence. If three aren't enough, it's still fog.",
+        "Every pillar is a promise to the player. Whatever serves none of them can go.",
+        "Give every open question a deadline. Even prophecies expire.",
+        "A story is strong when the player's choices change something in it.",
+        "A quest's goal should fit in one sentence. Spells are short too.",
+        "If something has two names, put it in the Glossary. Names have power."
+      ],
+      "joke": [
+        "It's not magic, just well-named variables.",
+        "I foresee it: someone renames the hero today.",
+        "My crystal ball says act two is too long. It always is.",
+        "I once enchanted a bug. Now it's a feature."
+      ]
+    },
+    "scientist": {
+      "dressUp": ["Coat, glasses, flask. Let the measuring begin.", "Changed. Now I'm suspicious of every number."],
+      "tip": [
+        "Tune one number at a time. Otherwise you won't know what exploded.",
+        "Put a worked example next to every formula. You can only check what has numbers.",
+        "Make the difficulty curve a sawtooth: tension, breather, tension.",
+        "If it fits in a table, it belongs in data, not code. Experiments get faster.",
+        "Measure what you want to tune. Balancing by feel is cooking without scales.",
+        "Set the performance budget before you run out of it."
+      ],
+      "joke": [
+        "Experiment: 100 players, 1 boss. Result: the boss didn't survive the nerf.",
+        "My hypothesis says this number is wrong. So does the control group.",
+        "It didn't explode. That's the most worrying result.",
+        "The flask is blue because green is reserved for hitbox debugging."
+      ]
+    },
+    "knight": {
+      "dressUp": ["Armour on. Let battle commence.", "Pitchfork down, sword up."],
+      "tip": [
+        "Every attack deserves a counter. Honour and balance demand it.",
+        "An enemy is memorable when the player learns it and beats it.",
+        "Describe the hero in one sentence: who they are and what they want.",
+        "Factions should differ in what they want, not just in their banners.",
+        "Give every boss at least one learnable pattern. Even jousts have rules.",
+        "If one weapon is better at everything, the rest are wall decorations."
+      ],
+      "joke": [
+        "I have a sword, I have a shield… I just don't have a hitbox yet.",
+        "I swore to defend the balance. I'm on my third patch.",
+        "Armour is heavy. The design doc is heavier.",
+        "I challenged scope creep to a duel. It brought three friends."
+      ]
+    },
+    "farmer": {
+      "dressUp": ["Boots on, pitchfork in hand. Off to the village.", "Overalls: the comfiest costume in game design."],
+      "tip": [
+        "A good loop is like sowing: put in, wait, harvest, start again.",
+        "Give every NPC a schedule. A village lives because everyone is going somewhere.",
+        "Weather works when it changes the player's decisions, not just the colours.",
+        "Sum up each building in a sentence: what it makes and what it eats.",
+        "Let the seasons set a rhythm: something to prepare for, a reason to hurry.",
+        "Start small: one village, one loop, one season. Then grow."
+      ],
+      "joke": [
+        "Your weather system beats ours. Back home it only rains.",
+        "A cow is just an NPC with less dialogue.",
+        "The pitchfork: the most versatile UI element in the village.",
+        "I planted an idea. We'll see what comes up next spring."
+      ]
+    },
+    "smith": {
+      "dressUp": ["Apron on, gloves on. What are we forging today?", "Forge is lit. Bring on the recipes."],
+      "tip": [
+        "Recipe first, hammer second. Every crafted item needs a source.",
+        "An item should be good at something and bad at something else. Otherwise there's no choice.",
+        "Layer the architecture: the core shouldn't know the UI exists.",
+        "Design saving from day one. Don't hammer it on at the end.",
+        "Built a system twice? The third time, forge it into a tool.",
+        "Short, plain names in code. An anvil has no ornaments either."
+      ],
+      "joke": [
+        "Refactoring is reforging: hot, loud, and better afterwards.",
+        "With a hammer every problem looks like a nail. Except merge conflicts.",
+        "I forged fifty swords. The fifty-first was also +2 damage.",
+        "Tech debt is iron too. Just rusty."
+      ]
+    },
+    "pirate": {
+      "dressUp": ["Eyepatch on, off to the open sea! Or at least the market.", "Pirate mode on. From now on, we haggle."],
+      "tip": [
+        "Every money faucet needs a sink, or we sail into a sea of inflation.",
+        "Make the world map spark curiosity: every region should promise something.",
+        "Let prices move, but not at random. Even treasure hunts need a map.",
+        "Before release, keep a list of what you'll cut when the rope gets tight.",
+        "Sound and music should carry the mood even when the player isn't reading.",
+        "A trade route gets interesting when it carries some risk."
+      ],
+      "joke": [
+        "Deadlines? More what you'd call guidelines, matey.",
+        "Lost the gold? No worries, there's more in the loot table.",
+        "I can see with one eye that this price is too low.",
+        "X marks the treasure. Y marks the scope creep."
+      ]
+    },
+    "suit": {
+      "dressUp": ["Suit, tie, sunglasses. Let's talk deadlines.", "Put on the meeting suit. This is serious."],
+      "tip": [
+        "End every milestone with something you can show. If you can't demo it, it isn't done.",
+        "A backlog isn't a wish list. If everything is high priority, nothing is.",
+        "Log risks early, while they're cheap. Later you pay interest.",
+        "Plan a buffer. Not because you're slow, but because game development is like that.",
+        "A good schedule says what gets cut if we slip.",
+        "Don't just plan what you'll build. Plan what you won't."
+      ],
+      "joke": [
+        "Deadlines are like stocks: sometimes they only exist on paper.",
+        "This meeting could have been an email. This feature could have been a DLC.",
+        "We're agile: every sprint we're late in a new way.",
+        "The sunglasses aren't style. The burndown chart is just too bright."
+      ]
+    },
+    "zombie": {
+      "dressUp": ["Mmm… I changed. Or maybe I just woke up like this.", "This isn't a costume. It's my third night of planning."],
+      "tip": [
+        "Orphaned entries come back to haunt you. Link them or bury them properly.",
+        "Write down what you cut. It may rise again as a DLC.",
+        "A hint you've ignored for weeks isn't a hint anymore. It's a roommate.",
+        "Never rename anything after midnight. Trust me, I know."
+      ],
+      "joke": [
+        "Braaains! …I mean, game design documents.",
+        "Mmm… fresh bugs.",
+        "I'm slow, but I always get there. Like old builds.",
+        "It's not dead. It's just not in this sprint."
+      ]
+    },
+    "reflect": {
+      "docEmpty": ["This part is still completely empty. Start with the smallest thing?", "A blank page. The first entry is the hardest, then it flows."],
+      "docStarted": ["This part is {{pct}}% done. It's moving, and that's what counts.", "{{pct}}% here. Step by step."],
+      "docHalf": ["Already {{pct}}% done here. Past the halfway mark!", "{{pct}}%. It's downhill from the top of the hill."],
+      "docDone": ["This part is done. Nice work! Shall we look at another?", "Every section is filled in. That calls for a celebration."],
+      "hintsHere": ["{{count}} hints are waiting in this planner. Shall we look at one?", "{{count}} open hints in this planner. One of them could go right now."],
+      "hintsClear": ["No open hints in this planner. Suspiciously clean.", "All good here. Shall we move on?"],
+      "hintsTotal": ["{{count}} unresolved hints in the project… mmm, fresh bugs.", "{{count}} hints are waiting. I'm in no hurry, but they won't leave either."],
+      "overallLow": ["The whole plan is at {{pct}}%. Every great game started here.", "{{pct}}% overall. For investors: early stage, big potential."],
+      "overallMid": ["The whole plan is at {{pct}}%. For investors, we call that strong momentum.", "{{pct}}% done. The middle stretch is the longest, every project knows it."],
+      "overallHigh": ["The whole plan is at {{pct}}%. Time to think about the demo.", "{{pct}}%. This is ready to show the board."],
+      "nextMilestone": ["Next milestone: “{{name}}”. What does it still need?", "“{{name}}” is the next milestone. Make sure it ends in a demo."],
+      "roadmapOverload": ["The schedule is {{weeks}} person-weeks over. We call that strategic flexibility.", "{{weeks}} person-weeks of overload. Let's cut before the slip cuts us."],
+      "questionsOpen": ["{{count}} open questions hang in the air. The future is foggy, but decisions need deadlines.", "{{count}} questions await answers. Pick one to settle today?"],
+      "questionsOverdue": ["{{count}} questions are past their deadline. Even prophecies go stale.", "{{count}} overdue questions. Time to decide, or set a new date."],
+      "itemsNoRecipes": ["{{items}} items but only {{recipes}} recipes. Who's going to forge all that?", "{{items}} items need a source. Loot, shop or recipe, it has to come from somewhere."],
+      "npcCrowd": ["{{count}} NPC types live in the village. Does each have a job?", "{{count}} kinds of villagers. Who's going to feed the cows?"],
+      "factionsMany": ["{{count}} factions on the map. Does each have a reason to fight?", "{{count}} banners flying. Have you planned the alliances too?"],
+      "questsMany": ["{{count}} quests in the journal. Which ones carry the main thread?", "{{count}} quests. The best stories cut a few."]
+    }
+  },
   "flavor": {
+    "issuesNone": ["Not a single problem? Then what am I supposed to eat?", "A clean project. I'll hang around anyway, just in case."],
+    "hintsSettings": ["Tune how much I grumble here. Don't be too strict.", "Hints on, hints off. I always come back anyway."],
     "settings": {
       "label": "Personality",
       "hint": "Small, kind (and sometimes funny) asides on empty pages, while loading and when saving. Never shown in errors or confirmations.",
@@ -1927,5 +2149,12 @@
       "Adding battle royale mode…",
       "Planning live-service monetisation… kidding."
     ]
+  },
+  "theme": {
+    "label": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "hint": "System follows your device's light or dark setting. Saved in this browser only."
   }
 }

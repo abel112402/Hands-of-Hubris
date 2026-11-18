@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import type { ExportAsset } from '../../core/export/markdown'
 import { MODULES } from '../../core/modules/registry'
 import { renderMermaid, type MermaidResult } from './mermaid'
+import { useTheme } from '../../core/theme'
 
 /**
  * GitHub-flavoured rendering of an exported document: tables, task lists, strikethrough, autolinks, Mermaid diagrams,
@@ -56,14 +57,16 @@ function docRoute(href: string, fromPath?: string): string | null {
 }
 
 function Mermaid({ source }: { source: string }) {
-  const [result, setResult] = useState<{ source: string; r: MermaidResult } | null>(null)
+  const theme = useTheme()
+  const [result, setResult] = useState<{ source: string; theme: string; r: MermaidResult } | null>(null)
   useEffect(() => {
     let alive = true
-    void renderMermaid(source).then((r) => alive && setResult({ source, r }))
+    void renderMermaid(source, theme).then((r) => alive && setResult({ source, theme, r }))
     return () => {
       alive = false
     }
-  }, [source])
+  }, [source, theme])
+  // Keep showing the previous theme's diagram while the new one renders, rather than flashing empty.
   const r = result?.source === source ? result.r : null
   if (r && 'error' in r)
     return (

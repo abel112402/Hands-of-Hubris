@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { CloudBackend } from '../../core/cloud/backend'
 import { createConfiguredBackend, isCloudConfigured } from '../../core/cloud/config'
 import { initCloud, lastActiveProjectId, openCloudProject, useCloud } from '../../core/cloud/session'
-import { useLoadingLine } from '../flavor/easter'
+import { LoadingLine } from '../flavor/easter'
 
 const RETURN_KEY = 'hoh.returnTo'
 
@@ -30,8 +30,7 @@ function takeReturnTo(): string | null {
 
 export function Loading() {
   const { t } = useTranslation()
-  const line = useLoadingLine()
-  return <div className="page cloud-loading" role="status">{line ?? t('cloud.loading')}</div>
+  return <div className="page cloud-loading" role="status"><LoadingLine fallback={t('cloud.loading')} /></div>
 }
 
 /**

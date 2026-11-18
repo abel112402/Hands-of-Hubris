@@ -12,7 +12,7 @@ import { useProject } from '../hooks'
 import { dragCue } from '../motion'
 import type { ViewProps } from './CollectionEditor'
 
-const PALETTE = ['#4f9cf9', '#f97b4f', '#53c28b', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e']
+const PALETTE = ['var(--c-blue)', 'var(--c-orange)', 'var(--c-green)', 'var(--c-pink)', 'var(--c-yellow)', 'var(--c-cyan)', 'var(--c-red)']
 
 const AVERAGE = '__average'
 
@@ -66,7 +66,7 @@ export function RadarView({ docId, sec, items, mapField, scale }: ViewProps & { 
               {chosen.map((id, i) => (
                 <Radar key={id} name={items.find((e) => e.id === id)?.name} dataKey={id} stroke={PALETTE[i % PALETTE.length]} fill={PALETTE[i % PALETTE.length]} fillOpacity={0.25} />
               ))}
-              {showAverage && <Radar name="Average of all" dataKey={AVERAGE} stroke="#aaa" strokeDasharray="4 3" fill="none" />}
+              {showAverage && <Radar name="Average of all" dataKey={AVERAGE} stroke="var(--muted)" strokeDasharray="4 3" fill="none" />}
               <Legend />
               <Tooltip />
             </RadarChart>
@@ -82,7 +82,8 @@ export function Grid2dView({ items, onSelect, selected, patch, xField, yField, m
   const ys = [...xs].reverse()
   const color = (x: number, y: number) => {
     const t = (x * y) / (max * max)
-    return `hsl(${120 - 120 * t}, 55%, ${28 + 8 * t}%)`
+    // Green (low) → red (high), tinted onto the panel so cell text stays readable in either theme.
+    return `color-mix(in srgb, color-mix(in srgb, var(--c-green), var(--c-red) ${Math.round(t * 100)}%) 40%, var(--panel))`
   }
   return (
     <div className="grid2d">

@@ -29,22 +29,22 @@ import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
 /** Role tier colours (Starter → Final, then "no role"); the same ramp as Combat's threat curve. */
-export const ROLE_COLORS = ['#53c28b', '#4f9cf9', '#f2c94c', '#f97b4f', '#e5707e', '#8b93a5']
-const VIA_COLORS: Record<UnlockVia, string> = { boss: '#e5707e', quest: '#4f9cf9', faction: '#d86be0', graph: '#8b93a5' }
+export const ROLE_COLORS = ['var(--c-green)', 'var(--c-blue)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-red)', 'var(--c-grey)']
+const VIA_COLORS: Record<UnlockVia, string> = { boss: 'var(--c-red)', quest: 'var(--c-blue)', faction: 'var(--c-pink)', graph: 'var(--c-grey)' }
 const VIA_LABEL: Record<UnlockVia, string> = { boss: 'Boss', quest: 'Quest', faction: 'Faction', graph: 'Graph arrow' }
 const MARKER_GLYPH: Record<string, string> = { Capital: '★', Outpost: '⚑', Landmark: '◆', Note: '✎' }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const fmt = (n: number | null | undefined) => (n === null || n === undefined ? '–' : n >= 1000 ? `${Math.round(n / 100) / 10}k` : String(Math.round(n * 10) / 10))
 const roleColor = (b: Entity) => ROLE_COLORS[roleIndex(b) ?? 5]
-export const biomeColor = (b: Entity | undefined) => (b && typeof b.color === 'string' && b.color ? b.color : b ? roleColor(b) : '#8b93a5')
+export const biomeColor = (b: Entity | undefined) => (b && typeof b.color === 'string' && b.color ? b.color : b ? roleColor(b) : 'var(--c-grey)')
 const catalogLabel = (p: Project, cat: string, id: string) => p.registry.catalogs[cat]?.items.find((i) => i.id === id)?.label ?? id
-/** Linear ramp red (0) → amber → green (1). */
+/** Linear ramp red (0) → amber → green (1), mixed from the theme's series colours so it reads in light and dark. */
 const ramp = (t: number) => {
   const k = Math.max(0, Math.min(1, t))
-  const [a, b] = k < 0.5 ? [[229, 112, 126], [242, 201, 76]] : [[242, 201, 76], [83, 194, 139]]
+  const [a, b] = k < 0.5 ? ['--c-red', '--c-yellow'] : ['--c-yellow', '--c-green']
   const u = k < 0.5 ? k * 2 : (k - 0.5) * 2
-  return `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * u)).join(',')})`
+  return `color-mix(in srgb, var(${a}), var(${b}) ${Math.round(u * 100)}%)`
 }
 
 function mutate(fn: (p: Project) => void) {
@@ -254,7 +254,7 @@ export function WorldAtlasView({ selected, onSelect }: ViewProps) {
     if (colorBy === 'coverage') return ramp(cov.get(b.id) ?? 0)
     if (colorBy === 'threat') {
       const t = threat.get(b.id)
-      return isNum(t) && t > 0 ? ramp(1 - (hi > lo ? (Math.log(t) - lo) / (hi - lo) : 0.5)) : '#555b68'
+      return isNum(t) && t > 0 ? ramp(1 - (hi > lo ? (Math.log(t) - lo) / (hi - lo) : 0.5)) : 'var(--line-strong)'
     }
     return biomeColor(b)
   }
@@ -495,18 +495,18 @@ export function BiomeThreatView({ selected, onSelect }: ViewProps) {
         <div style={{ height: 300 }}>
           <ResponsiveContainer>
             <ComposedChart data={chart} onClick={(e) => { const id = (e as { activePayload?: { payload: { id: string } }[] })?.activePayload?.[0]?.payload.id; if (id) onSelect(id) }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
               <XAxis dataKey="name" />
               <YAxis yAxisId="t" scale={log ? 'log' : 'auto'} domain={log ? ['auto', 'auto'] : [0, 'auto']} allowDataOverflow />
-              {hasLevels && <YAxis yAxisId="lv" orientation="right" allowDecimals={false} label={{ value: 'Level', angle: 90, position: 'insideRight', fill: '#8b93a5' }} />}
+              {hasLevels && <YAxis yAxisId="lv" orientation="right" allowDecimals={false} label={{ value: 'Level', angle: 90, position: 'insideRight', fill: 'var(--c-grey)' }} />}
               <Tooltip formatter={(v, n) => [Array.isArray(v) ? `${v[0]}–${Math.round(Number(v[1]))}` : v, n]} />
               <Legend />
-              {hasLevels && <Bar yAxisId="lv" dataKey="level" name="Level band" fill="rgba(91,156,255,.25)" stroke="#5b9cff" barSize={14} />}
+              {hasLevels && <Bar yAxisId="lv" dataKey="level" name="Level band" fill="color-mix(in srgb, var(--accent) 25%, transparent)" stroke="var(--accent)" barSize={14} />}
               <Bar yAxisId="t" dataKey="median" name="Median enemy">
-                {chart.map((d) => <Cell key={d.id} fill={ROLE_COLORS[d.stage ?? 5]} stroke={d.id === selected ? '#fff' : undefined} strokeWidth={d.id === selected ? 2 : 0} />)}
+                {chart.map((d) => <Cell key={d.id} fill={ROLE_COLORS[d.stage ?? 5]} stroke={d.id === selected ? 'var(--text)' : undefined} strokeWidth={d.id === selected ? 2 : 0} />)}
               </Bar>
-              <Line yAxisId="t" dataKey="max" name="Strongest enemy" stroke="#e6e8ee" strokeDasharray="4 3" connectNulls dot={{ r: 3 }} />
-              <Line yAxisId="t" dataKey="boss" name="Strongest boss" stroke="none" dot={{ r: 6, fill: '#e5707e' }} isAnimationActive={false} />
+              <Line yAxisId="t" dataKey="max" name="Strongest enemy" stroke="var(--text)" strokeDasharray="4 3" connectNulls dot={{ r: 3 }} />
+              <Line yAxisId="t" dataKey="boss" name="Strongest boss" stroke="none" dot={{ r: 6, fill: 'var(--c-red)' }} isAnimationActive={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

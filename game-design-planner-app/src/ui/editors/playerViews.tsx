@@ -5,7 +5,7 @@ import { buildState, comparedLevels, depletion, depletionSeries, levelCap, level
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
-const PALETTE = ['#4f9cf9', '#f97b4f', '#53c28b', '#d86be0', '#f2c94c', '#5ad1d1', '#e5707e']
+const PALETTE = ['var(--c-blue)', 'var(--c-orange)', 'var(--c-green)', 'var(--c-pink)', 'var(--c-yellow)', 'var(--c-cyan)', 'var(--c-red)']
 const fmt = (n: number) => (Math.round(n * 10) / 10).toString()
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
@@ -49,7 +49,7 @@ export function DepletionView({ items, selected, onSelect }: ViewProps) {
         <div style={{ height: 280 }}>
           <ResponsiveContainer>
             <LineChart data={depletionGrid(project, plotted, levelId)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
               <XAxis type="number" dataKey="t" name="time" domain={[0, 'dataMax']} unit={units.size === 1 ? ` ${[...units][0].split(' ')[1]}` : ''} />
               <YAxis domain={[0, 100]} unit="%" />
               <Tooltip />
@@ -113,16 +113,16 @@ export function LevelCurveView() {
       <div style={{ height: 260 }}>
         <ResponsiveContainer>
           <ComposedChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis dataKey="level" />
             <YAxis yAxisId="next" />
             <YAxis yAxisId="total" orientation="right" />
             <Tooltip />
             <Legend />
-            <Bar yAxisId="next" dataKey="next" name="XP to this level" fill="#4f9cf9" />
-            <Line yAxisId="total" dataKey="total" name="Total XP" stroke="#f2c94c" dot={false} />
+            <Bar yAxisId="next" dataKey="next" name="XP to this level" fill="var(--c-blue)" />
+            <Line yAxisId="total" dataKey="total" name="Total XP" stroke="var(--c-yellow)" dot={false} />
             {trees.map((t, i) =>
-              t.affordableAt ? <ReferenceLine key={t.cast.id} yAxisId="next" x={t.affordableAt} stroke={PALETTE[(i + 2) % PALETTE.length]} strokeDasharray="4 3" label={{ value: t.cast.label, fill: '#aaa', fontSize: 11, position: 'top' }} /> : null,
+              t.affordableAt ? <ReferenceLine key={t.cast.id} yAxisId="next" x={t.affordableAt} stroke={PALETTE[(i + 2) % PALETTE.length]} strokeDasharray="4 3" label={{ value: t.cast.label, fill: 'var(--muted)', fontSize: 11, position: 'top' }} /> : null,
             )}
           </ComposedChart>
         </ResponsiveContainer>

@@ -18,6 +18,8 @@ import { moneyFlow, priceOf, reputationLevels, tradeList, wanderingOdds } from '
 import { actPacing, endingReachability, storyList } from '../../core/story'
 import { QuestFlowCanvas } from '../editors/storyViews'
 import { AtlasPreview } from '../editors/worldViews'
+import { locationsOf } from '../../core/location/analysis'
+import { locationSvg } from '../../core/location/render/svg'
 import { controlConflicts, flowAnalysis, layoutIssues, layoutOf, layoutSvg, screensOf, uiList } from '../../core/ui'
 import { TreeCanvas } from '../editors/playerViews'
 import { questionList } from '../../core/openQuestions'
@@ -106,12 +108,12 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
         <div style={{ height: 170 }}>
           <ResponsiveContainer>
             <LineChart data={t.rows}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
               <XAxis dataKey="level" />
               <YAxis />
               <Tooltip />
-              <Line dataKey="total" name="Total XP" stroke="#f2c94c" dot={false} />
-              <Line dataKey="next" name="XP to level" stroke="#4f9cf9" dot={false} />
+              <Line dataKey="total" name="Total XP" stroke="var(--c-yellow)" dot={false} />
+              <Line dataKey="next" name="XP to level" stroke="var(--c-blue)" dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -217,7 +219,7 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
     return (
       <div className="phase-track" style={{ height: 32 }}>
         {cov.phases.map((ph, i) => (
-          <div key={ph.id} className="phase-seg" style={{ left: `${100 - ph.hpFrom}%`, width: `${ph.hpFrom - ph.hpTo}%`, background: ['#53c28b', '#4f9cf9', '#f2c94c', '#f97b4f', '#e5707e'][i % 5] }} title={ph.mechanics}>
+          <div key={ph.id} className="phase-seg" style={{ left: `${100 - ph.hpFrom}%`, width: `${ph.hpFrom - ph.hpTo}%`, background: ['var(--c-green)', 'var(--c-blue)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-red)'][i % 5] }} title={ph.mechanics}>
             {ph.name}
           </div>
         ))}
@@ -476,6 +478,11 @@ function Preview({ project, ex, param }: { project: Project; ex: GuideExample; p
   }
   if (ex.preview === 'questFlow') return <QuestFlowCanvas project={project} />
   if (ex.preview === 'worldAtlas') return <AtlasPreview project={project} />
+  if (ex.preview === 'locationMap') {
+    // The example adds one location with its map; it is the last one in the list.
+    const svg = locationsOf(project).map((l) => locationSvg(project, l)).filter(Boolean).pop()
+    return svg ? <img className="loc-preview" alt="Generated map" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} /> : null
+  }
   if (ex.preview === 'townFlow') {
     const estimate = estimateTown(project)
     return (

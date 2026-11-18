@@ -6,8 +6,8 @@ import { useRevealOnce } from '../hooks'
  * Drawn inline (no image request, CSP-safe) in the app's own palette; it is a sketch, not a screenshot.
  */
 const C = {
-  bg: '#111316', s1: '#171a1f', s2: '#1e2229', s3: '#262b34', line: '#30353f', text: '#e6e8ee', muted: '#8b93a5',
-  brand: '#f2a541', ok: '#4cc38a', concept: '#b08cff', systems: '#5b9cff', content: '#3fc6a5', production: '#f2a541', polish: '#ff7a8a',
+  bg: 'var(--bg)', s1: 'var(--surface-1)', s2: 'var(--surface-2)', s3: 'var(--surface-3)', line: 'var(--line)', text: 'var(--text)', muted: 'var(--muted)',
+  brand: 'var(--brand)', ok: 'var(--ok)', concept: 'var(--phase-concept)', systems: 'var(--accent)', content: 'var(--phase-content)', production: 'var(--brand)', polish: 'var(--phase-polish)',
 }
 const PHASES = [C.concept, C.systems, C.content, C.production, C.polish]
 
@@ -75,7 +75,7 @@ export function WorkspaceIllustration({ label }: { label: string }) {
       <Bar x={258} y={214} w={420} fill={C.s3} />
       <Bar x={258} y={226} w={360} fill={C.s3} />
       <rect x="258" y="248" width="92" height="24" rx="6" fill={C.brand} />
-      <Bar x={272} y={257} w={64} fill="#111316" />
+      <Bar x={272} y={257} w={64} fill="var(--bg)" />
       <Bar x={364} y={257} w={48} fill={C.muted} />
       <Bar x={426} y={257} w={56} fill={C.muted} />
       {/* journey */}

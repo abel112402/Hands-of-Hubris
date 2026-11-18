@@ -25,7 +25,7 @@ import type { ViewProps } from './CollectionEditor'
 
 const fmt = (n: number) => (Math.round(n * 100) / 100).toString()
 /** Series palette (the only hard-coded colours, as in the other planners). */
-export const NPC_COLORS = ['#4f9cf9', '#53c28b', '#f2c94c', '#f97b4f', '#d86be0', '#5ad1d1', '#e5707e', '#a3a8ff']
+export const NPC_COLORS = ['var(--c-blue)', 'var(--c-green)', 'var(--c-yellow)', 'var(--c-orange)', 'var(--c-pink)', 'var(--c-cyan)', 'var(--c-red)', 'var(--c-lavender)']
 const catalogOf = (p: Project, id: string) => p.registry.catalogs[id]?.items ?? []
 const labelOf = (p: Project, catalog: string, id: unknown) => catalogOf(p, catalog).find((i) => i.id === id)?.label ?? (id ? String(id) : '')
 const keyActivate = (fn: () => void) => (e: KeyboardEvent) => {
@@ -330,7 +330,7 @@ export function WorkforceView({ selected, onSelect }: ViewProps) {
 }
 
 const ACTIVITIES = ['Sleep', 'Work', 'Eat', 'Leisure', 'Socialize', 'Patrol', 'Travel', 'Train']
-const ACTIVITY_COLOR: Record<string, string> = { Sleep: '#5a6380', Work: '#4f9cf9', Eat: '#f2c94c', Leisure: '#53c28b', Socialize: '#d86be0', Patrol: '#e5707e', Travel: '#5ad1d1', Train: '#f97b4f' }
+const ACTIVITY_COLOR: Record<string, string> = { Sleep: 'var(--c-slate)', Work: 'var(--c-blue)', Eat: 'var(--c-yellow)', Leisure: 'var(--c-green)', Socialize: 'var(--c-pink)', Patrol: 'var(--c-red)', Travel: 'var(--c-cyan)', Train: 'var(--c-orange)' }
 
 /** The daily routine as one coloured strip per profession; each slot can be changed in place. */
 export function RoutineView({ items }: ViewProps) {
@@ -366,7 +366,7 @@ export function RoutineView({ items }: ViewProps) {
                 key={r.times[i].id}
                 aria-label={`${row.profession.label} at ${r.times[i].label}`}
                 className="npc-routine-slot"
-                style={{ background: slot ? ACTIVITY_COLOR[slot] ?? 'var(--panel2)' : undefined, color: slot ? '#111' : undefined }}
+                style={{ background: slot ? ACTIVITY_COLOR[slot] ?? 'var(--panel2)' : undefined, color: slot ? 'var(--on-series)' : undefined }}
                 value={slot}
                 onChange={(e) => set(row.profession.id, r.times[i].id, e.target.value)}
               >
