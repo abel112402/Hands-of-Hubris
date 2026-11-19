@@ -46,3 +46,27 @@ describe('section states', () => {
     expect(sectionStates(p, 'nope')).toEqual({})
   })
 })
+
+describe('hints grace period', () => {
+  const hint = (id: string, entityId?: string) => ({ id, target: { docId: 'd', entityId } }) as never
+
+  it('leaves out hints about entries still in their grace period', async () => {
+    const { withoutFresh } = await import('../src/ui/hints/useHints')
+    const all = [hint('a', 'new'), hint('b', 'old'), hint('c')]
+    const r = withoutFresh({ all, visible: all, total: 3 }, { new: 2000, old: 500 }, 1000)
+    expect(r.all.map((h: { id: string }) => h.id)).toEqual(['b', 'c'])
+    expect(r.total).toBe(2)
+    // Nothing fresh: the same result object comes back.
+    const same = { all, visible: all, total: 3 }
+    expect(withoutFresh(same, {}, 1000)).toBe(same)
+  })
+
+  it('marks new entries for a minute and releases them early when left', async () => {
+    const { useFreshEntries, GRACE_MS } = await import('../src/ui/hints/useHints')
+    useFreshEntries.getState().mark('x')
+    const until = useFreshEntries.getState().until.x
+    expect(until - Date.now()).toBeGreaterThan(GRACE_MS - 1000)
+    useFreshEntries.getState().release('x')
+    expect(useFreshEntries.getState().until.x).toBeUndefined()
+  })
+})

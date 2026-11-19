@@ -272,13 +272,25 @@ Ship behind a setting `ui.version: 'v2' | 'v3'` (default v2 until Phase 2 lands)
 > - View width: 427 → **828 px**, and it stays that width with a record open (was 95 px).
 > - A new enemy shows **3 inputs** (was 26).
 >
-> **Left for part 1b:**
-> - Fold the collection toolbar (views, filter, CSV, add) into the section header to reach the ≤ 160 px target.
-> - Hints grace period.
-> - `CanvasEditorFrame`.
-> - Expand-to-page (`?r=`).
-> - A per-planner tier pass.
-> - Spotlight steps that target a detail field still hidden behind a chip must open it first.
+> **Part 1b done 2026-11-19:**
+> - **Collection tools in the header:**
+>   - The views, the filter (a search button that expands), CSV and Add render into a slot in the section header (`ui/v3/sectionTools.ts`, React portal).
+>   - The section state and entry count moved into the line above the title, which truncates and shows everything on hover.
+>   - Insert example is an icon button.
+>   - At 1024×768 the space above the data is now **128 px** (target ≤ 160).
+> - **Walkthrough targets:**
+>   - Spotlight now finds targets in the v3 page as well (`:is(.content, .editor3)`); before, tours found nothing there.
+>   - A detail field hidden behind a chip passes its tour target to the chip.
+> - **Hints grace period:** `useFreshEntries` and `withoutFresh` in `ui/hints/useHints.ts`. A new entry gets no hints until the user leaves it or 60 s pass. Opening it as a page doesn't count as leaving, and the section strip's badges follow the same rule.
+> - **Expand to page:** `?r=<id>` shows the record full-width in place of the view (deep-linkable). ‹ › moves the page along, Collapse returns to the sheet, and Close goes back to the list.
+> - **`CanvasEditorFrame`** (`ui/v3/CanvasEditorFrame.tsx`):
+>   - the presentational bar, rail, canvas and tabbed side panel, with panel and full-screen buttons
+>   - the editor keeps its own state
+>   - the Locations map editor now uses it, all 188 location tests unchanged; its frame classes moved from `loc-*` to `cframe-*`
+>
+> **Still open:**
+> - **Per-planner tier pass:** only enemies are marked so far; the default rule covers the rest.
+> - **Wireframe editor:** moving it onto `CanvasEditorFrame` belongs with the Phase 3/4 canvas work.
 - `SectionHeader` (sticky): title, fill ring, view dropdown, overflow, ⓘ concept popover, conditional walkthrough banner. Remove the per-section toolbar and the map thumbnail from the page flow.
 - **Field tiers:** optional `tier?: 'core' | 'detail'` on `FieldDef` (default: `required` or first 3 fields of the first group → core). No data migration, since this is schema metadata only. Tiers are tagged per module in `src/modules/*` (a review pass for each of the ~30 planners, cheapest with a heuristic plus spot fixes).
 - Collection Inspector → record sheet with group tabs, `‹ ›` stepping, Expand to page (route `?r=<id>`).

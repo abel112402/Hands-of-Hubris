@@ -4,6 +4,7 @@
 import { getModule, getSections } from './modules/registry'
 import { isSectionEmpty } from './hints/util'
 import { collectHints, makeContext } from './hints/engine'
+import type { Hint } from './hints/types'
 import type { Entity, Project } from './model/types'
 
 /** Share (0–100) of a planner's sections that have content. Unknown planners count as 0. */
@@ -21,13 +22,14 @@ export type SectionState = 'empty' | 'started' | 'done'
 
 /**
  * Each section's state as the system map shows it: empty without content, started while it has open hints,
- * else done; with its hint count. Same rule as `mapStates` (ui/guides/GuideMap.tsx).
+ * else done; with its hint count. Same rule as `mapStates` (ui/guides/GuideMap.tsx). `quiet` leaves hints out
+ * (v3: entries still in their grace period).
  */
-export function sectionStates(project: Project, docId: string): Record<string, { state: SectionState; hints: number }> {
+export function sectionStates(project: Project, docId: string, quiet: (h: Hint) => boolean = () => false): Record<string, { state: SectionState; hints: number }> {
   const mod = getModule(docId)
   const out: Record<string, { state: SectionState; hints: number }> = {}
   if (!mod) return out
-  const hints = collectHints(makeContext(project, { docId }))
+  const hints = collectHints(makeContext(project, { docId })).filter((h) => !quiet(h))
   for (const sec of getSections(mod, project.registry)) {
     const count = hints.filter((h) => h.target.docId === docId && h.target.sectionId === sec.id).length
     const empty = isSectionEmpty(sec, project.documents[docId]?.data[sec.id])

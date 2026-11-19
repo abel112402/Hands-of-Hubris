@@ -26,8 +26,9 @@ export function Spotlight({ docId, guide, sectionId }: { docId: string; guide: M
   useLayoutEffect(() => {
     if (!key || !step?.target) return
     let el: HTMLElement | null = null
+    // The classic editor (.content) or the v3 planner page (.editor3).
     const measure = () => {
-      el = document.querySelector<HTMLElement>(`.content [data-guide="${step.target}"]`)
+      el = document.querySelector<HTMLElement>(`:is(.content, .editor3) [data-guide="${step.target}"]`)
       if (!el) return setMeasured({ key, box: null })
       const r = el.getBoundingClientRect()
       setMeasured({ key, box: { top: r.top, left: r.left, width: r.width, height: r.height } })

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { CollectionSection, CollectionView, Entity, FieldDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { AiBadge } from '../ai/AiBadge'
@@ -42,6 +42,10 @@ import { useTranslation } from 'react-i18next'
 import { useUiVersion } from '../../core/uiVersion'
 import { coreFieldKeys, splitByTier } from '../../core/fieldTier'
 import { Sheet } from '../v3/Sheet'
+import { useSectionToolsSlot } from '../v3/sectionTools'
+import { createPortal } from 'react-dom'
+import { Segmented } from '../motion'
+import { useFreshEntries } from '../hints/useHints'
 import { countOf } from '../../core/text'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
@@ -152,7 +156,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
   const [viewIdx, setViewIdx] = useState(0)
   const [selected, setSelected] = useState<string | undefined>()
   // `?e=<id>` (command palette, links) selects that entry; reading it again when it changes.
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const wanted = params.get('e') ?? undefined
   const [wantedSeen, setWantedSeen] = useState<string | undefined>()
   if (wanted !== wantedSeen) {
@@ -160,6 +164,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
     if (wanted && data?.some((e) => e.id === wanted)) setSelected(wanted)
   }
   const [filter, setFilter] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
   const items = useMemo(() => data ?? [], [data])
   const view = sec.views[Math.min(viewIdx, sec.views.length - 1)] ?? { kind: 'cards' as const }
 
@@ -174,6 +179,8 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
     update((d) => {
       d.push({ id, name: `New ${sec.singular}`, ...init })
     })
+    // v3: hints leave the new entry alone while it is being filled in (grace period, ui/hints/useHints.ts).
+    if (v3) useFreshEntries.getState().mark(id)
     setSelected(id)
   }
   const patch = (id: string, key: string, value: any) =>
@@ -195,34 +202,95 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
   const props: ViewProps = { docId, sec, items: shown, selected, onSelect: setSelected, patch, inspectorFor: inlineInspector ? inspectorFor : undefined }
   // v3 opens the entry in a sheet over the view, so the view keeps its width; v2 shows it beside the view.
   const v3 = useUiVersion() === 'v3'
+  const { t } = useTranslation()
+  const slot = useSectionToolsSlot()
+  const toolsSlot = v3 ? slot : null
+  const downloadCsv = () => {
+    const mod = getModule(docId)!
+    const csv = sectionCsv(project, mod, sec)
+    if (csv) downloadText(`${docId}.${sec.id}.csv`, csv, 'text/csv')
+  }
   const besideInspector = !!sel && view.kind !== 'wireframe' && !inlineInspector && !v3
   const sheetFor = v3 && view.kind !== 'wireframe' && !inlineInspector ? sel : undefined
+  // v3 "Expand to page": `?r=<id>` shows that entry full-width instead of the view (deep-linkable).
+  const pageId = v3 ? params.get('r') : null
+  const pageEntity = pageId ? items.find((e) => e.id === pageId) : undefined
+  // Leaving an entry (selecting another, closing it) ends its grace period; opening it as a page does not.
+  const prevSelected = useRef(selected ?? pageId ?? undefined)
+  useEffect(() => {
+    const now = selected ?? pageId ?? undefined
+    const prev = prevSelected.current
+    if (prev && prev !== now) useFreshEntries.getState().release(prev)
+    prevSelected.current = now
+  }, [selected, pageId])
+  const setPage = (id?: string, thenSelect?: string) => {
+    const n = new URLSearchParams(params)
+    n.delete('e')
+    if (id) n.set('r', id)
+    else n.delete('r')
+    setParams(n)
+    setSelected(thenSelect)
+  }
+  if (pageEntity)
+    return (
+      <div className="collection record3-pagewrap">
+        <RecordSheet
+          asPage
+          docId={docId}
+          sec={sec}
+          entity={pageEntity}
+          items={items}
+          patch={patch}
+          onClose={() => setPage(undefined)}
+          onToggleExpand={() => setPage(undefined, pageEntity.id)}
+          setSelected={(id) => setPage(id)}
+        />
+      </div>
+    )
 
   return (
     <div className="collection">
-      <div className="toolbar">
-        <div className="tabs">
-          {sec.views.map((vw, i) => (
-            <button key={i} data-guide={`view-${vw.kind}`} className={i === viewIdx ? 'active' : ''} onClick={() => setViewIdx(i)}>
-              {VIEW_LABEL[vw.kind]}
-            </button>
-          ))}
+      {toolsSlot ? createPortal(
+        // v3: the tools join the section header's row (views as a segmented switch, per the conventions).
+        <div className="sec3-coll-tools">
+          {sec.views.length > 1 && (
+            <Segmented role="group" aria-label={t('v3.collection.views')}>
+              {sec.views.map((vw, i) => (
+                <button key={i} type="button" data-guide={`view-${vw.kind}`} aria-pressed={i === viewIdx} onClick={() => setViewIdx(i)}>
+                  {VIEW_LABEL[vw.kind]}
+                </button>
+              ))}
+            </Segmented>
+          )}
+          {/* The filter folds to a button while empty; the count lives in the section header's line. */}
+          {filterOpen || filter ? (
+            <input autoFocus className="search sec3-filter" aria-label={t('v3.collection.filter')} placeholder={`${t('v3.collection.filter')}…`} value={filter}
+              onChange={(e) => setFilter(e.target.value)} onBlur={() => !filter && setFilterOpen(false)} onKeyDown={(e) => e.key === 'Escape' && (setFilter(''), setFilterOpen(false))} />
+          ) : (
+            <button type="button" className="icon-btn" aria-label={t('v3.collection.filter')} title={t('v3.collection.filter')} onClick={() => setFilterOpen(true)}><Icon name="search" /></button>
+          )}
+          <button type="button" className="icon-btn" aria-label={t('v3.collection.csv')} title={t('v3.collection.csv')} onClick={downloadCsv}><Icon name="download" /></button>
+          {items.length > 0 && <button type="button" className="primary" data-guide="add" onClick={() => add()}>+ {t('v3.collection.add', { what: sec.singular })}</button>}
+        </div>,
+        toolsSlot,
+      ) : (
+        <div className="toolbar">
+          <div className="tabs">
+            {sec.views.map((vw, i) => (
+              <button key={i} data-guide={`view-${vw.kind}`} className={i === viewIdx ? 'active' : ''} onClick={() => setViewIdx(i)}>
+                {VIEW_LABEL[vw.kind]}
+              </button>
+            ))}
+          </div>
+          <input className="search" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <span className="muted">{countOf(items.length, sec.singular, sec.plural)}</span>
+          <span className="spacer" />
+          <button className="small" onClick={downloadCsv}>
+            CSV
+          </button>
+          {items.length > 0 && <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>}
         </div>
-        <input className="search" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        <span className="muted">{countOf(items.length, sec.singular, sec.plural)}</span>
-        <span className="spacer" />
-        <button
-          className="small"
-          onClick={() => {
-            const mod = getModule(docId)!
-            const csv = sectionCsv(project, mod, sec)
-            if (csv) downloadText(`${docId}.${sec.id}.csv`, csv, 'text/csv')
-          }}
-        >
-          CSV
-        </button>
-        {items.length > 0 && <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>}
-      </div>
+      )}
       <div className={'collection-body' + (besideInspector ? ' with-inspector' : '')}>
         <div className="view-area">
           {view.kind === 'cards' && <CardsView {...props} />}
@@ -316,7 +384,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
         {besideInspector && sel && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
-        {sheetFor && <RecordSheet docId={docId} sec={sec} entity={sheetFor} items={shown.some((e) => e.id === sheetFor.id) ? shown : items} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
+        {sheetFor && <RecordSheet docId={docId} sec={sec} entity={sheetFor} items={shown.some((e) => e.id === sheetFor.id) ? shown : items} patch={patch} onClose={() => setSelected(undefined)} onToggleExpand={() => setPage(sheetFor.id)} setSelected={setSelected} />}
       </div>
     </div>
   )
@@ -399,7 +467,7 @@ const BASICS_TAB = '__basics'
  * width. Field groups are tabs with fill counts; inside a tab only core fields, filled fields and fields the
  * user opened show, the rest wait behind "+ field" chips. ‹ › steps through the entries in view order.
  */
-function RecordSheet({ docId, sec, entity, items, patch, onClose, setSelected }: {
+function RecordSheet({ docId, sec, entity, items, patch, onClose, onToggleExpand, setSelected, asPage = false }: {
   docId: string
   sec: CollectionSection
   entity: Entity
@@ -407,7 +475,11 @@ function RecordSheet({ docId, sec, entity, items, patch, onClose, setSelected }:
   items: Entity[]
   patch: ViewProps['patch']
   onClose: () => void
+  /** Sheet → full page, or page → back to the sheet. */
+  onToggleExpand?: () => void
   setSelected: (id?: string) => void
+  /** Full-width page (`?r=`) instead of a sheet over the view. */
+  asPage?: boolean
 }) {
   const { t } = useTranslation()
   const project = useProject()
@@ -443,7 +515,13 @@ function RecordSheet({ docId, sec, entity, items, patch, onClose, setSelected }:
       onNext={items.length > 1 ? () => step(1) : undefined}
       prevLabel={t('v3.record.prev', { what: sec.singular })}
       nextLabel={t('v3.record.next', { what: sec.singular })}
-      width={520}
+      mode={asPage ? 'split' : 'overlay'}
+      width={asPage ? '100%' : 520}
+      actions={onToggleExpand && (
+        <button type="button" className="icon-btn" aria-label={t(asPage ? 'v3.record.collapse' : 'v3.record.expand')} title={t(asPage ? 'v3.record.collapse' : 'v3.record.expand')} onClick={onToggleExpand}>
+          <Icon name={asPage ? 'shrink' : 'expand'} />
+        </button>
+      )}
       footer={
         <>
           <button type="button" className="ghost" onClick={duplicate}>{t('v3.record.duplicate')}</button>

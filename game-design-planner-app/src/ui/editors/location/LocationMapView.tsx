@@ -20,6 +20,7 @@ import { EXPORTS, runExport, type ExportId } from './exportMap'
 import { THEMES } from '../../../core/location/render/theme'
 import { ObjectPanel } from './ObjectPanel'
 import { ToolIcon } from './toolIcons'
+import { CanvasEditorFrame } from '../../v3/CanvasEditorFrame'
 
 const nameOf = (e: Entity) => String(e.name ?? '') || '(unnamed)'
 type Overlay = 'none' | 'nav' | 'light'
@@ -349,11 +350,25 @@ export function LocationMapView({ docId, sec, items, selected, onSelect, inspect
   }
   const shownTab = tab ?? (map ? 'map' : 'inputs')
   const viewChanged = overlay !== 'none' || player || !!map?.theme || !!map?.env
-  const columns = [map && 'var(--loc-rail)', 'minmax(0,1fr)', panelOpen && 'var(--loc-panel)'].filter(Boolean).join(' ')
 
   return (
-    <div className={'loc-root' + (full ? ' full' : '')}>
-      <div className="loc-bar">
+    <CanvasEditorFrame
+      full={full}
+      onFull={setFull}
+      panelOpen={panelOpen}
+      onPanelOpen={setPanelOpen}
+      railLabel="Tools"
+      rail={map ? (
+        <>
+            {tools.map(([t, label, title]) => (
+              <button key={t} aria-label={label} aria-pressed={activeTool === t} title={`${label} (${TOOL_KEY[t].toUpperCase()}) — ${title}`} onClick={() => setTool(t)}>
+                <ToolIcon name={t} />
+              </button>
+            ))}
+        </>
+      ) : undefined}
+      toolbar={
+        <>
         <label className="loc-pick">
           <span className="sr-only">Location</span>
           <select aria-label="Location" className="loc-location" value={location.id} onChange={(e) => onSelect(e.target.value)}>
@@ -425,23 +440,10 @@ export function LocationMapView({ docId, sec, items, selected, onSelect, inspect
           </Popover>
         )}
         {type && map && <button className="loc-btn" data-guide="generate-map" title="Roll every layer again with a new seed; pinned objects and kept areas stay" onClick={generate}><ToolIcon name="dice" />New map</button>}
-        <span className="loc-sep" />
-        <button className="loc-icon-btn" aria-pressed={panelOpen} aria-label={panelOpen ? 'Hide side panel' : 'Show side panel'} title={panelOpen ? 'Hide side panel' : 'Show side panel'} onClick={() => setPanelOpen(!panelOpen)}><ToolIcon name="panel" /></button>
-        <button className="loc-icon-btn" aria-pressed={full} aria-label={full ? 'Exit full screen' : 'Full screen'} title={full ? 'Exit full screen (Esc)' : 'Full screen'} onClick={() => setFull(!full)}><ToolIcon name={full ? 'shrink' : 'expand'} /></button>
-      </div>
-
-      <div className="loc-body" style={{ gridTemplateColumns: columns }}>
-        {map && (
-          <div className="loc-rail" role="toolbar" aria-label="Tools" aria-orientation="vertical">
-            {tools.map(([t, label, title]) => (
-              <button key={t} aria-label={label} aria-pressed={activeTool === t} title={`${label} (${TOOL_KEY[t].toUpperCase()}) — ${title}`} onClick={() => setTool(t)}>
-                <ToolIcon name={t} />
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="loc-canvas-wrap">
+        </>
+      }
+      canvas={
+        <>
           {!type && (
             <div className="loc-empty">
               <strong>No generator for this type</strong>
@@ -500,15 +502,16 @@ export function LocationMapView({ docId, sec, items, selected, onSelect, inspect
               {player && <span className="loc-float loc-flag">Player view</span>}
             </>
           )}
-        </div>
-
-        {panelOpen && (
-          <div className="loc-side">
-            <div className="loc-tabs" role="tablist" aria-label="Side panel">
-              <button role="tab" aria-selected={shownTab === 'map'} disabled={!map} onClick={() => setTab('map')}>Map</button>
-              <button role="tab" aria-selected={shownTab === 'inputs'} onClick={() => setTab('inputs')}>Inputs</button>
-            </div>
-            <div ref={panel} className="loc-side-scroll">
+        </>
+      }
+      panelScrollRef={panel}
+      panel={{
+        label: 'Side panel',
+        tabs: [{ id: 'map', label: 'Map', disabled: !map }, { id: 'inputs', label: 'Inputs' }],
+        active: shownTab,
+        onTab: (id) => setTab(id as 'map' | 'inputs'),
+        content: (
+          <>
               {shownTab === 'inputs' && (inspectorFor?.(location.id) ?? <p className="muted loc-pad">Open the location in the Gallery or Table view to edit its inputs.</p>)}
               {map && type && (
                 <div hidden={shownTab !== 'map'}>
@@ -609,10 +612,9 @@ export function LocationMapView({ docId, sec, items, selected, onSelect, inspect
                   </Panel>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+          </>
+        ),
+      }}
+    />
   )
 }

@@ -45,7 +45,8 @@ export function FormEditor({ docId, sec }: { docId: string; sec: Extract<Section
         <div className="add-detail form3-more" role="group" aria-label={t('v3.record.moreDetail')}>
           <span className="muted">{t('v3.record.moreDetail')}</span>
           {hidden.map((f) => (
-            <button key={f.key} type="button" className="chip-add" onClick={() => {
+            // A hidden field's chip carries the field's guide target, so a walkthrough spotlight lands on it.
+            <button key={f.key} type="button" className="chip-add" data-guide={`field-${f.key}`} onClick={() => {
               setOpened(new Set(opened).add(f.key))
               requestAnimationFrame(() => document.getElementById(`${docId}-${sec.id}-${f.key}`)?.focus())
             }}>+ {f.label}</button>

@@ -39,7 +39,8 @@ export function Sheet({
   actions?: ReactNode
   footer?: ReactNode
   mode?: 'overlay' | 'split'
-  width?: number
+  /** Pixels, or any CSS width (a record page uses 100%). */
+  width?: number | string
   children: ReactNode
 }) {
   const { t } = useTranslation()

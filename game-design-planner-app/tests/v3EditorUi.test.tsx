@@ -86,3 +86,45 @@ describe('v3 planner page', () => {
     }
   })
 })
+
+describe('v3 part 1b', () => {
+  it('puts the collection tools in the section header instead of a toolbar row', async () => {
+    const { container } = open('#/doc/design.combat?s=enemies')
+    const head = (await screen.findByRole('heading', { level: 1, name: 'Enemies' })).closest('header')!
+    const views = within(head).getByRole('group', { name: 'View' })
+    expect(within(views).getAllByRole('button').map((b) => b.textContent)).toEqual(['Table', 'Threat curve', 'Weaknesses', 'Cards'])
+    // The filter folds to a button until used; the entry count sits in the header line.
+    expect(within(head).queryByRole('textbox', { name: 'Filter' })).toBeNull()
+    fireEvent.click(within(head).getByRole('button', { name: 'Filter' }))
+    fireEvent.change(within(head).getByRole('textbox', { name: 'Filter' }), { target: { value: 'wra' } })
+    expect(screen.queryByText('Ghoul')).toBeNull()
+    expect(head.textContent).toContain('2 enemies')
+    expect(within(head).getByRole('button', { name: '+ Add enemy' })).toBeTruthy()
+    expect(container.querySelector('.collection > .toolbar')).toBeNull()
+    fireEvent.click(within(views).getByRole('button', { name: 'Cards' }))
+    expect(within(views).getByRole('button', { name: 'Cards' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('expands a record to its own page and back to the sheet', async () => {
+    open('#/doc/design.combat?s=enemies&e=gh')
+    const sheet = await screen.findByRole('dialog', { name: 'enemy: Ghoul' })
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Open as a page' }))
+    expect(window.location.hash).toBe('#/doc/design.combat?s=enemies&r=gh')
+    const page = screen.getByRole('region', { name: 'enemy: Ghoul' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('group', { name: 'View' })).toBeNull()
+    // Stepping moves the page along.
+    fireEvent.click(within(page).getByRole('button', { name: 'Next enemy' }))
+    expect(window.location.hash).toBe('#/doc/design.combat?s=enemies&r=wr')
+    fireEvent.click(within(screen.getByRole('region', { name: 'enemy: Bog Wraith' })).getByRole('button', { name: /Back to the list/ }))
+    expect(window.location.hash).toBe('#/doc/design.combat?s=enemies')
+    expect(screen.getByRole('dialog', { name: 'enemy: Bog Wraith' })).toBeTruthy()
+  })
+
+  it('gives a hidden form field\'s chip the field\'s walkthrough target', async () => {
+    const { container } = open('#/doc/overview.vision')
+    await screen.findByRole('heading', { level: 1 })
+    const chip = container.querySelector('.form3 .chip-add')
+    if (chip) expect(chip.getAttribute('data-guide')).toMatch(/^field-/)
+  })
+})

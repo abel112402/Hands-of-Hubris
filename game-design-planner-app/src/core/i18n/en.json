@@ -2236,7 +2236,22 @@
       "duplicate": "Duplicate",
       "delete": "Delete",
       "groups": "Field groups",
-      "moreDetail": "Add detail"
+      "moreDetail": "Add detail",
+      "expand": "Open as a page",
+      "collapse": "Back to the list (as a panel)"
+    },
+    "collection": {
+      "views": "View",
+      "filter": "Filter",
+      "csv": "Download as CSV",
+      "add": "Add {{what}}"
+    },
+    "frame": {
+      "hidePanel": "Hide side panel",
+      "showPanel": "Show side panel",
+      "full": "Full screen",
+      "exitFull": "Exit full screen",
+      "exitFullKey": "Exit full screen (Esc)"
     }
   }
 }

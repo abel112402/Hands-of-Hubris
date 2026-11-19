@@ -1985,7 +1985,22 @@
       "duplicate": "Másolat",
       "delete": "Törlés",
       "groups": "Mezőcsoportok",
-      "moreDetail": "Részletek hozzáadása"
+      "moreDetail": "Részletek hozzáadása",
+      "expand": "Megnyitás külön oldalon",
+      "collapse": "Vissza a listához (panelként)"
+    },
+    "collection": {
+      "views": "Nézet",
+      "filter": "Szűrés",
+      "csv": "Letöltés CSV-ként",
+      "add": "Új: {{what}}"
+    },
+    "frame": {
+      "hidePanel": "Oldalpanel elrejtése",
+      "showPanel": "Oldalpanel megjelenítése",
+      "full": "Teljes képernyő",
+      "exitFull": "Kilépés a teljes képernyőből",
+      "exitFullKey": "Kilépés a teljes képernyőből (Esc)"
     }
   }
 }

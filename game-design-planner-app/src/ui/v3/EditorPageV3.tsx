@@ -21,6 +21,9 @@ import { Icon } from '../Icon'
 import { Menu } from '../Menu'
 import { ModuleIcon } from '../ModuleIcon'
 import { Sheet } from './Sheet'
+import { useFreshEntries } from '../hints/useHints'
+import { countOf } from '../../core/text'
+import { SectionToolsSlot } from './sectionTools'
 
 const isEmptyCollection = (project: Project, docId: string, sec: SectionDef) => {
   if (sec.kind !== 'collection') return false
@@ -47,10 +50,14 @@ export function EditorPageV3() {
   const [help, setHelp] = useState(false)
   const [about, setAbout] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
+  const [toolsEl, setToolsEl] = useState<HTMLElement | null>(null)
   useEffect(() => {
     if (mod) useStore.getState().ensureDoc(docId)
   }, [docId, mod])
-  const states = useMemo(() => (mod ? sectionStates(project, docId) : {}), [project, docId, mod])
+  // Entries in their hint grace period (ui/hints/useHints.ts) do not count towards the badges either.
+  const fresh = useFreshEntries((s) => s.until)
+  // An entry leaves the list when its grace ends, so being listed is enough.
+  const states = useMemo(() => (mod ? sectionStates(project, docId, (h) => !!h.target.entityId && h.target.entityId in fresh) : {}), [project, docId, mod, fresh])
   const sections = mod ? getSections(mod, project.registry) : []
   const sec = sections.find((s) => s.id === sp.get('s')) ?? sections[0]
   // Opening another section (from the strip or the map) closes the map and the about panel.
@@ -79,6 +86,9 @@ export function EditorPageV3() {
   const state = sec ? states[sec.id] : undefined
   const filled = sections.filter((s) => states[s.id] && states[s.id].state !== 'empty').length
   const concept = sec ? guide?.concepts[sec.id] : undefined
+  // A collection's size goes in the header line, so its own tools need no count.
+  const list = sec?.kind === 'collection' ? project.documents[docId]?.data[sec.id] : undefined
+  const entries = sec?.kind === 'collection' ? countOf(Array.isArray(list) ? list.length : 0, sec.singular, sec.plural) : undefined
   const hasExamples = !!sec && !!guide?.examples.some((e) => e.section === sec.id) && !isEmptyCollection(project, docId, sec)
 
   return (
@@ -86,25 +96,35 @@ export function EditorPageV3() {
       <header className="sec3-head">
         <div className="sec3-top">
           <div className="sec3-titles">
-            <div className="eyebrow sec3-planner"><ModuleIcon id={mod.id} /> {mod.title} <span className="sec3-count">· {t('v3.section.filled', { filled, total: sections.length })}</span></div>
-            <h1 className="sec3-title">{sec?.title ?? mod.title}</h1>
+            <div
+              className="eyebrow sec3-planner"
+              title={[mod.title, t('v3.section.filled', { filled, total: sections.length }), state && t(`v3.section.state.${state.state}`), state?.hints && t('v3.section.hints', { count: state.hints }), entries].filter(Boolean).join(' · ')}
+            >
+              <ModuleIcon id={mod.id} /> {mod.title}
+              <span className="sec3-count">· {t('v3.section.filled', { filled, total: sections.length })}</span>
+              {state && (
+                <span className={'sec3-state ' + state.state}>
+                  · <StateGlyph state={state.state} /> {t(`v3.section.state.${state.state}`)}
+                  {state.hints > 0 && <> · {t('v3.section.hints', { count: state.hints })}</>}
+                  {entries !== undefined && <> · {entries}</>}
+                </span>
+              )}
+            </div>
+            <div className="sec3-titlerow">
+              <h1 className="sec3-title">{sec?.title ?? mod.title}</h1>
+              {(sec?.description || concept) && (
+                <button type="button" className="icon-btn" aria-expanded={about} aria-label={t('v3.section.about')} title={t('v3.section.about')} onClick={() => setAbout(!about)}>
+                  <Icon name="help" />
+                </button>
+              )}
+            </div>
           </div>
-          {state && (
-            <span className={'sec3-state ' + state.state}>
-              <StateGlyph state={state.state} />
-              {t(`v3.section.state.${state.state}`)}
-              {state.hints > 0 && <span className="sec3-hints">{t('v3.section.hints', { count: state.hints })}</span>}
-            </span>
-          )}
-          {(sec?.description || concept) && (
-            <button type="button" className="icon-btn" aria-expanded={about} aria-label={t('v3.section.about')} title={t('v3.section.about')} onClick={() => setAbout(!about)}>
-              <Icon name="help" />
-            </button>
-          )}
           <span className="spacer" />
+          {/* The section's own tools (a collection's views, filter, Add) render here; see sectionTools.ts. */}
+          <div className="sec3-tools" ref={setToolsEl} />
           {hasExamples && (
-            <button type="button" className="ghost" data-guide="examples" onClick={() => useGuideUi.getState().openPicker(sec!.id)}>
-              <Icon name="sparkle" /> {t('guide.insertExample')}
+            <button type="button" className="icon-btn" data-guide="examples" aria-label={t('guide.insertExample')} title={t('guide.insertExample')} onClick={() => useGuideUi.getState().openPicker(sec!.id)}>
+              <Icon name="sparkle" />
             </button>
           )}
           <Menu className="doc-menu" label={t('v3.section.more')} summary={<Icon name="more" />}>
@@ -149,7 +169,9 @@ export function EditorPageV3() {
           <MarkdownPreview text={moduleToMarkdown(project, mod)} assets={exportAssets(project, mod)} fromPath={exportPath(mod)} />
         ) : sec ? (
           <div key={`${docId}/${sec.id}`} className="section-swap">
-            <SectionRenderer docId={docId} sec={sec} />
+            <SectionToolsSlot.Provider value={toolsEl}>
+              <SectionRenderer docId={docId} sec={sec} />
+            </SectionToolsSlot.Provider>
           </div>
         ) : null}
       </div>
