@@ -140,6 +140,28 @@ export function mapChecks(location: Entity, map: LocationMap, project?: Project)
   return out
 }
 
+const checkCache = new WeakMap<LocationMap, { project?: Project; location: Entity; checks: MapCheck[] }>()
+
+/** `mapChecks`, kept per stored map until the map, the location or the project changes. */
+export function cachedMapChecks(location: Entity, map: LocationMap, project?: Project): MapCheck[] {
+  const hit = checkCache.get(map)
+  if (hit && hit.project === project && hit.location === location) return hit.checks
+  const checks = mapChecks(location, map, project)
+  checkCache.set(map, { project, location, checks })
+  return checks
+}
+
+/** The kinds of problem the hints tell apart. */
+export type CheckGroup = 'locks' | 'links' | 'layout'
+export const checkGroup = (c: MapCheck): CheckGroup => (c.id.startsWith('lock-') ? 'locks' : c.id.startsWith('link-') || c.id === 'anchor' ? 'links' : 'layout')
+
+/** Locations whose current map has problems of one kind. */
+export const locationsWithChecks = (project: Project, group: CheckGroup): Entity[] =>
+  locationsOf(project).filter((l) => {
+    const map = currentMap(l)
+    return !!map && cachedMapChecks(l, map, project).some((c) => checkGroup(c) === group)
+  })
+
 /**
  * Problems with links between maps: an object that opens a location that no longer exists, and an inner map whose
  * object on the parent map has changed since it was generated (its entrance may no longer match).

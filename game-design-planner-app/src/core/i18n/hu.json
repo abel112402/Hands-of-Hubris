@@ -619,6 +619,18 @@
       "title": "Térkép nélküli helyszínek",
       "body": "{{count}} helyszínnek még nincs térképe: {{names}}. Nyisd meg a Map nézetet, és nyomd meg a Generate map gombot."
     },
+    "worldLocLocks": {
+      "title": "Nem nyitható zárak",
+      "body": "{{count}} térképen van zár, amelynek a kulcsa hiányzik vagy a zár mögött van: {{names}}. A Map nézet Checks doboza megmutatja, melyik; generáld újra a tartalmat, vagy tedd át a kulcsot."
+    },
+    "worldLocLinks": {
+      "title": "Ellenőrizendő kapcsolatok a térképek között",
+      "body": "{{count}} térkép már nem létező helyre linkel, vagy a szülő térképe megváltozott: {{names}}. A Map nézet Checks doboza megmondja, mi a teendő."
+    },
+    "worldLocLayout": {
+      "title": "Saját szabályaikat sértő térképek",
+      "body": "{{count}} térképen van elérhetetlen terem vagy lény, vagy szabályt sértő alaprajz: {{names}}. A Map nézet Checks doboza felsorolja őket; kattintásra kijelöli a termet."
+    },
     "worldLocStale": {
       "title": "Elavult rétegek a térképeken",
       "body": "{{count}} térképen vannak rétegek, amelyek már nem illeszkednek az alattuk lévőkhöz: {{names}}. A Map nézetben nyomd meg az „Update out of date” gombot, vagy hagyd őket így."

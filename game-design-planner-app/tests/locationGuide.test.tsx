@@ -99,7 +99,7 @@ describe('location guide and help', () => {
 
   it('previews each example on a copy and inserts the same map as one undo step', () => {
     const examples = WORLD_GUIDE.examples.filter((e) => e.section === 'locations')
-    expect(examples.length).toBe(3)
+    expect(examples.length).toBe(4)
     for (const ex of examples) {
       useStore.getState().loadProject(createProject('T'), 'x')
       const before = useStore.getState().project

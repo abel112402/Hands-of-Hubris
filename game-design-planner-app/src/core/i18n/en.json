@@ -729,6 +729,24 @@
       "body_one": "{{count}} location has no map yet: {{names}}. Open the Map view and press Generate map.",
       "body_other": "{{count}} locations have no map yet: {{names}}. Open the Map view and press Generate map."
     },
+    "worldLocLocks": {
+      "title": "Locks that cannot be opened",
+      "body": "{{count}} maps have a lock whose key is missing or lies behind it: {{names}}. The Checks box in the Map view shows which; reroll the contents, or move the key.",
+      "body_one": "{{count}} map has a lock whose key is missing or lies behind it: {{names}}. The Checks box in the Map view shows which; reroll the contents, or move the key.",
+      "body_other": "{{count}} maps have a lock whose key is missing or lies behind it: {{names}}. The Checks box in the Map view shows which; reroll the contents, or move the key."
+    },
+    "worldLocLinks": {
+      "title": "Links between maps to look at",
+      "body": "{{count}} maps link to a place that is gone, or sit on a parent map that changed: {{names}}. The Checks box in the Map view says what to do.",
+      "body_one": "{{count}} map links to a place that is gone, or sits on a parent map that changed: {{names}}. The Checks box in the Map view says what to do.",
+      "body_other": "{{count}} maps link to a place that is gone, or sit on a parent map that changed: {{names}}. The Checks box in the Map view says what to do."
+    },
+    "worldLocLayout": {
+      "title": "Maps that break their own rules",
+      "body": "{{count}} maps have rooms or creatures nobody can reach, or a house plan that breaks its rules: {{names}}. The Checks box in the Map view lists them; a click selects the room.",
+      "body_one": "{{count}} map has rooms or creatures nobody can reach, or a house plan that breaks its rules: {{names}}. The Checks box in the Map view lists them; a click selects the room.",
+      "body_other": "{{count}} maps have rooms or creatures nobody can reach, or a house plan that breaks its rules: {{names}}. The Checks box in the Map view lists them; a click selects the room."
+    },
     "worldLocStale": {
       "title": "Maps with layers out of date",
       "body": "{{count}} maps have layers that no longer fit the layers below them: {{names}}. In the Map view, press “Update out of date”, or keep them as they are.",

@@ -1,5 +1,5 @@
 import { biomesWithoutEnemies, biomesWithoutEntry, biomesWithoutZone, graphDisagreements, levelInversions, outpostsMissing, unlinkedZones, unlockPath, unreachedBiomes, WORLD_DOC as DOC } from '../../world'
-import { locationsOf, locationsWithoutBiome, staleLocations, unmappedLocations, untypedLocations } from '../../location/analysis'
+import { locationsOf, locationsWithChecks, locationsWithoutBiome, staleLocations, unmappedLocations, untypedLocations } from '../../location/analysis'
 import type { Entity, Project } from '../../model/types'
 import type { Hint, HintRule } from '../types'
 import { entitiesOf, hintId, shortList } from '../util'
@@ -70,6 +70,9 @@ export const worldRules: HintRule[] = [
   located('world.locType', (project) => untypedLocations(project), 'worldLocType', 'info'),
   located('world.locMap', (project) => unmappedLocations(project), 'worldLocMap', 'info'),
   located('world.locStale', (project) => staleLocations(project), 'worldLocStale', 'suggest'),
+  located('world.locLocks', (project) => locationsWithChecks(project, 'locks'), 'worldLocLocks', 'suggest'),
+  located('world.locLinks', (project) => locationsWithChecks(project, 'links'), 'worldLocLinks', 'suggest'),
+  located('world.locLayout', (project) => locationsWithChecks(project, 'layout'), 'worldLocLayout', 'suggest'),
   located('world.locBiome', (project) => (entitiesOf(project, DOC, 'biomes').length ? locationsWithoutBiome(project) : []), 'worldLocBiome', 'info'),
 ]
 

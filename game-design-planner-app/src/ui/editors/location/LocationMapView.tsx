@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import type { Entity, Project } from '../../../core/model/types'
+import type { Entity } from '../../../core/model/types'
 import type { SvgNode } from '../../../core/location/render/node'
 import { makeId } from '../../../core/model/project'
-import { mapChecks, mapLight, mapNav, type MapCheck } from '../../../core/location/analysis'
+import { cachedMapChecks, mapLight, mapNav, type MapCheck } from '../../../core/location/analysis'
 import { lightOverlay, navOverlay } from '../../../core/location/render/overlays'
 import { addStamp, splitRoom } from '../../../core/location/brush'
 import { addMask, addObject, duplicateObject, findObject, maskAround, putObject, removeMask, setLayerLocked } from '../../../core/location/edit'
@@ -23,15 +23,7 @@ import { ObjectPanel } from './ObjectPanel'
 const nameOf = (e: Entity) => String(e.name ?? '') || '(unnamed)'
 type Overlay = 'none' | 'nav' | 'light'
 
-/** Checks and overlays walk the whole map; each is kept per stored map until the map (or the project) changes. */
-const checkCache = new WeakMap<LocationMap, { project: Project; location: Entity; checks: MapCheck[] }>()
-function cachedChecks(location: Entity, map: LocationMap, project: Project): MapCheck[] {
-  const hit = checkCache.get(map)
-  if (hit && hit.project === project && hit.location === location) return hit.checks
-  const checks = mapChecks(location, map, project)
-  checkCache.set(map, { project, location, checks })
-  return checks
-}
+/** Overlays walk the whole map; each is kept per stored map until the map changes. */
 const overlayCache = new WeakMap<LocationMap, Partial<Record<Overlay, SvgNode>>>()
 function cachedOverlay(map: LocationMap, kind: Exclude<Overlay, 'none'>): SvgNode {
   const kept = overlayCache.get(map) ?? {}
@@ -121,7 +113,7 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
   }
   const stale = map ? staleLayers(map) : []
   // Both walk the whole map, so they are worked out again only when the map (or the project) changes.
-  const checks = map ? cachedChecks(location, map, project) : []
+  const checks = map ? cachedMapChecks(location, map, project) : []
   const overlayNode = !map || overlay === 'none' ? null : cachedOverlay(map, overlay)
   const object = map ? findObject(map, picked) : null
   const addable = [
