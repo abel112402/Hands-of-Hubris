@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { CollectionSection, CollectionView, Entity, FieldDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { AiBadge } from '../ai/AiBadge'
@@ -138,6 +138,8 @@ export type ViewProps = {
   selected?: string
   onSelect: (id?: string) => void
   patch: (id: string, key: string, value: any) => void
+  /** Set for views that show an entity's inputs inside themselves (the location map) instead of beside them. */
+  inspectorFor?: (id: string) => ReactNode
 }
 
 export function CollectionEditor({ docId, sec }: { docId: string; sec: CollectionSection }) {
@@ -171,8 +173,15 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
       }
     }, `${id}.${key}`)
 
-  const props: ViewProps = { docId, sec, items: shown, selected, onSelect: setSelected, patch }
   const sel = items.find((e) => e.id === selected)
+  // The map editor holds the inputs in its own side panel, so the canvas keeps the width.
+  const inlineInspector = view.kind === 'locationMap'
+  const inspectorFor = (id: string) => {
+    const e = items.find((x) => x.id === id)
+    return e ? <Inspector key={e.id} docId={docId} sec={sec} entity={e} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} embedded /> : null
+  }
+  const props: ViewProps = { docId, sec, items: shown, selected, onSelect: setSelected, patch, inspectorFor: inlineInspector ? inspectorFor : undefined }
+  const besideInspector = !!sel && view.kind !== 'wireframe' && !inlineInspector
 
   return (
     <div className="collection">
@@ -199,7 +208,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
         </button>
         {items.length > 0 && <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>}
       </div>
-      <div className={'collection-body' + (sel && view.kind !== 'wireframe' ? ' with-inspector' : '')}>
+      <div className={'collection-body' + (besideInspector ? ' with-inspector' : '')}>
         <div className="view-area">
           {view.kind === 'cards' && <CardsView {...props} />}
           {view.kind === 'table' && <TableView {...props} columns={view.columns} />}
@@ -291,7 +300,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {view.kind === 'townNetwork' && <TownNetworkView {...props} />}
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
-        {sel && view.kind !== 'wireframe' && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
+        {besideInspector && sel && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
       </div>
     </div>
   )
@@ -304,6 +313,7 @@ function Inspector({
   patch,
   onClose,
   setSelected,
+  embedded,
 }: {
   docId: string
   sec: CollectionSection
@@ -311,6 +321,8 @@ function Inspector({
   patch: ViewProps['patch']
   onClose: () => void
   setSelected: (id?: string) => void
+  /** Shown inside a view's own panel: no frame and no Close button. */
+  embedded?: boolean
 }) {
   const { update } = useSection<Entity[]>(docId, sec.id)
   const project = useProject()
@@ -346,7 +358,7 @@ function Inspector({
     })
 
   return (
-    <aside className="inspector">
+    <aside className={'inspector' + (embedded ? ' embedded' : '')}>
       <div className="inspector-head">
         <strong>{sec.singular}</strong>
         <AiBadge entity={entity} />
@@ -355,7 +367,7 @@ function Inspector({
         <button className="icon" title="Move down" onClick={() => move(1)}>↓</button>
         <button className="small" onClick={duplicate}>Duplicate</button>
         <button className="small danger" onClick={remove}>Delete</button>
-        <button className="icon icon-btn" aria-label="Close" title="Close" onClick={onClose}><Icon name="close" /></button>
+        {!embedded && <button className="icon icon-btn" aria-label="Close" title="Close" onClick={onClose}><Icon name="close" /></button>}
       </div>
       <div className="form">
         {[...groups.filter((g) => !g.group || !hidden.has(g.group)), ...groups.filter((g) => g.group && hidden.has(g.group))].map(({ group, fields }) => {

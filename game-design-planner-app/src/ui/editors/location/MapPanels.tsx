@@ -74,8 +74,6 @@ export function HistoryPanel() {
   return (
     <section className="loc-history" aria-label="History">
       <div className="row">
-        <strong>History</strong>
-        <span className="spacer" />
         <button className="small ghost" disabled={!past.length} onClick={undo}>Undo</button>
         <button className="small ghost" disabled={!future.length} onClick={redo}>Redo</button>
       </div>
@@ -112,7 +110,6 @@ export function VersionsPanel({ project, location, map, commit }: { project: Pro
   )
   return (
     <section className="loc-versions" aria-label="Versions">
-      <strong>Versions</strong>
       <div className="row">
         <input aria-label="Version name" placeholder="Name this version" value={name} onChange={(e) => setName(e.target.value)} />
         <button className="small" aria-label="Save version" onClick={() => {

@@ -14,7 +14,7 @@ const CHILD_TYPES = ['Dwelling', 'Dungeon', 'Cave', 'Village', 'City']
  * The selected map object: its text, variants, position and size, road rank, lock, whether it is for the game
  * master only, whether it is pinned, masking the area around it, and Delete.
  */
-export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDeleted, onMask, linkName, onOpen, onCreateLinked }: {
+export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDeleted, onMask, onClose, linkName, onOpen, onCreateLinked }: {
   map: LocationMap
   object: MapObject
   layerLabel: string
@@ -22,6 +22,8 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
   onDuplicate: () => void
   onDeleted: () => void
   onMask: () => void
+  /** Clears the selection. */
+  onClose?: () => void
   /** Name of the location the object opens, when it has a link that still leads somewhere. */
   linkName?: string
   onOpen?: (locationId: string) => void
@@ -41,9 +43,11 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
   const isBox = info.shape === 'box'
   return (
     <section className="loc-object" aria-label="Selected object">
-      <div className="row">
+      <div className="loc-object-head">
         <strong>{info.label}</strong>
-        <span className="muted">in {layerLabel}</span>
+        <span className="loc-chip">{layerLabel}</span>
+        <span className="spacer" />
+        {onClose && <button className="loc-mini" aria-label="Clear selection" title="Clear selection (Esc)" onClick={onClose}>×</button>}
       </div>
       {info.text && (
         <div className="field">
@@ -101,7 +105,7 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
           </select>
         </div>
       )}
-      <label className="row" title="Left out of the player view and the player export.">
+      <label className="loc-check" title="Left out of the player view and the player export.">
         <input type="checkbox" checked={!!object.secret} onChange={(e) => {
           const next: MapObject = { ...object }
           if (e.target.checked) next.secret = true
@@ -120,12 +124,13 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
           <button className="small" title="Make a new location inside this one, with its own map, and open it" onClick={() => onCreateLinked(childType || defaultChildType(object, map.type))}>Create linked map</button>
         </div>
       )}
-      <label className="row" title="A pinned object stays when its layer is regenerated. Editing an object pins it.">
+      <label className="loc-check" title="A pinned object stays when its layer is regenerated. Editing an object pins it.">
         <input type="checkbox" checked={!!object.pinned} onChange={(e) => commit(setPinned(map, object.id, e.target.checked))} /> Keep when regenerating
       </label>
-      <div className="row">
+      <div className="loc-actions">
         <button className="small ghost" title="Mask the area around this object: everything in it survives every reroll" onClick={onMask}>Keep this area</button>
         <button className="small ghost" onClick={onDuplicate}>Duplicate</button>
+        <span className="spacer" />
         <button className="small danger" onClick={() => { commit(removeObject(map, object.id), undefined, `Delete ${info.label.toLowerCase()}`); onDeleted() }}>Delete</button>
       </div>
     </section>
