@@ -2193,8 +2193,8 @@
     "setting": {
       "label": "Interface",
       "classic": "Classic",
-      "preview": "Design Atlas (preview)",
-      "hint": "Try the new Version 3 interface while it is being built. Saved in this browser only; your projects are not changed."
+      "preview": "Design Atlas",
+      "hint": "Design Atlas is the new interface. Classic is the previous one and stays available. Saved in this browser only; your projects are not changed."
     },
     "palette": {
       "label": "Jump to",
@@ -2203,7 +2203,7 @@
       "placeholder": "Planners, sections, entries, actions…",
       "results": "Results",
       "empty": "Nothing matches.",
-      "keys": "↑ ↓ to choose · Enter to open · Esc to close",
+      "keys": "↑ ↓ to choose · Enter to open · Esc to close · Elsewhere: J / K sections, M section map, A Atlas, N next step, . hints, / search",
       "kind": {
         "planner": "Planner",
         "section": "Section",
@@ -2252,6 +2252,21 @@
       "full": "Full screen",
       "exitFull": "Exit full screen",
       "exitFullKey": "Exit full screen (Esc)"
+    },
+    "compass": {
+      "explored": "{{pct}}% explored",
+      "filled": "{{pct}}% filled"
+    },
+    "crumbs": {
+      "label": "You are here",
+      "planners": "{{current}}: other planners in {{phase}}",
+      "sections": "{{current}}: other sections of {{planner}}"
+    },
+    "step": {
+      "current": "Current walkthrough step: {{title}}",
+      "region": "Next walkthrough step",
+      "next": "Next step",
+      "hide": "Hide until the next step"
     }
   }
 }

@@ -24,6 +24,7 @@ import { Sheet } from './Sheet'
 import { useFreshEntries } from '../hints/useHints'
 import { countOf } from '../../core/text'
 import { SectionToolsSlot } from './sectionTools'
+import { SECTION_MAP_EVENT } from './shortcuts'
 
 const isEmptyCollection = (project: Project, docId: string, sec: SectionDef) => {
   if (sec.kind !== 'collection') return false
@@ -51,6 +52,12 @@ export function EditorPageV3() {
   const [about, setAbout] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [toolsEl, setToolsEl] = useState<HTMLElement | null>(null)
+  // M (shortcuts.ts) opens the section map.
+  useEffect(() => {
+    const open = () => setMapOpen(true)
+    window.addEventListener(SECTION_MAP_EVENT, open)
+    return () => window.removeEventListener(SECTION_MAP_EVENT, open)
+  }, [])
   useEffect(() => {
     if (mod) useStore.getState().ensureDoc(docId)
   }, [docId, mod])

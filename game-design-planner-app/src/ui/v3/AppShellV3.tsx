@@ -19,6 +19,10 @@ import { Icon, type IconName } from '../Icon'
 import { CountBadge } from '../motion'
 import { FlavorToast } from '../flavor/moments'
 import { CommandPalette, type PaletteExtra } from './CommandPalette'
+import { PhaseCompass } from './PhaseCompass'
+import { Breadcrumb } from './Breadcrumb'
+import { NextStepPill, StepButton, useNextStep } from './NextStep'
+import { useShortcuts } from './shortcuts'
 
 const subscribeResize = (l: () => void) => {
   window.addEventListener('resize', l)
@@ -59,7 +63,11 @@ export function AppShellV3() {
   // On a planner page the tray's Hints open that planner's hints; elsewhere they lead to the Hints settings.
   const loc = useLocation()
   const docId = matchPath('/doc/:docId', loc.pathname)?.params.docId
-  const sectionId = new URLSearchParams(loc.search).get('s') ?? undefined
+  const search = new URLSearchParams(loc.search)
+  const sectionId = search.get('s') ?? undefined
+  const entityId = search.get('r') ?? search.get('e') ?? undefined
+  const nextStep = useNextStep(docId, sectionId)
+  useShortcuts({ docId, sectionId, nextLink: nextStep?.link, openPalette: () => setPalette(true), openHints: () => (docId ? setHintsOpen(true) : nav('/settings/hints')) })
   const layout = shellLayout(useViewportWidth())
   const issues = validateProject(project).length
   const hintCount = useHints().total
@@ -84,8 +92,10 @@ export function AppShellV3() {
   const rail = (
     <>
       <RailLink to="/" end icon="compass" label={t('v3.rail.atlas')} />
-      <RailLink to="/issues" icon="warning" label={t('nav.issues')} badge={issues} />
+      <span className="rail3-sep" aria-hidden="true" />
+      <PhaseCompass docId={docId} />
       <span className="rail3-spacer" />
+      <RailLink to="/issues" icon="warning" label={t('nav.issues')} badge={issues} />
       <RailLink to="/settings" icon="settings" label={t('nav.settings')} />
     </>
   )
@@ -97,7 +107,10 @@ export function AppShellV3() {
         <input className="bar3-name" aria-label={t('app.projectName')} value={project.meta.name} readOnly={readOnly}
           onChange={(e) => useStore.getState().mutate((p) => void (p.meta.name = e.target.value), 'name')} />
         {cloudActive ? <CloudSaveStatus /> : <SaveStatus dirty={dirty} fileName={fileName} />}
+        <span className="bar3-divider" aria-hidden="true" />
+        <Breadcrumb docId={docId} sectionId={sectionId} entityId={entityId} />
         <span className="bar3-spacer" />
+        <StepButton docId={docId} sectionId={sectionId} />
         <button type="button" className="bar3-search" onClick={() => setPalette(true)} aria-label={t('v3.palette.open')}>
           <Icon name="search" /><span>{t('v3.palette.button')}</span><kbd>Ctrl K</kbd>
         </button>
@@ -111,7 +124,7 @@ export function AppShellV3() {
       <CloudBanners />
       <div className="body3" style={{ gridTemplateColumns: shellColumns(layout) }}>
         {!layout.compact && <nav className="rail3" aria-label={t('nav.main')}>{rail}</nav>}
-        <main className="surface3 shell-body"><Outlet /></main>
+        <main className="surface3 shell-body"><Outlet /><NextStepPill docId={docId} sectionId={sectionId} /></main>
         {!layout.compact && (
           <aside className="tray3" aria-label={t('v3.companion')}>
             <button type="button" className="tray3-item" title={t('nav.hints')} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`} onClick={() => (docId ? setHintsOpen(true) : nav('/settings/hints'))}>

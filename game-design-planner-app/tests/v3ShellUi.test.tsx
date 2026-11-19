@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useState } from 'react'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import '../src/core/i18n'
 import { App } from '../src/App'
 import { createProject } from '../src/core/model/project'
@@ -22,20 +22,32 @@ function load() {
 const isV3 = () => !!document.querySelector('.shell3')
 
 describe('v3 shell', () => {
-  it('is off by default and switched on from Settings without touching the project', async () => {
+  it('is the default when this browser has no stored choice', async () => {
+    load()
+    localStorage.removeItem(UI_VERSION_KEY)
+    resetUiVersionOverride()
+    window.location.hash = '#/'
+    render(<App />)
+    await screen.findByRole('navigation', { name: 'Main' })
+    expect(isV3()).toBe(true)
+  })
+
+  it('switches between Classic and Design Atlas in Settings without touching the project', async () => {
     load()
     window.location.hash = '#/settings/general'
     render(<App />)
     await screen.findByRole('heading', { name: 'Settings' })
     expect(isV3()).toBe(false)
-    fireEvent.click(screen.getByRole('button', { name: 'Design Atlas (preview)' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Design Atlas' }))
     expect(isV3()).toBe(true)
-    expect(localStorage.getItem(UI_VERSION_KEY)).toBe('v3')
+    // The default is stored as no choice; Classic is stored explicitly.
+    expect(localStorage.getItem(UI_VERSION_KEY)).toBeNull()
     expect(useStore.getState().dirty).toBe(false)
     // The rail labels every item; the classic interface is one click away.
-    expect(screen.getByRole('link', { name: 'Atlas' })).toBeTruthy()
+    expect(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Atlas' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Classic' }))
     expect(isV3()).toBe(false)
+    expect(localStorage.getItem(UI_VERSION_KEY)).toBe('v2')
   })
 
   it('jumps to a named entry from the command palette and selects it', async () => {
@@ -43,7 +55,7 @@ describe('v3 shell', () => {
     localStorage.setItem(UI_VERSION_KEY, 'v3')
     window.location.hash = '#/'
     render(<App />)
-    await screen.findByRole('link', { name: 'Atlas' })
+    await screen.findByRole('navigation', { name: 'Main' })
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
     const box = screen.getByRole('combobox', { name: 'Jump to' })
     fireEvent.change(box, { target: { value: 'ghoul' } })
@@ -60,7 +72,7 @@ describe('v3 shell', () => {
     setUiVersion('v3')
     window.location.hash = '#/'
     render(<App />)
-    await screen.findByRole('link', { name: 'Atlas' })
+    await screen.findByRole('navigation', { name: 'Main' })
     const theme = document.documentElement.dataset.theme
     fireEvent.click(screen.getByRole('button', { name: /^Switch to (light|dark) mode$/ }))
     expect(document.documentElement.dataset.theme).not.toBe(theme)

@@ -299,7 +299,29 @@ Ship behind a setting `ui.version: 'v2' | 'v3'` (default v2 until Phase 2 lands)
 - `CanvasEditorFrame`: extract the Locations map editor's layout (tool rail, zoomable canvas, tabbed side panel, full screen) into a shared component. Move the map editor onto it first, its tests unchanged, then the wireframe editor.
 - **Target:** chrome above content ≤ 160 px at 1024×768 (now 586); table ≥ 640 px wide with a record open (now 95).
 
-### Phase 2: navigation (≈ 1–2 weeks)
+### Phase 2: navigation (≈ 1–2 weeks). **Done 2026-11-19**
+
+> **Shipped (v3 preview only):**
+> - **Phase compass** (`core/compass.ts`, `ui/v3/PhaseCompass.tsx`):
+>   - Every planner sits in the phase of the first walkthrough step that opens it, else in its group's phase, so the compass follows the genre-tailored walkthrough.
+>   - The rail has Atlas, then the five phases as labelled line icons with a thin fill track, then Issues and Settings.
+>   - The phase of the planner on screen is marked.
+>   - Each phase opens a flyout of its planners with fill rings and hint counts; it closes on Esc, a click outside or navigation.
+> - **Breadcrumb** (`Breadcrumb.tsx`): Atlas / planner ▾ / section ▾ / entry. The planner menu lists the same phase's planners and the section menu the planner's sections; their accessible names say what is current.
+> - **Current-step button and Next-step pill** (`NextStep.tsx`): the 36 px pulsing circle in the command bar, and a pill at the bottom. The pill hides on the step's own page and can be dismissed until the step changes.
+> - **Shortcuts** (`shortcuts.ts`, pure `shortcutAction`):
+>   - J / K sections, M section map, A Atlas, N next step, `.` hints, `/` search.
+>   - They listen on `window` after page handlers, so the map editor's tool keys (K = Keep area) win there.
+>   - They're off while typing, with modifiers, or with a modal open.
+>   - They're listed in the palette footer.
+> - **Tests:** `tests/v3Nav.test.ts` and `tests/v3NavUi.test.tsx`.
+>
+> **Default flipped (user decision):** the Design Atlas is now the default interface. No stored choice means v3, and Classic is stored explicitly (`hohplan:uiVersion = v2`), so people who never chose follow future defaults. Settings › General › Interface reads "Classic | Design Atlas" without "(preview)". The test setup (`tests/setup.ts`) starts each test in Classic, because most UI tests cover it and it stays available; the v3 tests choose v3, and `tests/v3ShellUi.test.tsx` checks that a fresh browser gets v3.
+>
+> **Not done:**
+> - **The Guided/Studio switch:** waits for the modes (Phase 4).
+> - **Section strip:** still in section order rather than the system map's topological order.
+> - **Flyout hint counts:** they include "section is empty" hints, so untouched planners show large numbers. Consider counting only started planners, or only non-empty-section hints.
 - Phase compass rail: monochrome labelled line icons (Atlas, Concept, Systems, Content, Production, Polish, Settings), 2 px progress tracks, an active marker, plus planner flyouts (fill rings from the existing progress code; hint badges from the hints engine).
 - Command bar: one-line project name, the 36 px current-step button wired to the walkthrough (`useGuideUi` / guide progress), the theme toggle and the Guided/Studio switch.
 - Section strip: flatten each guide's `map` into an ordered node chain (topological order of the system map, falling back to section order), with state glyphs and hover peek.

@@ -1942,8 +1942,8 @@
     "setting": {
       "label": "Felület",
       "classic": "Klasszikus",
-      "preview": "Design Atlasz (előnézet)",
-      "hint": "Próbáld ki az új, 3. verziós felületet, amíg készül. Csak ebben a böngészőben mentődik; a projektjeid nem változnak."
+      "preview": "Design Atlasz",
+      "hint": "A Design Atlasz az új felület. A Klasszikus az előző, és továbbra is elérhető. Csak ebben a böngészőben mentődik; a projektjeid nem változnak."
     },
     "palette": {
       "label": "Ugrás",
@@ -1952,7 +1952,7 @@
       "placeholder": "Tervezők, szakaszok, elemek, műveletek…",
       "results": "Találatok",
       "empty": "Nincs találat.",
-      "keys": "↑ ↓ választás · Enter megnyitás · Esc bezárás",
+      "keys": "↑ ↓ választás · Enter megnyitás · Esc bezárás · Máshol: J / K szakaszok, M szakasztérkép, A Atlasz, N következő lépés, . tippek, / keresés",
       "kind": {
         "planner": "Tervező",
         "section": "Szakasz",
@@ -2001,6 +2001,21 @@
       "full": "Teljes képernyő",
       "exitFull": "Kilépés a teljes képernyőből",
       "exitFullKey": "Kilépés a teljes képernyőből (Esc)"
+    },
+    "compass": {
+      "explored": "{{pct}}% felfedezve",
+      "filled": "{{pct}}% kitöltve"
+    },
+    "crumbs": {
+      "label": "Itt vagy",
+      "planners": "{{current}}: további tervezők itt: {{phase}}",
+      "sections": "{{current}}: {{planner}} további szakaszai"
+    },
+    "step": {
+      "current": "Aktuális lépés: {{title}}",
+      "region": "Következő lépés",
+      "next": "Következő lépés",
+      "hide": "Elrejtés a következő lépésig"
     }
   }
 }
