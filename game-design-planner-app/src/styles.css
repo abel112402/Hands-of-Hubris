@@ -1585,6 +1585,8 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .bar3-search span{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar3 .icon-btn{width:var(--control-min);height:var(--control-min)}
 @media (max-width:1100px){.bar3-search{min-width:0}.bar3-search span,.bar3-search kbd{display:none}}
+/* Phones: the bar keeps only what has no other way in; mode, redo and theme stay in the palette (Ctrl K) and Settings. */
+@media (max-width:560px){.bar3{gap:4px;padding:0 var(--space-2)}.bar3-mode,.bar3-redo,.bar3-theme,.bar3-divider{display:none}.bar3-name{min-width:60px}}
 .body3{flex:1;display:grid;min-height:0}
 .surface3{min-width:0;background:var(--surface-canvas)}
 .rail3{display:flex;flex-direction:column;align-items:center;gap:4px;padding:var(--space-3) 0;background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto}
@@ -1643,7 +1645,8 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .sec3-about{margin-top:var(--space-3);padding:var(--space-3) var(--space-4);max-width:80ch;border-radius:var(--radius-md);background:var(--surface-note);animation:hoh-rise var(--dur-fast) var(--ease-out)}
 .sec3-about p{margin:0 0 var(--space-2)}
 .sec3-head .walk-chip,.sec3-head [class*="walkthrough"]{margin-top:var(--space-3)}
-.sec3-strip{display:flex;align-items:center;gap:4px;padding:var(--space-2) 0;overflow-x:auto;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+/* contain:paint keeps the strip's scrolled-off pills out of the page's width (Chrome otherwise widens the surface on phones). */
+.sec3-strip{display:flex;align-items:center;gap:4px;padding:var(--space-2) 2px;overflow-x:auto;contain:paint;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
 .sec3-strip::-webkit-scrollbar{display:none}
 .step3{display:inline-flex;align-items:center;gap:6px;height:var(--control-min);padding:0 10px;border:1px solid transparent;border-radius:var(--radius-pill);background:none;color:var(--muted);white-space:nowrap;flex:none}
 .step3:hover{color:var(--text);background:var(--panel2)}
@@ -1713,6 +1716,10 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .step3btn-dot{width:10px;height:10px;border-radius:50%;background:var(--brand);animation:hoh-halo 1.8s var(--ease-out) infinite;--halo:var(--brand)}
 .pill3{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:6px}
 .pill3-go{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px 0 14px;border:1px solid color-mix(in srgb,var(--brand) 55%,transparent);border-radius:var(--radius-pill);background:var(--surface-sheet);box-shadow:var(--shadow-sheet);font-weight:600;max-width:min(560px,70vw)}
+/* Compact layout (narrow window or 200% zoom): sit above the bottom phase bar, never over it. */
+.shell3.compact .pill3{bottom:calc(var(--rail3-bottom-h,74px) + 12px)}
+.pill3-label{white-space:nowrap;flex:none}
+@media (max-width:560px){.pill3-label{display:none}.pill3-go{max-width:calc(100vw - 72px)}}
 .pill3-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill3-x{display:grid;place-items:center;width:32px;height:32px;padding:0;border-radius:50%;background:var(--surface-sheet);color:var(--muted);box-shadow:var(--shadow-sheet)}
 @media (forced-colors:active){.rail3-track>span,.ring3-fill{stroke:CanvasText;background:CanvasText}}
@@ -1735,15 +1742,16 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .step3card-title{margin:4px 0;font-size:var(--fs-2xl)}
 .step3card-text p{margin:0;color:var(--muted);max-width:80ch}
 .step3card-actions{display:flex;gap:var(--space-2);flex-wrap:wrap}
-.atlas3-map{position:relative;width:100%;min-width:1120px;border:1px solid var(--line);border-radius:var(--radius-md);background-color:var(--surface-canvas);overflow:hidden}
+.atlas3-map{position:relative;width:100%;min-width:1120px;border:1px solid var(--line);border-radius:var(--radius-md);background-color:var(--atlas-paper);--grid-dot:var(--atlas-dot);overflow:hidden}
 .atlas3-svg{position:absolute;inset:0;width:100%;height:100%}
-.atlas3-region{stroke-width:1.5;stroke-dasharray:6 5}
+.atlas3-region{stroke-width:1.5;stroke-dasharray:6 5;transition:opacity var(--dur-slow) var(--ease-out),fill var(--dur-slow) var(--ease-out)}
 .atlas3-region.fog{opacity:.45}
 .atlas3-link{stroke:color-mix(in srgb,var(--muted) 22%,transparent);stroke-width:1}
 .atlas3-route{stroke:color-mix(in srgb,var(--brand) 70%,transparent);stroke-width:2;stroke-dasharray:7 7;animation:atlas3-march 1.2s linear infinite}
-.atlas3-route.walked{stroke:var(--brand);stroke-dasharray:none;animation:none;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--brand) 60%,transparent))}
+/* A segment that becomes walked draws itself in (pathLength 1). */
+.atlas3-route.walked{stroke:var(--brand);stroke-dasharray:1;stroke-dashoffset:0;animation:hoh-draw var(--dur-slow) var(--ease-out);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--brand) 60%,transparent))}
 @keyframes atlas3-march{to{stroke-dashoffset:-14}}
-.atlas3-region-label{position:absolute;transform:translateY(-50%);padding:0 8px;background:var(--surface-canvas);font:700 var(--fs-xs) var(--font-display);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.atlas3-region-label{position:absolute;transform:translateY(-50%);padding:0 8px;background:var(--atlas-paper);font:700 var(--fs-xs) var(--font-display);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
 .atlas3-uncharted{margin-left:8px;color:var(--muted);letter-spacing:.08em}
 .atlas3-lm{position:absolute;width:100px;transform:translate(-50%,-24px);display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;z-index:2;border-radius:var(--radius-md)}
 .atlas3-ring{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--panel);box-shadow:0 0 0 1px var(--line);transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
@@ -1753,6 +1761,7 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .atlas3-lm:hover .atlas3-ring,.atlas3-lm:focus-visible .atlas3-ring{transform:scale(1.1);box-shadow:0 0 0 1px currentColor,0 0 18px color-mix(in srgb,currentColor 50%,transparent)}
 .atlas3-lm:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .atlas3-name{font-size:11.5px;font-weight:600;line-height:1.2;text-align:center;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.atlas3-lm{transition:opacity var(--dur-slow) var(--ease-out),filter var(--dur-slow) var(--ease-out)}
 .atlas3-lm.fogged{opacity:.5;filter:grayscale(.9)}
 .atlas3-lm.here .atlas3-ring{animation:hoh-halo 1.8s var(--ease-out) infinite;--halo:var(--brand);box-shadow:0 0 0 2px var(--brand)}
 .atlas3-here{position:absolute;top:-24px;padding:2px 8px;border-radius:var(--radius-pill);background:var(--brand);color:var(--on-brand);font-size:var(--fs-xs);font-weight:700;white-space:nowrap}
@@ -1782,3 +1791,9 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .studio3-offer{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
 .sheet-body:has(> .hint-panel.embedded),.companion3-body{overflow-x:hidden}
 .hint-panel.embedded .hint-head{width:auto;box-sizing:border-box}
+/* v3 Phase 5: the Atlas on paper. Dark keeps the blueprint canvas; light turns the map into warm parchment. */
+:root{--atlas-paper:var(--surface-canvas);--atlas-dot:var(--grid-dot)}
+:root[data-theme=light]{--atlas-paper:#f7f1e3;--atlas-dot:color-mix(in srgb,#8a6a3a 24%,transparent)}
+:root[data-theme=light] .atlas3-map{border-color:#e2d6bd;box-shadow:inset 0 0 60px color-mix(in srgb,#8a6a3a 10%,transparent)}
+/* The heading takes focus after navigation (EditorPageV3) to announce the page; it is not a control, so no ring. */
+.sec3-title:focus{outline:none}

@@ -78,7 +78,7 @@ function AtlasMap({ atlas }: { atlas: AtlasModel }) {
           <line key={`${l.from}>${l.to}`} className="atlas3-link" x1={at[l.from].x} y1={at[l.from].y} x2={at[l.to].x} y2={at[l.to].y} />
         ))}
         {atlas.route.map((s, i) => at[s.from] && at[s.to] && (
-          <line key={i} className={'atlas3-route' + (s.walked ? ' walked' : '')} x1={at[s.from].x} y1={at[s.from].y} x2={at[s.to].x} y2={at[s.to].y} />
+          <line key={i} className={'atlas3-route' + (s.walked ? ' walked' : '')} pathLength={s.walked ? 1 : undefined} x1={at[s.from].x} y1={at[s.from].y} x2={at[s.to].x} y2={at[s.to].y} />
         ))}
       </svg>
       {atlas.regions.map((r) => (

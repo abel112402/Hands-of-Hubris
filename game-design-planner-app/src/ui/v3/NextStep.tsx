@@ -45,7 +45,7 @@ export function NextStepPill({ docId, sectionId }: { docId?: string; sectionId?:
     <div className="pill3" role="region" aria-label={t('v3.step.region')}>
       <button type="button" className="pill3-go" onClick={() => nav(step.link!)}>
         <span className="step3btn-dot" aria-hidden="true" />
-        <span className="muted">{t('v3.step.next')}</span>
+        <span className="muted pill3-label">{t('v3.step.next')}</span>
         <span className="pill3-title">{step.title}</span>
         <Icon name="chevronRight" />
       </button>

@@ -63,8 +63,9 @@ describe('v3 shell', () => {
     fireEvent.keyDown(box, { key: 'Enter' })
     expect(screen.queryByRole('dialog', { name: 'Jump to' })).toBeNull()
     expect(window.location.hash).toBe('#/doc/design.combat?s=enemies&e=gh')
-    // The entry opens in the inspector.
-    expect(((await screen.findByLabelText(/^Name/)) as HTMLInputElement).value).toBe('Ghoul')
+    // The entry opens in its record sheet (table cells are labelled "Name: Ghoul" too, so look inside the sheet).
+    const sheet = await screen.findByRole('dialog', { name: 'enemy: Ghoul' })
+    expect((within(sheet).getByLabelText(/^Name/) as HTMLInputElement).value).toBe('Ghoul')
   })
 
   it('switches the theme and back to the classic interface from the palette', async () => {
@@ -115,5 +116,16 @@ describe('Sheet', () => {
     expect(onClose).toHaveBeenCalledOnce()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(document.activeElement).toBe(opener)
+  })
+
+  it('selects a placeholder value on open so typing replaces it', () => {
+    render(
+      <Sheet label="New enemy" title="New enemy" onClose={() => {}} selectFirst>
+        <input aria-label="Name" defaultValue="New enemy" />
+      </Sheet>,
+    )
+    const input = screen.getByLabelText('Name') as HTMLInputElement
+    expect(document.activeElement).toBe(input)
+    expect([input.selectionStart, input.selectionEnd]).toEqual([0, 'New enemy'.length])
   })
 })

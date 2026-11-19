@@ -344,7 +344,7 @@ export function GuideCenter({ view, setup }: { view: WalkthroughView; setup?: Re
         document.getElementById(`tab-${tabs[next].id}`)?.focus()
       }}>
         {tabs.map((x) => (
-          <button key={x.id} role="tab" id={`tab-${x.id}`} aria-selected={tab === x.id} aria-controls={`panel-${x.id}`} tabIndex={tab === x.id ? 0 : -1} className={tab === x.id ? 'active' : ''} onClick={() => setTab(x.id)}>
+          <button key={x.id} role="tab" id={`tab-${x.id}`} aria-selected={tab === x.id} aria-controls={tab === x.id ? `panel-${x.id}` : undefined} tabIndex={tab === x.id ? 0 : -1} className={tab === x.id ? 'active' : ''} onClick={() => setTab(x.id)}>
             <Icon name={x.icon} /> {x.label}
           </button>
         ))}

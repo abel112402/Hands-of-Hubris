@@ -528,6 +528,8 @@ function RecordSheet({ docId, sec, entity, items, patch, onClose, onToggleExpand
       nextLabel={t('v3.record.next', { what: sec.singular })}
       mode={asPage ? 'split' : 'overlay'}
       width={asPage ? '100%' : 520}
+      // A just-added entry still has its placeholder name: select it so typing replaces it.
+      selectFirst={!!useFreshEntries.getState().until[entity.id]}
       actions={onToggleExpand && (
         <button type="button" className="icon-btn" aria-label={t(asPage ? 'v3.record.collapse' : 'v3.record.expand')} title={t(asPage ? 'v3.record.collapse' : 'v3.record.expand')} onClick={onToggleExpand}>
           <Icon name={asPage ? 'shrink' : 'expand'} />
@@ -542,11 +544,19 @@ function RecordSheet({ docId, sec, entity, items, patch, onClose, onToggleExpand
       }
     >
       {nameField && <div className="form record3-name"><EntityField docId={docId} entity={entity} field={nameField} patch={patch} /></div>}
-      <div className="record3-tabs" role="tablist" aria-label={t('v3.record.groups')}>
+      {/* ARIA tabs: one Tab stop; ← → Home End switch tab and move focus. */}
+      <div className="record3-tabs" role="tablist" aria-label={t('v3.record.groups')} onKeyDown={(e) => {
+        const at = tabs.findIndex((x) => x.id === tab.id)
+        const to = e.key === 'ArrowRight' ? (at + 1) % tabs.length : e.key === 'ArrowLeft' ? (at - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1
+        if (to < 0) return
+        e.preventDefault()
+        setTabId(tabs[to].id)
+        requestAnimationFrame(() => document.getElementById(`rt-${tabs[to].id}`)?.focus())
+      }}>
         {tabs.map((x) => {
           const filled = x.fields.filter((f) => !isBlankValue(entity[f.key])).length
           return (
-            <button key={x.id} type="button" role="tab" id={`rt-${x.id}`} aria-selected={x.id === tab.id} aria-controls="record3-panel" onClick={() => setTabId(x.id)}>
+            <button key={x.id} type="button" role="tab" id={`rt-${x.id}`} aria-selected={x.id === tab.id} aria-controls="record3-panel" tabIndex={x.id === tab.id ? 0 : -1} onClick={() => setTabId(x.id)}>
               {x.label}
               {x.id === LINKS_TAB ? (usages.length > 0 && <span className="record3-count">{usages.length}</span>) : <span className="record3-count">{filled}/{x.fields.length}</span>}
             </button>
@@ -753,7 +763,7 @@ function TableView({ docId, sec, items, selected, onSelect, patch, columns }: Vi
               {cols.map((c) => (
                 <td key={c.key} onClick={(ev) => c.type !== 'text' && c.type !== 'number' && ev.stopPropagation()}>
                   {['text', 'number', 'enum', 'ref', 'boolean'].includes(c.type) ? (
-                    <FieldInput field={c} value={e[c.key]} docId={docId} compact onChange={(v) => patch(e.id, c.key, v)} />
+                    <FieldInput field={c} value={e[c.key]} docId={docId} compact label={`${c.label}: ${String(e.name ?? '').trim() || sec.singular}`} onChange={(v) => patch(e.id, c.key, v)} />
                   ) : (
                     <span className="cell-text">{displayValue(project, docId, c, e)}</span>
                   )}

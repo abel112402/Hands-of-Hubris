@@ -22,6 +22,7 @@ export function Sheet({
   footer,
   mode = 'overlay',
   width = 480,
+  selectFirst = false,
   children,
 }: {
   /** Accessible name of the sheet. */
@@ -41,6 +42,8 @@ export function Sheet({
   mode?: 'overlay' | 'split'
   /** Pixels, or any CSS width (a record page uses 100%). */
   width?: number | string
+  /** Select the text of the first field when the sheet opens (a placeholder value the user will replace). */
+  selectFirst?: boolean
   children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -54,10 +57,17 @@ export function Sheet({
     const before = document.activeElement as HTMLElement | null
     const el = ref.current
     // The first field or button inside, else the sheet itself.
-    ;(el?.querySelector<HTMLElement>('.sheet-body ' + FOCUSABLE.split(', ').join(', .sheet-body ')) ?? el)?.focus()
+    const first = el?.querySelector<HTMLElement>('.sheet-body ' + FOCUSABLE.split(', ').join(', .sheet-body '))
+    ;(first ?? el)?.focus()
+    if (selectFirst && first instanceof HTMLInputElement) first.select()
     return () => {
-      if (before?.isConnected) before.focus()
+      // Back to whatever opened the sheet; if that is gone (an empty state replaced by the list), to the
+      // page heading, so focus never falls back to the top of the document.
+      if (before?.isConnected && before !== document.body) before.focus()
+      else document.querySelector<HTMLElement>('.surface3 h1[tabindex], .surface3 h1')?.focus({ preventScroll: true })
     }
+    // Runs once, on open: later changes to selectFirst must not move focus again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onKeyDown = (e: React.KeyboardEvent) => {

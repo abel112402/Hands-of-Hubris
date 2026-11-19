@@ -128,7 +128,7 @@ export function AppShellV3() {
           <Icon name="search" /><span>{t('v3.palette.button')}</span><kbd>Ctrl K</kbd>
         </button>
         <button type="button" className="icon-btn" disabled={!canUndo} aria-label={t('actions.undo')} title={`${t('actions.undo')} (Ctrl+Z)`} onClick={() => useStore.getState().undo()}><Icon name="undo" /></button>
-        <button type="button" className="icon-btn" disabled={!canRedo} aria-label={t('actions.redo')} title={`${t('actions.redo')} (Ctrl+Y)`} onClick={() => useStore.getState().redo()}><Icon name="redo" /></button>
+        <button type="button" className="icon-btn bar3-redo" disabled={!canRedo} aria-label={t('actions.redo')} title={`${t('actions.redo')} (Ctrl+Y)`} onClick={() => useStore.getState().redo()}><Icon name="redo" /></button>
         <button type="button" className="icon-btn bar3-theme" aria-label={themeLabel} title={themeLabel} onClick={() => setThemePref(nextTheme)}>
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
         </button>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getModule, getSections } from '../../core/modules/registry'
@@ -52,6 +52,14 @@ export function EditorPageV3() {
   const [about, setAbout] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [toolsEl, setToolsEl] = useState<HTMLElement | null>(null)
+  // Opening a planner or section moves focus to its heading, so keyboard and screen-reader users land on the
+  // new page instead of the top of the document. Not while a field or sheet already has focus.
+  const heading = useRef<HTMLHeadingElement>(null)
+  const sectionKey = `${docId}/${sp.get('s') ?? ''}`
+  useEffect(() => {
+    const active = document.activeElement
+    if (!active || active === document.body || !document.body.contains(active)) heading.current?.focus({ preventScroll: true })
+  }, [sectionKey])
   // M (shortcuts.ts) opens the section map.
   useEffect(() => {
     const open = () => setMapOpen(true)
@@ -90,6 +98,17 @@ export function EditorPageV3() {
     if (preview) n.set('v', 'md')
     setSp(n)
   }
+  /** Arrow keys move focus along the strip (the focused button is the only one in the Tab order on Tab-out). */
+  const stripKeys = (e: React.KeyboardEvent<HTMLElement>) => {
+    const steps = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('.step3'))
+    const at = steps.indexOf(document.activeElement as HTMLButtonElement)
+    if (at < 0) return
+    const to = e.key === 'ArrowRight' ? at + 1 : e.key === 'ArrowLeft' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? steps.length - 1 : null
+    if (to === null || !steps[to]) return
+    e.preventDefault()
+    steps.forEach((b, i) => (b.tabIndex = i === to ? 0 : -1))
+    steps[to].focus()
+  }
   const state = sec ? states[sec.id] : undefined
   const filled = sections.filter((s) => states[s.id] && states[s.id].state !== 'empty').length
   const concept = sec ? guide?.concepts[sec.id] : undefined
@@ -118,7 +137,7 @@ export function EditorPageV3() {
               )}
             </div>
             <div className="sec3-titlerow">
-              <h1 className="sec3-title">{sec?.title ?? mod.title}</h1>
+              <h1 className="sec3-title" ref={heading} tabIndex={-1}>{sec?.title ?? mod.title}</h1>
               {(sec?.description || concept) && (
                 <button type="button" className="icon-btn" aria-expanded={about} aria-label={t('v3.section.about')} title={t('v3.section.about')} onClick={() => setAbout(!about)}>
                   <Icon name="help" />
@@ -151,12 +170,13 @@ export function EditorPageV3() {
           </div>
         )}
         {sec && <WalkthroughChip docId={docId} sectionId={sec.id} />}
-        <nav className="sec3-strip" aria-label={t('editor.sections')}>
+        {/* One Tab stop: ← → (Home, End) move between sections, Enter opens one (roving tabindex). */}
+        <nav className="sec3-strip" aria-label={t('editor.sections')} onKeyDown={stripKeys}>
           {sections.map((s) => {
             const st = states[s.id]
             const on = s.id === sec?.id
             return (
-              <button key={s.id} type="button" className={'step3' + (on ? ' on' : '')} aria-current={on ? 'step' : undefined} onClick={() => goSection(s.id)}>
+              <button key={s.id} type="button" className={'step3' + (on ? ' on' : '')} aria-current={on ? 'step' : undefined} tabIndex={on ? 0 : -1} onClick={() => goSection(s.id)}>
                 <StateGlyph state={st?.state ?? 'empty'} />
                 <span className="step3-name">{s.title}</span>
                 <span className="sr-only">, {t(`v3.section.state.${st?.state ?? 'empty'}`)}</span>

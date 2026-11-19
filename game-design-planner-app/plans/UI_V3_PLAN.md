@@ -384,6 +384,28 @@ Ship behind a setting `ui.version: 'v2' | 'v3'` (default v2 until Phase 2 lands)
 - Accessibility audit (axe plus a keyboard-only run of: open planner → add record → fill core → next section), screen-reader labels for map nodes, 200% zoom check.
 - Before/after screenshots into `design-critique/v3-after-*.jpg` at 1024/1440/375.
 
+> **Shipped (Phase 5, first pass):**
+> - **Motion:** fog dissolves (opacity, fill and filter transitions on regions and landmarks), walked route segments draw in (`pathLength=1` plus a dash animation), and the sheet slides in. All of it falls under the global reduced-motion rule. No sound was added.
+> - **Parchment:** the light theme gives the Atlas a warm paper (`--atlas-paper`, `--atlas-dot`), an inset edge, and region labels cut out against the paper. A test holds every phase colour to 4.5:1 or better, both on the parchment and on the dark canvas.
+> - **Accessibility audit:** `tests/v3A11y.test.tsx` runs a scripted check, not axe, using `dom-accessibility-api`, which is installed with Testing Library. It checks that every control has a name, that ids are unique, and that every ARIA reference resolves. It covers the Atlas (map, list and flyout), the record sheet, the record page, the section map, the companion tabs, the palette and a form section. It found and fixed these problems:
+>   - Table cells had no names. Each cell is now labelled "Field: entry", for example "HP: Ghoul".
+>   - The companion tabs pointed `aria-controls` at panels that weren't rendered.
+>   - Focus was lost after J/K and after closing a sheet. The section heading now takes focus, and closing a sheet returns focus to its opener or, failing that, to the heading.
+>   - The section strip and the record tabs each took one tab stop per item. Each is now a single roving tab stop moved with ←/→/Home/End.
+> - **Keyboard-only run, in the browser:** search → section → J/K → "Start blank" → type a name → Biome and Role → Esc → J to the next section, all without a mouse. Fixed along the way: a new entry's placeholder name ("New enemy") is now selected when the sheet opens, so typing replaces it instead of appending.
+> - **200% zoom (720×450) and phone (375):**
+>   - The compact layout with the bottom phase bar holds at both sizes.
+>   - The next-step pill now sits above the bottom bar instead of covering two phases.
+>   - On phones the command bar hides the mode switch, redo and theme. All three stay in the palette and Settings. Before this the bar pushed the page to 515 px.
+>   - The section strip uses `contain:paint`, because its scrolled-off pills widened the page in Chrome.
+>   - On phones the pill shows only the step title.
+> - **After screenshots:** `design-critique/v3-after-{1440,1024,375}-{atlas,record}.jpg` and `v3-after-zoom200.jpg`.
+>
+> **Not done:**
+> - An axe run and a real screen-reader pass (NVDA or VoiceOver). The scripted audit doesn't replace either one.
+> - On phones the breadcrumb clips to "Atl…", "Production" breaks across two lines in the bottom bar, and the record sheet leaves an empty band above its header.
+> - Sound (off by default) is still only an idea.
+
 ### Success measures
 | Measure | v2 today | v3 target |
 |---|---|---|
