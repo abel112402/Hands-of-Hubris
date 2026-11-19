@@ -46,6 +46,7 @@ import { useSectionToolsSlot } from '../v3/sectionTools'
 import { createPortal } from 'react-dom'
 import { Segmented } from '../motion'
 import { useFreshEntries } from '../hints/useHints'
+import { useUiMode } from '../../core/uiMode'
 import { countOf } from '../../core/text'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
@@ -212,6 +213,14 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
   }
   const besideInspector = !!sel && view.kind !== 'wireframe' && !inlineInspector && !v3
   const sheetFor = v3 && view.kind !== 'wireframe' && !inlineInspector ? sel : undefined
+  // Closing the sheet also drops `?e=`, so following the same link to the entry opens it again.
+  const closeSheet = () => {
+    setSelected(undefined)
+    if (!params.has('e')) return
+    const n = new URLSearchParams(params)
+    n.delete('e')
+    setParams(n, { replace: true })
+  }
   // v3 "Expand to page": `?r=<id>` shows that entry full-width instead of the view (deep-linkable).
   const pageId = v3 ? params.get('r') : null
   const pageEntity = pageId ? items.find((e) => e.id === pageId) : undefined
@@ -384,7 +393,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
         {besideInspector && sel && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
-        {sheetFor && <RecordSheet docId={docId} sec={sec} entity={sheetFor} items={shown.some((e) => e.id === sheetFor.id) ? shown : items} patch={patch} onClose={() => setSelected(undefined)} onToggleExpand={() => setPage(sheetFor.id)} setSelected={setSelected} />}
+        {sheetFor && <RecordSheet docId={docId} sec={sec} entity={sheetFor} items={shown.some((e) => e.id === sheetFor.id) ? shown : items} patch={patch} onClose={closeSheet} onToggleExpand={() => setPage(sheetFor.id)} setSelected={setSelected} />}
       </div>
     </div>
   )
@@ -500,7 +509,9 @@ function RecordSheet({ docId, sec, entity, items, patch, onClose, onToggleExpand
   tabs.push({ id: LINKS_TAB, label: t('v3.record.links'), fields: [] })
   const [tabId, setTabId] = useState(tabs[0].id)
   const tab = tabs.find((x) => x.id === tabId) ?? tabs[0]
-  const { shown, hidden: more } = splitByTier(tab.fields, entity, opened, core)
+  // Studio shows every field; Guided keeps empty detail fields behind chips.
+  const studio = useUiMode() === 'studio'
+  const { shown, hidden: more } = studio ? { shown: tab.fields, hidden: [] as FieldDef[] } : splitByTier(tab.fields, entity, opened, core)
   const at = items.findIndex((e) => e.id === entity.id)
   const step = (d: number) => items.length > 1 && setSelected(items[(at + d + items.length) % items.length].id)
   const name = String(entity.name ?? '').trim()

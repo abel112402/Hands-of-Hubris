@@ -1,13 +1,11 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, matchPath, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { HintPanel } from '../hints/HintPanel'
-import { Sheet } from './Sheet'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../core/store/store'
 import { validateProject } from '../../core/references/refs'
 import { setThemePref, useTheme } from '../../core/theme'
 import { setUiVersion } from '../../core/uiVersion'
-import { shellColumns, shellLayout } from '../../core/shellLayout'
+import { DOCK_FROM, shellColumns, shellLayout } from '../../core/shellLayout'
 import { useCloud } from '../../core/cloud/session'
 import { useHints } from '../hints/useHints'
 import { SETTINGS_TABS } from '../settings/SettingsPage'
@@ -16,13 +14,15 @@ import { newProject, saveProject } from '../actions'
 import { CloudBanners, CloudSaveStatus } from '../cloud/CloudBanners'
 import { BrandMark } from '../BrandMark'
 import { Icon, type IconName } from '../Icon'
-import { CountBadge } from '../motion'
+import { CountBadge, Segmented } from '../motion'
 import { FlavorToast } from '../flavor/moments'
 import { CommandPalette, type PaletteExtra } from './CommandPalette'
 import { PhaseCompass } from './PhaseCompass'
 import { Breadcrumb } from './Breadcrumb'
 import { NextStepPill, StepButton, useNextStep } from './NextStep'
 import { useShortcuts } from './shortcuts'
+import { CompanionPanel, CompanionTray, useCompanion } from './Companion'
+import { getCompanionPinned, setUiMode, useCompanionPinned, useUiMode } from '../../core/uiMode'
 
 const subscribeResize = (l: () => void) => {
   window.addEventListener('resize', l)
@@ -58,7 +58,6 @@ export function AppShellV3() {
   const cloudActive = useCloud((s) => !!s.active)
   const theme = useTheme()
   const [palette, setPalette] = useState(false)
-  const [hintsOpen, setHintsOpen] = useState(false)
   useShellEffects(() => setPalette(true))
   // On a planner page the tray's Hints open that planner's hints; elsewhere they lead to the Hints settings.
   const loc = useLocation()
@@ -67,8 +66,17 @@ export function AppShellV3() {
   const sectionId = search.get('s') ?? undefined
   const entityId = search.get('r') ?? search.get('e') ?? undefined
   const nextStep = useNextStep(docId, sectionId)
-  useShortcuts({ docId, sectionId, nextLink: nextStep?.link, openPalette: () => setPalette(true), openHints: () => (docId ? setHintsOpen(true) : nav('/settings/hints')) })
-  const layout = shellLayout(useViewportWidth())
+  useShortcuts({ docId, sectionId, nextLink: nextStep?.link, openPalette: () => setPalette(true), openHints: () => (docId ? showCompanion('hints') : nav('/settings/hints')) })
+  // The companion docks as a column when pinned on a wide screen, else it is an overlay that closes on navigation.
+  const vw = useViewportWidth()
+  const companionOpen = useCompanion((s) => s.open)
+  const showCompanion = useCompanion((s) => s.show)
+  const pinned = useCompanionPinned()
+  const layout = shellLayout(vw, { companionPinned: pinned && companionOpen && !!docId })
+  const mode = useUiMode()
+  useEffect(() => {
+    if (!getCompanionPinned() || window.innerWidth < DOCK_FROM) useCompanion.getState().close()
+  }, [loc.pathname, loc.search])
   const issues = validateProject(project).length
   const hintCount = useHints().total
   const nextTheme = theme === 'dark' ? 'light' : 'dark'
@@ -80,6 +88,7 @@ export function AppShellV3() {
     { id: 'page:issues', kind: 'page', label: t('nav.issues'), to: '/issues', icon: 'warning' },
     ...SETTINGS_TABS.map((id): PaletteExtra => ({ id: `page:settings/${id}`, kind: 'page', label: `${t('settingsPage.title')}: ${t(`settingsPage.tabs.${id}`)}`, to: `/settings/${id}`, icon: 'settings' })),
     { id: 'act:theme', kind: 'action', label: themeLabel, run: () => setThemePref(nextTheme), icon: nextTheme === 'light' ? 'sun' : 'moon' },
+    { id: 'act:mode', kind: 'action', label: t(mode === 'guided' ? 'v3.mode.toStudio' : 'v3.mode.toGuided'), run: () => setUiMode(mode === 'guided' ? 'studio' : 'guided'), icon: 'layers' },
     { id: 'act:classic', kind: 'action', label: t('v3.useClassic'), run: () => setUiVersion('v2'), icon: 'monitor' },
     { id: 'act:undo', kind: 'action', label: t('actions.undo'), run: () => useStore.getState().undo(), icon: 'undo' },
     { id: 'act:redo', kind: 'action', label: t('actions.redo'), run: () => useStore.getState().redo(), icon: 'redo' },
@@ -87,7 +96,7 @@ export function AppShellV3() {
     { id: 'act:new', kind: 'action', label: t('actions.new'), run: newProject, icon: 'file' },
     // The labels follow the language; rebuild when it changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [t, i18n.language, themeLabel, nextTheme])
+  ], [t, i18n.language, themeLabel, nextTheme, mode])
 
   const rail = (
     <>
@@ -110,6 +119,10 @@ export function AppShellV3() {
         <span className="bar3-divider" aria-hidden="true" />
         <Breadcrumb docId={docId} sectionId={sectionId} entityId={entityId} />
         <span className="bar3-spacer" />
+        <Segmented role="group" aria-label={t('v3.mode.label')} className="bar3-mode">
+          <button type="button" aria-pressed={mode === 'guided'} title={t('v3.mode.guidedHint')} onClick={() => setUiMode('guided')}>{t('v3.mode.guided')}</button>
+          <button type="button" aria-pressed={mode === 'studio'} title={t('v3.mode.studioHint')} onClick={() => setUiMode('studio')}>{t('v3.mode.studio')}</button>
+        </Segmented>
         <StepButton docId={docId} sectionId={sectionId} />
         <button type="button" className="bar3-search" onClick={() => setPalette(true)} aria-label={t('v3.palette.open')}>
           <Icon name="search" /><span>{t('v3.palette.button')}</span><kbd>Ctrl K</kbd>
@@ -124,22 +137,14 @@ export function AppShellV3() {
       <CloudBanners />
       <div className="body3" style={{ gridTemplateColumns: shellColumns(layout) }}>
         {!layout.compact && <nav className="rail3" aria-label={t('nav.main')}>{rail}</nav>}
-        <main className="surface3 shell-body"><Outlet />{/* The Atlas has the step card instead. */}{loc.pathname !== '/' && <NextStepPill docId={docId} sectionId={sectionId} />}</main>
-        {!layout.compact && (
-          <aside className="tray3" aria-label={t('v3.companion')}>
-            <button type="button" className="tray3-item" title={t('nav.hints')} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`} onClick={() => (docId ? setHintsOpen(true) : nav('/settings/hints'))}>
-              <Icon name="bulb" />{!!hintCount && <CountBadge count={hintCount} />}
-            </button>
-          </aside>
-        )}
+        <main className="surface3 shell-body"><Outlet />{/* The Atlas has the step card instead. */}{loc.pathname !== '/' && mode === 'guided' && <NextStepPill docId={docId} sectionId={sectionId} />}</main>
+        {!layout.compact && (layout.companionDocked && docId
+          ? <CompanionPanel docId={docId} sectionId={sectionId} docked canPin />
+          : <CompanionTray docId={docId} hintCount={hintCount} />)}
       </div>
       {layout.compact && <nav className="rail3 bottom" aria-label={t('nav.main')}>{rail}</nav>}
       {palette && <CommandPalette extras={extras} onClose={() => setPalette(false)} />}
-      {hintsOpen && docId && (
-        <Sheet label={t('nav.hints')} title={t('nav.hints')} width={400} onClose={() => setHintsOpen(false)}>
-          <HintPanel docId={docId} sectionId={sectionId} />
-        </Sheet>
-      )}
+      {companionOpen && docId && !layout.companionDocked && <CompanionPanel docId={docId} sectionId={sectionId} docked={false} canPin={vw >= DOCK_FROM} />}
       <FlavorToast />
     </div>
   )

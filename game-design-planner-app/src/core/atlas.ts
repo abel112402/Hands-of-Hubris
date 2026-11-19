@@ -62,7 +62,8 @@ export function plannerLinks(guides: Record<string, { map: GuideMap } | undefine
   return out
 }
 
-export function buildAtlas(project: Project, walk: Pick<Walkthrough, 'steps'>, guides: Record<string, { map: GuideMap } | undefined>, next?: { target?: { docId: string } }): Atlas {
+/** `fog: false` (Studio mode) charts every region. */
+export function buildAtlas(project: Project, walk: Pick<Walkthrough, 'steps'>, guides: Record<string, { map: GuideMap } | undefined>, next?: { target?: { docId: string } }, opts: { fog?: boolean } = {}): Atlas {
   const visits = firstVisits(walk)
   const order = (id: string) => {
     const i = visits.indexOf(id)
@@ -85,7 +86,7 @@ export function buildAtlas(project: Project, walk: Pick<Walkthrough, 'steps'>, g
     planners.forEach((p, i) => landmarks.push({ id: p.id, title: p.title, phase: g.phase, x: Math.round(box.x + cw * (i % cols) + cw / 2), y: Math.round(top + ch * Math.floor(i / cols) + ch / 2), progress: p.progress }))
     // Fog: nothing started here, and the walkthrough has not reached this phase yet.
     const reached = herePhase ? PHASES.indexOf(g.phase) <= PHASES.indexOf(herePhase) : true
-    return { phase: g.phase, ...box, progress: g.progress, fog: !reached && g.planners.every((p) => p.progress === 0) }
+    return { phase: g.phase, ...box, progress: g.progress, fog: opts.fog !== false && !reached && g.planners.every((p) => p.progress === 0) }
   })
   const route: AtlasSegment[] = []
   for (let i = 1; i < visits.length; i++) route.push({ from: visits[i - 1], to: visits[i], walked: hereAt >= 0 && i <= hereAt })

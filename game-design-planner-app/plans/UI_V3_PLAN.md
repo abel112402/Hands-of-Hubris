@@ -355,7 +355,27 @@ Ship behind a setting `ui.version: 'v2' | 'v3'` (default v2 until Phase 2 lands)
 - Home becomes the Atlas, and the v2 GuideCenter content moves into the current-step card and the companion.
 - Design emblem: three figure sets (RPG, Survival, Strategy) as SVG with one group per phase. A `genre → figure` mapping in Settings reads the project's genres, and other genres fall back to RPG until they get figures. Part state comes from the phase fill used by the compass, rank from the explored share, and a completion toast appears when a part reaches 100%.
 
-### Phase 4: companion and empty states (≈ 1 week)
+### Phase 4: companion and empty states (≈ 1 week). **Done 2026-11-19**
+
+> **Shipped:**
+> - **Companion** (`ui/v3/Companion.tsx`):
+>   - The classic hints panel already combined Hints, Guide and AI tabs (with "Explain with AI"), so it gained an `embedded` mode (no resize handle or collapse toggle) instead of a second implementation.
+>   - The tray has Hints (with count), Guide and AI. Each opens the companion on that tab, and the tray marks the open tab.
+>   - It's an overlay sheet that closes when you move to another page.
+>   - At ≥ 1440 px it can be pinned. Pinned, it docks as a 360 px column through `shellLayout`, replacing the tray, and stays open across pages. The pin is remembered per browser.
+> - **Hint links:** in v3, "Go" on a hint about one entry opens that entry's record sheet (`?e=`). Hints carry no field id, so the jump goes to the entry, not a single field.
+> - **Guided / Studio** (`core/uiMode.ts`, per browser):
+>   - The switch is in the command bar, and the palette can toggle it too.
+>   - Guided (the default) keeps detail fields behind chips, fog on the Atlas, the Next-step pill and example-first empty states. Studio shows every field and drops the fog, the pill and the example-first order.
+>   - Guided suggests Studio once, on the Atlas, after 10 finished walkthrough steps; "No thanks" is remembered.
+>   - The trigger isn't the plan's "~10 filled sections": the sample project's seed data already fills 14, so every newcomer would have been offered Studio straight away.
+> - **Empty states:** in v3 Guided, a section with examples offers "Start from an example" as the primary action and "Start blank" second. Tour targets stay on the same actions.
+> - **Fixed along the way:** closing a record sheet drops `?e=` from the address, so following the same link to the entry opens it again.
+> - **Tests:** `tests/v3CompanionUi.test.tsx`. The shared test setup also resets mode, pin and suggestion per test.
+>
+> **Not done:**
+> - Opening the companion automatically on a planner's first visit in Guided.
+> - Mascot art in the empty states beyond the existing Hubi aside.
 - Merge Hints / Guide / AI into the Companion sheet with tray badges. "Fix ▸" deep links highlight the target field.
 - Example-first empty states with mascot art; Guided vs Studio modes and the mode prompt.
 

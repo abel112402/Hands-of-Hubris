@@ -2095,6 +2095,26 @@
           "ship": "a zászló kitűzése"
         }
       }
+    },
+    "mode": {
+      "label": "Mód",
+      "guided": "Vezetett",
+      "studio": "Stúdió",
+      "guidedHint": "Vezetett: előbb az alapmezők, köd az Atlaszon, a következő lépés mindig látható",
+      "studioHint": "Stúdió: minden mező látható, nincs köd és lépésjelző",
+      "toStudio": "Váltás Stúdió módra",
+      "toGuided": "Váltás Vezetett módra",
+      "offer": "Már {{count}} lépést teljesítettél a végigvezetésből. A Stúdió mód minden mezőt mutat, és elhagyja a kezdő segítségeket.",
+      "tryStudio": "Kipróbálom",
+      "noThanks": "Köszönöm, nem"
+    },
+    "companionPanel": {
+      "pin": "Rögzítés az oldal mellé",
+      "unpin": "Rögzítés feloldása (panel az oldal fölött)"
+    },
+    "empty": {
+      "fromExample": "Kezdés egy példából",
+      "blank": "Üres kezdés ({{singular}})"
     }
   }
 }

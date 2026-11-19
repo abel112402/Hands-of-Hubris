@@ -9,6 +9,7 @@ import { useSection, useProject } from '../hooks'
 import { FieldInput } from '../FieldInput'
 import { useTranslation } from 'react-i18next'
 import { useUiVersion } from '../../core/uiVersion'
+import { useUiMode } from '../../core/uiMode'
 import { splitByTier } from '../../core/fieldTier'
 import type { ExportAsset } from '../../core/export/markdown'
 
@@ -18,8 +19,10 @@ export function FormEditor({ docId, sec }: { docId: string; sec: Extract<Section
   const { t } = useTranslation()
   // v3: a centred column with core fields first; empty detail fields wait behind "+ field" chips.
   const v3 = useUiVersion() === 'v3'
+  const guided = useUiMode() === 'guided'
   const [opened, setOpened] = useState<Set<string>>(() => new Set())
-  const { shown, hidden } = v3 ? splitByTier(sec.fields, values, opened) : { shown: sec.fields, hidden: [] }
+  // Studio shows every field.
+  const { shown, hidden } = v3 && guided ? splitByTier(sec.fields, values, opened) : { shown: sec.fields, hidden: [] }
   return (
     <div className={'form wide' + (v3 ? ' form3' : '')}>
       {shown.map((f) => (

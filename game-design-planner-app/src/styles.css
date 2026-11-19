@@ -1771,3 +1771,14 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .atlas3-walk>summary{cursor:pointer;color:var(--muted);font-weight:600;padding:var(--space-2) 0}
 @media (prefers-reduced-motion:no-preference){::view-transition-new(root){animation:hoh-zoom var(--dur-slow) var(--ease-out)}}
 @media (forced-colors:active){.atlas3-route.walked,.emblem3-bar>span{background:CanvasText;stroke:CanvasText}}
+/* v3 Phase 4: companion (overlay or docked), mode switch, Studio suggestion. */
+.bar3-mode{flex:none}
+.bar3-mode button{min-height:30px;font-size:var(--fs-sm)}
+.tray3-item.on{color:var(--text);background:var(--panel2);border-color:var(--line-strong)}
+.hint-panel.embedded{position:static;width:auto;max-width:none;height:auto;border:0;background:none;padding:0;box-shadow:none}
+.hint-panel.embedded .hint-head{position:sticky;top:calc(-1 * var(--space-4));z-index:1;background:var(--surface-sheet);margin:calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-3);padding:var(--space-2) var(--space-4)}
+.companion3{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--line);background:var(--surface-sheet)}
+.companion3-body{flex:1;min-height:0;overflow:auto;padding:var(--space-4)}
+.studio3-offer{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.sheet-body:has(> .hint-panel.embedded),.companion3-body{overflow-x:hidden}
+.hint-panel.embedded .hint-head{width:auto;box-sizing:border-box}

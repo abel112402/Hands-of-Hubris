@@ -2346,6 +2346,26 @@
           "ship": "fly the banner"
         }
       }
+    },
+    "mode": {
+      "label": "Mode",
+      "guided": "Guided",
+      "studio": "Studio",
+      "guidedHint": "Guided: core fields first, fog on the Atlas, the next step always in view",
+      "studioHint": "Studio: every field shown, no fog or next-step pill",
+      "toStudio": "Switch to Studio mode",
+      "toGuided": "Switch to Guided mode",
+      "offer": "You have finished {{count}} walkthrough steps. Studio mode shows every field and drops the beginner aids.",
+      "tryStudio": "Try Studio",
+      "noThanks": "No thanks"
+    },
+    "companionPanel": {
+      "pin": "Pin beside the page",
+      "unpin": "Unpin (show as a panel over the page)"
+    },
+    "empty": {
+      "fromExample": "Start from an example",
+      "blank": "Start blank ({{singular}})"
     }
   }
 }

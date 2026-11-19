@@ -23,6 +23,7 @@ import { GuideCenter } from '../workspace/GuideCenter'
 import { useWalkthrough } from '../workspace/useWalkthrough'
 import { Emblem } from './Emblem'
 import { Ring } from './PhaseCompass'
+import { dismissStudioOffer, setUiMode, STUDIO_OFFER_AT, useStudioOfferDismissed, useUiMode } from '../../core/uiMode'
 
 const VIEW_KEY = 'hohplan:atlasView'
 const PHASE_VAR: Record<PhaseId, string> = { concept: 'var(--phase-concept)', systems: 'var(--phase-systems)', content: 'var(--phase-content)', production: 'var(--phase-production)', ship: 'var(--phase-polish)' }
@@ -145,7 +146,11 @@ export function Atlas() {
   const cloudActive = useCloud((s) => !!s.active)
   const genresSet = !!useGenreNames()
   const view = useWalkthrough()
-  const atlas = useMemo(() => buildAtlas(project, view.walk, GUIDES, view.progress.next), [project, view.walk, view.progress.next])
+  const uiMode = useUiMode()
+  const atlas = useMemo(() => buildAtlas(project, view.walk, GUIDES, view.progress.next, { fog: uiMode === 'guided' }), [project, view.walk, view.progress.next, uiMode])
+  // Walkthrough steps the user finished (seed data in a sample project fills sections, but finishes few steps).
+  const stepsDone = view.progress.done
+  const offerDismissed = useStudioOfferDismissed()
   const emblem = useMemo(
     () => emblemState(readProfile(project).genres, Object.fromEntries(atlas.regions.map((r) => [r.phase, r.progress])), atlas.explored),
     [project, atlas],
@@ -185,6 +190,13 @@ export function Atlas() {
           <button onClick={() => void restoreAutosave()}>{t('actions.restore')}</button>
           <span className="spacer" />
           <button className="banner-close" aria-label={t('home.closeBanner')} title={t('home.closeBanner')} onClick={() => setAuto(null)}>×</button>
+        </div>
+      )}
+      {uiMode === 'guided' && !offerDismissed && stepsDone >= STUDIO_OFFER_AT && (
+        <div className="banner studio3-offer" role="status">
+          <span>{t('v3.mode.offer', { count: stepsDone })}</span>
+          <button className="primary" onClick={() => { setUiMode('studio'); dismissStudioOffer() }}>{t('v3.mode.tryStudio')}</button>
+          <button className="ghost" onClick={dismissStudioOffer}>{t('v3.mode.noThanks')}</button>
         </div>
       )}
       <StepCard />
