@@ -35,6 +35,8 @@ export type RenderOptions = {
   theme?: MapTheme
   /** The players' version: secrets, creatures, traps and keys left out (visibility.ts). */
   player?: boolean
+  /** Only the map area, without the card frame, title and footer (for VTT and engine pictures). */
+  bare?: boolean
 }
 
 /**
@@ -54,18 +56,18 @@ export function renderMap(project: Project, location: Entity, stored: LocationMa
   const tint = TIME_TINT[map.env?.time ?? 'day']
   if (tint) layers.push(el('rect', { x: 0, y: 0, width: map.w, height: map.h, fill: tint.fill, opacity: tint.opacity, 'pointer-events': 'none' }))
   const subtitle = [map.type, biomeName(project, location)].filter(Boolean).join(' · ')
-  const node = el('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: `0 0 ${card.w} ${card.h}`, role: 'img' }, [
+  const node = el('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: o.bare ? `${CARD.side} ${CARD.top} ${map.w} ${map.h}` : `0 0 ${card.w} ${card.h}`, role: 'img' }, [
     el('title', {}, `${String(location.name ?? '')} (${subtitle})`),
     frameDefs(theme, uid, map.w, map.h, map.seed),
     ...paper(theme, uid, map.w, map.h),
     el('g', { transform: `translate(${CARD.side} ${CARD.top})`, 'clip-path': `url(#${uid}-map)` }, layers),
     ...frame(theme, map.w, map.h, { title: String(location.name ?? ''), subtitle, seed: map.seed }),
   ])
-  return { ...card, node }
+  return o.bare ? { w: map.w, h: map.h, node } : { ...card, node }
 }
 
 /** A standalone SVG file of a location's map (thumbnails and the export); null when it has no map. */
-export function locationSvg(project: Project, location: Entity, o: Pick<RenderOptions, 'player'> = {}): string | null {
+export function locationSvg(project: Project, location: Entity, o: Pick<RenderOptions, 'player' | 'bare'> = {}): string | null {
   const map = mapOf(location)
   if (!map) return null
   const r = renderMap(project, location, map, o)

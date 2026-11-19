@@ -254,7 +254,8 @@ describe('rendering and export', () => {
     p.documents[WORLD_DOC].data.locations = [{ ...location, map: gen(location) }, { id: 'v2', name: 'Unmapped', type: 'Village' }]
     const mod = getModule(WORLD_DOC)!
     const assets = exportAssets(p, mod)
-    expect(assets.map((a) => a.path)).toEqual([locationMapPath(location)])
+    // The picture, and the same map as engine data next to it.
+    expect(assets.map((a) => a.path)).toEqual([locationMapPath(location), locationMapPath(location).replace(/.svg$/, '.json')])
     expect(assets[0].content).toContain('<svg')
     const md = moduleToMarkdown(p, mod)
     expect(md).toContain(`](${locationMapPath(location)})`)

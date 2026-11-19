@@ -10,14 +10,13 @@ import { locationById, parentChain } from '../../../core/location/links'
 import { generateMap, regenerateLayer, regenerateStale, setLayerHidden, staleLayers } from '../../../core/location/generate'
 import { kindInfo } from '../../../core/location/objects'
 import { getLocationType, LOCATION_TYPES } from '../../../core/location/registry'
-import { locationSvg } from '../../../core/location/render/svg'
 import { mapOf } from '../../../core/location/schema'
 import type { LocationMap } from '../../../core/location/types'
-import { downloadText } from '../../../core/persistence/file'
 import { useProject, useSection } from '../../hooks'
 import type { ViewProps } from '../CollectionEditor'
 import { MapStage, PAINT, type Tool } from './MapStage'
 import { HistoryPanel, ParamSliders, VersionsPanel } from './MapPanels'
+import { EXPORTS, runExport, type ExportId } from './exportMap'
 import { THEMES } from '../../../core/location/render/theme'
 import { ObjectPanel } from './ObjectPanel'
 
@@ -95,6 +94,9 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
   const [player, setPlayer] = useState(false)
   const [tool, setTool] = useState<Tool>('select')
   const [brush, setBrush] = useState(24)
+  const [exportId, setExportId] = useState<ExportId>('svg')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
   /** The map as a slider being moved would make it; shown instead of the stored map until the slider is let go. */
   const [draft, setDraft] = useState<LocationMap | null>(null)
   // A selection belongs to one location: switching locations starts with nothing selected.
@@ -214,8 +216,18 @@ export function LocationMapView({ docId, sec, items, selected, onSelect }: ViewP
                 onChange={(e) => commit(generateMap(project, location, Math.max(0, Math.floor(Number(e.target.value) || 0)), map), `loc-seed-${location.id}`, 'Change seed')}
               />
             </label>
-            <button className="small ghost" onClick={() => { const svg = locationSvg(project, location); if (svg) downloadText(`${nameOf(location)}.svg`, svg, 'image/svg+xml') }}>Export SVG</button>
-            <button className="small ghost" title="Without secrets, creatures, traps and keys" onClick={() => { const svg = locationSvg(project, location, { player: true }); if (svg) downloadText(`${nameOf(location)} (player).svg`, svg, 'image/svg+xml') }}>Export player SVG</button>
+            <label className="loc-pick">
+              <span className="muted">Export</span>
+              <select aria-label="Export format" value={exportId} onChange={(e) => setExportId(e.target.value as ExportId)}>
+                {EXPORTS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+              </select>
+            </label>
+            <button className="small ghost" disabled={exporting} onClick={() => {
+              setExporting(true)
+              setExportError('')
+              runExport(exportId, project, location, map).catch((e: unknown) => setExportError(e instanceof Error ? e.message : String(e))).finally(() => setExporting(false))
+            }}>{exporting ? 'Exporting…' : 'Export'}</button>
+            {exportError && <span className="muted" role="alert">{exportError}</span>}
           </>
         )}
         {type && <button className="primary" data-guide="generate-map" onClick={() => { commit(generateMap(project, location, newSeed(), map), undefined, map ? 'New map' : 'Generate map'); setPicked(null) }}>{map ? 'New map' : 'Generate map'}</button>}
