@@ -1,10 +1,13 @@
 import type { Entity } from '../../model/types'
 import { arrange, DOOR, houseRect, outerSides, planDoors, PRIVACY, programme, scorePlan, type Privacy } from '../architecture'
+import { attachFor } from '../attach'
+import { anchorOf } from '../links'
 import { blob, dist } from '../geometry'
+import { replaceObjects } from '../order'
 import { lightOf } from '../light'
 import type { Rng } from '../rng'
 import type { GenContext, LayerDef, LocationMap, LocationTypeDef, MapObject, MapPoint as Pt, NewMapObject } from '../types'
-import { biomeTint, clamp, objects, outlineOf, path, pos, refsOf, splitRects, touches, type Rect } from './shared'
+import { biomeTint, clamp, objects, outlineOf, param, path, pos, refsOf, splitRects, touches, type Rect } from './shared'
 
 /**
  * Dwelling: the floor plan of one building. The footprint is cut into rooms, every room is reachable through
@@ -50,20 +53,22 @@ function plot({ project, location, map, rand }: GenContext): NewMapObject[] {
   })
 }
 
-function rooms({ location, map, rand }: GenContext): NewMapObject[] {
+function rooms({ project, location, map, rand }: GenContext): NewMapObject[] {
   const f = footprintOf(location)
   const count = clamp(Math.round(Number(location.dwellingRooms)) || f.rooms, 1, 12)
-  const [w, h] = f.house
+  const [w, h] = f.house.map((v) => Math.round((v * param(map, 'houseScale', 1)) / 10) * 10)
   const privacy = privacyOf(location)
+  // Inside a building on another map: the front door faces that map's road (links.ts).
+  const front = anchorOf(project, location)?.side
   // Which room is what is a search under the house rules (architecture.ts): an entrance hall by the front door,
   // bedrooms off the shared rooms, the pantry by the kitchen, large uses in large rooms. Some cuts of the footprint
   // cannot keep every rule, so a few are tried and the best kept; the first that breaks none wins.
   let best: { slots: ReturnType<typeof arrange>; score: number } | null = null
   for (let attempt = 0; attempt < 4; attempt++) {
     const cut = splitRects({ x: Math.round((map.w - w) / 20) * 10, y: Math.round((map.h - h) / 20) * 10, w, h }, count, rand, 70)
-    const slots = arrange(cut, programme(f.uses, cut.length), privacy, rand)
-    const plan = planDoors(slots, privacy)
-    const score = scorePlan(slots, privacy)
+    const slots = arrange(cut, programme(f.uses, cut.length), privacy, rand, front)
+    const plan = planDoors(slots, privacy, front)
+    const score = scorePlan(slots, privacy, front)
     if (!best || score > best.score) best = { slots, score }
     if (!plan.forced && !plan.unreached.length) break
   }
@@ -78,23 +83,30 @@ function rooms({ location, map, rand }: GenContext): NewMapObject[] {
   }))
 }
 
-function doors({ location, map, rand }: GenContext): NewMapObject[] {
+function doors({ project, location, map, rand }: GenContext): NewMapObject[] {
   const list = roomsOf(map)
   if (!list.length) return []
   // Doors from the rules, for the rooms as they are now (also after rooms were moved or renamed by hand).
-  const plan = planDoors(list.map((r) => ({ rect: rectOf(r), use: String(r.label ?? '') })), privacyOf(location))
+  const plan = planDoors(list.map((r) => ({ rect: rectOf(r), use: String(r.label ?? '') })), privacyOf(location), anchorOf(project, location)?.side)
+  // Each door and window is attached to its room's wall (attach.ts), so it moves with the wall when edited.
+  const on = (room: MapObject, p: Pt) => {
+    const attach = attachFor(room, p)
+    return attach ? { attach } : {}
+  }
   const out: NewMapObject[] = plan.doors.map((d) =>
-    d.entrance ? { kind: 'door', x: d.at[0], y: d.at[1], w: DOOR + 4, h: 8, rot: d.rot, props: { entrance: true } } : { kind: 'door', x: d.at[0], y: d.at[1], w: DOOR, h: 8, rot: d.rot },
+    d.entrance
+      ? { kind: 'door', x: d.at[0], y: d.at[1], w: DOOR + 4, h: 8, rot: d.rot, props: { entrance: true }, ...on(list[d.a], d.at) }
+      : { kind: 'door', x: d.at[0], y: d.at[1], w: DOOR, h: 8, rot: d.rot, ...on(list[d.a], d.at) },
   )
   const house = houseRect(list.map(rectOf))
-  for (const room of list.map(rectOf)) {
-    for (const side of outerSides(room, house)) {
+  for (const roomObj of list) {
+    for (const side of outerSides(rectOf(roomObj), house)) {
       if (side.length < 70) continue
       const shift = rand.range(-0.2, 0.2) * side.length
       const p: Pt = [side.at[0] + (side.rot === 0 ? shift : 0), side.at[1] + (side.rot === 90 ? shift : 0)]
       // Not where a door already is.
       if (plan.doors.some((d) => dist(p, d.at) < DOOR + 22)) continue
-      out.push({ kind: 'window', x: p[0], y: p[1], w: 22, h: 6, rot: side.rot })
+      out.push({ kind: 'window', x: p[0], y: p[1], w: 22, h: 6, rot: side.rot, ...on(roomObj, p) })
     }
   }
   return out
@@ -138,7 +150,7 @@ function spot(room: Rect, type: string, rand: Rng): { p: Pt; rot: number } {
 }
 
 function furniture({ location, map, rand }: GenContext): NewMapObject[] {
-  const level = LEVEL[String(location.furnishing)] ?? LEVEL['Lived-in']
+  const level = (LEVEL[String(location.furnishing)] ?? LEVEL['Lived-in']) * param(map, 'furnishing', 1)
   const openings = objects(map, 'doors', 'door')
   const out: NewMapObject[] = []
   for (const room of roomsOf(map)) {
@@ -226,10 +238,52 @@ const LAYERS: LayerDef[] = [
   { id: 'labels', label: 'Labels', dependsOn: ['rooms'], generate: labels, addable: ['label'] },
 ]
 
+/**
+ * A room edited by hand takes its walls with it: a neighbour that shared the wall that moved follows it, growing
+ * or shrinking, so no gap opens and no rooms overlap. Pinned rooms stay; a neighbour that would get too small stays.
+ */
+function heal(map: LocationMap, before: MapObject, after: MapObject): LocationMap {
+  if (after.kind !== 'room') return map
+  const [o, n] = [rectOf(before), rectOf(after)]
+  const changed = new Map<string, MapObject>()
+  const overlap = (a0: number, a1: number, b0: number, b1: number) => Math.min(a1, b1) - Math.max(a0, b0) > 1
+  for (const r of roomsOf(map)) {
+    if (r.id === after.id || r.pinned) continue
+    const q = rectOf(r)
+    let [x0, x1, y0, y1] = [q.x, q.x + q.w, q.y, q.y + q.h]
+    const alongY = overlap(q.y, q.y + q.h, o.y, o.y + o.h)
+    const alongX = overlap(q.x, q.x + q.w, o.x, o.x + o.w)
+    if (alongY && Math.abs(x1 - o.x) < 1) x1 = n.x
+    if (alongY && Math.abs(x0 - (o.x + o.w)) < 1) x0 = n.x + n.w
+    if (alongX && Math.abs(y1 - o.y) < 1) y1 = n.y
+    if (alongX && Math.abs(y0 - (o.y + o.h)) < 1) y0 = n.y + n.h
+    if ([x0, x1, y0, y1].join() === [q.x, q.x + q.w, q.y, q.y + q.h].join() || x1 - x0 < 40 || y1 - y0 < 40) continue
+    changed.set(r.id, { ...r, x: Math.round((x0 + x1) / 2), y: Math.round((y0 + y1) / 2), w: Math.round(x1 - x0), h: Math.round(y1 - y0) })
+  }
+  return replaceObjects(map, changed, DWELLING)
+}
+
 export const DWELLING: LocationTypeDef = {
   id: 'Dwelling',
   size: (location) => ({ w: footprintOf(location).map[0], h: footprintOf(location).map[1] }),
   layers: LAYERS,
   topology: { rooms: { layer: 'rooms', kind: 'room' }, doors: { layer: 'doors', kind: 'door' } },
   nav: { cell: 5, open: true },
+  heal,
+  params: [
+    { id: 'houseScale', label: 'House size', min: 0.8, max: 1.3, step: 0.05, default: 1, layers: ['rooms'] },
+    { id: 'furnishing', label: 'Furniture', min: 0.3, max: 1.8, step: 0.1, default: 1, layers: ['furniture'] },
+  ],
+  stamps: [
+    {
+      id: 'bedroom',
+      label: 'Bed, chest and rug',
+      layer: 'furniture',
+      make: (x, y) => [
+        { kind: 'furniture', x, y, w: 46, h: 30, rot: 0, props: { type: 'rug' } },
+        { kind: 'furniture', x, y: y - 6, w: 36, h: 22, rot: 0, props: { type: 'bed' } },
+        { kind: 'furniture', x: x + 32, y: y - 6, w: 17, h: 12, rot: 0, props: { type: 'chest' } },
+      ],
+    },
+  ],
 }

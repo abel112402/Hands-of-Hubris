@@ -257,12 +257,63 @@ export const GLYPHS: Record<string, Glyph> = {
   },
   // A cave chamber is gameplay data (the room graph), not drawn: the cavern outline already shows it.
   hollow: { draw: () => [] },
+  // The world map.
+  sea: {
+    draw: (o, t) => {
+      const [w, h] = size(o, 400)
+      const rand = randOf(o)
+      const waves = Array.from({ length: Math.round((w * h) / 9000) }, () => {
+        const [x, y] = [o.x - w / 2 + rand.range(0, w), o.y - h / 2 + rand.range(0, h)]
+        return `M${x.toFixed(0)},${y.toFixed(0)}q5,-4 10,0q5,4 10,0`
+      }).join('')
+      return [el('rect', { x: o.x - w / 2, y: o.y - h / 2, width: w, height: h, fill: t.water }), ink(t, waves, 1, { stroke: t.waterLight, opacity: 0.7 })]
+    },
+  },
+  land: {
+    // A pale shore line just off the coast, then the land and its inked edge.
+    under: (o, t) => [el('path', { d: smoothPath(o.points ?? [], true), fill: 'none', stroke: t.waterLight, 'stroke-width': 9, opacity: 0.6 })],
+    draw: (o, t) => {
+      const d = smoothPath(o.points ?? [], true)
+      return [el('path', { d, fill: t.paper }), el('path', { d, fill: t.ground[1], opacity: 0.25 }), ink(t, d, 1.8)]
+    },
+  },
+  region: {
+    draw: (o, t) => {
+      const d = smoothPath(o.points ?? [], true)
+      const fill = typeof o.props?.color === 'string' ? o.props.color : pick(t.ground, o.props?.tone)
+      return [el('path', { d, fill, opacity: 0.32 }), ink(t, d, 1, { stroke: t.inkSoft, 'stroke-dasharray': '3 4', opacity: 0.6 })]
+    },
+  },
+  site: {
+    draw: (o, t) => {
+      const type = String(o.props?.type ?? 'Village')
+      const roofs = (n: number) =>
+        Array.from({ length: n }, (_, i) => {
+          const x = (i - (n - 1) / 2) * 8
+          return el('path', { d: `M${x - 4},3 V-1 L${x},-5 L${x + 4},-1 V3 Z`, fill: pick(t.roofs, i), stroke: t.ink, 'stroke-width': 0.9 })
+        })
+      const icons: Record<string, SvgNode[]> = {
+        City: [el('path', { d: 'M-9,5 V-4 H-6 V-7 H-3 V-4 H3 V-7 H6 V-4 H9 V5 Z', fill: t.stone, stroke: t.ink, 'stroke-width': 1.1 }), el('rect', { x: -2, y: 0, width: 4, height: 5, fill: t.ink })],
+        Village: roofs(3),
+        Dwelling: roofs(1),
+        Dungeon: [el('path', { d: 'M-8,5 V-2 A8,8 0 0 1 8,-2 V5 Z', fill: t.rock, stroke: t.ink, 'stroke-width': 1.1 }), el('path', { d: 'M-3,5 V0 A3,3 0 0 1 3,0 V5 Z', fill: t.ink })],
+        Cave: [el('path', { d: 'M-10,5 L-4,-6 L1,-2 L5,-7 L10,5 Z', fill: t.rock, stroke: t.ink, 'stroke-width': 1.1 }), el('path', { d: 'M-3,5 Q0,-2 3,5 Z', fill: t.ink })],
+      }
+      return [el('g', { transform: `translate(${o.x} ${o.y})` }, [el('circle', { r: 11, fill: t.paper, stroke: t.ink, 'stroke-width': 1.2, opacity: 0.9 }), ...(icons[type] ?? icons.Village)])]
+    },
+  },
   light: {
     // A soft pool of light under everything of its layer, and a small icon for the source.
     under: (o, t) => {
       const e = emits(o)
       const g = t.glow ?? 1
-      return e && g > 0 ? [el('circle', { cx: o.x, cy: o.y, r: e.radius * 0.45, fill: e.color, opacity: 0.16 * g }), el('circle', { cx: o.x, cy: o.y, r: e.radius * 0.22, fill: e.color, opacity: 0.18 * g })] : []
+      // The glow lies over other objects; clicks go through it to them.
+      return e && g > 0
+        ? [
+            el('circle', { cx: o.x, cy: o.y, r: e.radius * 0.45, fill: e.color, opacity: 0.16 * g, 'pointer-events': 'none' }),
+            el('circle', { cx: o.x, cy: o.y, r: e.radius * 0.22, fill: e.color, opacity: 0.18 * g, 'pointer-events': 'none' }),
+          ]
+        : []
     },
     draw: (o, t) => {
       const type = String(o.props?.type ?? 'torch')
@@ -429,4 +480,31 @@ function floored(o: MapObject, t: MapTheme, floor: string, hidden: boolean): Svg
       ink(t, edge, hidden ? 3 : 5, { 'stroke-linejoin': 'miter', ...(hidden ? { 'stroke-dasharray': '7 5' } : {}) }),
     ]),
   ]
+}
+
+/** A building from above as a plan: its outline, a thin inner wall line, and a cross for a landmark. */
+function planBox(o: MapObject, t: MapTheme, landmark: boolean): SvgNode[] {
+  const [w, h] = size(o, 24)
+  const edge = polyPath(box(w, h), true)
+  const inner = polyPath(box(Math.max(2, w - 5), Math.max(2, h - 5)), true)
+  return [
+    local(o, [
+      el('path', { d: edge, fill: landmark ? t.landmarkRoof : pick(t.roofs, o.props?.roof) }),
+      ink(t, edge, 1.4, { 'stroke-linejoin': 'miter' }),
+      ink(t, inner, 0.6, { opacity: 0.6 }),
+      ...(landmark ? [ink(t, polyPath([[-w / 2, -h / 2], [w / 2, h / 2]]) + polyPath([[w / 2, -h / 2], [-w / 2, h / 2]]), 0.6, { opacity: 0.5 })] : []),
+    ]),
+  ]
+}
+
+/** Glyphs for the plan-style themes (blueprint, modern plan): flat outlines instead of roofs and crowns. */
+export const PLAN_GLYPHS: Partial<Record<string, Glyph>> = {
+  house: { draw: (o, t) => (o.props?.use === 'stall' ? GLYPHS.house.draw(o, t) : planBox(o, t, false)) },
+  landmark: { draw: (o, t) => planBox(o, t, true) },
+  tree: {
+    draw: (o, t) => {
+      const r = (o.w ?? 18) / 2
+      return [el('circle', { cx: o.x, cy: o.y, r, fill: pick(t.trees, o.props?.tone), opacity: 0.6 }), el('circle', { cx: o.x, cy: o.y, r, fill: 'none', stroke: t.inkSoft, 'stroke-width': 0.8, 'stroke-dasharray': '2 2' })]
+    },
+  },
 }

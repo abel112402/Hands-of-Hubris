@@ -7,7 +7,7 @@ import { playerView } from '../visibility'
 import { CARD, cardSize, frame, frameDefs, paper } from './frame'
 import { GLYPHS } from './glyphs'
 import { el, toSvgString, type SvgNode } from './node'
-import { PARCHMENT, type MapTheme } from './theme'
+import { themeOf, type MapTheme } from './theme'
 
 const biomeName = (project: Project, location: Entity): string => {
   const biomes: Entity[] = project.documents['design.world']?.data.biomes ?? []
@@ -16,10 +16,12 @@ const biomeName = (project: Project, location: Entity): string => {
 
 /** One layer: every casing first, then every object, each object in its own group so the editor can find it. */
 function layerNode(id: string, layer: MapLayer, theme: MapTheme): SvgNode {
-  const known = layer.objects.filter((o) => GLYPHS[o.kind])
+  // A theme may draw some kinds its own way.
+  const glyph = (kind: string) => theme.glyphs?.[kind] ?? GLYPHS[kind]
+  const known = layer.objects.filter((o) => glyph(o.kind))
   return el('g', { 'data-layer': id }, [
-    ...known.flatMap((o) => GLYPHS[o.kind].under?.(o, theme) ?? []),
-    ...known.map((o) => el('g', { 'data-obj': o.id }, GLYPHS[o.kind].draw(o, theme))),
+    ...known.flatMap((o) => glyph(o.kind)!.under?.(o, theme) ?? []),
+    ...known.map((o) => el('g', { 'data-obj': o.id }, glyph(o.kind)!.draw(o, theme))),
   ])
 }
 
@@ -41,7 +43,7 @@ export type RenderOptions = {
  */
 export function renderMap(project: Project, location: Entity, stored: LocationMap, o: RenderOptions = {}): MapRender {
   const map = o.player ? playerView(stored) : stored
-  const base = o.theme ?? PARCHMENT
+  const base = o.theme ?? themeOf(map.theme)
   // Lights glow by how dark the place is: little in daylight outdoors, fully underground or at night.
   const glow = Math.min(1, Math.max(0.2, 1.1 - ambientOf(map)))
   const theme: MapTheme = { ...base, glow, ...(map.env?.sun !== undefined ? { sun: map.env.sun } : {}) }

@@ -128,15 +128,18 @@ const ZONE_ORDER: Record<Zone, number> = { public: 0, service: 1, private: 2 }
  * rooms and towards rooms the rules want close; only when no allowed door is left does it take a forbidden one
  * (counted in `forced`).
  */
-export function planDoors(slots: Slot[], privacy: Privacy): DoorPlan {
+export function planDoors(slots: Slot[], privacy: Privacy, facing?: Side['side']): DoorPlan {
   if (!slots.length) return { doors: [], entrance: -1, unreached: [], forced: 0 }
   const house = houseRect(slots.map((s) => s.rect))
-  const sideRank = { south: 0, west: 1, east: 1, north: 2 }
+  // The front door goes on the side the outside world is on (the road, for a house on a town map); south by default.
+  const sideRank = (side: Side['side']) => (side === (facing ?? 'south') ? 0 : side === 'south' ? 1 : side === 'north' ? 3 : 2)
   const fronts = slots
     .flatMap((s, i) => outerSides(s.rect, house).filter((side) => side.length >= DOOR + 16).map((side) => ({ i, side })))
     .sort((p, q) => {
       const rank = (x: { i: number }) => (slots[x.i].use === 'Hall' ? 0 : ROOM_RULES.entranceTo.includes(slots[x.i].use) ? 1 : roomUse(slots[x.i].use).zone === 'private' ? 4 : 3)
-      return rank(p) - rank(q) || sideRank[p.side.side] - sideRank[q.side.side] || p.i - q.i
+      // The side facing the outside world first (when there is one), then the best room for a front door, then the other sides.
+      const faces = (x: { side: Side }) => (!facing || x.side.side === facing ? 0 : 1)
+      return faces(p) - faces(q) || rank(p) - rank(q) || sideRank(p.side.side) - sideRank(q.side.side) || p.i - q.i
     })
   const front = fronts[0]
   const entrance = front?.i ?? 0
@@ -179,8 +182,8 @@ export function planDoors(slots: Slot[], privacy: Privacy): DoorPlan {
 }
 
 /** How well an arrangement keeps the rules and fits rooms to their sizes; higher is better. */
-export function scorePlan(slots: Slot[], privacy: Privacy): number {
-  const plan = planDoors(slots, privacy)
+export function scorePlan(slots: Slot[], privacy: Privacy, facing?: Side['side']): number {
+  const plan = planDoors(slots, privacy, facing)
   const area = (s: Slot) => s.rect.w * s.rect.h
   // Large uses in large rooms: a room's place by floor area against how many uses want more floor than its use.
   const byArea = [...slots].sort((p, q) => area(q) - area(p))
@@ -196,17 +199,17 @@ export function scorePlan(slots: Slot[], privacy: Privacy): number {
  * Which use goes in which room: biggest uses in the biggest rooms first, then pairs of rooms swap places while
  * that keeps improving the score (a few hundred tries, from the layer's random stream).
  */
-export function arrange(rects: Rect[], uses: string[], privacy: Privacy, rand: Rng): Slot[] {
+export function arrange(rects: Rect[], uses: string[], privacy: Privacy, rand: Rng, facing?: Side['side']): Slot[] {
   const byArea = rects.map((_, i) => i).sort((p, q) => rects[q].w * rects[q].h - rects[p].w * rects[p].h)
   const bySize = [...uses].sort((p, q) => roomUse(q).size - roomUse(p).size)
   const slots: Slot[] = rects.map((rect) => ({ rect, use: '' }))
   byArea.forEach((ri, k) => (slots[ri].use = bySize[k] ?? 'Storage'))
-  let best = scorePlan(slots, privacy)
+  let best = scorePlan(slots, privacy, facing)
   for (let t = 0; t < 240 && slots.length > 1; t++) {
     const [i, j] = [rand.int(0, slots.length - 1), rand.int(0, slots.length - 1)]
     if (i === j || slots[i].use === slots[j].use) continue
     ;[slots[i].use, slots[j].use] = [slots[j].use, slots[i].use]
-    const s = scorePlan(slots, privacy)
+    const s = scorePlan(slots, privacy, facing)
     if (s > best) best = s
     else [slots[i].use, slots[j].use] = [slots[j].use, slots[i].use]
   }

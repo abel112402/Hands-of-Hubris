@@ -6,10 +6,12 @@ import { getModule, ensureDocument } from '../modules/registry'
 
 enablePatches()
 
-interface HistoryEntry {
+export interface HistoryEntry {
   patches: Patch[]
   inverse: Patch[]
   key?: string
+  /** What the step did, in a few words, for the history list ("Move house", "Reroll Roads"). */
+  label?: string
   at: number
 }
 
@@ -24,7 +26,7 @@ interface State {
   markDirty: () => void
   past: HistoryEntry[]
   future: HistoryEntry[]
-  mutate: (fn: (p: Project) => void, key?: string) => void
+  mutate: (fn: (p: Project) => void, key?: string, label?: string) => void
   updateHintPrefs: (fn: (h: HintPrefs) => void) => void
   undo: () => void
   redo: () => void
@@ -46,7 +48,7 @@ export const useStore = create<State>((set, get) => ({
   setReadOnly: (readOnly) => set({ readOnly }),
   markDirty: () => set({ dirty: true }),
 
-  mutate: (fn, key) => {
+  mutate: (fn, key, label) => {
     if (get().readOnly) return
     const [next, patches, inverse] = produceWithPatches(get().project, (d) => {
       fn(d)
@@ -59,9 +61,9 @@ export const useStore = create<State>((set, get) => ({
     const past = [...get().past]
     const last = past[past.length - 1]
     if (key && last && last.key === key && now - last.at < COALESCE_MS) {
-      past[past.length - 1] = { ...last, patches: [...last.patches, ...patches], inverse: [...inverse, ...last.inverse], at: now }
+      past[past.length - 1] = { ...last, patches: [...last.patches, ...patches], inverse: [...inverse, ...last.inverse], at: now, label: last.label ?? label }
     } else {
-      past.push({ patches, inverse, key, at: now })
+      past.push({ patches, inverse, key, at: now, ...(label ? { label } : {}) })
     }
     set({ project: next, dirty: true, past: past.slice(-MAX_HISTORY), future: [] })
   },

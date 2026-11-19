@@ -1,12 +1,16 @@
-import type { Entity } from '../../model/types'
+import type { Entity, Project } from '../../model/types'
 import { blob, dist, distToPolyline, inPolygon, toDeg } from '../geometry'
 import { MinHeap } from '../heap'
 import { lightOf } from '../light'
+import { LOCK_NAMES } from '../mission'
+import { buildGraph, reach } from '../topology'
+import { locationById } from '../links'
+import { markDependentsStale, withId } from '../order'
 import { fractal, simplex2 } from '../noise'
 import { fieldOf, gridOf } from '../raster'
 import type { Rng } from '../rng'
 import type { GenContext, LayerDef, LayerOutput, LocationMap, LocationTypeDef, MapPoint as Pt, NewMapObject } from '../types'
-import { catalogRefs, clamp, objects, outlineOf, path, pos, refsOf, sizeKey, touches } from './shared'
+import { catalogRefs, clamp, objects, outlineOf, param, path, pos, refsOf, sizeKey, touches } from './shared'
 
 /**
  * Cave: an organic floor cut out of rock. The floor is made on a grid by one of three methods, always joined into
@@ -277,6 +281,8 @@ export type Hollows = {
   radii: number[]
   /** Pairs of chamber indices whose floor meets. */
   links: [number, number][]
+  /** For each link: the middle of the line where the two chambers' floors meet, and how long that line is (map units). */
+  meets: { at: Pt; width: number }[]
 }
 export function hollows(g: Grid, max: number): Hollows {
   const n = g.floor.length
@@ -314,6 +320,8 @@ export function hollows(g: Grid, max: number): Hollows {
     walk.push(i)
   })
   const contact = new Map<string, number>()
+  /** Sum of meeting points, to find the middle of each meeting line. */
+  const meetSum = new Map<string, [number, number]>()
   for (let head = 0; head < walk.length; head++) {
     const i = walk[head]
     const [x, y] = xy(i)
@@ -326,11 +334,20 @@ export function hollows(g: Grid, max: number): Hollows {
       } else if (owner[j] !== owner[i]) {
         const k = `${Math.min(owner[i], owner[j])}-${Math.max(owner[i], owner[j])}`
         contact.set(k, (contact.get(k) ?? 0) + 1)
+        const m = meetSum.get(k) ?? [0, 0]
+        meetSum.set(k, [m[0] + (x + nx + 1) / 2, m[1] + (y + ny + 1) / 2])
       }
     }
   }
-  const links = [...contact.entries()].filter(([, c]) => c >= 2).map(([k]) => k.split('-').map(Number) as [number, number])
+  const met = [...contact.entries()].filter(([, c]) => c >= 2)
+  const links = met.map(([k]) => k.split('-').map(Number) as [number, number])
+  const meets = met.map(([k, c]) => {
+    const [sx, sy] = meetSum.get(k)!
+    // Each meeting is seen from both sides.
+    return { at: [(sx / c) * g.cell, (sy / c) * g.cell] as Pt, width: (c / 2) * g.cell }
+  })
   return {
+    meets,
     centres: picked.map((i) => [(xy(i)[0] + 0.5) * g.cell, (xy(i)[1] + 0.5) * g.cell] as Pt),
     radii: picked.map((i) => depth[i] * g.cell),
     links,
@@ -431,7 +448,7 @@ function lights({ map, rand }: GenContext): NewMapObject[] {
       }
     }
   }
-  const crystals = rand.int(3, 6)
+  const crystals = Math.round(param(map, 'crystals', rand.int(3, 6)))
   for (let tries = 0, made = 0; tries < crystals * 40 && made < crystals; tries++) {
     const p: Pt = [rand.range(0, map.w), rand.range(0, map.h)]
     const room = clearance(s, p)
@@ -448,15 +465,38 @@ function rock({ map }: GenContext): NewMapObject[] {
 
 function cavern({ location, map, rand }: GenContext): LayerOutput {
   const chambers = clamp(Math.round(Number(location.chambers)) || scaleOf(location).chambers, 1, 14)
-  const openness = OPENNESS[String(location.openness)] ?? 1
+  const openness = (OPENNESS[String(location.openness)] ?? 1) * param(map, 'openness', 1)
   const method = (CAVE_METHODS as readonly string[]).includes(String(location.caveMethod)) ? String(location.caveMethod) : CAVE_METHODS[0]
-  const passes = clamp(Math.round(Number(location.smoothing)) || 5, 1, 10)
+  const passes = clamp(Math.round(param(map, 'smoothing', Number(location.smoothing) || 5)), 1, 10)
   const g =
     method === 'Simplex noise'
       ? noisy(map.w, map.h, chambers, openness, rand)
       : method === 'Chambers and tunnels'
         ? carve(map.w, map.h, chambers, openness, rand)
         : cellular(map.w, map.h, chambers, openness, rand, passes)
+  // Inside a mask the old floor and rock stay as they were (carved by hand, or kept on purpose).
+  if (keepMasked(g, map)) connect(g, rand)
+  return cavernFrom(g)
+}
+
+/** Copies the previous rock field's cells under the map's masks into `g`; whether anything was masked. */
+function keepMasked(g: Grid, map: LocationMap): boolean {
+  const old = map.fields?.rock && gridOf(map.fields.rock)
+  if (!old || !map.masks?.length) return false
+  let any = false
+  for (let i = 0; i < g.floor.length; i++) {
+    const p: Pt = [((i % g.cols) + 0.5) * g.cell, (Math.floor(i / g.cols) + 0.5) * g.cell]
+    if (!map.masks.some((m) => inPolygon(p, m.poly))) continue
+    const [c, r] = [Math.floor(p[0] / old.cell), Math.floor(p[1] / old.cell)]
+    if (c < 0 || r < 0 || c >= old.cols || r >= old.rows) continue
+    g.floor[i] = old.data[r * old.cols + c] === 0 && inner(g, i % g.cols, Math.floor(i / g.cols))
+    any = true
+  }
+  return any
+}
+
+/** The cavern layer's objects and rock field for a floor grid. */
+function cavernFrom(g: Grid): LayerOutput {
   const loops = trace(g)
   const rockField = fieldOf({ cell: g.cell, cols: g.cols, rows: g.rows, data: Uint8Array.from(g.floor, (f) => (f ? 0 : 1)) })
   if (!loops.length) return { objects: [], fields: { rock: rockField } }
@@ -495,7 +535,49 @@ function entrances({ location, map, rand }: GenContext): NewMapObject[] {
   return out
 }
 
-/** The hollows of the floor as invisible `hollow` objects that list their links, for the room graph. */
+/**
+ * Gates for a cave: up to `count` links on the way from the entrance chamber to the deepest one are locked. Only
+ * links that are the sole way onward qualify (taking one away cuts the deeper chambers off), so no loop through
+ * the cave goes round a gate. Returns the locked links as index pairs with their lock name, nearest first.
+ */
+export function caveLocks(count: number, nodes: number, links: [number, number][], entry: number): { a: number; b: number; lock: string }[] {
+  if (!count || nodes < 2) return []
+  const near = (skip?: [number, number]) => {
+    const depth = new Array<number>(nodes).fill(-1)
+    const parent = new Array<number>(nodes).fill(-1)
+    depth[entry] = 0
+    const queue = [entry]
+    while (queue.length) {
+      const i = queue.shift()!
+      for (const [p, q] of links) {
+        if (skip && ((p === skip[0] && q === skip[1]) || (p === skip[1] && q === skip[0]))) continue
+        const j = p === i ? q : q === i ? p : -1
+        if (j >= 0 && depth[j] < 0) {
+          depth[j] = depth[i] + 1
+          parent[j] = i
+          queue.push(j)
+        }
+      }
+    }
+    return { depth, parent }
+  }
+  const { depth, parent } = near()
+  const deepest = depth.reduce((best, d, i) => (d > depth[best] ? i : best), entry)
+  const way: [number, number][] = []
+  for (let at = deepest; parent[at] >= 0; at = parent[at]) way.unshift([parent[at], at])
+  // A link is the only way on when the chamber beyond it can no longer be reached without it.
+  const sole = way.filter(([a, b]) => near([a, b]).depth[b] < 0)
+  const k = Math.min(count, sole.length, LOCK_NAMES.length)
+  return Array.from({ length: k }, (_, i) => {
+    const [a, b] = sole[Math.round(((i + 1) * sole.length) / k) - 1]
+    return { a, b, lock: LOCK_NAMES[i] }
+  })
+}
+
+/**
+ * The hollows of the floor as invisible `hollow` objects that list their links, for the room graph, and a locked
+ * gate across the passage of each locked link.
+ */
 function chambersLayer({ location, map, rand }: GenContext): NewMapObject[] {
   const g = floorOf(map)
   if (!g) return []
@@ -504,13 +586,24 @@ function chambersLayer({ location, map, rand }: GenContext): NewMapObject[] {
   if (!found.centres.length) return []
   const door = objects(map, 'entrances', 'stairs')[0]
   const entry = door ? found.centres.reduce((best, c, i) => (dist(c, pos(door)) < dist(found.centres[best], pos(door)) ? i : best), 0) : 0
+  const locks = caveLocks(clamp(Math.round(Number(location.caveLocks)) || 0, 0, LOCK_NAMES.length), found.centres.length, found.links, entry)
+  const lockOf = (a: number, b: number) => locks.find((l) => (l.a === a && l.b === b) || (l.a === b && l.b === a))?.lock
   const tag = rand.int(0, 36 ** 4).toString(36)
   const node = (i: number) => `c${i}.${tag}`
-  return found.centres.map((c, i) => {
-    const links = found.links.filter(([a]) => a === i).map(([, b]) => node(b))
+  const chambers: NewMapObject[] = found.centres.map((c, i) => {
+    const links = found.links.filter(([a]) => a === i).map(([a, b]) => node(b) + (lockOf(a, b) ? `:${lockOf(a, b)}` : ''))
     const r = Math.max(found.radii[i], g.cell)
     return { kind: 'hollow', x: c[0], y: c[1], w: r * 2, h: r * 2, props: { node: node(i), role: i === entry ? 'entrance' : 'room', ...(links.length ? { links: links.join(' ') } : {}) } }
   })
+  // A gate stands across the passage where the two chambers meet, wide enough to close it.
+  const gates: NewMapObject[] = locks.flatMap((l) => {
+    const k = found.links.findIndex(([a, b]) => (a === l.a && b === l.b) || (a === l.b && b === l.a))
+    if (k < 0) return []
+    const { at, width } = found.meets[k]
+    const [p, q] = [found.centres[l.a], found.centres[l.b]]
+    return [{ kind: 'door', x: at[0], y: at[1], w: width + g.cell * 2, h: 10, rot: toDeg(Math.atan2(q[1] - p[1], q[0] - p[0])) + 90, lock: l.lock, props: { style: 'gate' } }]
+  })
+  return [...chambers, ...gates]
 }
 
 function water({ location, map, rand }: GenContext): NewMapObject[] {
@@ -561,8 +654,36 @@ function features({ project, location, map, rand }: GenContext): NewMapObject[] 
 
 function contents({ project, location, map, rand }: GenContext): NewMapObject[] {
   const s = sceneOf(map)
+  if (!s) return []
+  return [...creatures(project, location, map, s, rand), ...keys(map, rand)]
+}
+
+/**
+ * The key to each gate, in a chamber that can be reached before that gate: walk in from the entrance opening the
+ * gates in order, and put each key in the deepest chamber reached so far (not the entrance when there is a choice).
+ */
+function keys(map: LocationMap, rand: Rng): NewMapObject[] {
+  const graph = buildGraph(map, CAVE.topology!)
+  const opened = new Set<string>()
+  const used = new Set<string>()
+  const out: NewMapObject[] = []
+  for (const lock of LOCK_NAMES.filter((l) => graph.edges.some((e) => e.lock === l))) {
+    const reached = reach(graph, graph.entrance, (e) => !e.lock || opened.has(e.lock))
+    const ids = [...reached.keys()].filter((id) => !used.has(id))
+    const room = ids.sort((a, b) => Number(a === graph.entrance) - Number(b === graph.entrance) || reached.get(b)! - reached.get(a)!)[0]
+    opened.add(lock)
+    const node = graph.nodes.find((n) => n.id === room)
+    if (!node) continue
+    used.add(room)
+    const a = rand.range(0, Math.PI * 2)
+    out.push({ kind: 'key', x: node.x + Math.cos(a) * 14, y: node.y + Math.sin(a) * 14, w: 16, h: 16, key: lock, label: `${lock[0].toUpperCase()}${lock.slice(1)} key`, props: { color: lock } })
+  }
+  return out
+}
+
+function creatures(project: Project, location: Entity, map: LocationMap, s: Scene, rand: Rng): NewMapObject[] {
   const enemies = refsOf(project, location.enemies, 'design.combat', 'enemies')
-  if (!s || !enemies.length) return []
+  if (!enemies.length) return []
   const solid = [...objects(map, 'features'), ...objects(map, 'water', 'pond')]
   const want = Math.max(2, Math.round(scaleOf(location).chambers * 0.8))
   // Creatures lair in the chambers away from the entrance, roomiest first; open floor makes up any shortfall.
@@ -580,8 +701,10 @@ function contents({ project, location, map, rand }: GenContext): NewMapObject[] 
     })
 }
 
-function labels({ map }: GenContext): NewMapObject[] {
-  const out: NewMapObject[] = objects(map, 'entrances', 'stairs').map((o) => ({ kind: 'label', x: o.x, y: o.y - 18, label: 'Entrance' }))
+function labels({ project, location, map }: GenContext): NewMapObject[] {
+  // Under another place, the first way in says where it leads.
+  const parent = locationById(project, location.parent)
+  const out: NewMapObject[] = objects(map, 'entrances', 'stairs').map((o, i) => ({ kind: 'label', x: o.x, y: o.y - 18, label: i === 0 && parent ? `Up to ${String(parent.name ?? 'the surface')}` : 'Entrance' }))
   for (const o of objects(map, 'contents')) if (o.label) out.push({ kind: 'label', x: o.x, y: o.y + 22, label: o.label })
   // One label per resource: at the first vein of each.
   const named = new Set<string>()
@@ -597,13 +720,32 @@ const LAYERS: LayerDef[] = [
   { id: 'rock', label: 'Rock', dependsOn: [], generate: rock },
   { id: 'entrances', label: 'Entrances', dependsOn: ['cavern'], generate: entrances, addable: ['corridor', 'stairs'] },
   { id: 'cavern', label: 'Cavern', dependsOn: [], generate: cavern },
-  { id: 'chambers', label: 'Chambers', dependsOn: ['cavern', 'entrances'], generate: chambersLayer },
+  { id: 'chambers', label: 'Chambers and gates', dependsOn: ['cavern', 'entrances'], generate: chambersLayer },
   { id: 'water', label: 'Water', dependsOn: ['cavern'], generate: water },
   { id: 'features', label: 'Stalagmites and ore', dependsOn: ['cavern', 'water'], generate: features, addable: ['stalagmite', 'ore'] },
-  { id: 'contents', label: 'Enemies', dependsOn: ['cavern', 'chambers', 'water', 'features'], generate: contents, addable: ['marker'] },
+  { id: 'contents', label: 'Enemies and keys', dependsOn: ['cavern', 'chambers', 'water', 'features'], generate: contents, addable: ['marker', 'key'] },
   { id: 'lights', label: 'Lights', dependsOn: ['cavern', 'contents'], generate: lights, addable: ['light'] },
   { id: 'labels', label: 'Labels', dependsOn: ['entrances', 'features', 'contents'], generate: labels, addable: ['label'] },
 ]
+
+/**
+ * After the rock was carved or filled by hand: the cavern outline is traced again from the field (pinned cavern
+ * objects stay), and the layers drawn from it become out of date.
+ */
+function fromField(map: LocationMap, fieldId: string): LocationMap {
+  const layer = map.layers.cavern
+  const g = fieldId === 'rock' ? floorOf(map) : null
+  if (!g || !layer || layer.locked) return map
+  const made = cavernFrom(g).objects.map((o, i) => withId(o, `cavern.carved.${i}`))
+  const next: LocationMap = { ...map, layers: { ...map.layers, cavern: { ...layer, objects: [...made, ...layer.objects.filter((o) => o.pinned)] } } }
+  return markDependentsStale(next, ['cavern'], CAVE)
+}
+
+/** A rounded pool, drawn through eight waypoints. */
+export function poolAt(x: number, y: number, rx = 36, ry = 28): NewMapObject {
+  const ctrl: Pt[] = Array.from({ length: 8 }, (_, i) => [x + Math.cos((i / 8) * Math.PI * 2) * rx, y + Math.sin((i / 8) * Math.PI * 2) * ry])
+  return { kind: 'pond', x, y, w: rx * 2, h: ry * 2, ...outlineOf(ctrl) }
+}
 
 export const CAVE: LocationTypeDef = {
   id: 'Cave',
@@ -611,4 +753,11 @@ export const CAVE: LocationTypeDef = {
   layers: LAYERS,
   topology: { rooms: { layer: 'chambers', kind: 'hollow' }, planned: true },
   nav: { cell: 10, open: false },
+  fromField,
+  params: [
+    { id: 'openness', label: 'Openness', min: 0.6, max: 1.5, step: 0.05, default: 1, layers: ['cavern'], help: 'More floor and wider passages.' },
+    { id: 'smoothing', label: 'Smoothing', min: 1, max: 8, step: 1, default: 5, layers: ['cavern'], help: 'Cellular automata only: rounder, simpler walls.' },
+    { id: 'crystals', label: 'Glowing crystals', min: 0, max: 12, step: 1, default: 4, layers: ['lights'] },
+  ],
+  stamps: [{ id: 'pool', label: 'Pool', layer: 'water', make: (x, y) => [poolAt(x, y)] }],
 }

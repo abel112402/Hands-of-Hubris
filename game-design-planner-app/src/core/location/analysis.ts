@@ -1,6 +1,7 @@
 import type { Entity, Project } from '../model/types'
 import { staleLayers } from './generate'
 import { lightGrid, type LightGrid } from './light'
+import { anchorMoved, linkedObjects, locationById, wayOut } from './links'
 import { buildNav, reachable, type NavGrid } from './nav'
 import { inRoom } from './rooms'
 import { getLocationType } from './registry'
@@ -105,8 +106,9 @@ export type MapCheck = { id: string; text: string; objects: string[] }
  * What a map's own rules say is wrong with it as it stands, hand edits included: house rules for a dwelling
  * (architecture.ts), locks whose key cannot be reached in time, and rooms no way leads into. Empty when all is well.
  */
-export function mapChecks(location: Entity, map: LocationMap): MapCheck[] {
+export function mapChecks(location: Entity, map: LocationMap, project?: Project): MapCheck[] {
   const all = Object.values(map.layers).flatMap((l) => l.objects)
+  const linked = project ? linkChecks(project, location, map) : []
   // Creatures, people and keys one cannot walk to (locks open, secrets known), on every kind of map.
   const stranded: MapCheck[] = unreachableObjects(map, ['marker', 'key']).map((o) => ({
     id: `reach-${o.id}`,
@@ -114,15 +116,15 @@ export function mapChecks(location: Entity, map: LocationMap): MapCheck[] {
     objects: [o.id],
   }))
   const graph = mapGraph(map)
-  if (!graph) return stranded
+  if (!graph) return [...linked, ...stranded]
   const unreachable = metrics(graph).unreachable
   const name = (id: string) => String(all.find((o) => o.id === id)?.label ?? 'a room')
   if (map.type === 'Dwelling') {
     const rooms = all.filter((o) => o.kind === 'room')
-    return [...checkPlan(graph, rooms, privacyOf(location), unreachable).map((issue, i) => ({ id: `${issue.rule}-${i}`, text: issue.text, objects: issue.rooms })), ...stranded]
+    return [...linked, ...checkPlan(graph, rooms, privacyOf(location), unreachable).map((issue, i) => ({ id: `${issue.rule}-${i}`, text: issue.text, objects: issue.rooms })), ...stranded]
   }
   const out: MapCheck[] = unreachable.map((id) => ({ id: `unreachable-${id}`, text: `Nothing leads into ${name(id) === 'a room' ? 'a room' : `the ${name(id)}`}.`, objects: [id] }))
-  out.push(...stranded)
+  out.push(...linked, ...stranded)
   // The boss waits in the boss room.
   const bossRoom = all.find((o) => o.kind === 'chamber' && o.props?.role === 'boss')
   for (const boss of all.filter((o) => o.kind === 'marker' && o.props?.type === 'boss')) {
@@ -134,6 +136,23 @@ export function mapChecks(location: Entity, map: LocationMap): MapCheck[] {
       const doors = graph.edges.filter((e) => e.lock === lock).flatMap((e) => e.via)
       out.push({ id: `lock-${lock}`, text: `The ${lock} lock cannot be opened: its key is missing or lies behind it.`, objects: doors })
     }
+  }
+  return out
+}
+
+/**
+ * Problems with links between maps: an object that opens a location that no longer exists, and an inner map whose
+ * object on the parent map has changed since it was generated (its entrance may no longer match).
+ */
+function linkChecks(project: Project, location: Entity, map: LocationMap): MapCheck[] {
+  const out: MapCheck[] = []
+  for (const o of linkedObjects(map)) {
+    if (!locationById(project, o.link!.locationId)) out.push({ id: `link-${o.id}`, text: `${o.label ?? 'An object'} opens a location that no longer exists.`, objects: [o.id] })
+  }
+  if (anchorMoved(project, location, map)) {
+    const parent = locationById(project, location.parent)
+    const door = wayOut(map)
+    out.push({ id: 'anchor', text: `This place has changed on the map of ${String(parent?.name ?? 'its parent')}; generate a new map (or reroll its doors) so the entrance matches again.`, objects: door ? [door.id] : [] })
   }
   return out
 }

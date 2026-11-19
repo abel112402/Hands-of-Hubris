@@ -1,5 +1,6 @@
 import { dependents, withId } from './generate'
 import { CURVE_STEP, sampleSpline, toDeg, toRad } from './geometry'
+import { heal } from './heal'
 import { kindInfo } from './objects'
 import { getLocationType } from './registry'
 import { MAX_OBJECTS_PER_LAYER } from './schema'
@@ -76,12 +77,16 @@ function withLayer(map: LocationMap, layerId: string, fn: (layer: MapLayer) => M
   return { ...map, layers }
 }
 
-/** Puts a changed object back in place of the one with its id, pinned. */
-export function putObject(map: LocationMap, object: MapObject): LocationMap {
+/**
+ * Puts a changed object back in place of the one with its id, pinned, and heals the map around it (heal.ts):
+ * what is attached to it or stands in it follows, corridors and shared walls adjust. `heal: false` skips that.
+ */
+export function putObject(map: LocationMap, object: MapObject, o: { heal?: boolean } = {}): LocationMap {
   const found = findObject(map, object.id)
   if (!found) return map
   const next = withId({ ...object, pinned: true }, object.id)
-  return withLayer(map, found.layerId, (layer) => ({ ...layer, objects: layer.objects.map((o) => (o.id === object.id ? next : o)) }))
+  const out = withLayer(map, found.layerId, (layer) => ({ ...layer, objects: layer.objects.map((x) => (x.id === object.id ? next : x)) }))
+  return out === map || o.heal === false ? out : heal(out, found.object, next)
 }
 
 /** Pins or releases an object without otherwise changing it; nothing becomes stale. */
@@ -114,6 +119,41 @@ export function duplicateObject(map: LocationMap, id: string, newId: string): Lo
   return withLayer(map, found.layerId, (layer) =>
     layer.objects.length >= MAX_OBJECTS_PER_LAYER ? null : { ...layer, objects: [...layer.objects, withId({ ...moved(found.object, 14, 14), pinned: true }, newId)] },
   )
+}
+
+// ---------- Masks ----------
+
+const MAX_MASKS = 50
+
+/** Adds a mask: everything inside it survives every reroll (generate.ts). */
+export function addMask(map: LocationMap, poly: Pt[], id: string, label?: string): LocationMap {
+  if (poly.length < 3 || (map.masks ?? []).length >= MAX_MASKS || map.masks?.some((m) => m.id === id)) return map
+  const mask = { id, poly: poly.map(([x, y]) => [Math.round(x) || 0, Math.round(y) || 0] as Pt), ...(label ? { label } : {}) }
+  return { ...map, masks: [...(map.masks ?? []), mask] }
+}
+
+export function removeMask(map: LocationMap, id: string): LocationMap {
+  const masks = (map.masks ?? []).filter((m) => m.id !== id)
+  const next: LocationMap = { ...map, masks }
+  if (!masks.length) delete next.masks
+  return next
+}
+
+/** A rectangle from two corners, as a mask outline. */
+export const rectPoly = (a: Pt, b: Pt): Pt[] => {
+  const [x0, x1, y0, y1] = [Math.min(a[0], b[0]), Math.max(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[1], b[1])]
+  return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+}
+
+/** A rectangle around an object with some room to spare, to mask it and what stands in it. */
+export function maskAround(o: MapObject, pad = 12): Pt[] {
+  if (o.points?.length) {
+    const xs = o.points.map((p) => p[0])
+    const ys = o.points.map((p) => p[1])
+    return rectPoly([Math.min(...xs) - pad, Math.min(...ys) - pad], [Math.max(...xs) + pad, Math.max(...ys) + pad])
+  }
+  const r = Math.hypot(o.w ?? 20, o.h ?? 20) / 2 + pad
+  return rectPoly([o.x - r, o.y - r], [o.x + r, o.y + r])
 }
 
 /** Locks or unlocks a layer. A locked layer is not edited and not regenerated. */

@@ -37,7 +37,7 @@ const object = z.object({
   pinned: z.literal(true).optional(),
   rank: opt(z.enum(ROAD_RANKS)),
   zone: opt(id),
-  attach: opt(z.object({ to: id, t: z.number().min(0).max(1), side: z.number().int().min(-1).max(1).optional() })),
+  attach: opt(z.object({ to: id, t: z.number().min(0).max(1), side: z.number().int().min(-1).max(1).optional(), off: z.number().min(0).max(2000).optional(), rot: z.number().min(-720).max(720).optional() })),
   link: opt(z.object({ locationId: id, anchor: z.string().max(80).optional() })),
   lock: opt(id),
   key: opt(id),
@@ -83,6 +83,7 @@ const map = z.object({
   masks: listOf(z.object({ id, poly, label: text.optional() }), 50),
   env: opt(z.object({ sun: opt(z.number().min(0).max(360)), time: opt(z.enum(TIMES_OF_DAY)) })),
   snapshots: opt(z.array(z.unknown())),
+  anchorStamp: opt(z.number().int().min(0)),
 })
 
 /** Drops keys whose value is undefined, so parsed data equals the data that was stored. */
@@ -118,6 +119,7 @@ function parseBody(value: unknown): Omit<LocationMap, 'snapshots'> & { rawSnapsh
     fields,
     masks: d.masks?.length ? d.masks : undefined,
     env: d.env && compact(d.env) && Object.keys(d.env).length ? d.env : undefined,
+    anchorStamp: d.anchorStamp,
     rawSnapshots: d.snapshots,
   })
 }
