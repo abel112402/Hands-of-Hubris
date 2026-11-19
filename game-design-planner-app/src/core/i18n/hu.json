@@ -2016,6 +2016,85 @@
       "region": "Következő lépés",
       "next": "Következő lépés",
       "hide": "Elrejtés a következő lépésig"
+    },
+    "atlas": {
+      "eyebrow": "Játéktervezési atlasz",
+      "lede": "Minden tervező egy tereptárgy a fázisa régiójában. A köd eloszlik, ahogy kitöltöd őket; kövesd a kivilágított útvonalat, vagy ugorj bárhová.",
+      "viewLabel": "Atlasz nézet",
+      "map": "Térkép",
+      "list": "Lista",
+      "stepOf": "Végigvezetés · {{n}}. lépés / {{total}}",
+      "openStep": "Lépés megnyitása",
+      "markDone": "Késznek jelöl",
+      "skip": "Kihagyás",
+      "allDone": "A végigvezetés kész. Minden tervező itt marad a finomításhoz.",
+      "uncharted": "Feltérképezetlen",
+      "here": "Itt tartasz",
+      "fullWalkthrough": "A teljes végigvezetés, tippek és MI",
+      "legend": {
+        "walked": "Bejárt út",
+        "ahead": "Előttünk álló út",
+        "links": "Egymást tápláló tervezők"
+      },
+      "stepCard": "A következő lépésed"
+    },
+    "emblem": {
+      "label": "Tervezési jelvény: {{rank}}, {{pct}}% felfedezve",
+      "figure": "{{figure}}, 5 részből {{built}} elkezdve",
+      "complete": "Minden rész elkészült. A terv kiadható.",
+      "next": "Töltsd ki a(z) {{phase}} tervezőket: {{part}}.",
+      "nextRank": "Következő rang: {{rank}}, {{at}}%-nál.",
+      "knight": {
+        "name": "Lovag",
+        "ranks": {
+          "0": "Vándor",
+          "1": "Fegyverhordozó",
+          "2": "Lovag",
+          "3": "Bajnok",
+          "4": "Legenda"
+        },
+        "parts": {
+          "concept": "a sisak kovácsolása",
+          "systems": "a páncél kovácsolása",
+          "content": "kard és pajzs",
+          "production": "köpeny és csizma",
+          "ship": "a forgó és a fénykör"
+        }
+      },
+      "camp": {
+        "name": "Tábor",
+        "ranks": {
+          "0": "Hajótörött",
+          "1": "Guberáló",
+          "2": "Telepes",
+          "3": "Ösvényjáró",
+          "4": "Őrző"
+        },
+        "parts": {
+          "concept": "a sátor felállítása",
+          "systems": "tűzifa gyűjtése",
+          "content": "a tűz meggyújtása",
+          "production": "az erdő megnövesztése",
+          "ship": "a tiszta éjszakai ég"
+        }
+      },
+      "castle": {
+        "name": "Vár",
+        "ranks": {
+          "0": "Előőrs",
+          "1": "Falucska",
+          "2": "Erőd",
+          "3": "Fellegvár",
+          "4": "Birodalom"
+        },
+        "parts": {
+          "concept": "a lakótorony felhúzása",
+          "systems": "a falak építése",
+          "content": "a kapu megnyitása",
+          "production": "a tornyok hozzáadása",
+          "ship": "a zászló kitűzése"
+        }
+      }
     }
   }
 }

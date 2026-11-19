@@ -2267,6 +2267,85 @@
       "region": "Next walkthrough step",
       "next": "Next step",
       "hide": "Hide until the next step"
+    },
+    "atlas": {
+      "eyebrow": "Game design atlas",
+      "lede": "Every planner is a landmark in the region of its phase. Fog lifts as you fill them in; follow the lit route, or jump anywhere.",
+      "viewLabel": "Atlas view",
+      "map": "Map",
+      "list": "List",
+      "stepOf": "Walkthrough · step {{n}} of {{total}}",
+      "openStep": "Open step",
+      "markDone": "Mark done",
+      "skip": "Skip",
+      "allDone": "The walkthrough is done. Every planner is still here to refine.",
+      "uncharted": "Uncharted",
+      "here": "You are here",
+      "fullWalkthrough": "The whole walkthrough, hints and AI",
+      "legend": {
+        "walked": "Route walked",
+        "ahead": "Route ahead",
+        "links": "Planners that feed each other"
+      },
+      "stepCard": "Your next step"
+    },
+    "emblem": {
+      "label": "Design emblem: {{rank}}, {{pct}}% explored",
+      "figure": "{{figure}}, {{built}} of 5 parts begun",
+      "complete": "Every part is built. The design is ready to ship.",
+      "next": "Fill {{phase}} planners to {{part}}.",
+      "nextRank": "Next rank, {{rank}}, at {{at}}%.",
+      "knight": {
+        "name": "Knight",
+        "ranks": {
+          "0": "Wanderer",
+          "1": "Squire",
+          "2": "Knight",
+          "3": "Champion",
+          "4": "Legend"
+        },
+        "parts": {
+          "concept": "forge the helmet",
+          "systems": "forge the armor",
+          "content": "arm sword and shield",
+          "production": "stitch cape and boots",
+          "ship": "earn the plume and the aura"
+        }
+      },
+      "camp": {
+        "name": "Camp",
+        "ranks": {
+          "0": "Castaway",
+          "1": "Scavenger",
+          "2": "Settler",
+          "3": "Pathfinder",
+          "4": "Warden"
+        },
+        "parts": {
+          "concept": "pitch the tent",
+          "systems": "gather firewood",
+          "content": "light the fire",
+          "production": "grow the forest",
+          "ship": "clear the night sky"
+        }
+      },
+      "castle": {
+        "name": "Castle",
+        "ranks": {
+          "0": "Outpost",
+          "1": "Hamlet",
+          "2": "Stronghold",
+          "3": "Citadel",
+          "4": "Empire"
+        },
+        "parts": {
+          "concept": "raise the keep",
+          "systems": "build the walls",
+          "content": "open the gate",
+          "production": "add the towers",
+          "ship": "fly the banner"
+        }
+      }
     }
   }
 }

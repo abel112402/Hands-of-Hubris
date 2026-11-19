@@ -328,7 +328,26 @@ Ship behind a setting `ui.version: 'v2' | 'v3'` (default v2 until Phase 2 lands)
 - Breadcrumb with sibling dropdowns; keyboard shortcuts; Next-step pill.
 - Flip the default to `v3` for new projects at the end of this phase.
 
-### Phase 3: the Atlas (≈ 2 weeks)
+### Phase 3: the Atlas (≈ 2 weeks). **Done 2026-11-19, except the zoom transition polish and the part toast**
+
+> **Shipped** (`core/atlas.ts`, `core/emblem.ts`, `ui/v3/Atlas.tsx`, `ui/v3/Emblem.tsx`; the home route is `HomeRoute` in `ui/Shell.tsx`):
+> - **Layout:**
+>   - Regions per phase in a fixed 1200 × 680 box, sized for the planner counts (Concept 3, Core systems 12, Content 5, Production 14, Polish & ship 4).
+>   - Planners sit in a grid inside their region, ordered by when the walkthrough reaches them. This is a deterministic layout instead of a hand-tuned coordinate file, so new planners place themselves.
+>   - The map has a 1120 px minimum width and scrolls sideways on smaller screens.
+> - **Links:** taken from every system map's "other planner" nodes, each pair once, drawn faintly.
+> - **Route:** the walkthrough's path through planners in first-visit order. It's solid up to the current step's planner and a marching dashed line after it, and that planner pulses with a "You are here" label.
+> - **Fog:** a phase is fogged when none of its planners is started and the walkthrough hasn't reached it. Fog only dims; everything stays clickable.
+> - **Step card:** the next walkthrough step with Open step, Mark done (one undo step) and Skip for optional steps. The Next-step pill is hidden on the Atlas, since the card replaces it.
+> - **Emblem:** the minimal design from the prototype review, with the figure taken from the project's first genre (Settings › Genre).
+> - **List view:** a list grouped by phase as the accessible equal of the map, remembered per browser.
+> - **Kept from the classic home page:** the autosave-restore banner, and the full walkthrough with its Hints and AI tabs in a collapsed "The whole walkthrough, hints and AI" section.
+> - **Zoom into a planner:** landmarks use React Router's `viewTransition`, and the CSS zooms the new page in where the View Transitions API exists (none under reduced motion).
+>
+> **Not done:**
+> - The completion toast when a part of the emblem is finished.
+> - Landmark positions inside planners taken from each planner's system map (planners are single landmarks for now).
+> - A shared-element zoom from the landmark into the planner page; it's a cross-fade with a zoom for now.
 - Atlas layout: regions per phase, planner positions from a hand-tuned layout file (stable, art-directed) rather than force layout. Landmarks inside are positioned from each planner's existing guide map coordinates, scaled down.
 - Inter-planner edges from the guide maps' "other document" nodes. Route from the walkthrough order.
 - Fog rendering (SVG mask plus blur filter, reduced-motion fallback to opacity), semantic zoom into the planner map (shared-element transition via the View Transitions API with a CSS fallback).

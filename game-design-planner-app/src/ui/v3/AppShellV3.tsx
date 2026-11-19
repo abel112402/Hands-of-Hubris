@@ -124,7 +124,7 @@ export function AppShellV3() {
       <CloudBanners />
       <div className="body3" style={{ gridTemplateColumns: shellColumns(layout) }}>
         {!layout.compact && <nav className="rail3" aria-label={t('nav.main')}>{rail}</nav>}
-        <main className="surface3 shell-body"><Outlet /><NextStepPill docId={docId} sectionId={sectionId} /></main>
+        <main className="surface3 shell-body"><Outlet />{/* The Atlas has the step card instead. */}{loc.pathname !== '/' && <NextStepPill docId={docId} sectionId={sectionId} />}</main>
         {!layout.compact && (
           <aside className="tray3" aria-label={t('v3.companion')}>
             <button type="button" className="tray3-item" title={t('nav.hints')} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`} onClick={() => (docId ? setHintsOpen(true) : nav('/settings/hints'))}>
