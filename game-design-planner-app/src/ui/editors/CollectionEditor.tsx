@@ -38,6 +38,10 @@ import { BiomeCoverageView, BiomeDossierView, BiomeThreatView, UnlockPathView, W
 import { LocationGalleryView } from './locationViews'
 import { LocationMapView } from './location/LocationMapView'
 import { Icon } from '../Icon'
+import { useTranslation } from 'react-i18next'
+import { useUiVersion } from '../../core/uiVersion'
+import { coreFieldKeys, splitByTier } from '../../core/fieldTier'
+import { Sheet } from '../v3/Sheet'
 import { countOf } from '../../core/text'
 
 const VIEW_LABEL: Record<CollectionView['kind'], string> = {
@@ -189,7 +193,10 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
     return e ? <Inspector key={e.id} docId={docId} sec={sec} entity={e} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} embedded /> : null
   }
   const props: ViewProps = { docId, sec, items: shown, selected, onSelect: setSelected, patch, inspectorFor: inlineInspector ? inspectorFor : undefined }
-  const besideInspector = !!sel && view.kind !== 'wireframe' && !inlineInspector
+  // v3 opens the entry in a sheet over the view, so the view keeps its width; v2 shows it beside the view.
+  const v3 = useUiVersion() === 'v3'
+  const besideInspector = !!sel && view.kind !== 'wireframe' && !inlineInspector && !v3
+  const sheetFor = v3 && view.kind !== 'wireframe' && !inlineInspector ? sel : undefined
 
   return (
     <div className="collection">
@@ -309,35 +316,17 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
         {besideInspector && sel && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
+        {sheetFor && <RecordSheet docId={docId} sec={sec} entity={sheetFor} items={shown.some((e) => e.id === sheetFor.id) ? shown : items} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
       </div>
     </div>
   )
 }
 
-function Inspector({
-  docId,
-  sec,
-  entity,
-  patch,
-  onClose,
-  setSelected,
-  embedded,
-}: {
-  docId: string
-  sec: CollectionSection
-  entity: Entity
-  patch: ViewProps['patch']
-  onClose: () => void
-  setSelected: (id?: string) => void
-  /** Shown inside a view's own panel: no frame and no Close button. */
-  embedded?: boolean
-}) {
+/** Delete (with a warning when referenced), duplicate and reorder one entry; shared by the inspector and the v3 record sheet. */
+function useEntityActions(docId: string, sec: CollectionSection, entity: Entity, setSelected: (id?: string) => void, onClose: () => void) {
   const { update } = useSection<Entity[]>(docId, sec.id)
   const project = useProject()
   const usages = useMemo(() => findUsages(project, entity.id), [project, entity.id])
-  const groups = fieldGroups(sec.fields)
-  const hidden = hiddenGroups(project, docId, sec, entity)
-
   const remove = () => {
     const msg = usages.length
       ? `“${entity.name}” is referenced ${countOf(usages.length, 'time')}. Delete anyway? (references will show as missing)`
@@ -364,6 +353,171 @@ function Inspector({
       if (j < 0 || j >= d.length) return
       ;[d[i], d[j]] = [d[j], d[i]]
     })
+  return { usages, remove, duplicate, move }
+}
+
+/** "Used by": every place that references the entry, as links. */
+function UsedBy({ usages }: { usages: ReturnType<typeof findUsages> }) {
+  if (!usages.length) return <span className="muted">Not referenced anywhere.</span>
+  return (
+    <ul className="usages">
+      {usages.map((u, i) => (
+        <li key={i}>
+          <Link to={`/doc/${u.docId}?s=${u.sectionId}`}>{u.docTitle} › {u.sectionTitle} › {u.entityLabel}</Link> <span className="muted">({u.field})</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** One labelled input of an entry, with its help line. */
+function EntityField({ docId, entity, field: f, patch }: { docId: string; entity: Entity; field: FieldDef; patch: ViewProps['patch'] }) {
+  return (
+    <div className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
+      <label htmlFor={`${docId}-${entity.id}-${f.key}`}>
+        {f.label}
+        {f.required && <span className="req"> *</span>}
+      </label>
+      <FieldInput
+        id={`${docId}-${entity.id}-${f.key}`}
+        describedBy={f.help ? `${docId}-${entity.id}-${f.key}-help` : undefined}
+        field={f}
+        value={entity[f.key]}
+        docId={docId}
+        onChange={(v) => patch(entity.id, f.key, v)}
+      />
+      {f.help && <small className="muted" id={`${docId}-${entity.id}-${f.key}-help`}>{f.help}</small>}
+    </div>
+  )
+}
+
+const LINKS_TAB = '__links'
+const BASICS_TAB = '__basics'
+
+/**
+ * v3 record sheet (plans/UI_V3_PLAN.md, Screen 3): the selected entry slides over the view, which keeps its
+ * width. Field groups are tabs with fill counts; inside a tab only core fields, filled fields and fields the
+ * user opened show, the rest wait behind "+ field" chips. ‹ › steps through the entries in view order.
+ */
+function RecordSheet({ docId, sec, entity, items, patch, onClose, setSelected }: {
+  docId: string
+  sec: CollectionSection
+  entity: Entity
+  /** The entries in the order the view shows them, for ‹ › stepping. */
+  items: Entity[]
+  patch: ViewProps['patch']
+  onClose: () => void
+  setSelected: (id?: string) => void
+}) {
+  const { t } = useTranslation()
+  const project = useProject()
+  const hidden = hiddenGroups(project, docId, sec, entity)
+  const { usages, remove, duplicate } = useEntityActions(docId, sec, entity, setSelected, onClose)
+  const core = useMemo(() => coreFieldKeys(sec.fields), [sec.fields])
+  const [opened, setOpened] = useState<Set<string>>(() => new Set())
+  // The name sits above the tabs (the sheet's editable heading); then one tab per field group the entry's
+  // type uses (other ungrouped fields first), then the links.
+  const nameField = sec.fields.find((f) => f.key === 'name')
+  const tabs: { id: string; label: string; fields: FieldDef[] }[] = []
+  for (const f of sec.fields) {
+    if (f === nameField || (f.group && hidden.has(f.group))) continue
+    const id = f.group ?? BASICS_TAB
+    const tab = tabs.find((x) => x.id === id) ?? (tabs.push({ id, label: f.group ?? t('v3.record.basics'), fields: [] }), tabs[tabs.length - 1])
+    tab.fields.push(f)
+  }
+  tabs.push({ id: LINKS_TAB, label: t('v3.record.links'), fields: [] })
+  const [tabId, setTabId] = useState(tabs[0].id)
+  const tab = tabs.find((x) => x.id === tabId) ?? tabs[0]
+  const { shown, hidden: more } = splitByTier(tab.fields, entity, opened, core)
+  const at = items.findIndex((e) => e.id === entity.id)
+  const step = (d: number) => items.length > 1 && setSelected(items[(at + d + items.length) % items.length].id)
+  const name = String(entity.name ?? '').trim()
+
+  return (
+    <Sheet
+      label={`${sec.singular}: ${name || t('v3.record.unnamed')}`}
+      eyebrow={<>{sec.singular}{at >= 0 && <> · {t('v3.record.position', { n: at + 1, total: items.length })}</>} <AiBadge entity={entity} /></>}
+      title={name || t('v3.record.unnamed')}
+      onClose={onClose}
+      onPrev={items.length > 1 ? () => step(-1) : undefined}
+      onNext={items.length > 1 ? () => step(1) : undefined}
+      prevLabel={t('v3.record.prev', { what: sec.singular })}
+      nextLabel={t('v3.record.next', { what: sec.singular })}
+      width={520}
+      footer={
+        <>
+          <button type="button" className="ghost" onClick={duplicate}>{t('v3.record.duplicate')}</button>
+          <span className="spacer" />
+          <button type="button" className="ghost danger" onClick={remove}>{t('v3.record.delete')}</button>
+        </>
+      }
+    >
+      {nameField && <div className="form record3-name"><EntityField docId={docId} entity={entity} field={nameField} patch={patch} /></div>}
+      <div className="record3-tabs" role="tablist" aria-label={t('v3.record.groups')}>
+        {tabs.map((x) => {
+          const filled = x.fields.filter((f) => !isBlankValue(entity[f.key])).length
+          return (
+            <button key={x.id} type="button" role="tab" id={`rt-${x.id}`} aria-selected={x.id === tab.id} aria-controls="record3-panel" onClick={() => setTabId(x.id)}>
+              {x.label}
+              {x.id === LINKS_TAB ? (usages.length > 0 && <span className="record3-count">{usages.length}</span>) : <span className="record3-count">{filled}/{x.fields.length}</span>}
+            </button>
+          )
+        })}
+      </div>
+      <div className="form record3-panel" role="tabpanel" id="record3-panel" aria-labelledby={`rt-${tab.id}`}>
+        {tab.id === LINKS_TAB ? (
+          <>
+            {docId === 'overview.roadmap' && sec.id === 'gates' && <GateReadiness entity={entity} />}
+            {docId === 'design.items' && sec.id === 'items' && <ItemLinks item={entity} />}
+            {docId === 'design.combat' && (sec.id === 'enemies' || sec.id === 'bosses') && <CombatLinks entity={entity} boss={sec.id === 'bosses'} />}
+            <div className="field">
+              <label>Used by</label>
+              <UsedBy usages={usages} />
+            </div>
+          </>
+        ) : (
+          <>
+            {shown.map((f) => <EntityField key={f.key} docId={docId} entity={entity} field={f} patch={patch} />)}
+            {more.length > 0 && (
+              <div className="add-detail" role="group" aria-label={t('v3.record.moreDetail')}>
+                <span className="muted">{t('v3.record.moreDetail')}</span>
+                {more.map((f) => (
+                  <button key={f.key} type="button" className="chip-add" onClick={() => {
+                    setOpened(new Set(opened).add(f.key))
+                    requestAnimationFrame(() => document.getElementById(`${docId}-${entity.id}-${f.key}`)?.focus())
+                  }}>+ {f.label}</button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Sheet>
+  )
+}
+
+function Inspector({
+  docId,
+  sec,
+  entity,
+  patch,
+  onClose,
+  setSelected,
+  embedded,
+}: {
+  docId: string
+  sec: CollectionSection
+  entity: Entity
+  patch: ViewProps['patch']
+  onClose: () => void
+  setSelected: (id?: string) => void
+  /** Shown inside a view's own panel: no frame and no Close button. */
+  embedded?: boolean
+}) {
+  const project = useProject()
+  const groups = fieldGroups(sec.fields)
+  const hidden = hiddenGroups(project, docId, sec, entity)
+  const { usages, remove, duplicate, move } = useEntityActions(docId, sec, entity, setSelected, onClose)
 
   return (
     <aside className={'inspector' + (embedded ? ' embedded' : '')}>

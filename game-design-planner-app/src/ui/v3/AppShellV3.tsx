@@ -1,5 +1,7 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, matchPath, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { HintPanel } from '../hints/HintPanel'
+import { Sheet } from './Sheet'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../core/store/store'
 import { validateProject } from '../../core/references/refs'
@@ -52,7 +54,12 @@ export function AppShellV3() {
   const cloudActive = useCloud((s) => !!s.active)
   const theme = useTheme()
   const [palette, setPalette] = useState(false)
+  const [hintsOpen, setHintsOpen] = useState(false)
   useShellEffects(() => setPalette(true))
+  // On a planner page the tray's Hints open that planner's hints; elsewhere they lead to the Hints settings.
+  const loc = useLocation()
+  const docId = matchPath('/doc/:docId', loc.pathname)?.params.docId
+  const sectionId = new URLSearchParams(loc.search).get('s') ?? undefined
   const layout = shellLayout(useViewportWidth())
   const issues = validateProject(project).length
   const hintCount = useHints().total
@@ -107,7 +114,7 @@ export function AppShellV3() {
         <main className="surface3 shell-body"><Outlet /></main>
         {!layout.compact && (
           <aside className="tray3" aria-label={t('v3.companion')}>
-            <button type="button" className="tray3-item" title={t('nav.hints')} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`} onClick={() => nav('/settings/hints')}>
+            <button type="button" className="tray3-item" title={t('nav.hints')} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`} onClick={() => (docId ? setHintsOpen(true) : nav('/settings/hints'))}>
               <Icon name="bulb" />{!!hintCount && <CountBadge count={hintCount} />}
             </button>
           </aside>
@@ -115,6 +122,11 @@ export function AppShellV3() {
       </div>
       {layout.compact && <nav className="rail3 bottom" aria-label={t('nav.main')}>{rail}</nav>}
       {palette && <CommandPalette extras={extras} onClose={() => setPalette(false)} />}
+      {hintsOpen && docId && (
+        <Sheet label={t('nav.hints')} title={t('nav.hints')} width={400} onClose={() => setHintsOpen(false)}>
+          <HintPanel docId={docId} sectionId={sectionId} />
+        </Sheet>
+      )}
       <FlavorToast />
     </div>
   )

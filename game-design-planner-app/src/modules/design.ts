@@ -1419,9 +1419,10 @@ export const designModules = [
           f.ref('biome', 'Biome', BIOMES, { group: 'Identity' }),
           f.enm('role', 'Role', ['Swarm', 'Brute', 'Ranged', 'Caster', 'Elite', 'Support'], { group: 'Identity' }),
           f.num('tier', 'Tier', { min: 1, group: 'Identity' }),
-          f.num('hp', 'HP', { min: 0, group: 'Stats' }),
-          f.num('damage', 'Damage per hit', { min: 0, group: 'Stats' }),
-          f.num('attackRate', 'Attacks per second', { min: 0, step: 0.05, group: 'Stats' }),
+          // HP, damage and rate are what every enemy needs for the threat curve: always shown in v3.
+          f.num('hp', 'HP', { min: 0, group: 'Stats', tier: 'core' }),
+          f.num('damage', 'Damage per hit', { min: 0, group: 'Stats', tier: 'core' }),
+          f.num('attackRate', 'Attacks per second', { min: 0, step: 0.05, group: 'Stats', tier: 'core' }),
           f.num('speed', 'Speed', { min: 0, group: 'Stats' }),
           f.num('armor', 'Armor', { min: 0, group: 'Stats' }),
           f.ref('damageType', 'Deals damage type', catalog('damageTypes'), { group: 'Stats' }),

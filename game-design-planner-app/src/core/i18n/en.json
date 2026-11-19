@@ -2211,6 +2211,32 @@
         "page": "Page",
         "action": "Action"
       }
+    },
+    "section": {
+      "unknown": "Unknown planner.",
+      "filled": "{{filled}}/{{total}} sections started",
+      "about": "About this section",
+      "more": "More: Markdown preview, export, help",
+      "map": "Section map",
+      "hints_one": "{{count}} hint",
+      "hints_other": "{{count}} hints",
+      "state": {
+        "empty": "Empty",
+        "started": "Started",
+        "done": "Done"
+      }
+    },
+    "record": {
+      "basics": "Basics",
+      "links": "Links",
+      "unnamed": "(unnamed)",
+      "position": "{{n}} of {{total}}",
+      "prev": "Previous {{what}}",
+      "next": "Next {{what}}",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "groups": "Field groups",
+      "moreDetail": "Add detail"
     }
   }
 }

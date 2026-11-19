@@ -7,14 +7,22 @@ import { tryEvaluate, variablesOf } from '../../core/formula'
 import { ASYMMETRY_TOLERANCE } from '../../core/diplomacy'
 import { useSection, useProject } from '../hooks'
 import { FieldInput } from '../FieldInput'
+import { useTranslation } from 'react-i18next'
+import { useUiVersion } from '../../core/uiVersion'
+import { splitByTier } from '../../core/fieldTier'
 import type { ExportAsset } from '../../core/export/markdown'
 
 export function FormEditor({ docId, sec }: { docId: string; sec: Extract<SectionDef, { kind: 'form' }> }) {
   const { data, update } = useSection<Record<string, any>>(docId, sec.id)
   const values = data ?? {}
+  const { t } = useTranslation()
+  // v3: a centred column with core fields first; empty detail fields wait behind "+ field" chips.
+  const v3 = useUiVersion() === 'v3'
+  const [opened, setOpened] = useState<Set<string>>(() => new Set())
+  const { shown, hidden } = v3 ? splitByTier(sec.fields, values, opened) : { shown: sec.fields, hidden: [] }
   return (
-    <div className="form wide">
-      {sec.fields.map((f) => (
+    <div className={'form wide' + (v3 ? ' form3' : '')}>
+      {shown.map((f) => (
         <div key={f.key} data-guide={`field-${f.key}`} className={'field' + (f.type === 'boolean' ? ' inline' : '')}>
           <label htmlFor={`${docId}-${sec.id}-${f.key}`}>{f.label}</label>
           {f.help && <small className="muted field-hint" id={`${docId}-${sec.id}-${f.key}-help`}>{f.help}</small>}
@@ -33,6 +41,17 @@ export function FormEditor({ docId, sec }: { docId: string; sec: Extract<Section
           />
         </div>
       ))}
+      {hidden.length > 0 && (
+        <div className="add-detail form3-more" role="group" aria-label={t('v3.record.moreDetail')}>
+          <span className="muted">{t('v3.record.moreDetail')}</span>
+          {hidden.map((f) => (
+            <button key={f.key} type="button" className="chip-add" onClick={() => {
+              setOpened(new Set(opened).add(f.key))
+              requestAnimationFrame(() => document.getElementById(`${docId}-${sec.id}-${f.key}`)?.focus())
+            }}>+ {f.label}</button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

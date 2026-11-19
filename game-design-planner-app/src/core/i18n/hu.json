@@ -1960,6 +1960,32 @@
         "page": "Oldal",
         "action": "Művelet"
       }
+    },
+    "section": {
+      "unknown": "Ismeretlen tervező.",
+      "filled": "{{filled}}/{{total}} szakasz elkezdve",
+      "about": "A szakaszról",
+      "more": "Továbbiak: Markdown-előnézet, export, súgó",
+      "map": "Szakasztérkép",
+      "hints_one": "{{count}} tipp",
+      "hints_other": "{{count}} tipp",
+      "state": {
+        "empty": "Üres",
+        "started": "Elkezdve",
+        "done": "Kész"
+      }
+    },
+    "record": {
+      "basics": "Alapok",
+      "links": "Kapcsolatok",
+      "unnamed": "(névtelen)",
+      "position": "{{n}} / {{total}}",
+      "prev": "Előző: {{what}}",
+      "next": "Következő: {{what}}",
+      "duplicate": "Másolat",
+      "delete": "Törlés",
+      "groups": "Mezőcsoportok",
+      "moreDetail": "Részletek hozzáadása"
     }
   }
 }

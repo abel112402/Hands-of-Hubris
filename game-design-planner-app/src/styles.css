@@ -1626,3 +1626,43 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .palette3-kind{font-size:var(--fs-xs);color:var(--muted)}
 .palette3-empty{padding:var(--space-4);color:var(--muted);margin:0}
 .palette3-foot{margin:0;padding:8px var(--space-4);border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--muted)}
+
+/* v3 Phase 1: planner page (EditorPageV3), record sheet, progressive fields. */
+.editor3{display:flex;flex-direction:column;min-height:100%}
+.sec3-head{position:sticky;top:0;z-index:5;padding:var(--space-3) var(--space-5) 0;background:var(--surface-canvas);border-bottom:1px solid var(--line)}
+.sec3-top{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
+.sec3-titles{min-width:0}
+.sec3-planner{display:flex;align-items:center;gap:6px}
+.sec3-count{font-weight:500;letter-spacing:0;text-transform:none}
+.sec3-title{margin:2px 0 0;font-size:var(--fs-3xl);line-height:1.15}
+.sec3-state{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:var(--radius-pill);font-size:var(--fs-sm);color:var(--muted);white-space:nowrap}
+.sec3-state.done{color:var(--ok)}.sec3-state.started{color:var(--warn)}
+.sec3-hints{color:var(--muted)}.sec3-hints::before{content:'·';margin-right:6px}
+.sec3-head .icon-btn{width:var(--control-min);height:var(--control-min)}
+.sec3-about{margin-top:var(--space-3);padding:var(--space-3) var(--space-4);max-width:80ch;border-radius:var(--radius-md);background:var(--surface-note);animation:hoh-rise var(--dur-fast) var(--ease-out)}
+.sec3-about p{margin:0 0 var(--space-2)}
+.sec3-head .walk-chip,.sec3-head [class*="walkthrough"]{margin-top:var(--space-3)}
+.sec3-strip{display:flex;align-items:center;gap:4px;padding:var(--space-2) 0;overflow-x:auto;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+.sec3-strip::-webkit-scrollbar{display:none}
+.step3{display:inline-flex;align-items:center;gap:6px;height:var(--control-min);padding:0 10px;border:1px solid transparent;border-radius:var(--radius-pill);background:none;color:var(--muted);white-space:nowrap;flex:none}
+.step3:hover{color:var(--text);background:var(--panel2)}
+.step3.on{color:var(--text);background:var(--panel2);border-color:var(--line-strong)}
+.step3-hints{min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--brand);color:var(--on-brand);font-size:10px;font-weight:700;line-height:16px;text-align:center}
+.step3-map{margin-left:auto;flex:none}
+/* State shapes: ring = empty, half = started, solid = done (never colour alone). */
+.glyph3{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;flex:none}
+.glyph3.started{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.glyph3.done{background:currentColor}
+.step3 .glyph3.done{color:var(--ok)}.step3 .glyph3.started{color:var(--warn)}
+.sec3-body{flex:1;padding:var(--space-3) var(--space-5) var(--space-7);min-width:0}
+.form3{max-width:720px;margin:0 auto}
+.add-detail{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2);padding-top:var(--space-3);border-top:1px solid var(--line)}
+.chip-add{height:30px;padding:0 12px;border:1px dashed var(--line-strong);border-radius:var(--radius-pill);background:none;color:var(--muted);font-size:var(--fs-sm)}
+.chip-add:hover{border-color:var(--accent);color:var(--text)}
+.record3-name{margin-bottom:var(--space-3)}
+.record3-tabs{display:flex;gap:var(--space-4);margin:0 calc(-1 * var(--space-4)) var(--space-4);padding:0 var(--space-4);border-bottom:1px solid var(--line);overflow-x:auto}
+.record3-tabs button{display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 2px;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);font-weight:600;white-space:nowrap}
+.record3-tabs button[aria-selected=true]{color:var(--text);border-bottom-color:var(--accent)}
+.record3-count{font-size:var(--fs-xs);padding:1px 6px;border-radius:var(--radius-pill);background:var(--panel2);color:var(--muted);font-weight:600}
+.record3-panel{display:flex;flex-direction:column;gap:var(--space-3)}
+@media (forced-colors:active){.glyph3.done,.glyph3.started{background:CanvasText}}

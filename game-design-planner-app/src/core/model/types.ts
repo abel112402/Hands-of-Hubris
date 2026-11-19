@@ -17,7 +17,19 @@ export type GroupFilter = { field: string; profiles?: { section: string; key: st
 export type RangeFrom = { section: string; minField: string; maxField: string }
 
 /** `group` collects fields under one collapsible heading in the inspector. */
-export type FieldBase = { key: string; label: string; help?: string; placeholder?: string; required?: boolean; group?: string }
+export type FieldBase = {
+  key: string
+  label: string
+  help?: string
+  placeholder?: string
+  required?: boolean
+  group?: string
+  /**
+   * v3 progressive fields: `core` always shows, `detail` hides behind an "add" chip while empty.
+   * Unset = decided by `coreFieldKeys` (core/fieldTier.ts). Schema metadata only, never stored in projects.
+   */
+  tier?: 'core' | 'detail'
+}
 export type FieldDef = FieldBase &
   (
     | { type: 'text' }

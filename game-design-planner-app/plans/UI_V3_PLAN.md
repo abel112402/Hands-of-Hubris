@@ -249,7 +249,36 @@ Ship behind a setting `ui.version: 'v2' | 'v3'` (default v2 until Phase 2 lands)
 - `CommandPalette` (⌘K) over the module registry, sections, entities (name index) and actions.
 - **Tests:** a layout-budget test (work surface ≥ 60% at 1024/1440 in jsdom with mocked widths), palette search, sheet focus handling.
 
-### Phase 1: the editor frame (≈ 1–2 weeks)
+### Phase 1: the editor frame (≈ 1–2 weeks). **Part 1a done 2026-11-19**
+
+> **Part 1a shipped (v3 preview only):**
+> - **`EditorPageV3`** (picked by `EditorRoute`):
+>   - **Header:** a compact sticky header with planner, title, state (○ ◐ ●, hint count) and an ⓘ about panel holding the description and concept. Insert example stays as a button; Markdown, export, import and help moved into a ⋯ menu.
+>   - **Walkthrough step:** shown as before when this section is one.
+>   - **Section strip:** a strip of all sections with state glyphs, pulled forward from Phase 2.
+>   - **System map:** opens in a sheet.
+>   - **Hints:** the classic sidebar, map strip and hint column are gone. Hints open from the companion tray as a sheet for the current planner.
+> - **Record sheet:**
+>   - entries open in a `Sheet` over the view, so the view keeps its width
+>   - Name sits above the tabs
+>   - field groups become tabs with fill counts, plus a Links tab (Used by, gate/item/combat links)
+>   - ‹ › steps through entries in view order; Duplicate and Delete are in the footer
+> - **Field tiers:** `FieldDef.tier` (schema metadata, nothing stored), with `coreFieldKeys` / `splitByTier` in `core/fieldTier.ts`. Required fields plus the first group's leading fields, up to 3, are core; fields marked core are added on top; empty detail fields become "+ field" chips that open and focus the field. First spot fix: enemy HP, damage and attack rate.
+> - **Forms:** a centred 720 px column using the same tier rule.
+> - **`sectionStates`** in `core/progress.ts`: the system map's empty/started/done rule, now shared.
+>
+> **Measured at 1024×768 (Combat › Enemies):**
+> - Space above the data: 586 → **192 px**.
+> - View width: 427 → **828 px**, and it stays that width with a record open (was 95 px).
+> - A new enemy shows **3 inputs** (was 26).
+>
+> **Left for part 1b:**
+> - Fold the collection toolbar (views, filter, CSV, add) into the section header to reach the ≤ 160 px target.
+> - Hints grace period.
+> - `CanvasEditorFrame`.
+> - Expand-to-page (`?r=`).
+> - A per-planner tier pass.
+> - Spotlight steps that target a detail field still hidden behind a chip must open it first.
 - `SectionHeader` (sticky): title, fill ring, view dropdown, overflow, ⓘ concept popover, conditional walkthrough banner. Remove the per-section toolbar and the map thumbnail from the page flow.
 - **Field tiers:** optional `tier?: 'core' | 'detail'` on `FieldDef` (default: `required` or first 3 fields of the first group → core). No data migration, since this is schema metadata only. Tiers are tagged per module in `src/modules/*` (a review pass for each of the ~30 planners, cheapest with a heuristic plus spot fixes).
 - Collection Inspector → record sheet with group tabs, `‹ ›` stepping, Expand to page (route `?r=<id>`).
