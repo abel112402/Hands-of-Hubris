@@ -9,7 +9,7 @@ import { getModule } from '../../core/modules/registry'
 import { useNewlyAdded, useSection, useProject } from '../hooks'
 import { dragCue } from '../motion'
 import { FieldInput, displayValue, isLongField } from '../FieldInput'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { RadarView, Grid2dView, TimelineView, LadderView, ProgressionView, CompareView, RangesView, EconomyView } from './views'
 import { BondLadderView, EventOddsView, LifespanView, NeedChainView, NeedsBalanceView, PopulationView, RoutineView, StatPreviewView, WorkforceView } from './npcViews'
 import { BuildPlannerView, DepletionView, LevelCurveView, SkillTreeView } from './playerViews'
@@ -147,6 +147,14 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
   const project = useProject()
   const [viewIdx, setViewIdx] = useState(0)
   const [selected, setSelected] = useState<string | undefined>()
+  // `?e=<id>` (command palette, links) selects that entry; reading it again when it changes.
+  const [params] = useSearchParams()
+  const wanted = params.get('e') ?? undefined
+  const [wantedSeen, setWantedSeen] = useState<string | undefined>()
+  if (wanted !== wantedSeen) {
+    setWantedSeen(wanted)
+    if (wanted && data?.some((e) => e.id === wanted)) setSelected(wanted)
+  }
   const [filter, setFilter] = useState('')
   const items = useMemo(() => data ?? [], [data])
   const view = sec.views[Math.min(viewIdx, sec.views.length - 1)] ?? { kind: 'cards' as const }

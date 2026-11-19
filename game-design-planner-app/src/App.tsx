@@ -1,5 +1,5 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AppShell } from './ui/AppShell'
+import { Shell } from './ui/Shell'
 import { Home } from './ui/pages/Home'
 import { EditorPage } from './ui/pages/EditorPage'
 import { Issues } from './ui/pages/Issues'
@@ -22,7 +22,7 @@ export function App({ cloudBackend }: { cloudBackend?: CloudBackend | null } = {
           <Route path="welcome" element={<Landing />} />
           <Route path="projects" element={<RequireUser><ProjectsPage /></RequireUser>} />
           <Route path="projects/:projectId/*" element={<RequireUser><OpenProjectRoute /></RequireUser>} />
-          <Route element={<RequireWorkspace><AppShell /></RequireWorkspace>}>
+          <Route element={<RequireWorkspace><Shell /></RequireWorkspace>}>
             <Route index element={<Home />} />
             <Route path="doc/:docId" element={<EditorPage />} />
             <Route path="issues" element={<Issues />} />

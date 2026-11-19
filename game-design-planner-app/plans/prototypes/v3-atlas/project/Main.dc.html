@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design Atlas prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#0d0f12}
+a{color:#7fb2ff}a:hover{color:#a9cbff}
+.app{transition:filter .35s ease}
+.app.light{filter:invert(1) hue-rotate(180deg)}
+.app.light .sheet,.app.light .peek,.app.light .pill{box-shadow:0 16px 40px rgba(255,255,255,.18)}
+.app *{box-sizing:border-box}
+.app button{font:inherit;color:inherit}
+.app input,.app textarea{font:inherit}
+@keyframes zin{from{opacity:0;transform:scale(.965)}to{opacity:1;transform:none}}
+@keyframes slide{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes march{to{background-position:16px 0}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,165,65,.55)}100%{box-shadow:0 0 0 16px rgba(242,165,65,0)}}
+@keyframes drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.scr{animation:zin .42s cubic-bezier(.2,.7,.3,1) both}
+.bar button:hover,.rail button:hover,.tray button:hover{background:#1e2229}
+.crumb-btn{height:30px;padding:0 8px;border:0;border-radius:8px;background:none;color:#8b93a5;cursor:pointer;font-size:13px;font-weight:500}
+.crumb-btn.last{color:#e6e8ee;font-weight:600}
+.seg{display:inline-flex;padding:3px;gap:2px;border:1px solid #30353f;border-radius:10px;background:#111316}
+.seg button{height:30px;padding:0 12px;border:0;border-radius:7px;background:none;color:#8b93a5;cursor:pointer;font-size:13px;font-weight:600}
+.seg button[aria-pressed=true]{background:#262b34;color:#e6e8ee}
+.rail-btn{width:44px;height:44px;border:1px solid transparent;border-radius:12px;background:none;display:grid;place-items:center;cursor:pointer;color:#8b93a5;position:relative}
+.rail-btn.on{background:#1e2229;border-color:#30353f;color:#e6e8ee}
+.ph-dot{width:26px;height:26px;border-radius:50%;border:2px solid;display:grid;place-items:center;font:700 12px 'Space Grotesk',sans-serif}
+.rail-btn .tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);padding:4px 8px;border-radius:6px;background:#262b34;color:#e6e8ee;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.rail-btn:hover .tip,.rail-btn:focus-visible .tip{opacity:1}
+.rail-btn.ph{width:62px;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.rail-btn.ph .tip{left:70px}
+.ph-label{font-size:10.5px;font-weight:600;line-height:1;letter-spacing:.01em}
+.ph-track{display:block;width:22px;height:2px;border-radius:1px;background:#30353f;overflow:hidden}
+.ph-fill{display:block;height:100%;background:#6b7385;transition:width .4s}
+.rail-btn.ph.on .ph-fill{background:#e6e8ee}
+.rail-btn.ph.on{box-shadow:inset 2px 0 0 #e6e8ee}
+.fly-item{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;width:100%;height:40px;padding:0 10px;border:0;border-radius:10px;background:none;cursor:pointer;text-align:left;font-size:13.5px}
+.fly-item:hover{background:#262b34}
+.btn{height:36px;padding:0 14px;border-radius:10px;border:1px solid #30353f;background:#1e2229;cursor:pointer;font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:#3d4350;background:#262b34}
+.btn.primary{background:#f2a541;border-color:#f2a541;color:#111316}
+.btn.primary:hover{background:#ffb95e}
+.btn.ghost{background:none;border-color:transparent;color:#aab1c0}
+.btn.danger{background:none;border-color:transparent;color:#ff7a8a}
+.icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid #30353f;background:#1e2229;display:grid;place-items:center;cursor:pointer;color:#aab1c0}
+.icon-btn:hover{color:#e6e8ee;background:#262b34}
+.map{position:relative;width:1100px;height:620px;margin:0 auto;background-image:radial-gradient(rgba(139,147,165,.16) 1px,transparent 1px);background-size:20px 20px}
+.region{position:absolute;border:1.5px dashed;border-radius:36px;transition:filter .4s,opacity .4s}
+.region.fog{filter:grayscale(.85);opacity:.55}
+.region-name{position:absolute;left:22px;top:-11px;padding:0 8px;background:#111316;font:700 12px 'Space Grotesk',sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.uncharted{position:absolute;right:18px;bottom:12px;font:600 11px 'Space Grotesk',sans-serif;letter-spacing:.16em;color:#8b93a5;text-transform:uppercase}
+.fogveil{position:absolute;inset:0;border-radius:36px;background:radial-gradient(circle at 30% 40%,rgba(139,147,165,.16),transparent 55%),radial-gradient(circle at 75% 65%,rgba(139,147,165,.12),transparent 50%);pointer-events:none}
+.edge{position:absolute;height:2px;transform-origin:0 50%;pointer-events:none}
+.edge.done{background:#f2a541;box-shadow:0 0 10px rgba(242,165,65,.6)}
+.edge.next{background:repeating-linear-gradient(90deg,rgba(242,165,65,.75) 0 8px,transparent 8px 16px);animation:march 1s linear infinite}
+.edge.link{background:rgba(139,147,165,.26)}
+.edge.flow{background:repeating-linear-gradient(90deg,rgba(139,147,165,.55) 0 6px,transparent 6px 12px);animation:march 1.4s linear infinite}
+.lm{position:absolute;width:132px;margin-left:-66px;margin-top:-24px;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;cursor:pointer;padding:0;z-index:2}
+.lm .ring{position:relative;width:48px;height:48px;border-radius:50%;background:#171a1f;display:grid;place-items:center;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+.lm:hover .ring,.lm:focus-visible .ring{transform:scale(1.12);box-shadow:0 0 0 6px rgba(255,255,255,.06),0 0 24px currentColor}
+.lm .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.lm .glyph{font:700 15px 'Space Grotesk',sans-serif}
+.lm-name{font-size:12.5px;font-weight:600;line-height:1.25;text-align:center;color:#d5d9e1}
+.lm.fogged{opacity:.5;filter:grayscale(.9)}
+.lm.here .ring{animation:pulse 1.8s ease-out infinite}
+.badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f2a541;color:#111316;font:700 11px Inter,sans-serif;display:grid;place-items:center}
+.trk{fill:none;stroke:#2a2f38;stroke-width:3}
+.val{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;transition:stroke-dasharray .6s}
+.pmap{position:relative;width:980px;height:560px;margin:0 auto;background-image:radial-gradient(rgba(139,147,165,.14) 1px,transparent 1px);background-size:20px 20px}
+.node{position:absolute;transform:translate(-50%,-50%);min-width:156px;height:48px;padding:0 14px;display:flex;align-items:center;gap:10px;border-radius:14px;background:#1a1d23;border:1.5px solid #3d4350;cursor:pointer;font-size:13px;font-weight:600;color:#e6e8ee;z-index:2;transition:transform .18s,box-shadow .18s}
+.node:hover,.node:focus-visible{transform:translate(-50%,-50%) translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.node.doc{border-style:dashed;border-radius:999px;background:#111316;color:#aab1c0;font-weight:500}
+.node .cnt{margin-left:auto;font-size:11px;color:#8b93a5;font-weight:600}
+.node .nbadge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;border-radius:9px;background:#f2a541;color:#111316;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
+.peek{position:absolute;width:260px;padding:14px;border-radius:14px;background:#1e2229;border:1px solid #3d4350;box-shadow:0 18px 40px rgba(0,0,0,.5);z-index:5;pointer-events:none;animation:drop .18s ease-out}
+.step-wrap{display:flex;align-items:center;flex:none}
+.conn{width:16px;height:2px;background:#30353f;flex:none}
+.step{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:999px;border:1px solid transparent;background:none;cursor:pointer;color:#8b93a5;font-size:13px;font-weight:600}
+.step .sname{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .3s cubic-bezier(.2,.7,.3,1)}
+.step:hover .sname,.step:focus-visible .sname,.step.on .sname{max-width:240px}
+.step.on{background:#1e2229;border-color:#3d4350;color:#e6e8ee}
+.step:hover{color:#e6e8ee}
+.row{display:grid;grid-template-columns:1.4fr 1.2fr 1fr .6fr .8fr .7fr;align-items:center;gap:12px;width:100%;height:52px;padding:0 18px;border:0;border-bottom:1px solid #23272f;background:none;cursor:pointer;text-align:left;font-size:13.5px;color:#d5d9e1}
+.row:hover{background:#171a1f}
+.row.on{background:rgba(91,156,255,.1);box-shadow:inset 3px 0 0 #5b9cff}
+.chip{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;background:#1e2229;border:1px solid #30353f;font-size:12px;color:#aab1c0;white-space:nowrap}
+.addchip{height:30px;padding:0 12px;border-radius:999px;border:1px dashed #3d4350;background:none;cursor:pointer;color:#aab1c0;font-size:12.5px;font-weight:600}
+.addchip:hover{border-color:#5b9cff;color:#e6e8ee}
+.card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;border:1px solid #2a2f38;background:#171a1f;cursor:pointer;text-align:left}
+.card:hover{border-color:#3d4350;transform:translateY(-2px);transition:transform .15s}
+.barcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:300px;border:0;background:none;cursor:pointer;flex:1}
+.barcol:hover .bar{filter:brightness(1.2)}
+.bar{width:100%;max-width:64px;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,#5b9cff,#2f6fd6)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fl{font-size:13px;font-weight:600;color:#d5d9e1;display:flex;align-items:center;gap:8px}
+.inp{height:40px;padding:0 12px;border-radius:10px;border:1px solid #30353f;background:#111316;color:#e6e8ee;font-size:14px;outline:none;width:100%}
+.inp:focus{border-color:#5b9cff;box-shadow:0 0 0 3px rgba(91,156,255,.2)}
+.ta{min-height:88px;padding:10px 12px;border-radius:10px;border:1px solid #30353f;background:#111316;color:#e6e8ee;font-size:14px;line-height:1.5;outline:none;width:100%;resize:vertical}
+.ta:focus{border-color:#5b9cff;box-shadow:0 0 0 3px rgba(91,156,255,.2)}
+.tab{height:40px;padding:0 4px;margin-right:18px;border:0;border-bottom:2px solid transparent;background:none;cursor:pointer;color:#8b93a5;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.tab[aria-selected=true]{color:#e6e8ee;border-bottom-color:#5b9cff}
+.tcount{font-size:11px;padding:1px 6px;border-radius:999px;background:#262b34;color:#aab1c0}
+.sheet{position:absolute;right:0;top:0;bottom:0;width:500px;max-width:100%;display:flex;flex-direction:column;background:#171a1f;border-left:1px solid #30353f;box-shadow:-28px 0 60px rgba(0,0,0,.45);z-index:8;animation:slide .24s cubic-bezier(.2,.7,.3,1)}
+.tray-btn{width:36px;height:36px;border-radius:10px;border:1px solid transparent;background:none;display:grid;place-items:center;cursor:pointer;color:#8b93a5;position:relative}
+.tray-btn.on{background:#1e2229;border-color:#30353f;color:#e6e8ee}
+.tray-btn .badge{top:-5px;right:-5px}
+.hint{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:12px;background:#1e2229;border:1px solid #2a2f38}
+.linkbtn{align-self:flex-start;height:28px;padding:0;border:0;background:none;cursor:pointer;color:#7fb2ff;font-weight:600;font-size:13px}
+.linkbtn:hover{text-decoration:underline}
+.res{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:10px;width:100%;height:42px;padding:0 12px;border:0;border-radius:10px;background:none;cursor:pointer;text-align:left;font-size:14px}
+.res:hover,.res.on{background:#262b34}
+.pill{height:44px;padding:0 18px 0 14px;border-radius:999px;border:1px solid rgba(242,165,65,.5);background:rgba(23,26,31,.92);backdrop-filter:blur(10px);box-shadow:0 12px 32px rgba(0,0,0,.5);cursor:pointer;display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.pill:hover{border-color:#f2a541}
+.pulse-dot{width:10px;height:10px;border-radius:50%;background:#f2a541;animation:pulse 1.8s ease-out infinite}
+.list-item{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:12px;width:100%;height:46px;padding:0 14px;border:0;border-radius:12px;background:none;cursor:pointer;text-align:left;font-size:14px}
+.list-item:hover{background:#1e2229}
+.scrim{position:absolute;inset:0;border:0;background:rgba(5,6,8,.55);cursor:default;z-index:20;backdrop-filter:blur(2px)}
+</style>
+</helmet>
+<div class="{{appCls}}" style="height: 100vh; min-height: 760px; display: grid; grid-template-rows: 56px minmax(0, 1fr); grid-template-columns: 72px minmax(0, 1fr) 56px; background: #111316; color: #e6e8ee; font-family: Inter, system-ui, sans-serif; position: relative; overflow: hidden">
+
+  <header class="bar" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid #23272f; background: #0f1114">
+    <button onClick="{{goAtlas}}" aria-label="Atlas home" style="width: 40px; height: 40px; border: 0; border-radius: 10px; background: none; display: grid; place-items: center; cursor: pointer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f2a541" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 10-9 10-9-10z"></path><path d="M12 7l4.5 5-4.5 5-4.5-5z" fill="#f2a541"></path></svg>
+    </button>
+    <span style="font: 700 15px 'Space Grotesk', sans-serif; margin-right: 6px; white-space: nowrap; flex: none">Hands of Hubris</span>
+    <span style="width: 1px; height: 22px; background: #30353f"></span>
+    <nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden">
+      <sc-for list="{{crumbs}}" as="c" hint-placeholder-count="2">
+        <span style="display: inline-flex; align-items: center">
+          <sc-if value="{{c.notFirst}}" hint-placeholder-val="{{false}}"><span style="color: #4a5160; padding: 0 2px">/</span></sc-if>
+          <button class="{{c.cls}}" onClick="{{c.go}}">{{c.label}}</button>
+        </span>
+      </sc-for>
+    </nav>
+    <span style="flex: 1"></span>
+    <button onClick="{{goStep}}" title="{{step.tip}}" aria-label="Current walkthrough step: {{step.title}}" style="width: 36px; height: 36px; flex: none; padding: 0; display: grid; place-items: center; border: 1px solid rgba(242,165,65,.45); border-radius: 50%; background: rgba(242,165,65,.08); cursor: pointer">
+      <span class="pulse-dot"></span>
+    </button>
+    <button onClick="{{openPalette}}" style="height: 36px; min-width: 260px; padding: 0 10px 0 12px; display: flex; align-items: center; gap: 10px; border: 1px solid #30353f; border-radius: 10px; background: #171a1f; color: #8b93a5; cursor: pointer; font-size: 13.5px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+      <span style="flex: 1; text-align: left">Jump to a planner, section or enemy…</span>
+      <span style="font-size: 11px; padding: 2px 6px; border: 1px solid #3d4350; border-radius: 6px">Ctrl K</span>
+    </button>
+    <div class="seg" role="group" aria-label="Mode">
+      <button aria-pressed="{{guided}}" onClick="{{setGuided}}">Guided</button>
+      <button aria-pressed="{{studio}}" onClick="{{setStudio}}">Studio</button>
+    </div>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: #8b93a5; padding: 0 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #4cc38a"></span>Saved</span>
+    <button onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" title="{{themeLabel}}" style="width: 36px; height: 36px; border: 1px solid #30353f; border-radius: 10px; background: #171a1f; color: #e6e8ee; display: grid; place-items: center; cursor: pointer">
+      <sc-if value="{{isDark}}" hint-placeholder-val="{{true}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      </sc-if>
+      <sc-if value="{{isLight}}" hint-placeholder-val="{{false}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"></path></svg>
+      </sc-if>
+    </button>
+  </header>
+
+  <nav class="rail" aria-label="Phases" style="grid-row: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0; border-right: 1px solid #23272f; background: #0f1114; position: relative; z-index: 12">
+    <button class="{{atlasRailCls}}" onClick="{{goAtlas}}" aria-label="Atlas">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.5l-2 5-5 2 2-5z"></path></svg>
+      <span class="ph-label">Atlas</span>
+    </button>
+    <span style="width: 28px; height: 1px; background: #30353f; margin: 6px 0"></span>
+    <sc-for list="{{phases}}" as="p" hint-placeholder-count="5">
+      <button class="{{p.railCls}}" onClick="{{p.toggle}}" aria-label="{{p.name}} planners" aria-expanded="{{p.open}}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.icon}}"></path></svg>
+        <span class="ph-label">{{p.name}}</span>
+        <span class="ph-track" aria-hidden="true"><span class="ph-fill" style="width: {{p.pctNum}}%"></span></span>
+        <span class="tip">{{p.name}} planners · {{p.pct}} explored</span>
+      </button>
+    </sc-for>
+    <span style="flex: 1"></span>
+    <button class="rail-btn ph" aria-label="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <span class="ph-label">Settings</span>
+    </button>
+  </nav>
+
+  <main style="grid-row: 2; position: relative; min-width: 0; min-height: 0; overflow: hidden">
+
+    <sc-if value="{{isAtlas}}" hint-placeholder-val="{{true}}">
+      <div class="scr" style="position: absolute; inset: 0; overflow: auto; padding: 28px 32px 96px">
+        <div style="display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; max-width: 1100px; margin: 0 auto 22px">
+          <div style="flex: 1 1 380px">
+            <div style="font: 700 12px 'Space Grotesk', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: #f2a541">Game design atlas</div>
+            <h1 style="margin: 6px 0 8px; font: 700 36px/1.1 'Space Grotesk', sans-serif">Hands of Hubris</h1>
+            <p style="margin: 0; color: #aab1c0; font-size: 15px; max-width: 54ch; line-height: 1.5">{{atlasLede}}</p>
+          </div>
+          
+          <div title="{{em.next}}" style="display: flex; align-items: center; gap: 14px; flex: none; padding-bottom: 2px">
+            <div style="width: 72px; height: 84px; flex: none; filter: drop-shadow(0 6px 16px rgba(242,165,65,.18))">
+              <svg width="72" height="84" viewBox="0 0 120 140" role="img" aria-label="{{em.genre}} emblem, {{em.built}} of 5 parts built">
+                <circle cx="60" cy="72" r="58" style="fill: rgba(255,122,138,.16); stroke: rgba(255,122,138,.5); stroke-width: 1.5; opacity: {{em.aura}}; transition: opacity .5s"></circle>
+                <sc-if value="{{em.isRpg}}" hint-placeholder-val="{{true}}">
+                  <g style="fill: {{em.p3.fill}}; stroke: {{em.p3.stroke}}; stroke-dasharray: {{em.p3.dash}}; opacity: {{em.p3.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M36 56L24 118h72L84 56z"></path><path d="M46 100h11v26H43z"></path><path d="M63 100h11l3 26H63z"></path></g>
+                  <g style="fill: {{em.p1.fill}}; stroke: {{em.p1.stroke}}; stroke-dasharray: {{em.p1.dash}}; opacity: {{em.p1.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M40 54h40l-5 48H45z"></path><path d="M44 88h32v5H44z"></path></g>
+                  <g style="fill: {{em.p0.fill}}; stroke: {{em.p0.stroke}}; stroke-dasharray: {{em.p0.dash}}; opacity: {{em.p0.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M46 32a14 14 0 0 1 28 0v18H46z"></path><path d="M50 39h20v4H50z"></path></g>
+                  <g style="fill: {{em.p2.fill}}; stroke: {{em.p2.stroke}}; stroke-dasharray: {{em.p2.dash}}; opacity: {{em.p2.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M12 62h26v22c0 12-13 18-13 18s-13-6-13-18z"></path><path d="M95 26h6v58h-6z"></path><path d="M87 84h22v5H87z"></path><path d="M96 89h4v10h-4z"></path></g>
+                  <g style="fill: {{em.p4.fill}}; stroke: {{em.p4.stroke}}; stroke-dasharray: {{em.p4.dash}}; opacity: {{em.p4.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M60 18c4-10 16-12 22-6-9 1-15 5-22 6z"></path><path d="M22 18l3 6-3 6-3-6z"></path><path d="M104 104l3 6-3 6-3-6z"></path></g>
+                </sc-if>
+                <sc-if value="{{em.isSurvival}}" hint-placeholder-val="{{false}}">
+                  <path d="M4 122h112" style="stroke: #3d4350; stroke-width: 2; fill: none"></path>
+                  <g style="fill: {{em.p4.fill}}; stroke: {{em.p4.stroke}}; stroke-dasharray: {{em.p4.dash}}; opacity: {{em.p4.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M30 14a14 14 0 1 0 16 18 11 11 0 0 1-16-18z"></path><path d="M70 16l3 6-3 6-3-6z"></path><path d="M96 30l3 6-3 6-3-6z"></path></g>
+                  <g style="fill: {{em.p3.fill}}; stroke: {{em.p3.stroke}}; stroke-dasharray: {{em.p3.dash}}; opacity: {{em.p3.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M98 82l10-34 10 34z"></path><path d="M106 82h4v12h-4z"></path><path d="M2 96l8-26 8 26z"></path></g>
+                  <g style="fill: {{em.p0.fill}}; stroke: {{em.p0.stroke}}; stroke-dasharray: {{em.p0.dash}}; opacity: {{em.p0.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M14 122L46 58l32 64z"></path><path d="M46 122V88l10 34z"></path></g>
+                  <g style="fill: {{em.p1.fill}}; stroke: {{em.p1.stroke}}; stroke-dasharray: {{em.p1.dash}}; opacity: {{em.p1.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M76 114h32v6H76z"></path><path d="M80 108l26 10-2 4-26-10z"></path></g>
+                  <g style="fill: {{em.p2.fill}}; stroke: {{em.p2.stroke}}; stroke-dasharray: {{em.p2.dash}}; opacity: {{em.p2.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M92 110c-11-7-6-20 0-32 4 9 13 15 8 25-2 4-5 6-8 7z"></path></g>
+                </sc-if>
+                <sc-if value="{{em.isStrategy}}" hint-placeholder-val="{{false}}">
+                  <g style="fill: {{em.p3.fill}}; stroke: {{em.p3.stroke}}; stroke-dasharray: {{em.p3.dash}}; opacity: {{em.p3.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M8 62h18v58H8z"></path><path d="M94 62h18v58H94z"></path><path d="M5 62l12-17 12 17z"></path><path d="M91 62l12-17 12 17z"></path></g>
+                  <g style="fill: {{em.p1.fill}}; stroke: {{em.p1.stroke}}; stroke-dasharray: {{em.p1.dash}}; opacity: {{em.p1.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M26 78h68v42H26z"></path><path d="M26 72h8v6h-8z"></path><path d="M86 72h8v6h-8z"></path></g>
+                  <g style="fill: {{em.p0.fill}}; stroke: {{em.p0.stroke}}; stroke-dasharray: {{em.p0.dash}}; opacity: {{em.p0.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M47 36h26v84H47z"></path><path d="M47 28h6v8h-6z"></path><path d="M57 28h6v8h-6z"></path><path d="M67 28h6v8h-6z"></path></g>
+                  <g style="fill: {{em.p2.fill}}; stroke: {{em.p2.stroke}}; stroke-dasharray: {{em.p2.dash}}; opacity: {{em.p2.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M50 120v-18a10 10 0 0 1 20 0v18z"></path></g>
+                  <g style="fill: {{em.p4.fill}}; stroke: {{em.p4.stroke}}; stroke-dasharray: {{em.p4.dash}}; opacity: {{em.p4.op}}; stroke-width: 2; stroke-linejoin: round; transition: all .5s"><path d="M59 6h2v22h-2z"></path><path d="M61 6h22l-6 6 6 6H61z"></path></g>
+                </sc-if>
+              </svg>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px; width: 136px">
+              <strong style="font: 700 20px/1.1 'Space Grotesk', sans-serif; letter-spacing: -.01em">{{em.rank}}</strong>
+              <span style="display: block; width: 100%; height: 4px; border-radius: 2px; background: #262b34; overflow: hidden"><span style="display: block; height: 100%; width: {{em.explored}}%; min-width: 4px; border-radius: 2px; background: linear-gradient(90deg, #f2a541, #ffcf8a); transition: width .5s"></span></span>
+              <span style="color: #8b93a5; font-size: 12.5px; font-variant-numeric: tabular-nums">{{em.explored}}% explored</span>
+            </div>
+          </div>
+          <div class="seg" role="group" aria-label="Atlas view">
+            <button aria-pressed="{{atlasMap}}" onClick="{{showMap}}">Map</button>
+            <button aria-pressed="{{atlasList}}" onClick="{{showList}}">List</button>
+          </div>
+        </div>
+
+        <section aria-label="Current walkthrough step" style="max-width: 1100px; margin: 0 auto 18px; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; padding: 16px 18px; border-radius: 18px; border: 1px solid rgba(242,165,65,.35); background: linear-gradient(100deg, rgba(242,165,65,.12), rgba(242,165,65,.02) 60%), #151820">
+          <span class="pulse-dot" style="flex: none; width: 12px; height: 12px"></span>
+          <div style="flex: 1 1 420px; min-width: 0">
+            <div style="font: 700 11.5px 'Space Grotesk', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #f6bd6f">Walkthrough · step {{step.num}} of {{step.total}} · {{step.where}}</div>
+            <div style="font: 700 19px 'Space Grotesk', sans-serif; margin: 4px 0 4px">{{step.title}}</div>
+            <div style="color: #c9cfdb; font-size: 14px; line-height: 1.5; max-width: 78ch">{{step.tip}}</div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <button class="btn primary" onClick="{{goStep}}">Open step
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+            <button class="btn" onClick="{{markDone}}">Mark done</button>
+          </div>
+        </section>
+
+        <sc-if value="{{atlasMap}}" hint-placeholder-val="{{true}}">
+          <div style="overflow-x: auto; max-width: 1140px; margin: 0 auto; padding: 14px 0">
+            <div class="map">
+              <sc-for list="{{regions}}" as="r" hint-placeholder-count="5">
+                <div class="{{r.cls}}" style="left: {{r.x}}px; top: {{r.y}}px; width: {{r.w}}px; height: {{r.h}}px; border-color: {{r.line}}; background: {{r.bg}}">
+                  <sc-if value="{{r.fog}}" hint-placeholder-val="{{false}}"><span class="fogveil"></span><span class="uncharted">Uncharted</span></sc-if>
+                  <span class="region-name" style="color: {{r.color}}">{{r.num}} · {{r.name}}</span>
+                </div>
+              </sc-for>
+              <sc-for list="{{atlasEdges}}" as="e" hint-placeholder-count="6">
+                <div class="{{e.cls}}" style="left: {{e.x}}px; top: {{e.y}}px; width: {{e.len}}px; transform: rotate({{e.ang}}deg)"></div>
+              </sc-for>
+              <sc-for list="{{landmarks}}" as="l" hint-placeholder-count="12">
+                <button class="{{l.cls}}" style="left: {{l.x}}px; top: {{l.y}}px" onClick="{{l.open}}" aria-label="{{l.aria}}">
+                  <span class="ring" style="color: {{l.color}}">
+                    <svg width="48" height="48" viewBox="0 0 36 36" aria-hidden="true"><circle class="trk" cx="18" cy="18" r="15.915"></circle><circle class="val" cx="18" cy="18" r="15.915" style="stroke-dasharray: {{l.dash}} 100"></circle></svg>
+                    <span class="glyph">{{l.glyph}}</span>
+                    <sc-if value="{{l.hasHints}}" hint-placeholder-val="{{false}}"><span class="badge">{{l.hints}}</span></sc-if>
+                  </span>
+                  <span class="lm-name">{{l.name}}</span>
+                </button>
+              </sc-for>
+              <div style="position: absolute; left: {{step.flagX}}px; top: {{step.flagY}}px; transform: translateX(-50%); padding: 4px 10px; border-radius: 999px; background: #f2a541; color: #111316; font-size: 11.5px; font-weight: 700; white-space: nowrap; z-index: 3; box-shadow: 0 6px 18px rgba(242,165,65,.35)">You are here · {{step.title}}</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: 14px; color: #8b93a5; font-size: 12.5px">
+            <span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 26px; height: 2px; background: #f2a541"></span>Route walked</span>
+            <span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 26px; height: 2px; background: repeating-linear-gradient(90deg, #f2a541 0 6px, transparent 6px 12px)"></span>Route ahead</span>
+            <span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 26px; height: 2px; background: rgba(139,147,165,.45)"></span>Planners feed each other</span>
+            <span>○ empty · ◐ started · ● filled</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{atlasList}}" hint-placeholder-val="{{false}}">
+          <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px">
+            <sc-for list="{{phases}}" as="lp" hint-placeholder-count="5">
+              <section aria-label="{{lp.name}}" style="padding: 14px; border: 1px solid #2a2f38; border-radius: 18px; background: #151820">
+                <h2 style="margin: 4px 8px 10px; font: 700 13px 'Space Grotesk', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: {{lp.color}}">{{lp.num}} · {{lp.name}} <span style="color: #8b93a5; letter-spacing: 0; text-transform: none; font-weight: 500">{{lp.pct}}</span></h2>
+                <sc-for list="{{lp.planners}}" as="li" hint-placeholder-count="4">
+                  <button class="list-item" onClick="{{li.open}}">
+                    <span style="position: relative; width: 26px; height: 26px; color: {{li.color}}">
+                      <svg width="26" height="26" viewBox="0 0 36 36" aria-hidden="true" style="transform: rotate(-90deg)"><circle class="trk" cx="18" cy="18" r="15.915"></circle><circle class="val" cx="18" cy="18" r="15.915" style="stroke-dasharray: {{li.dash}} 100"></circle></svg>
+                    </span>
+                    <span>{{li.name}}</span>
+                    <span style="color: #8b93a5; font-size: 12.5px">{{li.pct}}</span>
+                  </button>
+                </sc-for>
+              </section>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isPlanner}}" hint-placeholder-val="{{false}}">
+      <div class="scr" style="position: absolute; inset: 0; overflow: auto; padding: 28px 32px 96px">
+        <div style="display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; max-width: 980px; margin: 0 auto 18px">
+          <div style="flex: 1 1 380px">
+            <div style="font: 700 12px 'Space Grotesk', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: {{cur.color}}">{{cur.num}} · {{cur.phaseName}} region</div>
+            <h1 style="margin: 6px 0 8px; font: 700 34px/1.1 'Space Grotesk', sans-serif">{{cur.name}}</h1>
+            <p style="margin: 0; color: #aab1c0; font-size: 15px; line-height: 1.5; max-width: 60ch">How the sections feed each other. Hover a landmark to peek, click to open it.</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; color: {{cur.color}}">
+            <div style="position: relative; width: 48px; height: 48px">
+              <svg width="48" height="48" viewBox="0 0 36 36" aria-hidden="true" style="transform: rotate(-90deg)"><circle class="trk" cx="18" cy="18" r="15.915"></circle><circle class="val" cx="18" cy="18" r="15.915" style="stroke-dasharray: {{cur.dash}} 100"></circle></svg>
+              <span style="position: absolute; inset: 0; display: grid; place-items: center; font: 700 12px 'Space Grotesk', sans-serif; color: #e6e8ee">{{cur.pct}}</span>
+            </div>
+            <span style="color: #aab1c0; font-size: 13px">{{cur.filledLine}}</span>
+          </div>
+          <sc-if value="{{hasSections}}" hint-placeholder-val="{{true}}">
+            <button class="btn primary" onClick="{{openFirst}}">Continue with {{firstName}}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+          </sc-if>
+        </div>
+        <sc-if value="{{hasSections}}" hint-placeholder-val="{{true}}">
+          <div style="overflow-x: auto; max-width: 1020px; margin: 0 auto; padding: 10px 0">
+            <div class="pmap">
+              <sc-for list="{{pEdges}}" as="pe" hint-placeholder-count="6">
+                <div class="{{pe.cls}}" style="left: {{pe.x}}px; top: {{pe.y}}px; width: {{pe.len}}px; transform: rotate({{pe.ang}}deg)"></div>
+              </sc-for>
+              <sc-for list="{{pNodes}}" as="n" hint-placeholder-count="8">
+                <button class="{{n.cls}}" style="left: {{n.x}}px; top: {{n.y}}px; border-color: {{n.border}}" onClick="{{n.open}}" onMouseEnter="{{n.peek}}" onFocus="{{n.peek}}" onMouseLeave="{{unpeek}}" onBlur="{{unpeek}}" aria-label="{{n.aria}}">
+                  <span style="font: 700 15px 'Space Grotesk', sans-serif; color: {{n.glyphColor}}">{{n.glyph}}</span>
+                  <span>{{n.name}}</span>
+                  <sc-if value="{{n.hasCount}}" hint-placeholder-val="{{false}}"><span class="cnt">{{n.count}}</span></sc-if>
+                  <sc-if value="{{n.hasHints}}" hint-placeholder-val="{{false}}"><span class="nbadge">{{n.hints}}</span></sc-if>
+                </button>
+              </sc-for>
+              <sc-if value="{{peekOn}}" hint-placeholder-val="{{false}}">
+                <div class="peek" style="left: {{peek.px}}px; top: {{peek.py}}px">
+                  <div style="font: 700 15px 'Space Grotesk', sans-serif; margin-bottom: 4px">{{peek.name}}</div>
+                  <div style="font-size: 12px; color: {{peek.stateColor}}; font-weight: 600; margin-bottom: 8px">{{peek.state}}</div>
+                  <div style="font-size: 13px; color: #aab1c0; line-height: 1.45">{{peek.desc}}</div>
+                  <div style="font-size: 12px; color: #7fb2ff; margin-top: 10px; font-weight: 600">{{peek.cta}}</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{noSections}}" hint-placeholder-val="{{false}}">
+          <div style="max-width: 620px; margin: 60px auto; padding: 32px; border: 1px dashed #3d4350; border-radius: 20px; text-align: center; background: #151820">
+            <div style="font: 700 20px 'Space Grotesk', sans-serif; margin-bottom: 8px">This region isn't charted in the prototype</div>
+            <p style="color: #aab1c0; margin: 0 0 18px; line-height: 1.5">The prototype wires four planners end to end. In the real build every planner's existing system map becomes its region map.</p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap">
+              <sc-for list="{{wired}}" as="w" hint-placeholder-count="4"><button class="btn" onClick="{{w.open}}">{{w.name}}</button></sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSection}}" hint-placeholder-val="{{false}}">
+      <div class="scr" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+        <div style="flex: none; padding: 18px 28px 0; border-bottom: 1px solid #23272f; background: linear-gradient(180deg, {{cur.tint}}, rgba(17,19,22,0) 120px), #111316; box-shadow: inset 0 3px 0 {{cur.color}}">
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+            <div style="min-width: 0">
+              <div style="font: 700 11.5px 'Space Grotesk', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: {{cur.color}}">{{cur.name}}</div>
+              <h1 style="margin: 4px 0 0; font: 700 28px/1.15 'Space Grotesk', sans-serif">{{sec.name}}</h1>
+            </div>
+            <div style="position: relative; width: 38px; height: 38px; color: {{cur.color}}" title="{{sec.pct}} filled">
+              <svg width="38" height="38" viewBox="0 0 36 36" aria-hidden="true" style="transform: rotate(-90deg)"><circle class="trk" cx="18" cy="18" r="15.915"></circle><circle class="val" cx="18" cy="18" r="15.915" style="stroke-dasharray: {{sec.dash}} 100"></circle></svg>
+              <span style="position: absolute; inset: 0; display: grid; place-items: center; font: 700 10px 'Space Grotesk', sans-serif; color: #e6e8ee">{{sec.pct}}</span>
+            </div>
+            <button class="icon-btn" onClick="{{toggleConcept}}" aria-label="About this section" aria-expanded="{{conceptOpen}}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg>
+            </button>
+            <span style="flex: 1"></span>
+            <sc-if value="{{isEnemies}}" hint-placeholder-val="{{false}}">
+              <div class="seg" role="group" aria-label="View">
+                <button aria-pressed="{{vTable}}" onClick="{{viewTable}}">Table</button>
+                <button aria-pressed="{{vCards}}" onClick="{{viewCards}}">Cards</button>
+                <button aria-pressed="{{vThreat}}" onClick="{{viewThreat}}">Threat curve</button>
+              </div>
+              <button class="btn primary">+ Add enemy</button>
+            </sc-if>
+            <button class="icon-btn" aria-label="More actions: Markdown, export, CSV, help">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+            </button>
+          </div>
+          <sc-if value="{{conceptOpen}}" hint-placeholder-val="{{false}}">
+            <div style="margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: rgba(91,156,255,.08); max-width: 760px; font-size: 13.5px; line-height: 1.55; color: #c9cfdb; animation: drop .2s ease-out">
+              <strong style="color: #e6e8ee">{{sec.name}}.</strong> {{sec.desc}}
+            </div>
+          </sc-if>
+          <sc-if value="{{walkHere}}" hint-placeholder-val="{{false}}">
+            <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(242,165,65,.4); background: rgba(242,165,65,.08); max-width: 760px">
+              <span class="pulse-dot"></span>
+              <span style="font-size: 13.5px"><strong>Walkthrough step {{step.num}}: {{step.title}}.</strong> {{step.tip}}</span>
+              <span style="flex: 1"></span>
+              <button class="btn" style="height: 30px" onClick="{{markDone}}">Mark done</button>
+            </div>
+          </sc-if>
+          <nav aria-label="Sections of {{cur.name}}" style="display: flex; align-items: center; padding: 12px 0 12px; overflow-x: auto">
+            <sc-for list="{{strip}}" as="s" hint-placeholder-count="6">
+              <span class="step-wrap">
+                <sc-if value="{{s.notFirst}}" hint-placeholder-val="{{false}}"><span class="conn"></span></sc-if>
+                <button class="{{s.cls}}" onClick="{{s.open}}" aria-label="{{s.name}}" aria-current="{{s.current}}">
+                  <span style="font: 700 14px 'Space Grotesk', sans-serif; color: {{s.glyphColor}}">{{s.glyph}}</span>
+                  <span class="sname">{{s.name}}</span>
+                </button>
+              </span>
+            </sc-for>
+            <span style="flex: 1; min-width: 12px"></span>
+            <button class="btn ghost" style="height: 30px; font-size: 12.5px" onClick="{{backToMap}}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+              Section map
+            </button>
+          </nav>
+        </div>
+
+        <div style="flex: 1; min-height: 0; position: relative">
+          <div style="position: absolute; inset: 0; overflow: auto; padding: 22px 28px 110px">
+
+            <sc-if value="{{isEnemies}}" hint-placeholder-val="{{false}}">
+              <sc-if value="{{vTable}}" hint-placeholder-val="{{true}}">
+                <div style="border: 1px solid #23272f; border-radius: 16px; overflow: hidden; background: #131519; min-width: 640px">
+                  <div style="display: grid; grid-template-columns: 1.4fr 1.2fr 1fr .6fr .8fr .7fr; gap: 12px; height: 42px; align-items: center; padding: 0 18px; border-bottom: 1px solid #23272f; font-size: 12px; font-weight: 600; color: #8b93a5; text-transform: uppercase; letter-spacing: .06em">
+                    <span>Name</span><span>Biome</span><span>Role</span><span>HP</span><span>DPS</span><span>Armor</span>
+                  </div>
+                  <sc-for list="{{enemyRows}}" as="er" hint-placeholder-count="6">
+                    <button class="{{er.cls}}" onClick="{{er.open}}">
+                      <span style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #e6e8ee"><span style="width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font: 700 12px 'Space Grotesk', sans-serif; background: {{er.avatarBg}}; color: {{er.avatarFg}}">{{er.initial}}</span>{{er.name}}<sc-if value="{{er.hasHint}}" hint-placeholder-val="{{false}}"><span style="width: 7px; height: 7px; border-radius: 50%; background: #f2a541" title="Has an open hint"></span></sc-if></span>
+                      <span>{{er.biome}}</span>
+                      <span><span class="chip">{{er.role}}</span></span>
+                      <span>{{er.hp}}</span>
+                      <span>{{er.dps}}</span>
+                      <span>{{er.armor}}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <p style="color: #8b93a5; font-size: 12.5px; margin: 10px 4px">Sample roster for the prototype. Click a row to open its record sheet. The table keeps its full width.</p>
+              </sc-if>
+              <sc-if value="{{vCards}}" hint-placeholder-val="{{false}}">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px">
+                  <sc-for list="{{enemyRows}}" as="ec" hint-placeholder-count="6">
+                    <button class="card" onClick="{{ec.open}}">
+                      <span style="display: flex; align-items: center; gap: 10px"><span style="width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font: 700 16px 'Space Grotesk', sans-serif; background: {{ec.avatarBg}}; color: {{ec.avatarFg}}">{{ec.initial}}</span><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">{{ec.name}}</strong><span style="font-size: 12.5px; color: #8b93a5">{{ec.biome}}</span></span></span>
+                      <span style="display: flex; gap: 6px; flex-wrap: wrap"><span class="chip">{{ec.role}}</span><span class="chip">HP {{ec.hp}}</span><span class="chip">DPS {{ec.dps}}</span></span>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{vThreat}}" hint-placeholder-val="{{false}}">
+                <div style="padding: 22px 24px 18px; border: 1px solid #23272f; border-radius: 16px; background: #131519; max-width: 900px">
+                  <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px"><strong style="font: 700 16px 'Space Grotesk', sans-serif">Threat by enemy</strong><span style="color: #8b93a5; font-size: 13px">HP × damage per second, relative to the strongest</span></div>
+                  <div style="display: flex; gap: 14px; align-items: flex-end">
+                    <sc-for list="{{enemyRows}}" as="tb" hint-placeholder-count="6">
+                      <button class="barcol" onClick="{{tb.open}}" aria-label="{{tb.name}}, threat {{tb.threatPct}} percent">
+                        <span style="font-size: 12px; font-weight: 600; color: #c9cfdb">{{tb.threatPct}}%</span>
+                        <span class="bar" style="height: {{tb.barH}}px"></span>
+                        <span style="font-size: 12px; color: #aab1c0; text-align: center; line-height: 1.25; min-height: 30px">{{tb.name}}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <sc-if value="{{isForm}}" hint-placeholder-val="{{false}}">
+              <div style="max-width: 720px; margin: 6px auto 0; display: flex; flex-direction: column; gap: 22px">
+                <sc-for list="{{formFields}}" as="ff" hint-placeholder-count="3">
+                  <label class="fld">
+                    <span class="fl">{{ff.label}}<sc-if value="{{ff.done}}" hint-placeholder-val="{{false}}"><span style="color: #4cc38a; font-size: 12px">✓</span></sc-if></span>
+                    <span style="font-size: 12.5px; color: #8b93a5; margin-top: -2px">{{ff.help}}</span>
+                    <textarea class="ta" placeholder="{{ff.placeholder}}" value="{{ff.value}}" onChange="{{ff.change}}"></textarea>
+                  </label>
+                </sc-for>
+                <sc-if value="{{hasFormChips}}" hint-placeholder-val="{{true}}">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid #23272f">
+                    <span style="font-size: 12.5px; color: #8b93a5; margin-right: 4px">Add detail when you need it</span>
+                    <sc-for list="{{formChips}}" as="fc" hint-placeholder-count="3"><button class="addchip" onClick="{{fc.reveal}}">+ {{fc.label}}</button></sc-for>
+                  </div>
+                </sc-if>
+                <div style="display: flex; gap: 10px; align-items: center">
+                  <sc-if value="{{hasNextSection}}" hint-placeholder-val="{{true}}">
+                    <button class="btn" onClick="{{nextSection}}">Next: {{nextSectionName}}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                    </button>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{recordOpen}}" hint-placeholder-val="{{false}}">
+            <section class="sheet" aria-label="Enemy {{rec.name}}">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 18px 18px 6px">
+                <span style="width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 700 17px 'Space Grotesk', sans-serif; background: {{rec.avatarBg}}; color: {{rec.avatarFg}}">{{rec.initial}}</span>
+                <div style="min-width: 0">
+                  <div style="font-size: 12px; color: #8b93a5; font-weight: 600">Enemy · {{rec.role}} · {{rec.pos}}</div>
+                  <h2 style="margin: 2px 0 0; font: 700 22px 'Space Grotesk', sans-serif">{{rec.name}}</h2>
+                </div>
+                <span style="flex: 1"></span>
+                <button class="icon-btn" onClick="{{prevRecord}}" aria-label="Previous enemy"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button>
+                <button class="icon-btn" onClick="{{nextRecord}}" aria-label="Next enemy"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+                <button class="icon-btn" onClick="{{closeRecord}}" aria-label="Close record"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+              </div>
+              <div role="tablist" aria-label="Field groups" style="display: flex; padding: 0 18px; border-bottom: 1px solid #23272f">
+                <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+                  <button class="tab" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.name}}<span class="tcount">{{t.count}}</span></button>
+                </sc-for>
+              </div>
+              <div style="flex: 1; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px">
+                <sc-if value="{{guided}}" hint-placeholder-val="{{true}}">
+                  <div style="font-size: 12.5px; color: #8b93a5">Guided mode shows the core fields. Add more detail when you need it.</div>
+                </sc-if>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+                  <sc-for list="{{recFields}}" as="rf" hint-placeholder-count="4">
+                    <label class="fld" style="grid-column: {{rf.span}}">
+                      <span class="fl">{{rf.label}}<sc-if value="{{rf.flag}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; color: #f2a541; font-weight: 600">needs attention</span></sc-if></span>
+                      <input class="inp" value="{{rf.value}}" placeholder="{{rf.placeholder}}" onChange="{{rf.change}}" style="border-color: {{rf.border}}">
+                    </label>
+                  </sc-for>
+                </div>
+                <sc-if value="{{hasRecChips}}" hint-placeholder-val="{{true}}">
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+                    <span style="font-size: 12.5px; color: #8b93a5; margin-right: 2px">More detail</span>
+                    <sc-for list="{{recChips}}" as="rc" hint-placeholder-count="3"><button class="addchip" onClick="{{rc.reveal}}">+ {{rc.label}}</button></sc-for>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="display: flex; gap: 6px; padding: 12px 18px; border-top: 1px solid #23272f">
+                <button class="btn ghost">Duplicate</button>
+                <button class="btn ghost">Expand to page</button>
+                <span style="flex: 1"></span>
+                <button class="btn danger">Delete</button>
+              </div>
+            </section>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{pillOn}}" hint-placeholder-val="{{true}}">
+      <div style="position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; z-index: 6">
+        <button class="pill" onClick="{{goNext}}"><span class="pulse-dot"></span><span style="color: #aab1c0; font-weight: 500">Next step</span>{{step.title}}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f2a541" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </button>
+        <button onClick="{{hidePill}}" aria-label="Hide next step" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #30353f; background: rgba(23,26,31,.92); color: #8b93a5; cursor: pointer; display: grid; place-items: center">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{companionOpen}}" hint-placeholder-val="{{false}}">
+      <section aria-label="Companion" class="sheet" style="width: 380px; z-index: 9">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 16px 16px 0">
+          <strong style="font: 700 17px 'Space Grotesk', sans-serif">Companion</strong>
+          <span style="flex: 1"></span>
+          <button class="icon-btn" onClick="{{closeCompanion}}" aria-label="Close companion"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+        <div role="tablist" aria-label="Companion" style="display: flex; padding: 6px 16px 0; border-bottom: 1px solid #23272f">
+          <button class="tab" role="tab" aria-selected="{{cHints}}" onClick="{{openHints}}">Hints<span class="tcount">{{hintCount}}</span></button>
+          <button class="tab" role="tab" aria-selected="{{cGuide}}" onClick="{{openGuide}}">Guide</button>
+          <button class="tab" role="tab" aria-selected="{{cAi}}" onClick="{{openAi}}">AI</button>
+        </div>
+        <div style="flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <sc-if value="{{cHints}}" hint-placeholder-val="{{true}}">
+            <sc-for list="{{hints}}" as="h" hint-placeholder-count="3">
+              <div class="hint">
+                <span style="font-size: 11.5px; color: #8b93a5; font-weight: 600; text-transform: uppercase; letter-spacing: .08em">{{h.where}}</span>
+                <span style="font-size: 14px; line-height: 1.45">{{h.text}}</span>
+                <button class="linkbtn" onClick="{{h.fix}}">Fix it ›</button>
+              </div>
+            </sc-for>
+            <p style="font-size: 12.5px; color: #8b93a5; margin: 4px 2px 0; line-height: 1.5">New entries get a grace period: no hints until you leave them.</p>
+          </sc-if>
+          <sc-if value="{{cGuide}}" hint-placeholder-val="{{false}}">
+            <div class="hint"><span style="font-size: 11.5px; color: #f2a541; font-weight: 700; text-transform: uppercase; letter-spacing: .08em">This section</span><span style="font-size: 14px; line-height: 1.5">{{guideText}}</span></div>
+            <div class="hint"><span style="font-size: 11.5px; color: #8b93a5; font-weight: 600; text-transform: uppercase; letter-spacing: .08em">Examples</span><span style="font-size: 14px; line-height: 1.5">Start from a worked example and edit it. One undo removes it.</span><button class="linkbtn">Browse examples ›</button></div>
+          </sc-if>
+          <sc-if value="{{cAi}}" hint-placeholder-val="{{false}}">
+            <div class="hint"><span style="font-size: 14px; line-height: 1.5">Ask about the section you are in. The assistant sees this planner and the planners that feed it.</span></div>
+            <label class="fld"><span class="fl">Ask</span><input class="inp" placeholder="Suggest a weakness for the Frost Revenant"></label>
+          </sc-if>
+        </div>
+      </section>
+    </sc-if>
+  </main>
+
+  <aside class="tray" aria-label="Companion tray" style="grid-row: 2; grid-column: 3; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 0; border-left: 1px solid #23272f; background: #0f1114">
+    <button class="{{trayHintsCls}}" onClick="{{openHints}}" aria-label="Hints, {{hintCount}} open">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z"></path></svg>
+      <span class="badge">{{hintCount}}</span>
+    </button>
+    <button class="{{trayGuideCls}}" onClick="{{openGuide}}" aria-label="Guide">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"></path><path d="M4 21V5"></path></svg>
+    </button>
+    <button class="{{trayAiCls}}" onClick="{{openAi}}" aria-label="AI assistant">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg>
+    </button>
+  </aside>
+
+  <sc-if value="{{flyoutOpen}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 80px; top: {{flyTop}}px; width: 300px; padding: 10px; border-radius: 16px; background: #171a1f; border: 1px solid #3d4350; box-shadow: 0 20px 48px rgba(0,0,0,.55); z-index: 14; animation: drop .18s ease-out">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px 10px">
+        <span style="font: 700 12px 'Space Grotesk', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: {{fly.color}}">{{fly.num}} · {{fly.name}}</span>
+        <span style="font-size: 12px; color: #8b93a5">{{fly.pct}} explored</span>
+      </div>
+      <sc-for list="{{fly.planners}}" as="fp" hint-placeholder-count="5">
+        <button class="fly-item" onClick="{{fp.open}}">
+          <span style="position: relative; width: 26px; height: 26px; color: {{fp.color}}">
+            <svg width="26" height="26" viewBox="0 0 36 36" aria-hidden="true" style="transform: rotate(-90deg)"><circle class="trk" cx="18" cy="18" r="15.915"></circle><circle class="val" cx="18" cy="18" r="15.915" style="stroke-dasharray: {{fp.dash}} 100"></circle></svg>
+          </span>
+          <span>{{fp.name}}</span>
+          <span style="font-size: 12px; color: #8b93a5">{{fp.pct}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{paletteOpen}}" hint-placeholder-val="{{false}}">
+    <button class="scrim" onClick="{{closePalette}}" aria-label="Close search"></button>
+    <div role="dialog" aria-label="Jump to" style="position: absolute; left: 50%; top: 84px; transform: translateX(-50%); width: 600px; max-width: calc(100% - 32px); border-radius: 18px; background: #171a1f; border: 1px solid #3d4350; box-shadow: 0 30px 70px rgba(0,0,0,.6); z-index: 21; overflow: hidden; animation: drop .18s ease-out">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid #2a2f38">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b93a5" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+        <input aria-label="Search" placeholder="Planners, sections, enemies, actions…" value="{{query}}" onChange="{{setQuery}}" onKeyDown="{{paletteKey}}" ref="{{paletteRef}}" style="flex: 1; height: 56px; border: 0; outline: none; background: none; color: #e6e8ee; font-size: 16px">
+        <span style="font-size: 11px; padding: 2px 6px; border: 1px solid #3d4350; border-radius: 6px; color: #8b93a5">Esc</span>
+      </div>
+      <div style="max-height: 380px; overflow: auto; padding: 8px">
+        <sc-for list="{{results}}" as="re" hint-placeholder-count="6">
+          <button class="{{re.cls}}" onClick="{{re.go}}">
+            <span style="width: 10px; height: 10px; border-radius: 3px; background: {{re.color}}; justify-self: center"></span>
+            <span>{{re.label}}</span>
+            <span style="font-size: 12px; color: #8b93a5">{{re.kind}}</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{noResults}}" hint-placeholder-val="{{false}}"><div style="padding: 18px; color: #8b93a5; font-size: 14px">Nothing matches. Try “ghoul”, “pitch” or “studio”.</div></sc-if>
+      </div>
+      <div style="display: flex; gap: 16px; padding: 10px 16px; border-top: 1px solid #2a2f38; font-size: 12px; color: #8b93a5"><span>↑ ↓ choose · Enter opens</span><span>In the app: J / K sections · M section map · A atlas</span></div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+var PHASES = [
+  { id: 'concept', num: 1, name: 'Concept', color: '#b08cff', box: [20, 40, 290, 300] },
+  { id: 'systems', num: 2, name: 'Systems', color: '#5b9cff', box: [340, 28, 380, 316] },
+  { id: 'content', num: 3, name: 'Content', color: '#3fc6a5', box: [750, 40, 330, 320] },
+  { id: 'production', num: 4, name: 'Production', color: '#f2a541', box: [150, 388, 450, 214] },
+  { id: 'polish', num: 5, name: 'Polish', color: '#ff7a8a', box: [640, 396, 400, 206] }
+];
+var PLANNERS = [
+  { id: 'vision', name: 'Vision & Concept', phase: 'concept', x: 92, y: 130, fill: 0.62, hints: 1 },
+  { id: 'glossary', name: 'Glossary', phase: 'concept', x: 232, y: 112, fill: 0.25, hints: 0 },
+  { id: 'roadmap', name: 'Roadmap', phase: 'concept', x: 230, y: 258, fill: 0.3, hints: 0 },
+  { id: 'coreLoop', name: 'Core Loop', phase: 'concept', x: 96, y: 272, fill: 0.45, hints: 0 },
+  { id: 'player', name: 'Player Character', phase: 'systems', x: 410, y: 108, fill: 0, hints: 0 },
+  { id: 'combat', name: 'Combat, Enemies & Bosses', phase: 'systems', x: 534, y: 92, fill: 0.35, hints: 2 },
+  { id: 'items', name: 'Items & Crafting', phase: 'systems', x: 655, y: 122, fill: 0.15, hints: 0 },
+  { id: 'timeWeather', name: 'Time, Weather & Events', phase: 'systems', x: 534, y: 220, fill: 0, hints: 0 },
+  { id: 'difficulty', name: 'Difficulty Levels', phase: 'systems', x: 410, y: 268, fill: 0.1, hints: 0 },
+  { id: 'trade', name: 'Trade & Economy', phase: 'systems', x: 655, y: 268, fill: 0, hints: 0 },
+  { id: 'world', name: 'World & Biomes', phase: 'content', x: 822, y: 112, fill: 0.2, hints: 0 },
+  { id: 'story', name: 'Story & Quests', phase: 'content', x: 990, y: 100, fill: 0, hints: 0 },
+  { id: 'npc', name: 'NPC System', phase: 'content', x: 818, y: 228, fill: 0, hints: 0 },
+  { id: 'factions', name: 'Factions & Diplomacy', phase: 'content', x: 996, y: 218, fill: 0, hints: 0 },
+  { id: 'town', name: 'Town Management', phase: 'content', x: 880, y: 318, fill: 0, hints: 0 },
+  { id: 'ui', name: 'UI / UX', phase: 'content', x: 1020, y: 318, fill: 0, hints: 0 },
+  { id: 'architecture', name: 'Technical Architecture', phase: 'production', x: 230, y: 448, fill: 0, hints: 0 },
+  { id: 'dataDriven', name: 'Data-driven Design', phase: 'production', x: 378, y: 436, fill: 0, hints: 0 },
+  { id: 'save', name: 'Save System', phase: 'production', x: 524, y: 452, fill: 0, hints: 0 },
+  { id: 'milestones', name: 'Milestones', phase: 'production', x: 250, y: 552, fill: 0, hints: 0 },
+  { id: 'backlog', name: 'Backlog', phase: 'production', x: 396, y: 560, fill: 0, hints: 0 },
+  { id: 'risks', name: 'Risk Register', phase: 'production', x: 530, y: 552, fill: 0, hints: 0 },
+  { id: 'testPlan', name: 'Test Plan', phase: 'polish', x: 720, y: 460, fill: 0, hints: 0 },
+  { id: 'balance', name: 'Balance Plan', phase: 'polish', x: 890, y: 452, fill: 0, hints: 0 },
+  { id: 'bugs', name: 'Bug Reports', phase: 'polish', x: 730, y: 556, fill: 0, hints: 0 },
+  { id: 'release', name: 'Release Checklist', phase: 'polish', x: 910, y: 560, fill: 0, hints: 0 }
+];
+var ROUTE = ['vision', 'coreLoop', 'combat', 'items', 'world', 'story'];
+/** The walkthrough as the prototype plays it: the real app has 33 steps; 5 are done in the sample project. */
+var STEPS_TOTAL = 33, STEPS_DONE = 5;
+/** The emblem: one part per phase, picked by the project's genre. Ranks rise with the explored share. */
+var EMBLEMS = {
+  rpg: { label: 'RPG', ranks: ['Wanderer', 'Squire', 'Knight', 'Champion', 'Legend'], parts: ['forge the helmet', 'forge the armor', 'arm sword and shield', 'stitch cape and boots', 'earn the plume and the aura'] },
+  survival: { label: 'Survival', ranks: ['Castaway', 'Scavenger', 'Settler', 'Pathfinder', 'Warden'], parts: ['pitch the tent', 'gather firewood', 'light the fire', 'grow the forest', 'clear the night sky'] },
+  strategy: { label: 'Strategy', ranks: ['Outpost', 'Hamlet', 'Stronghold', 'Citadel', 'Empire'], parts: ['raise the keep', 'build the walls', 'open the gate', 'add the towers', 'fly the banner'] }
+};
+var RANK_AT = [0, 10, 25, 50, 75];
+/** One monochrome line icon per phase: sketching ideas, connected systems, the world, building, polishing. */
+var PH_ICON = {
+  concept: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+  systems: 'M3 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M17 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0M10 18a2 2 0 1 0 4 0a2 2 0 1 0-4 0M7 6h10M6 7.8l5 8.4M18 7.8l-5 8.4',
+  content: 'M3 19l6-10 4 6 2-3 6 7zM14 6a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
+  production: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z',
+  polish: 'M6 3h12l4 6-10 12L2 9zM2 9h20M10 3L8 9l4 12 4-12-2-6'
+};
+var STEPS = [
+  { title: 'Write the pitch', planner: 'vision', section: 'pitch', where: 'Vision & Concept › One-sentence pitch', tip: 'One sentence: who the player is, what they do and why it is fun. If you need “and” twice, the game is not focused yet.' },
+  { title: 'Describe the core loop', planner: 'coreLoop', section: 'loops', where: 'Core Loop › Loops by time scale', tip: 'What the player repeats, from seconds to the whole campaign, and what each repetition gives them.' },
+  { title: 'Sketch the enemy roster', planner: 'combat', section: 'enemies', where: 'Combat › Enemies', tip: 'One enemy per role is enough to start tuning: a swarmer, a tank, a ranged threat and an elite.' },
+  { title: 'Name the biomes', planner: 'world', section: 'biomes', where: 'World & Biomes › Biomes', tip: 'Each biome needs a mood, a danger and a reason to visit. Enemies and resources will point here.' }
+];
+var LINKS = [['items', 'trade'], ['world', 'town'], ['npc', 'factions'], ['story', 'factions'], ['difficulty', 'combat'], ['architecture', 'save'], ['dataDriven', 'save'], ['milestones', 'backlog'], ['testPlan', 'bugs'], ['balance', 'difficulty'], ['glossary', 'vision'], ['roadmap', 'milestones']];
+
+function S(id, name, fill, extra) { var s = { id: id, name: name, fill: fill }; for (var k in extra || {}) s[k] = extra[k]; return s; }
+var SECTIONS = {
+  combat: {
+    nodes: [
+      S('system', 'Combat system', 1, { x: 118, y: 66, desc: 'Real-time or turn-based, aiming, dodge and block: the rules every fight shares.' }),
+      S('damage', 'Damage and defense', 0.6, { x: 363, y: 66, desc: 'How damage, armor and resistances combine into one number.' }),
+      S('status', 'Status effects', 0.5, { x: 608, y: 66, desc: 'Burn, bleed, freeze and friends: what they do and how long they last.' }),
+      S('formulas', 'Other formulas', 0, { x: 363, y: 178, desc: 'Crit chance, stagger, knockback: the formulas that are not damage.' }),
+      S('loadouts', 'Test loadouts', 0.3, { x: 363, y: 290, desc: 'Fixed player builds to test every enemy against.' }),
+      S('enemies', 'Enemies', 0.6, { x: 608, y: 290, count: 6, hints: 2, desc: 'Enemies are what the player fights in the world. A roster gives one of each role to tune.' }),
+      S('bosses', 'Bosses', 0.2, { x: 843, y: 290, count: 1, desc: 'Set-piece fights with phases, arenas and rewards.' }),
+      S('variants', 'Night and event variants', 0, { x: 608, y: 410, desc: 'Stronger or stranger versions of enemies at night and during events.' }),
+      S('phases', 'Boss phases', 0, { x: 843, y: 410, desc: 'What changes at each health threshold of a boss.' }),
+      S('sieges', 'NPC combat and sieges', 0, { x: 363, y: 480, desc: 'How settlements defend themselves and fight back.' }),
+      S('sketch', 'Boss phase sketch', 0, { x: 843, y: 516, desc: 'A free diagram of a boss fight from start to finish.' })
+    ],
+    docs: [
+      { id: 'd-difficulty', name: 'Difficulty', x: 843, y: 66, to: 'difficulty' },
+      { id: 'd-items', name: 'Items', x: 118, y: 222, to: 'items' },
+      { id: 'd-world', name: 'World', x: 843, y: 178, to: 'world' },
+      { id: 'd-player', name: 'Player', x: 118, y: 360, to: 'player' }
+    ],
+    edges: [['system', 'damage'], ['damage', 'status'], ['damage', 'formulas'], ['d-difficulty', 'status'], ['status', 'enemies'], ['d-items', 'loadouts'], ['d-player', 'loadouts'], ['loadouts', 'enemies'], ['d-world', 'enemies'], ['enemies', 'bosses'], ['enemies', 'variants'], ['bosses', 'phases'], ['phases', 'sketch'], ['variants', 'sieges']]
+  },
+  vision: { list: [['pitch', 'One-sentence pitch', 0.5, 'One sentence: who the player is, what they do and why it is fun. Every later decision is checked against it.'], ['genre', 'Genre and reference games', 1], ['audience', 'Target audience', 0.6], ['usp', 'Unique selling points', 0], ['pillars', 'Design pillars', 1], ['mood', 'Mood and tone', 0.3], ['scope', 'Scope', 0], ['platform', 'Platform and technical frame', 0], ['monetization', 'Monetization and release plan', 0]] },
+  coreLoop: { list: [['loops', 'Loops by time scale', 0.7, 'What the player repeats, from seconds to the whole campaign, and what each repetition gives them.'], ['rewards', 'Rewards and progression', 0.3], ['diagrams', 'Gameplay diagrams', 0]] },
+  world: { list: [['structure', 'World structure and exploration', 0.4], ['biomes', 'Biomes', 0.8], ['progression', 'Progression graph', 0], ['sketch', 'Map sketch', 0.2], ['outposts', 'Outposts to capture', 0], ['locations', 'Locations', 0.5]] }
+};
+var FIELDS = {
+  'vision.pitch': [['Pitch', 'A draft is fine now; refine it last.', 'A [genre] where [player] [does what] in order to [goal].'], ['Player fantasy', 'Who does the player get to be, and what power or feeling do they get?', ''], ['Main player activity', 'What does the player do most of the time, minute to minute?', '']]
+};
+var FORM_CHIPS = ['References', 'Constraints', 'Open questions'];
+var ENEMIES = [
+  { id: 'ghoul', name: 'Ghoul', biome: 'Barrow Moors', role: 'Swarmer', hp: 40, dmg: 6, aps: 1.2, armor: 0, pattern: 'Rushes in packs of four', drops: 'Bone dust' },
+  { id: 'wraith', name: 'Bog Wraith', biome: 'Sunken Fen', role: 'Caster', hp: 65, dmg: 14, aps: 0.6, armor: 2, pattern: 'Keeps distance, curses', drops: 'Wisp essence' },
+  { id: 'hound', name: 'Ash Hound', biome: 'Cinder Wastes', role: 'Flanker', hp: 55, dmg: 9, aps: 1.5, armor: 1, pattern: 'Circles and bites from behind', drops: 'Charred hide' },
+  { id: 'revenant', name: 'Frost Revenant', biome: 'Rime Peaks', role: 'Tank', hp: 180, dmg: 18, aps: 0.5, armor: 8, pattern: 'Slow sweeps, freezes ground', drops: 'Rime shard' },
+  { id: 'archer', name: 'Bandit Archer', biome: 'Old Kingsroad', role: 'Ranged', hp: 45, dmg: 11, aps: 0.9, armor: 1, pattern: 'Kites from cover', drops: 'Arrows, coins' },
+  { id: 'warden', name: 'Stone Warden', biome: 'Barrow Moors', role: 'Elite', hp: 320, dmg: 26, aps: 0.4, armor: 12, pattern: 'Guards a gate, slams', drops: '' }
+];
+var TABS = [
+  { id: 'identity', name: 'Identity', fields: [['name', 'Name', 1, 2], ['biome', 'Biome', 1, 1], ['role', 'Role', 1, 1], ['desc', 'Description', 0, 2], ['lore', 'Lore note', 0, 2]] },
+  { id: 'stats', name: 'Stats', fields: [['hp', 'HP', 1, 1], ['dmg', 'Damage per hit', 1, 1], ['aps', 'Attacks per second', 1, 1], ['armor', 'Armor', 0, 1], ['speed', 'Move speed', 0, 1], ['aggro', 'Aggro range', 0, 1], ['resist', 'Resistances', 0, 1], ['weak', 'Weakness', 0, 1]] },
+  { id: 'behavior', name: 'Behavior', fields: [['pattern', 'Attack pattern', 1, 2], ['tell', 'Telegraph', 0, 2], ['flee', 'Flee below HP %', 0, 1], ['group', 'Group size', 0, 1]] },
+  { id: 'reward', name: 'Reward', fields: [['drops', 'Drops', 1, 2], ['xp', 'XP', 0, 1], ['gold', 'Gold', 0, 1]] }
+];
+var AVATAR = { Swarmer: ['rgba(255,122,138,.16)', '#ff9aa6'], Caster: ['rgba(176,140,255,.18)', '#c7adff'], Flanker: ['rgba(242,165,65,.16)', '#f6bd6f'], Tank: ['rgba(91,156,255,.16)', '#8fbaff'], Ranged: ['rgba(63,198,165,.16)', '#6fdcc0'], Elite: ['rgba(230,232,238,.12)', '#e6e8ee'] };
+
+function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+function seg(a, b, cls) { var dx = b.x - a.x, dy = b.y - a.y; return { cls: 'edge ' + cls, x: a.x, y: a.y, len: Math.round(Math.sqrt(dx * dx + dy * dy)), ang: Math.round(Math.atan2(dy, dx) * 1800 / Math.PI) / 10 }; }
+function pct(f) { return Math.round(f * 100) + '%'; }
+function glyph(f) { return f <= 0 ? '○' : f < 0.75 ? '◐' : '●'; }
+function phaseOf(id) { for (var i = 0; i < PHASES.length; i++) if (PHASES[i].id === id) return PHASES[i]; return PHASES[0]; }
+function plannerOf(id) { for (var i = 0; i < PLANNERS.length; i++) if (PLANNERS[i].id === id) return PLANNERS[i]; return null; }
+function sectionsOf(pid) {
+  var d = SECTIONS[pid];
+  if (!d) return null;
+  if (d.nodes) return d.nodes;
+  return d.list.map(function (s, i) { return { id: s[0], name: s[1], fill: s[2], desc: s[3] || 'Open to fill in this section. Core fields first; more detail when you need it.', x: 170 + (i % 3) * 320, y: 90 + Math.floor(i / 3) * 150 }; });
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { screen: 'atlas', planner: null, section: null, record: null, tab: 'identity', mode: 'guided', atlasView: 'map', flyout: null, companion: null, palette: false, query: '', active: 0, peek: null, view: 'table', reveal: {}, edits: {}, pill: true, concept: false, stepIdx: 0, genre: 'rpg', boost: 0, theme: 'dark' };
+    this.paletteRef = { current: null };
+  }
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.palette && !prevState.palette && this.paletteRef.current) this.paletteRef.current.focus();
+  }
+  nav(next) { this.setState(Object.assign({ flyout: null, palette: false, query: '', peek: null, concept: false }, next)); }
+  openPlanner(pid) { this.nav({ screen: 'planner', planner: pid, section: null, record: null }); }
+  openSection(pid, sid) { this.nav({ screen: 'section', planner: pid, section: sid, record: null, view: 'table' }); }
+  openRecord(rid, tab) { this.nav({ screen: 'section', planner: 'combat', section: 'enemies', record: rid, tab: tab || 'identity' }); }
+
+  renderVals() {
+    var self = this, st = this.state, guided = st.mode === 'guided';
+    var stp = STEPS[st.stepIdx % STEPS.length], stpPlanner = plannerOf(stp.planner);
+    var step = { title: stp.title, where: stp.where, tip: stp.tip, num: STEPS_DONE + 1 + st.stepIdx, total: STEPS_TOTAL, flagX: stpPlanner.x, flagY: stpPlanner.y - 64 };
+    var reached = { concept: true, systems: true, content: true };
+    var crumbs = [{ label: 'Atlas', go: function () { self.nav({ screen: 'atlas', record: null }); } }];
+    var cp = st.planner ? plannerOf(st.planner) : null;
+    var secs = st.planner ? sectionsOf(st.planner) : null;
+    var sec = secs && st.section ? secs.filter(function (s) { return s.id === st.section; })[0] : null;
+    var rec = st.record ? ENEMIES.filter(function (e) { return e.id === st.record; })[0] : null;
+    if (cp) crumbs.push({ label: cp.name, go: function () { self.openPlanner(cp.id); } });
+    if (sec) crumbs.push({ label: sec.name, go: function () { self.openSection(cp.id, sec.id); } });
+    if (rec) crumbs.push({ label: rec.name, go: function () {} });
+    crumbs.forEach(function (c, i) { c.notFirst = i > 0; c.cls = 'crumb-btn' + (i === crumbs.length - 1 ? ' last' : ''); });
+
+    var phases = PHASES.map(function (p, i) {
+      var ps = PLANNERS.filter(function (x) { return x.phase === p.id; });
+      var avg = ps.reduce(function (a, x) { return a + x.fill; }, 0) / ps.length;
+      return {
+        id: p.id, num: p.num, name: p.name, color: p.color, pct: pct(avg), pctNum: Math.round(avg * 100), open: st.flyout === p.id,
+        dotBg: st.flyout === p.id ? hexA(p.color, 0.18) : 'transparent',
+        icon: PH_ICON[p.id], railCls: 'rail-btn ph' + (st.flyout === p.id || (cp && cp.phase === p.id) ? ' on' : ''),
+        toggle: function () { self.setState({ flyout: st.flyout === p.id ? null : p.id, palette: false }); },
+        planners: ps.map(function (x) { return { name: x.name, color: p.color, dash: Math.max(0.01, x.fill * 100), pct: pct(x.fill), open: function () { self.openPlanner(x.id); } }; })
+      };
+    });
+    var flyIdx = PHASES.map(function (p) { return p.id; }).indexOf(st.flyout);
+    var fly = flyIdx >= 0 ? phases[flyIdx] : null;
+
+    var explored = Math.round(PLANNERS.reduce(function (a, x) { return a + x.fill; }, 0) / PLANNERS.length * 100);
+    var embl = EMBLEMS[st.genre], b = st.boost / 100;
+    var partFill = PHASES.map(function (p, i) { var real = phases[i].pctNum / 100; return Math.max(real, Math.min(1, Math.max(0, b * 5 - i))); });
+    var emExplored = Math.max(explored, st.boost);
+    var rankIdx = 0; RANK_AT.forEach(function (t, i) { if (emExplored >= t) rankIdx = i; });
+    var nextPart = partFill.findIndex(function (f) { return f < 1; });
+    var em = {
+      genre: embl.label, rank: embl.ranks[rankIdx], explored: emExplored, boost: st.boost,
+      isRpg: st.genre === 'rpg', isSurvival: st.genre === 'survival', isStrategy: st.genre === 'strategy',
+      built: partFill.filter(function (f) { return f > 0; }).length, aura: partFill[4] >= 1 ? 1 : partFill[4] * 0.6,
+      next: nextPart < 0 ? 'Every part is built. The design is ready to ship.' : 'Fill ' + PHASES[nextPart].name + ' planners to ' + embl.parts[nextPart] + '.' + (rankIdx < 4 ? ' Next rank, ' + embl.ranks[rankIdx + 1] + ', at ' + RANK_AT[rankIdx + 1] + '%.' : ''),
+      parts: PHASES.map(function (p, i) { return { color: p.color, pctNum: Math.round(partFill[i] * 100), title: p.name + ': ' + embl.parts[i] + ' (' + Math.round(partFill[i] * 100) + '%)' }; }),
+      genres: Object.keys(EMBLEMS).map(function (k) { return { label: EMBLEMS[k].label, on: st.genre === k, pick: function () { self.setState({ genre: k }); } }; }),
+      setBoost: function (ev) { self.setState({ boost: Number(ev.target.value) }); }
+    };
+    PHASES.forEach(function (p, i) {
+      var f = partFill[i];
+      em['p' + i] = { stroke: f > 0 ? p.color : '#5a6170', fill: f > 0 ? hexA(p.color, Math.round((0.12 + 0.7 * f) * 100) / 100) : 'transparent', dash: f > 0 ? 'none' : '4 4', op: f > 0 ? 1 : 0.6 };
+    });
+    var regions = PHASES.map(function (p) {
+      var fog = guided && !reached[p.id];
+      return { name: p.name, num: p.num, color: p.color, x: p.box[0], y: p.box[1], w: p.box[2], h: p.box[3], fog: fog, cls: 'region' + (fog ? ' fog' : ''), line: hexA(p.color, 0.45), bg: 'radial-gradient(circle at 30% 20%, ' + hexA(p.color, 0.12) + ', ' + hexA(p.color, 0.03) + ' 70%)' };
+    });
+    var atlasEdges = [];
+    LINKS.forEach(function (l) { atlasEdges.push(seg(plannerOf(l[0]), plannerOf(l[1]), 'link')); });
+    for (var i = 0; i < ROUTE.length - 1; i++) atlasEdges.push(seg(plannerOf(ROUTE[i]), plannerOf(ROUTE[i + 1]), i === 0 ? 'done' : 'next'));
+    var landmarks = PLANNERS.map(function (x) {
+      var p = phaseOf(x.phase), fog = guided && !reached[x.phase];
+      return { name: x.name, x: x.x, y: x.y, color: p.color, dash: Math.max(0.01, x.fill * 100), glyph: glyph(x.fill), hints: x.hints, hasHints: x.hints > 0,
+        cls: 'lm' + (fog ? ' fogged' : '') + (x.id === stp.planner ? ' here' : ''), aria: x.name + ', ' + pct(x.fill) + ' filled' + (fog ? ', uncharted' : ''),
+        open: function () { self.openPlanner(x.id); } };
+    });
+
+    var cur = null;
+    if (cp) {
+      var cph = phaseOf(cp.phase);
+      var filled = secs ? secs.filter(function (s) { return s.fill > 0; }).length : 0;
+      cur = { name: cp.name, color: cph.color, num: cph.num, phaseName: cph.name, tint: hexA(cph.color, 0.1), dash: Math.max(0.01, cp.fill * 100), pct: pct(cp.fill), filledLine: secs ? filled + ' of ' + secs.length + ' sections started' : 'Not charted in the prototype' };
+    }
+    var byId = {};
+    var pNodes = [], pEdges = [];
+    if (secs && cp) {
+      var color = phaseOf(cp.phase).color;
+      secs.forEach(function (s) {
+        byId[s.id] = s;
+        pNodes.push({ name: s.name, x: s.x, y: s.y, glyph: glyph(s.fill), cls: 'node', aria: s.name + ', ' + pct(s.fill) + ' filled',
+          border: s.fill >= 0.75 ? color : s.fill > 0 ? hexA(color, 0.55) : '#3d4350', glyphColor: s.fill > 0 ? color : '#6b7280',
+          count: s.count ? s.count + ' entries' : '', hasCount: !!s.count, hints: s.hints || 0, hasHints: !!s.hints,
+          open: function () { self.openSection(cp.id, s.id); },
+          peek: function () { self.setState({ peek: s.id }); } });
+      });
+      var d = SECTIONS[cp.id];
+      (d.docs || []).forEach(function (o) {
+        byId[o.id] = o;
+        pNodes.push({ name: o.name + ' ›', x: o.x, y: o.y, glyph: '', cls: 'node doc', aria: 'Go to the ' + o.name + ' planner', border: '#4a5160', glyphColor: '#8b93a5', hasCount: false, hasHints: false, count: '', hints: 0,
+          open: function () { self.openPlanner(o.to); }, peek: function () { self.setState({ peek: o.id }); } });
+      });
+      if (d.edges) d.edges.forEach(function (e) { pEdges.push(seg(byId[e[0]], byId[e[1]], 'flow')); });
+      else for (var j = 0; j < secs.length - 1; j++) pEdges.push(seg(secs[j], secs[j + 1], 'flow'));
+    }
+    var pk = st.peek && byId[st.peek];
+    var peek = pk ? {
+      name: pk.name, px: Math.min(pk.x + 90, 700), py: Math.max(pk.y - 30, 0),
+      state: pk.to ? 'Another planner' : pk.fill >= 0.75 ? 'Filled' : pk.fill > 0 ? 'Started · ' + pct(pk.fill) : 'Empty',
+      stateColor: pk.to ? '#8b93a5' : pk.fill > 0 ? (cur ? cur.color : '#e6e8ee') : '#8b93a5',
+      desc: pk.to ? 'Feeds this planner. Click to walk over to it.' : pk.desc, cta: pk.to ? 'Open planner ›' : 'Click to open ›'
+    } : null;
+
+    var strip = [], secIdx = -1;
+    if (secs && sec) {
+      var c2 = phaseOf(cp.phase).color;
+      secs.forEach(function (s, i) {
+        if (s.id === sec.id) secIdx = i;
+        strip.push({ name: s.name, notFirst: i > 0, glyph: glyph(s.fill), glyphColor: s.fill > 0 ? c2 : '#6b7280', current: s.id === sec.id ? 'step' : 'false',
+          cls: 'step' + (s.id === sec.id ? ' on' : ''), open: function () { self.openSection(cp.id, s.id); } });
+      });
+    }
+    var nextSec = secIdx >= 0 && secIdx < secs.length - 1 ? secs[secIdx + 1] : null;
+    var isEnemies = !!(sec && cp.id === 'combat' && sec.id === 'enemies');
+
+    var hintRec = { revenant: 'weak', warden: 'drops' };
+    var maxThreat = Math.max.apply(null, ENEMIES.map(function (e) { return e.hp * e.dmg * e.aps; }));
+    var enemyRows = ENEMIES.map(function (e) {
+      var t = e.hp * e.dmg * e.aps, av = AVATAR[e.role];
+      return { name: e.name, biome: e.biome, role: e.role, hp: e.hp, dps: Math.round(e.dmg * e.aps * 10) / 10, armor: e.armor, initial: e.name[0],
+        avatarBg: av[0], avatarFg: av[1], hasHint: !!hintRec[e.id], cls: 'row' + (st.record === e.id ? ' on' : ''),
+        threatPct: Math.round(t / maxThreat * 100), barH: Math.max(8, Math.round(t / maxThreat * 220)),
+        open: function () { self.openRecord(e.id); } };
+    });
+
+    var formFields = [], formChips = [];
+    if (sec && !isEnemies) {
+      var key = cp.id + '.' + sec.id;
+      var defs = FIELDS[key] || [['Summary', 'The short version, in a few sentences.', 'Start with one sentence.'], ['Key decisions', 'What you have decided and why.', ''], ['Open questions', 'What is still unclear.', '']];
+      var revealed = st.reveal[key] || [];
+      var extra = (guided ? revealed : FORM_CHIPS).map(function (l) { return [l, 'Optional detail.', '']; });
+      defs.concat(extra).forEach(function (f) {
+        var k = key + '.' + f[0], v = st.edits[k] || '';
+        formFields.push({ label: f[0], help: f[1], placeholder: f[2], value: v, done: v.length > 0, change: function (ev) { var ed = Object.assign({}, self.state.edits); ed[k] = ev.target.value; self.setState({ edits: ed }); } });
+      });
+      if (guided) FORM_CHIPS.filter(function (l) { return revealed.indexOf(l) < 0; }).forEach(function (l) {
+        formChips.push({ label: l, reveal: function () { var r = Object.assign({}, self.state.reveal); r[key] = (r[key] || []).concat([l]); self.setState({ reveal: r }); } });
+      });
+    }
+
+    var tabs = [], recFields = [], recChips = [], recInfo = null;
+    if (rec) {
+      var ri = ENEMIES.indexOf(rec), av2 = AVATAR[rec.role];
+      recInfo = { name: rec.name, role: rec.role, initial: rec.name[0], avatarBg: av2[0], avatarFg: av2[1], pos: (ri + 1) + ' of ' + ENEMIES.length };
+      var valOf = function (f) { var k = rec.id + '.' + f; return self.state.edits[k] !== undefined ? self.state.edits[k] : (rec[f] !== undefined ? String(rec[f]) : ''); };
+      TABS.forEach(function (t) {
+        var n = t.fields.filter(function (f) { return valOf(f[0]) !== ''; }).length;
+        tabs.push({ name: t.name, count: n + '/' + t.fields.length, on: st.tab === t.id, pick: function () { self.setState({ tab: t.id }); } });
+      });
+      var tab = TABS.filter(function (t) { return t.id === st.tab; })[0] || TABS[0];
+      var rv = st.reveal[rec.id + '.' + tab.id] || [];
+      tab.fields.forEach(function (f) {
+        var show = !guided || f[2] === 1 || rv.indexOf(f[0]) >= 0;
+        if (!show) { recChips.push({ label: f[1], reveal: function () { var r = Object.assign({}, self.state.reveal); var k2 = rec.id + '.' + tab.id; r[k2] = (r[k2] || []).concat([f[0]]); self.setState({ reveal: r }); } }); return; }
+        var flag = hintRec[rec.id] === f[0];
+        recFields.push({ label: f[1], value: valOf(f[0]), placeholder: flag ? 'Not set yet' : '', span: f[3] === 2 ? '1 / -1' : 'auto', flag: flag, border: flag ? 'rgba(242,165,65,.7)' : '#30353f',
+          change: function (ev) { var ed = Object.assign({}, self.state.edits); ed[rec.id + '.' + f[0]] = ev.target.value; self.setState({ edits: ed }); } });
+      });
+    }
+    var stepRecord = function (d) { var i2 = ENEMIES.indexOf(rec) + d; if (i2 < 0) i2 = ENEMIES.length - 1; if (i2 >= ENEMIES.length) i2 = 0; self.setState({ record: ENEMIES[i2].id }); };
+
+    var hints = [
+      { where: 'Combat › Enemies', text: 'Frost Revenant has no weakness. Tanks without one turn into damage sponges.', fix: function () { var r = Object.assign({}, self.state.reveal); r['revenant.stats'] = ['weak']; self.setState({ reveal: r, companion: null }); self.openRecord('revenant', 'stats'); } },
+      { where: 'Combat › Enemies', text: 'Stone Warden drops nothing. Elites should be worth the fight.', fix: function () { self.setState({ companion: null }); self.openRecord('warden', 'reward'); } },
+      { where: 'Vision & Concept', text: 'The pitch is still a draft. Every later decision is checked against it.', fix: function () { self.setState({ companion: null }); self.openSection('vision', 'pitch'); } }
+    ];
+
+    var index = [];
+    PLANNERS.forEach(function (x) { index.push({ label: x.name, kind: 'Planner', color: phaseOf(x.phase).color, go: function () { self.openPlanner(x.id); } }); });
+    Object.keys(SECTIONS).forEach(function (pid) { sectionsOf(pid).forEach(function (s) { index.push({ label: s.name, kind: plannerOf(pid).name, color: phaseOf(plannerOf(pid).phase).color, go: function () { self.openSection(pid, s.id); } }); }); });
+    ENEMIES.forEach(function (e) { index.push({ label: e.name, kind: 'Enemy', color: '#5b9cff', go: function () { self.openRecord(e.id); } }); });
+    index.push({ label: 'Switch to Studio mode', kind: 'Action', color: '#8b93a5', go: function () { self.nav({ mode: 'studio' }); } });
+    index.push({ label: 'Switch to Guided mode', kind: 'Action', color: '#8b93a5', go: function () { self.nav({ mode: 'guided' }); } });
+    index.push({ label: 'Show open hints', kind: 'Action', color: '#f2a541', go: function () { self.nav({ companion: 'hints' }); } });
+    index.push({ label: 'Atlas as a list', kind: 'Action', color: '#8b93a5', go: function () { self.nav({ screen: 'atlas', atlasView: 'list', record: null }); } });
+    var q = st.query.trim().toLowerCase();
+    var results = (q ? index.filter(function (r) { return (r.label + ' ' + r.kind).toLowerCase().indexOf(q) >= 0; }) : index.slice(0, 4).concat(index.filter(function (r) { return r.kind === 'Enemy' || r.kind === 'Action'; }).slice(0, 4))).slice(0, 8);
+    var active = Math.min(st.active, Math.max(0, results.length - 1));
+    results.forEach(function (r, i) { r.cls = 'res' + (i === active ? ' on' : ''); });
+
+    var walkHere = !!(sec && cp.id === stp.planner && sec.id === stp.section);
+    var guideText = sec ? sec.desc : cp ? 'Each landmark is a section. Arrows show what feeds what, so you can see what to fill first.' : 'The atlas shows every planner as a region of your design. Fog lifts as you fill them in.';
+
+    return {
+      guided: guided, studio: !guided,
+      setGuided: function () { self.setState({ mode: 'guided' }); }, setStudio: function () { self.setState({ mode: 'studio' }); },
+      crumbs: crumbs, phases: phases, flyoutOpen: !!fly, fly: fly || { planners: [] }, flyTop: 140 + Math.max(0, flyIdx) * 62,
+      atlasRailCls: 'rail-btn ph' + (st.screen === 'atlas' ? ' on' : ''),
+      goAtlas: function () { self.nav({ screen: 'atlas', record: null }); },
+      isAtlas: st.screen === 'atlas', isPlanner: st.screen === 'planner', isSection: st.screen === 'section',
+      atlasMap: st.atlasView === 'map', atlasList: st.atlasView === 'list',
+      showMap: function () { self.setState({ atlasView: 'map' }); }, showList: function () { self.setState({ atlasView: 'list' }); },
+      atlasLede: guided ? 'Every planner is a region of your game. Fog lifts as you fill them in. Follow the lit route, or jump anywhere.' : 'All regions charted. Jump anywhere with Ctrl K, or open a region to see how its sections connect.',
+      appCls: 'app' + (st.theme === 'light' ? ' light' : ''), isDark: st.theme !== 'light', isLight: st.theme === 'light',
+      themeLabel: st.theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode',
+      toggleTheme: function () { self.setState({ theme: st.theme === 'light' ? 'dark' : 'light' }); },
+      explored: explored, em: em, regions: regions, atlasEdges: atlasEdges, landmarks: landmarks,
+      cur: cur || {}, hasSections: !!secs, noSections: st.screen === 'planner' && !secs,
+      firstName: secs ? (secs.filter(function (s) { return s.fill < 0.75; })[0] || secs[0]).name : '',
+      openFirst: function () { var f = secs.filter(function (s) { return s.fill < 0.75; })[0] || secs[0]; self.openSection(cp.id, f.id); },
+      pNodes: pNodes, pEdges: pEdges, peekOn: !!peek, peek: peek || {}, unpeek: function () { self.setState({ peek: null }); },
+      wired: ['vision', 'coreLoop', 'combat', 'world'].map(function (id) { return { name: plannerOf(id).name, open: function () { self.openPlanner(id); } }; }),
+      sec: sec ? { name: sec.name, desc: sec.desc, pct: pct(sec.fill), dash: Math.max(0.01, sec.fill * 100) } : {},
+      conceptOpen: st.concept, toggleConcept: function () { self.setState({ concept: !st.concept }); },
+      walkHere: walkHere, strip: strip, backToMap: function () { self.openPlanner(cp.id); },
+      isEnemies: isEnemies, isForm: !!sec && !isEnemies,
+      vTable: st.view === 'table', vCards: st.view === 'cards', vThreat: st.view === 'threat',
+      viewTable: function () { self.setState({ view: 'table' }); }, viewCards: function () { self.setState({ view: 'cards' }); }, viewThreat: function () { self.setState({ view: 'threat' }); },
+      enemyRows: enemyRows, formFields: formFields, formChips: formChips, hasFormChips: formChips.length > 0,
+      hasNextSection: !!nextSec, nextSectionName: nextSec ? nextSec.name : '', nextSection: function () { self.openSection(cp.id, nextSec.id); },
+      recordOpen: !!rec, rec: recInfo || {}, tabs: tabs, recFields: recFields, recChips: recChips, hasRecChips: recChips.length > 0,
+      prevRecord: function () { stepRecord(-1); }, nextRecord: function () { stepRecord(1); }, closeRecord: function () { self.setState({ record: null }); },
+      pillOn: guided && st.pill && !walkHere && !rec && !st.palette,
+      goNext: function () { self.openSection(stp.planner, stp.section); }, hidePill: function () { self.setState({ pill: false }); },
+      step: step,
+      goStep: function () { self.openSection(stp.planner, stp.section); },
+      markDone: function () { self.setState({ stepIdx: (st.stepIdx + 1) % STEPS.length }); },
+      companionOpen: !!st.companion, cHints: st.companion === 'hints', cGuide: st.companion === 'guide', cAi: st.companion === 'ai',
+      openHints: function () { self.setState({ companion: st.companion === 'hints' ? null : 'hints', flyout: null }); },
+      openGuide: function () { self.setState({ companion: st.companion === 'guide' ? null : 'guide', flyout: null }); },
+      openAi: function () { self.setState({ companion: st.companion === 'ai' ? null : 'ai', flyout: null }); },
+      closeCompanion: function () { self.setState({ companion: null }); },
+      trayHintsCls: 'tray-btn' + (st.companion === 'hints' ? ' on' : ''), trayGuideCls: 'tray-btn' + (st.companion === 'guide' ? ' on' : ''), trayAiCls: 'tray-btn' + (st.companion === 'ai' ? ' on' : ''),
+      hints: hints, hintCount: hints.length, guideText: guideText,
+      paletteOpen: st.palette, openPalette: function () { self.setState({ palette: true, flyout: null, query: '', active: 0 }); },
+      closePalette: function () { self.setState({ palette: false }); },
+      query: st.query, setQuery: function (ev) { self.setState({ query: ev.target.value, active: 0 }); },
+      paletteRef: this.paletteRef,
+      paletteKey: function (ev) {
+        if (ev.key === 'Escape') self.setState({ palette: false });
+        else if (ev.key === 'ArrowDown') { ev.preventDefault(); self.setState({ active: Math.min(active + 1, results.length - 1) }); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); self.setState({ active: Math.max(active - 1, 0) }); }
+        else if (ev.key === 'Enter' && results[active]) results[active].go();
+      },
+      results: results, noResults: results.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

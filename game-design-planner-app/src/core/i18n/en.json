@@ -2174,5 +2174,43 @@
     "light": "Light",
     "dark": "Dark",
     "hint": "System follows your device's light or dark setting. Saved in this browser only."
+  },
+  "v3": {
+    "companion": "Companion",
+    "useClassic": "Use the classic interface",
+    "theme": {
+      "toLight": "Switch to light mode",
+      "toDark": "Switch to dark mode"
+    },
+    "rail": {
+      "atlas": "Atlas"
+    },
+    "sheet": {
+      "close": "Close",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "setting": {
+      "label": "Interface",
+      "classic": "Classic",
+      "preview": "Design Atlas (preview)",
+      "hint": "Try the new Version 3 interface while it is being built. Saved in this browser only; your projects are not changed."
+    },
+    "palette": {
+      "label": "Jump to",
+      "open": "Search and jump to anything (Ctrl+K)",
+      "button": "Jump to a planner, section or entry…",
+      "placeholder": "Planners, sections, entries, actions…",
+      "results": "Results",
+      "empty": "Nothing matches.",
+      "keys": "↑ ↓ to choose · Enter to open · Esc to close",
+      "kind": {
+        "planner": "Planner",
+        "section": "Section",
+        "entity": "Entry",
+        "page": "Page",
+        "action": "Action"
+      }
+    }
   }
 }

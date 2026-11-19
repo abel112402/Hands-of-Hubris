@@ -1923,5 +1923,43 @@
     "light": "Világos",
     "dark": "Sötét",
     "hint": "A Rendszer beállítás az eszköz világos vagy sötét módját követi. Csak ebben a böngészőben mentjük."
+  },
+  "v3": {
+    "companion": "Segítő",
+    "useClassic": "Klasszikus felület használata",
+    "theme": {
+      "toLight": "Váltás világos módra",
+      "toDark": "Váltás sötét módra"
+    },
+    "rail": {
+      "atlas": "Atlasz"
+    },
+    "sheet": {
+      "close": "Bezárás",
+      "prev": "Előző",
+      "next": "Következő"
+    },
+    "setting": {
+      "label": "Felület",
+      "classic": "Klasszikus",
+      "preview": "Design Atlasz (előnézet)",
+      "hint": "Próbáld ki az új, 3. verziós felületet, amíg készül. Csak ebben a böngészőben mentődik; a projektjeid nem változnak."
+    },
+    "palette": {
+      "label": "Ugrás",
+      "open": "Keresés és ugrás bárhová (Ctrl+K)",
+      "button": "Ugrás tervezőre, szakaszra vagy elemre…",
+      "placeholder": "Tervezők, szakaszok, elemek, műveletek…",
+      "results": "Találatok",
+      "empty": "Nincs találat.",
+      "keys": "↑ ↓ választás · Enter megnyitás · Esc bezárás",
+      "kind": {
+        "planner": "Tervező",
+        "section": "Szakasz",
+        "entity": "Elem",
+        "page": "Oldal",
+        "action": "Művelet"
+      }
+    }
   }
 }
