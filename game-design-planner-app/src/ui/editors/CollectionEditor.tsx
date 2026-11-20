@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { CollectionSection, CollectionView, Entity, FieldDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { AiBadge } from '../ai/AiBadge'
+import { EngineBadge } from '../EngineBadge'
 import { findUsages, resolveSource } from '../../core/references/refs'
 import { downloadText } from '../../core/persistence/file'
 import { sectionCsv } from '../../core/export/markdown'
@@ -28,6 +29,8 @@ import { WireframeView } from './wireframe/WireframeView'
 import { BootSequenceView, CouplingView, DependencyMatrixView, ExtensionCoverageView, LayerDiagramView, LayerStackView, MessageFlowView, TickScheduleView } from './architectureViews'
 import { BranchFlowView, EnforcementBoardView, FolderTreeView, NamingTesterView } from './codingViews'
 import { DataModelView, LoadPlanView, PipelineReadinessView, RecordTesterView } from './dataDrivenViews'
+import { EngineExportView } from './engineViews'
+import { ClassDiagramView } from './classViews'
 import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
 import { PillarMatrixView, VisionReadinessView } from './visionViews'
 import { CutSavingsView, PhaseProgressView } from './roadmapViews'
@@ -80,6 +83,7 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   archExtensions: 'Coverage',
   archTicks: 'Tick schedule',
   archBoot: 'Boot sequence',
+  archClasses: 'Class diagram',
   codingNaming: 'Rule tester',
   codingFolders: 'Folder tree',
   codingGit: 'Branch flow',
@@ -88,6 +92,7 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   dataTester: 'Record tester',
   dataReadiness: 'Pipeline readiness',
   dataLoadPlan: 'Load plan',
+  engineExport: 'Engine export',
   depletion: 'Depletion',
   levelCurve: 'Level curve',
   skillTree: 'Skill tree',
@@ -349,6 +354,7 @@ export function CollectionViewBody({ view, props, onAdd }: { view: CollectionVie
       {view.kind === 'archExtensions' && <ExtensionCoverageView {...props} />}
       {view.kind === 'archTicks' && <TickScheduleView {...props} />}
       {view.kind === 'archBoot' && <BootSequenceView {...props} />}
+      {view.kind === 'archClasses' && <ClassDiagramView {...props} />}
       {view.kind === 'codingNaming' && <NamingTesterView {...props} />}
       {view.kind === 'codingFolders' && <FolderTreeView {...props} />}
       {view.kind === 'codingGit' && <BranchFlowView {...props} />}
@@ -357,6 +363,7 @@ export function CollectionViewBody({ view, props, onAdd }: { view: CollectionVie
       {view.kind === 'dataTester' && <RecordTesterView {...props} />}
       {view.kind === 'dataReadiness' && <PipelineReadinessView {...props} />}
       {view.kind === 'dataLoadPlan' && <LoadPlanView {...props} />}
+      {view.kind === 'engineExport' && <EngineExportView {...props} />}
       {view.kind === 'depletion' && <DepletionView {...props} />}
       {view.kind === 'levelCurve' && <LevelCurveView />}
       {view.kind === 'skillTree' && <SkillTreeView {...props} />}
@@ -540,7 +547,7 @@ function RecordSheet({ docId, sec, entity, items, patch, onClose, onToggleExpand
   return (
     <Sheet
       label={`${sec.singular}: ${name || t('v3.record.unnamed')}`}
-      eyebrow={<>{sec.singular}{at >= 0 && <> · {t('v3.record.position', { n: at + 1, total: items.length })}</>} <AiBadge entity={entity} /></>}
+      eyebrow={<>{sec.singular}{at >= 0 && <> · {t('v3.record.position', { n: at + 1, total: items.length })}</>} <AiBadge entity={entity} /> <EngineBadge entity={entity} /></>}
       title={name || t('v3.record.unnamed')}
       onClose={onClose}
       onPrev={items.length > 1 ? () => step(-1) : undefined}
@@ -644,6 +651,7 @@ function Inspector({
       <div className="inspector-head">
         <strong>{sec.singular}</strong>
         <AiBadge entity={entity} />
+        <EngineBadge entity={entity} />
         <span className="spacer" />
         <button className="icon" title="Move up" onClick={() => move(-1)}>↑</button>
         <button className="icon" title="Move down" onClick={() => move(1)}>↓</button>
@@ -733,7 +741,7 @@ function CardsView({ docId, sec, items, selected, onSelect }: ViewProps) {
     <div className="cards">
       {items.map((e) => (
         <div key={e.id} className={'card' + (e.id === selected ? ' selected' : '')} onClick={() => onSelect(e.id)} style={colorField && e[colorField.key] ? { borderTopColor: e[colorField.key] } : undefined}>
-          <div className="card-title">{e.name || <em>unnamed</em>}<AiBadge entity={e} /></div>
+          <div className="card-title">{e.name || <em>unnamed</em>}<AiBadge entity={e} /><EngineBadge entity={e} /></div>
           {summary(project, docId, sec, e).map(({ f, t }) => (
             <div key={f.key} className="card-line">
               <span className="muted">{f.label}: </span>
@@ -844,7 +852,7 @@ function KanbanView({ docId, sec, items, selected, onSelect, patch, groupBy, onA
                 className={'card small-card' + (e.id === selected ? ' selected' : '') + (landed.has(`${e[groupBy] ?? ''}:${e.id}`) ? ' landed' : '')}
                 onClick={() => onSelect(e.id)}
               >
-                <div className="card-title">{e.name}<AiBadge entity={e} /></div>
+                <div className="card-title">{e.name}<AiBadge entity={e} /><EngineBadge entity={e} /></div>
                 {summary(project, docId, sec, e).filter((x) => x.f.key !== groupBy).slice(0, 2).map(({ f, t }) => (
                   <div key={f.key} className="card-line"><span className="muted">{f.label}: </span>{t.length > 50 ? t.slice(0, 50) + '…' : t}</div>
                 ))}

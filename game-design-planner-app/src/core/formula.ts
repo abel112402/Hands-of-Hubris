@@ -1,6 +1,7 @@
-type Tok = { t: 'num'; v: number } | { t: 'id'; v: string } | { t: 'op'; v: string }
+export type Tok = { t: 'num'; v: number } | { t: 'id'; v: string } | { t: 'op'; v: string }
 
-const tokenize = (src: string): Tok[] => {
+/** Splits an expression into numbers, identifiers and single-character operators. */
+export const tokenize = (src: string): Tok[] => {
   const out: Tok[] = []
   const re = /\s*(?:(\d+\.?\d*|\.\d+)|([A-Za-z_][A-Za-z0-9_.]*)|(.))/gy
   let m: RegExpExecArray | null
@@ -12,7 +13,7 @@ const tokenize = (src: string): Tok[] => {
   return out
 }
 
-const FUNCS: Record<string, (...a: number[]) => number> = {
+export const FUNCS: Record<string, (...a: number[]) => number> = {
   min: Math.min,
   max: Math.max,
   sqrt: Math.sqrt,

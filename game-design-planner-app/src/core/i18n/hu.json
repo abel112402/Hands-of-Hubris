@@ -153,6 +153,8 @@
     "undo": "Visszavonás",
     "redo": "Újra",
     "exportMd": "Markdown export (.zip)",
+    "exportEngine": "Export: {{engine}} (.zip)",
+    "importEngineReport": "Motor-riport importálása…",
     "exportJson": "Projekt JSON letöltése",
     "search": "Keresés (Ctrl+K)",
     "snapshot": "Pillanatkép készítése",
@@ -758,6 +760,18 @@
     "dataUnvalidated": {
       "title": "Ellenőrzés nélküli sémák",
       "body": "{{count}} sémának nincs validátora és írott szabálya sem: {{names}}."
+    },
+    "engineIncomplete": {
+      "title": "Befejezendő rekordok a motorban",
+      "body": "A(z) {{engine}} szerint {{count}} rekord hiányos vagy még nincs assetje: {{names}}. Állítsd be ott a sprite-okat vagy prefabokat, vagy töltsd ki a hiányzó tervezői mezőket."
+    },
+    "engineStale": {
+      "title": "A motor-riport egy régebbi exportból készült",
+      "body": "A terv változott, mióta a(z) {{engine}}-projektbe importáltad. Exportálj újra, importáld a motorban, és írj új riportot."
+    },
+    "engineClasses": {
+      "title": "Még meg nem írt osztályok",
+      "body": "A(z) {{engine}} szerint {{count}} osztály hiányzik, vagy még TODO-s metódustörzsei vannak: {{names}}."
     },
     "dataLegacy": {
       "title": "Jegyzetek a korábbi verzióból",

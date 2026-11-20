@@ -153,6 +153,8 @@
     "undo": "Undo",
     "redo": "Redo",
     "exportMd": "Export Markdown (.zip)",
+    "exportEngine": "Export for {{engine}} (.zip)",
+    "importEngineReport": "Import engine report…",
     "exportJson": "Download project JSON",
     "search": "Search (Ctrl+K)",
     "snapshot": "Create snapshot",
@@ -921,6 +923,20 @@
       "title": "Schemas without validation",
       "body_other": "{{count}} schemas have no validator and no written rules: {{names}}.",
       "body_one": "{{count}} schema has no validator and no written rules: {{names}}."
+    },
+    "engineIncomplete": {
+      "title": "Records to finish in the engine",
+      "body_one": "{{engine}} reports {{count}} record that is incomplete or has no asset yet: {{names}}. Assign its sprites or prefabs there, or fill the missing planner fields.",
+      "body_other": "{{engine}} reports {{count}} records that are incomplete or have no asset yet: {{names}}. Assign their sprites or prefabs there, or fill the missing planner fields."
+    },
+    "engineStale": {
+      "title": "Engine report is from an older export",
+      "body": "The plan changed since the {{engine}} project was imported. Export again, import it in the engine and write a new report."
+    },
+    "engineClasses": {
+      "title": "Classes not written yet",
+      "body_one": "{{engine}} reports {{count}} class that is missing or still has TODO method bodies: {{names}}.",
+      "body_other": "{{engine}} reports {{count}} classes that are missing or still have TODO method bodies: {{names}}."
     },
     "dataLegacy": {
       "title": "Notes from the earlier version",

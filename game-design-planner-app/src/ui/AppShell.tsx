@@ -10,6 +10,8 @@ import { ThemeSwitch } from './ThemeSwitch'
 import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
 import { Icon } from './Icon'
+import { EngineExportButton, EngineReportButton } from './EngineExportButton'
+import { exportOnSave } from './engineLink'
 import { Menu } from './Menu'
 import { BrandMark } from './BrandMark'
 import { ModuleIcon } from './ModuleIcon'
@@ -90,7 +92,7 @@ export function useShellEffects(openPalette: () => void) {
       const typing = tag === 'INPUT' || tag === 'TEXTAREA'
       if (!mod) return
       const k = e.key.toLowerCase()
-      if (k === 's') { e.preventDefault(); void (useCloud.getState().active && !e.shiftKey ? flushSave() : saveProject(e.shiftKey)) }
+      if (k === 's') { e.preventDefault(); void (useCloud.getState().active && !e.shiftKey ? flushSave().then(() => exportOnSave()) : saveProject(e.shiftKey)) }
       else if (k === 'k') { e.preventDefault(); open.current() }
       else if (!typing && k === 'z') { e.preventDefault(); if (e.shiftKey) useStore.getState().redo()
         else useStore.getState().undo() }
@@ -145,6 +147,8 @@ export function SaveMenu({ extra }: { extra?: ReactNode }) {
         )}
         <hr />
         <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
+        <EngineExportButton />
+        <EngineReportButton />
         <button onClick={downloadJson}>{t('actions.exportJson')}</button>
         <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
         <hr />

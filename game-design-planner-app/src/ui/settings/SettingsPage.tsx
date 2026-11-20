@@ -8,6 +8,7 @@ import { deleteSnapshot, listSnapshots, type Snapshot } from '../../core/persist
 import { deserializeProject } from '../../core/persistence/serialize'
 import { createSnapshot, downloadJson, exportMarkdownZip } from '../actions'
 import { GenreProfilePanel } from '../genres/GenreProfilePanel'
+import { EngineExportButton, EngineReportButton } from '../EngineExportButton'
 import { HintsPage } from '../hints/HintsPage'
 import { AiSettings } from '../ai/AiSettings'
 import { Definitions } from '../pages/Definitions'
@@ -141,6 +142,8 @@ function DataSettings() {
       <h3>{t('settingsPage.export')}</h3>
       <div className="row">
         <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
+        <EngineExportButton />
+        <EngineReportButton />
         <button onClick={downloadJson}>{t('actions.exportJson')}</button>
       </div>
       <h3>{t('settingsPage.snapshots')}</h3>

@@ -19605,6 +19605,159 @@
             "loadSeconds": 0.3,
             "next": []
           }
+        ],
+        "classes": [
+          {
+            "id": "clsDmg01",
+            "name": "IDamageable",
+            "kind": "Interface",
+            "module": "vGaXv7CC",
+            "methods": [
+              "TakeDamage(amount: float): float"
+            ],
+            "responsibility": "Anything that can be hurt: players, townspeople, creatures, buildings.",
+            "status": "Done"
+          },
+          {
+            "id": "clsEvt01",
+            "name": "NeedChangedEvent",
+            "kind": "Event channel",
+            "module": "RseQrIdg",
+            "fields": [
+              "npcId: string",
+              "need: string",
+              "amount: float"
+            ],
+            "responsibility": "Raised when a townsperson need crosses a threshold; the HUD and the town ledger listen.",
+            "status": "Done"
+          },
+          {
+            "id": "clsHp001",
+            "name": "Health",
+            "kind": "Component",
+            "module": "lY-1vNDq",
+            "implements": [
+              "clsDmg01"
+            ],
+            "fields": [
+              "-max: float",
+              "+current: float",
+              "-regenPerSecond: float"
+            ],
+            "methods": [
+              "+TakeDamage(amount: float): float",
+              "-Die()"
+            ],
+            "responsibility": "Hit points, regeneration and death for the player and creatures.",
+            "status": "In progress"
+          },
+          {
+            "id": "clsPly01",
+            "name": "PlayerController",
+            "kind": "Actor / prefab root",
+            "module": "lY-1vNDq",
+            "requires": [
+              "clsHp001"
+            ],
+            "fields": [
+              "-moveSpeed: float",
+              "-health: Health",
+              "-inventory: Item[]",
+              "-cameraRig: Transform"
+            ],
+            "methods": [
+              "Update()",
+              "+Interact(target: Transform)"
+            ],
+            "responsibility": "Movement, interaction and the inventory of the castaway.",
+            "status": "In progress"
+          },
+          {
+            "id": "clsNpcB1",
+            "name": "NpcBrain",
+            "kind": "Component",
+            "module": "M29H6JSJ",
+            "fields": [
+              "-needs: NeedState[]",
+              "-mood: NpcMood",
+              "-onNeedChanged: NeedChangedEvent"
+            ],
+            "methods": [
+              "+Tick(deltaHours: float)",
+              "-PickWorkplace(): Building"
+            ],
+            "responsibility": "Decays needs each simulation tick and picks the next job or errand.",
+            "status": "Planned"
+          },
+          {
+            "id": "clsNeed1",
+            "name": "NeedState",
+            "kind": "Struct",
+            "module": "M29H6JSJ",
+            "fields": [
+              "+need: NpcNeed",
+              "+value: float"
+            ],
+            "responsibility": "One need of one townsperson.",
+            "status": "Planned"
+          },
+          {
+            "id": "clsMood1",
+            "name": "NpcMood",
+            "kind": "Enum",
+            "module": "M29H6JSJ",
+            "fields": [
+              "Content",
+              "Restless",
+              "Angry"
+            ],
+            "status": "Planned"
+          },
+          {
+            "id": "clsLedg1",
+            "name": "TownLedger",
+            "kind": "Class",
+            "module": "NeFQCRv7",
+            "fields": [
+              "-gold: int"
+            ],
+            "methods": [
+              "+Add(resource: string, amount: int)",
+              "+CanAfford(cost: Item[]): bool"
+            ],
+            "responsibility": "Stockpile and treasury of the colony.",
+            "status": "Planned"
+          },
+          {
+            "id": "clsSave1",
+            "name": "SaveService",
+            "kind": "Static class",
+            "module": "mhthdp-g",
+            "fields": [
+              "-slotCount: int"
+            ],
+            "methods": [
+              "+Save(slot: int)",
+              "+Load(slot: int): bool"
+            ],
+            "responsibility": "Writes and reads save slots.",
+            "status": "Planned"
+          },
+          {
+            "id": "clsHud01",
+            "name": "HealthBar",
+            "kind": "Component",
+            "module": "4yIatbB1",
+            "fields": [
+              "-target: Health",
+              "-fill: RectTransform"
+            ],
+            "methods": [
+              "LateUpdate()"
+            ],
+            "responsibility": "Shows the player health on the HUD.",
+            "status": "Planned"
+          }
         ]
       }
     },

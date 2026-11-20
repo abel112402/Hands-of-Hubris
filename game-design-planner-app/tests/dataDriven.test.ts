@@ -34,10 +34,10 @@ describe('data-driven module v2', () => {
       },
     }
     const doc = ensureDocument(p, mod, makeId)
-    expect(doc.moduleVersion).toBe(2)
+    expect(doc.moduleVersion).toBe(3)
     expect(doc.data.principle).toEqual({ principle: 'Content is data', legacyNotes: 'Formats: SO mostly\n\nLoading and Addressables: Addressables' })
     expect(doc.data.schemas.map((s: { id: string; format?: string }) => `${s.id}:${s.format}`)).toEqual(['s1:format-so', 's2:format-tiled', 's3:undefined'])
-    expect(doc.data.formats.map((f: { name: string }) => f.name)).toEqual(['ScriptableObject', 'JSON', 'CSV', 'Tiled'])
+    expect(doc.data.formats.map((f: { name: string }) => f.name)).toEqual(['Native data asset', 'JSON', 'CSV', 'Tiled'])
     expect(doc.data.schemas[0].required).toEqual(['name: string'])
     for (const s of ['loadGroups', 'validators']) expect(Array.isArray(doc.data[s]), s).toBe(true)
   })
@@ -158,5 +158,40 @@ describe('data-driven hints', () => {
       validators: [{ id: 'v', name: 'Unique', kind: 'Unique ID' }],
     })
     expect(ruleIds(p)).toEqual([])
+  })
+})
+
+describe('data-driven module v3 (engine-neutral)', () => {
+  it('renames an untouched Unity-only native format seed and keeps an edited one', () => {
+    const seed = { id: 'format-so', name: 'ScriptableObject', editedIn: 'Unity Inspector', whenToUse: 'Content designers edit in Unity with references to sprites and prefabs.' }
+    const run = (format: Record<string, unknown>) => {
+      const p = createProject('t', false)
+      p.documents[DATA_DOC] = { moduleVersion: 2, data: { formats: [format], schemas: [{ id: 's', name: 'Item', format: 'format-so' }] } }
+      return ensureDocument(p, mod, makeId)
+    }
+    const doc = run({ ...seed })
+    expect(doc.moduleVersion).toBe(3)
+    expect(doc.data.formats[0]).toMatchObject({ id: 'format-so', name: 'Native data asset', editedIn: 'Engine editor' })
+    expect(doc.data.schemas[0].format).toBe('format-so')
+    expect(run({ ...seed, name: 'SO assets' }).data.formats[0]).toMatchObject({ name: 'SO assets', editedIn: 'Unity Inspector' })
+  })
+
+  it('reads Godot and Unreal type spellings as the same neutral types', () => {
+    const t = (type: string) => {
+      const f = parseField(`x: ${type}`, [{ id: 'i', name: 'Item' }])
+      return f.kind === 'ref' ? `ref${f.array ? '[]' : ''}` : `${f.primitive ?? f.asset ?? f.kind}${f.array ? '[]' : ''}`
+    }
+    expect(['int32', 'FString', 'FText', 'FVector', 'FVector2D', 'FLinearColor', 'StringName', 'real', 'UCurveFloat*'].map(t)).toEqual(['int', 'string', 'localized', 'vec3', 'vec2', 'color', 'string', 'float', 'curve'])
+    expect(['PackedScene', 'Texture2D', 'TSoftObjectPtr<UTexture2D>', 'USoundBase*', 'AudioStream', 'UStaticMesh', 'Resource', 'UPrimaryDataAsset'].map(t)).toEqual(['scene', 'image', 'image', 'audio', 'audio', 'mesh', 'data', 'data'])
+    expect(['TArray<int32>', 'Array[Item]', 'Array<float>', 'Item[]'].map(t)).toEqual(['int[]', 'ref[]', 'float[]', 'ref[]'])
+    expect(t('Faction')).toBe('unknown')
+  })
+
+  it('checks Godot and Unreal typed records like Unity ones', () => {
+    const p = createProject('t', false)
+    p.documents[DATA_DOC] = { moduleVersion: 3, data: { schemas: [{ id: 's', name: 'Item', idPrefix: 'item.', required: ['hp: int32', 'pos: FVector'] }] } }
+    const s = p.documents[DATA_DOC].data.schemas[0]
+    expect(validateRecord(p, s, '{"id":"item.a","hp":1.5,"pos":[1,2]}').map((i) => i.message)).toEqual(['should be a whole number', 'should be [x, y, z]'])
+    expect(sampleRecord(p, s)).toMatchObject({ hp: 1, pos: [0, 0, 0] })
   })
 })

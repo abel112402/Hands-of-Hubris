@@ -47,7 +47,7 @@ describe('data-driven guide', () => {
     expect(dataList(state(), 'schemas').every((x) => !x.required)).toBe(true)
     applyExample(example('data-colony-schemas'))
     expect(dataList(state(), 'schemas').map((s) => s.name)).toEqual(dataList(preview, 'schemas').map((s) => s.name))
-    expect(dataList(state(), 'formats').map((f) => f.name)).toEqual(['ScriptableObject', 'JSON', 'CSV'])
+    expect(dataList(state(), 'formats').map((f) => f.name)).toEqual(['Native data asset', 'JSON', 'CSV'])
     const model = dataModel(state())
     expect(model.problems).toEqual([])
     expect(model.edges.some((e) => e.from.name === 'Quest' && e.to.name === 'Quest')).toBe(true)
