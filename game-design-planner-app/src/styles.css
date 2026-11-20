@@ -1883,3 +1883,70 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 :root[data-theme=light] .atlas3-map{border-color:#e2d6bd;box-shadow:inset 0 0 60px color-mix(in srgb,#8a6a3a 10%,transparent)}
 /* The heading takes focus after navigation (EditorPageV3) to announce the page; it is not a control, so no ring. */
 .sec3-title:focus{outline:none}
+
+/* ---- Project Book (read-only document of the project's data; Brief and Full data modes, printable) ---- */
+.book{max-width:1040px;margin:0 auto;padding:20px 32px 96px;font-size:15px;line-height:1.55}
+.book-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.book-tools-note{font-size:var(--fs-sm)}
+.book-cover{padding:12px 0 24px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.book-kicker{text-transform:uppercase;letter-spacing:.08em;font-size:var(--fs-xs);color:var(--accent);margin:0}
+.book-cover h1{font-size:var(--fs-4xl);line-height:1.15;margin:6px 0 12px}
+.book-pitch{font-size:var(--fs-xl);line-height:1.45;max-width:62ch;margin:0 0 10px}
+.book-lead{max-width:72ch;margin:0 0 10px}
+.book-pillars{display:grid;gap:6px;margin:16px 0}
+.book-pillars>div{padding:8px 12px;border-left:3px solid var(--accent);background:var(--surface-1);border-radius:var(--radius-sm)}
+.book-numbers{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:14px 0}
+.book-numbers>div{display:flex;flex-direction:column;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius-md);line-height:1.3}
+.book-numbers .num{font-size:var(--fs-2xl);font-weight:700}
+.book-toc{display:grid;gap:6px;margin-bottom:28px;padding:12px 16px;border:1px solid var(--line);border-radius:var(--radius-md)}
+.book-toc-row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:baseline}
+.book-toc-row>strong{font-size:var(--fs-sm);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.book-toc ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:2px 16px}
+.book-toc button.link{background:none;border:none;padding:2px 0;color:var(--accent);cursor:pointer;font:inherit;text-align:left}
+@media (max-width:720px){.book{padding:16px 16px 80px}.book-toc-row{grid-template-columns:1fr;gap:2px}}
+.book-part-title{text-transform:uppercase;letter-spacing:.08em;font-size:var(--fs-sm);color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:6px;margin:40px 0 8px}
+.book-chapter{margin:24px 0 40px}
+.book-chapter>h2{display:flex;align-items:center;gap:8px;font-size:var(--fs-2xl);margin:0 0 2px}
+.book-chapter-sub{margin:0 0 12px}
+.book a{color:inherit;text-decoration:none}
+.book a:hover{text-decoration:underline}
+:is(.book-fields,.book-used,.book-table td,.book-more) a{color:var(--accent)}
+.book-section{margin:20px 0}
+.book-section>h3{font-size:var(--fs-lg);margin:0 0 8px}
+.book-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 18px;margin:0}
+.book-fields>div{min-width:0}
+.book-fields>div.wide{grid-column:1/-1}
+.book-fields dt{font-size:var(--fs-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.book-fields dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;max-width:80ch}
+.book-entries{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.book-entry{border:1px solid var(--line);border-top:3px solid var(--line);border-radius:var(--radius-md);padding:10px 12px;background:var(--surface-1);break-inside:avoid}
+.book-entry h4{margin:0 0 6px}
+.book-used{font-size:var(--fs-sm);margin:8px 0 0}
+.book-check{list-style:none;margin:0;padding:0}
+.book-swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;border:1px solid var(--line)}
+.book-scroll{overflow-x:auto}
+.book-table{font-size:var(--fs-sm);line-height:1.4;width:100%}
+.book-table :is(th,td){vertical-align:top;text-align:left;padding:6px 10px}
+.book-table tbody th{white-space:nowrap}
+.book-more{color:var(--text);min-width:220px;max-width:420px}
+.book-more>div{overflow-wrap:anywhere}
+.book-figure{margin:12px 0 4px;break-inside:avoid}
+.book-figure figcaption{font-size:var(--fs-sm);color:var(--muted);margin-top:6px}
+/* Presentation mode for editor views: the figure keeps the drawing, not the controls, instructions or checks. */
+.book-figure-body{pointer-events:none}
+.book-figure-body :is(input,select,textarea,button,label,.toolbar,.tabs,[role=group],[role=toolbar]),
+.book-figure-body :is(.error-text,.warn,.warn-text,.issues,.hint),
+.book-figure-body p.muted{display:none!important}
+.book-graph{width:100%;height:auto;display:block}
+.book-text{white-space:pre-wrap}
+@media print{
+  .bar3,.rail3,.companion3-col,.companion3,.tray3,.pill3,.book-tools,.book-toc{display:none!important}
+  .body3{display:block!important}
+  .surface3{background:#fff!important}
+  .book{max-width:none;padding:0;font-size:11pt}
+  .book-cover{break-after:page;border:none}
+  .book-data .book-chapter{break-before:page}
+  .book-chapter>h2,.book-section>h3{break-after:avoid}
+  .book-scroll{overflow:visible}
+  .book-table tr{break-inside:avoid}
+}

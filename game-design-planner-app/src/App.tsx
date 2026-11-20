@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { EditorRoute, HomeRoute, Shell } from './ui/Shell'
 import { Issues } from './ui/pages/Issues'
+import { ProjectBook } from './ui/book/ProjectBook'
 import { SettingsPage } from './ui/settings/SettingsPage'
 import type { CloudBackend } from './core/cloud/backend'
 import { CloudBootstrap, RequireUser, RequireWorkspace } from './ui/cloud/guards'
@@ -24,6 +25,7 @@ export function App({ cloudBackend }: { cloudBackend?: CloudBackend | null } = {
             <Route index element={<HomeRoute />} />
             <Route path="doc/:docId" element={<EditorRoute />} />
             <Route path="issues" element={<Issues />} />
+            <Route path="book" element={<ProjectBook />} />
             <Route path="settings/:tab?" element={<SettingsPage />} />
             {/* Old addresses of pages that are now Settings tabs (bookmarks, links in docs). */}
             <Route path="definitions" element={<Navigate to="/settings/definitions" replace />} />

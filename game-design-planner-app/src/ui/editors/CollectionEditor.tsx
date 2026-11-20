@@ -314,100 +314,109 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
       )}
       <div className={'collection-body' + (besideInspector ? ' with-inspector' : '')}>
         <div className="view-area">
-          {view.kind === 'cards' && <CardsView {...props} />}
-          {view.kind === 'table' && <TableView {...props} columns={view.columns} />}
-          {view.kind === 'kanban' && <KanbanView {...props} groupBy={view.groupBy} onAdd={add} />}
-          {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} scale={view.scale} />}
-          {view.kind === 'statPreview' && <StatPreviewView {...props} view={view} />}
-          {view.kind === 'needsBalance' && <NeedsBalanceView {...props} view={view} />}
-          {view.kind === 'npcPopulation' && <PopulationView {...props} />}
-          {view.kind === 'npcLifespan' && <LifespanView {...props} />}
-          {view.kind === 'npcNeedChain' && <NeedChainView {...props} />}
-          {view.kind === 'npcWorkforce' && <WorkforceView {...props} />}
-          {view.kind === 'npcRoutine' && <RoutineView {...props} />}
-          {view.kind === 'npcBondLadder' && <BondLadderView {...props} />}
-          {view.kind === 'npcEventOdds' && <EventOddsView {...props} />}
-          {view.kind === 'archLayerStack' && <LayerStackView {...props} />}
-          {view.kind === 'archLayers' && <LayerDiagramView {...props} />}
-          {view.kind === 'archMatrix' && <DependencyMatrixView {...props} />}
-          {view.kind === 'archCoupling' && <CouplingView {...props} />}
-          {view.kind === 'archMessages' && <MessageFlowView {...props} />}
-          {view.kind === 'archExtensions' && <ExtensionCoverageView {...props} />}
-          {view.kind === 'archTicks' && <TickScheduleView {...props} />}
-          {view.kind === 'archBoot' && <BootSequenceView {...props} />}
-          {view.kind === 'codingNaming' && <NamingTesterView {...props} />}
-          {view.kind === 'codingFolders' && <FolderTreeView {...props} />}
-          {view.kind === 'codingGit' && <BranchFlowView {...props} />}
-          {view.kind === 'codingReview' && <EnforcementBoardView {...props} />}
-          {view.kind === 'dataModel' && <DataModelView {...props} />}
-          {view.kind === 'dataTester' && <RecordTesterView {...props} />}
-          {view.kind === 'dataReadiness' && <PipelineReadinessView {...props} />}
-          {view.kind === 'dataLoadPlan' && <LoadPlanView {...props} />}
-          {view.kind === 'depletion' && <DepletionView {...props} />}
-          {view.kind === 'levelCurve' && <LevelCurveView />}
-          {view.kind === 'skillTree' && <SkillTreeView {...props} />}
-          {view.kind === 'buildPlanner' && <BuildPlannerView {...props} />}
-          {view.kind === 'itemCoverage' && <CoverageView {...props} />}
-          {view.kind === 'valuePreview' && <ValuePreviewView {...props} />}
-          {view.kind === 'craftTree' && <CraftTreeView {...props} />}
-          {view.kind === 'rarityCurve' && <RarityCurveView {...props} />}
-          {view.kind === 'lootOdds' && <LootOddsView {...props} />}
-          {view.kind === 'combatSandbox' && <CombatSandboxView {...props} />}
-          {view.kind === 'threatCurve' && <ThreatCurveView {...props} />}
-          {view.kind === 'weaknessMatrix' && <WeaknessMatrixView {...props} />}
-          {view.kind === 'phaseBars' && <PhaseBarsView {...props} />}
-          {view.kind === 'dayClock' && <DayClockView {...props} />}
-          {view.kind === 'biomeWeather' && <BiomeWeatherView {...props} />}
-          {view.kind === 'yearStrip' && <YearStripView {...props} />}
-          {view.kind === 'conditions' && <ConditionsView />}
-          {view.kind === 'priceLadder' && <PriceLadderView {...props} />}
-          {view.kind === 'merchantStock' && <MerchantStockView {...props} />}
-          {view.kind === 'wanderingCalendar' && <WanderingCalendarView {...props} />}
-          {view.kind === 'moneyFlow' && <MoneyFlowView />}
-          {view.kind === 'questFlow' && <QuestFlowView {...props} />}
-          {view.kind === 'actPacing' && <ActPacingView {...props} />}
-          {view.kind === 'rewardBudget' && <RewardBudgetView />}
-          {view.kind === 'endingPaths' && <EndingPathsView {...props} />}
-          {view.kind === 'castCoverage' && <CastCoverageView {...props} />}
-          {view.kind === 'wireframe' && <WireframeView {...props} />}
-          {view.kind === 'screenMap' && <ScreenMapView {...props} />}
-          {view.kind === 'screenReadiness' && <ScreenReadinessView {...props} />}
-          {view.kind === 'bindingMap' && <BindingMapView {...props} />}
-          {view.kind === 'pillarMatrix' && <PillarMatrixView {...props} />}
-          {view.kind === 'visionReadiness' && <VisionReadinessView />}
-          {view.kind === 'phaseProgress' && <PhaseProgressView {...props} />}
-          {view.kind === 'cutSavings' && <CutSavingsView {...props} />}
-          {view.kind === 'loopPacing' && <LoopPacingView {...props} />}
-          {view.kind === 'tuningBoard' && <TuningBoardView {...props} />}
-          {view.kind === 'pressureOverview' && <PressureOverviewView {...props} />}
-          {view.kind === 'difficultyImpact' && <DifficultyImpactView />}
-          {view.kind === 'customSimulator' && <CustomSimulatorView {...props} />}
-          {view.kind === 'relationsWeb' && <RelationsWebView {...props} />}
-          {view.kind === 'factionFootprint' && <FactionFootprintView {...props} />}
-          {view.kind === 'reputationScale' && <ReputationScaleView {...props} />}
-          {view.kind === 'actionSimulator' && <ActionSimulatorView {...props} />}
-          {view.kind === 'biomeDossier' && <BiomeDossierView {...props} />}
-          {view.kind === 'worldAtlas' && <WorldAtlasView {...props} />}
-          {view.kind === 'unlockPath' && <UnlockPathView {...props} />}
-          {view.kind === 'biomeThreat' && <BiomeThreatView {...props} />}
-          {view.kind === 'biomeCoverage' && <BiomeCoverageView {...props} />}
-          {view.kind === 'locationGallery' && <LocationGalleryView {...props} />}
-          {view.kind === 'locationMap' && <LocationMapView {...props} />}
-          {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
-          {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
-          {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
-          {view.kind === 'progression' && <ProgressionView {...props} scaleField={view.scaleField} leadsField={view.leadsField} />}
-          {view.kind === 'compare' && <CompareView {...props} valuesSection={view.valuesSection} columns={view.columns} />}
-          {view.kind === 'ranges' && <RangesView {...props} view={view} />}
-          {view.kind === 'economy' && <EconomyView />}
-          {view.kind === 'townFlow' && <TownResourceFlowView {...props} />}
-          {view.kind === 'townNetwork' && <TownNetworkView {...props} />}
+          <CollectionViewBody view={view} props={props} onAdd={add} />
           {items.length === 0 && <GuideEmpty docId={docId} sectionId={sec.id} singular={sec.singular} onAdd={() => add()} />}
         </div>
         {besideInspector && sel && <Inspector key={sel.id} docId={docId} sec={sec} entity={sel} patch={patch} onClose={() => setSelected(undefined)} setSelected={setSelected} />}
         {sheetFor && <RecordSheet docId={docId} sec={sec} entity={sheetFor} items={shown.some((e) => e.id === sheetFor.id) ? shown : items} patch={patch} onClose={closeSheet} onToggleExpand={() => setPage(sheetFor.id)} setSelected={setSelected} />}
       </div>
     </div>
+  )
+}
+
+/** Draws one collection view; shared by the editor and the read-only Project Book. */
+export function CollectionViewBody({ view, props, onAdd }: { view: CollectionView; props: ViewProps; onAdd: (init?: Record<string, any>) => void }) {
+  return (
+    <>
+      {view.kind === 'cards' && <CardsView {...props} />}
+      {view.kind === 'table' && <TableView {...props} columns={view.columns} />}
+      {view.kind === 'kanban' && <KanbanView {...props} groupBy={view.groupBy} onAdd={onAdd} />}
+      {view.kind === 'radar' && <RadarView {...props} mapField={view.mapField} scale={view.scale} />}
+      {view.kind === 'statPreview' && <StatPreviewView {...props} view={view} />}
+      {view.kind === 'needsBalance' && <NeedsBalanceView {...props} view={view} />}
+      {view.kind === 'npcPopulation' && <PopulationView {...props} />}
+      {view.kind === 'npcLifespan' && <LifespanView {...props} />}
+      {view.kind === 'npcNeedChain' && <NeedChainView {...props} />}
+      {view.kind === 'npcWorkforce' && <WorkforceView {...props} />}
+      {view.kind === 'npcRoutine' && <RoutineView {...props} />}
+      {view.kind === 'npcBondLadder' && <BondLadderView {...props} />}
+      {view.kind === 'npcEventOdds' && <EventOddsView {...props} />}
+      {view.kind === 'archLayerStack' && <LayerStackView {...props} />}
+      {view.kind === 'archLayers' && <LayerDiagramView {...props} />}
+      {view.kind === 'archMatrix' && <DependencyMatrixView {...props} />}
+      {view.kind === 'archCoupling' && <CouplingView {...props} />}
+      {view.kind === 'archMessages' && <MessageFlowView {...props} />}
+      {view.kind === 'archExtensions' && <ExtensionCoverageView {...props} />}
+      {view.kind === 'archTicks' && <TickScheduleView {...props} />}
+      {view.kind === 'archBoot' && <BootSequenceView {...props} />}
+      {view.kind === 'codingNaming' && <NamingTesterView {...props} />}
+      {view.kind === 'codingFolders' && <FolderTreeView {...props} />}
+      {view.kind === 'codingGit' && <BranchFlowView {...props} />}
+      {view.kind === 'codingReview' && <EnforcementBoardView {...props} />}
+      {view.kind === 'dataModel' && <DataModelView {...props} />}
+      {view.kind === 'dataTester' && <RecordTesterView {...props} />}
+      {view.kind === 'dataReadiness' && <PipelineReadinessView {...props} />}
+      {view.kind === 'dataLoadPlan' && <LoadPlanView {...props} />}
+      {view.kind === 'depletion' && <DepletionView {...props} />}
+      {view.kind === 'levelCurve' && <LevelCurveView />}
+      {view.kind === 'skillTree' && <SkillTreeView {...props} />}
+      {view.kind === 'buildPlanner' && <BuildPlannerView {...props} />}
+      {view.kind === 'itemCoverage' && <CoverageView {...props} />}
+      {view.kind === 'valuePreview' && <ValuePreviewView {...props} />}
+      {view.kind === 'craftTree' && <CraftTreeView {...props} />}
+      {view.kind === 'rarityCurve' && <RarityCurveView {...props} />}
+      {view.kind === 'lootOdds' && <LootOddsView {...props} />}
+      {view.kind === 'combatSandbox' && <CombatSandboxView {...props} />}
+      {view.kind === 'threatCurve' && <ThreatCurveView {...props} />}
+      {view.kind === 'weaknessMatrix' && <WeaknessMatrixView {...props} />}
+      {view.kind === 'phaseBars' && <PhaseBarsView {...props} />}
+      {view.kind === 'dayClock' && <DayClockView {...props} />}
+      {view.kind === 'biomeWeather' && <BiomeWeatherView {...props} />}
+      {view.kind === 'yearStrip' && <YearStripView {...props} />}
+      {view.kind === 'conditions' && <ConditionsView />}
+      {view.kind === 'priceLadder' && <PriceLadderView {...props} />}
+      {view.kind === 'merchantStock' && <MerchantStockView {...props} />}
+      {view.kind === 'wanderingCalendar' && <WanderingCalendarView {...props} />}
+      {view.kind === 'moneyFlow' && <MoneyFlowView />}
+      {view.kind === 'questFlow' && <QuestFlowView {...props} />}
+      {view.kind === 'actPacing' && <ActPacingView {...props} />}
+      {view.kind === 'rewardBudget' && <RewardBudgetView />}
+      {view.kind === 'endingPaths' && <EndingPathsView {...props} />}
+      {view.kind === 'castCoverage' && <CastCoverageView {...props} />}
+      {view.kind === 'wireframe' && <WireframeView {...props} />}
+      {view.kind === 'screenMap' && <ScreenMapView {...props} />}
+      {view.kind === 'screenReadiness' && <ScreenReadinessView {...props} />}
+      {view.kind === 'bindingMap' && <BindingMapView {...props} />}
+      {view.kind === 'pillarMatrix' && <PillarMatrixView {...props} />}
+      {view.kind === 'visionReadiness' && <VisionReadinessView />}
+      {view.kind === 'phaseProgress' && <PhaseProgressView {...props} />}
+      {view.kind === 'cutSavings' && <CutSavingsView {...props} />}
+      {view.kind === 'loopPacing' && <LoopPacingView {...props} />}
+      {view.kind === 'tuningBoard' && <TuningBoardView {...props} />}
+      {view.kind === 'pressureOverview' && <PressureOverviewView {...props} />}
+      {view.kind === 'difficultyImpact' && <DifficultyImpactView />}
+      {view.kind === 'customSimulator' && <CustomSimulatorView {...props} />}
+      {view.kind === 'relationsWeb' && <RelationsWebView {...props} />}
+      {view.kind === 'factionFootprint' && <FactionFootprintView {...props} />}
+      {view.kind === 'reputationScale' && <ReputationScaleView {...props} />}
+      {view.kind === 'actionSimulator' && <ActionSimulatorView {...props} />}
+      {view.kind === 'biomeDossier' && <BiomeDossierView {...props} />}
+      {view.kind === 'worldAtlas' && <WorldAtlasView {...props} />}
+      {view.kind === 'unlockPath' && <UnlockPathView {...props} />}
+      {view.kind === 'biomeThreat' && <BiomeThreatView {...props} />}
+      {view.kind === 'biomeCoverage' && <BiomeCoverageView {...props} />}
+      {view.kind === 'locationGallery' && <LocationGalleryView {...props} />}
+      {view.kind === 'locationMap' && <LocationMapView {...props} />}
+      {view.kind === 'grid2d' && <Grid2dView {...props} xField={view.xField} yField={view.yField} max={view.max} />}
+      {view.kind === 'timeline' && <TimelineView {...props} view={view} />}
+      {view.kind === 'ladder' && <LadderView {...props} orderField={view.orderField} linkFields={view.linkFields} />}
+      {view.kind === 'progression' && <ProgressionView {...props} scaleField={view.scaleField} leadsField={view.leadsField} />}
+      {view.kind === 'compare' && <CompareView {...props} valuesSection={view.valuesSection} columns={view.columns} />}
+      {view.kind === 'ranges' && <RangesView {...props} view={view} />}
+      {view.kind === 'economy' && <EconomyView />}
+      {view.kind === 'townFlow' && <TownResourceFlowView {...props} />}
+      {view.kind === 'townNetwork' && <TownNetworkView {...props} />}
+    </>
   )
 }
 

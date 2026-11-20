@@ -2183,7 +2183,8 @@
       "toDark": "Switch to dark mode"
     },
     "rail": {
-      "atlas": "Atlas"
+      "atlas": "Atlas",
+      "book": "Book"
     },
     "sheet": {
       "close": "Close",

@@ -100,6 +100,7 @@ export function AppShellV3() {
   const rail = (
     <>
       <RailLink to="/" end icon="compass" label={t('v3.rail.atlas')} />
+      <RailLink to="/book" icon="book" label={t('v3.rail.book')} />
       <span className="rail3-sep" aria-hidden="true" />
       <PhaseCompass docId={docId} />
       <span className="rail3-spacer" />
@@ -136,7 +137,7 @@ export function AppShellV3() {
       <CloudBanners />
       <div className="body3" style={{ gridTemplateColumns: shellColumns(layout) }}>
         {!layout.compact && <nav className="rail3" aria-label={t('nav.main')}>{rail}</nav>}
-        <main className="surface3 shell-body"><Outlet />{/* The Atlas has the step card instead. */}{loc.pathname !== '/' && mode === 'guided' && <NextStepPill docId={docId} sectionId={sectionId} />}</main>
+        <main className="surface3 shell-body"><Outlet />{/* The Atlas has the step card instead. */}{loc.pathname !== '/' && loc.pathname !== '/book' && mode === 'guided' && <NextStepPill docId={docId} sectionId={sectionId} />}</main>
         {!layout.compact && (layout.companionDocked
           ? <div className="companion3-col"><CompanionPanel docId={docId} sectionId={sectionId} docked canPin /><CompanionTray docId={docId} hintCount={hintCount} /></div>
           : <CompanionTray docId={docId} hintCount={hintCount} />)}

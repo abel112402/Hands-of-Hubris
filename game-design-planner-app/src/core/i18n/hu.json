@@ -1932,7 +1932,8 @@
       "toDark": "Váltás sötét módra"
     },
     "rail": {
-      "atlas": "Atlasz"
+      "atlas": "Atlasz",
+      "book": "Könyv"
     },
     "sheet": {
       "close": "Bezárás",
