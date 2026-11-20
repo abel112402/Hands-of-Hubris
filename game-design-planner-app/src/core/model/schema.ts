@@ -34,6 +34,7 @@ export const projectSchema = z
         appVersion: z.string(),
         profile: profileSchema.optional(),
         guide: guideStateSchema.optional(),
+        engine: z.object({ target: z.string().max(40).optional() }).passthrough().optional(),
       })
       .passthrough(),
     registry,

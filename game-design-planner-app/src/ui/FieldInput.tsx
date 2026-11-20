@@ -13,6 +13,8 @@ export type FieldProps = {
   compact?: boolean
   id?: string
   describedBy?: string
+  /** Accessible name when the field has no visible <label> (table cells); fields with a label leave it unset. */
+  label?: string
 }
 
 export function ChecklistItems({ items, onChange }: { items: ChecklistData['groups'][number]['items']; onChange: (v: typeof items) => void }) {
@@ -31,7 +33,7 @@ export function ChecklistItems({ items, onChange }: { items: ChecklistData['grou
   )
 }
 
-export function FieldInput({ field, value, onChange, docId, compact, id, describedBy }: FieldProps) {
+export function FieldInput({ field, value, onChange, docId, compact, id, describedBy, label }: FieldProps) {
   const project = useProject()
   const options = useMemo(
     () => (field.type === 'ref' || field.type === 'multiref' || field.type === 'map' ? resolveSource(project, docId, field.source) : []),
@@ -40,14 +42,14 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
 
   switch (field.type) {
     case 'text':
-      return <input id={id} aria-describedby={describedBy} placeholder={field.placeholder} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <input id={id} aria-label={label} aria-describedby={describedBy} placeholder={field.placeholder} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'longtext':
-      return <textarea id={id} aria-describedby={describedBy} placeholder={field.placeholder} rows={compact ? 2 : 4} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      return <textarea id={id} aria-label={label} aria-describedby={describedBy} placeholder={field.placeholder} rows={compact ? 2 : 4} value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
     case 'number':
       return (
         <input
           id={id}
-          aria-describedby={describedBy}
+          aria-label={label} aria-describedby={describedBy}
           type="number"
           value={value ?? ''}
           min={field.min}
@@ -57,10 +59,10 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
         />
       )
     case 'boolean':
-      return <input id={id} aria-describedby={describedBy} type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+      return <input id={id} aria-label={label} aria-describedby={describedBy} type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
     case 'enum':
       return (
-        <select id={id} aria-describedby={describedBy} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
+        <select id={id} aria-label={label} aria-describedby={describedBy} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
           <option value="">—</option>
           {field.options.map((o) => (
             <option key={o}>{o}</option>
@@ -69,7 +71,7 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
       )
     case 'ref':
       return (
-        <select id={id} aria-describedby={describedBy} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
+        <select id={id} aria-label={label} aria-describedby={describedBy} value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)}>
           <option value="">—</option>
           {options.map((o) => (
             <option key={o.id} value={o.id}>
@@ -125,11 +127,11 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
       )
     }
     case 'date':
-      return <input id={id} aria-describedby={describedBy} type="date" value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)} />
+      return <input id={id} aria-label={label} aria-describedby={describedBy} type="date" value={value ?? ''} onChange={(e) => onChange(e.target.value || undefined)} />
     case 'color':
       return (
         <div className="row">
-          <input id={id} aria-describedby={describedBy} type="color" value={value || '#888888'} onChange={(e) => onChange(e.target.value)} />
+          <input id={id} aria-label={label} aria-describedby={describedBy} type="color" value={value || '#888888'} onChange={(e) => onChange(e.target.value)} />
           {value && <button className="small" onClick={() => onChange(undefined)}>clear</button>}
         </div>
       )
@@ -137,7 +139,7 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
       return (
         <textarea
           id={id}
-          aria-describedby={describedBy}
+          aria-label={label} aria-describedby={describedBy}
           rows={compact ? 2 : 4}
           placeholder={field.placeholder ?? 'One entry per line'}
           value={(value ?? []).join('\n')}
@@ -150,7 +152,7 @@ export function FieldInput({ field, value, onChange, docId, compact, id, describ
       const r = expr ? tryEvaluate(expr, vars) : null
       return (
         <div>
-          <input id={id} aria-describedby={describedBy} value={expr} placeholder="e.g. base * (1 + level / 10)" onChange={(e) => onChange(e.target.value)} />
+          <input id={id} aria-label={label} aria-describedby={describedBy} value={expr} placeholder="e.g. base * (1 + level / 10)" onChange={(e) => onChange(e.target.value)} />
           {r && !r.ok && <div className="error-text">{r.error}</div>}
         </div>
       )

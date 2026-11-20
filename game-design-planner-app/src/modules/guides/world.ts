@@ -15,7 +15,7 @@ import {
   WORLD_DOC,
   worldList,
 } from '../../core/world'
-import { hasHandEdits, locationsOf, unmappedLocations } from '../../core/location/analysis'
+import { cachedMapChecks, currentMap, hasHandEdits, locationsOf, unmappedLocations } from '../../core/location/analysis'
 import { generateMap } from '../../core/location/generate'
 import { getLocationType } from '../../core/location/registry'
 
@@ -298,6 +298,34 @@ export const WORLD_GUIDE: ModuleGuide = {
       target: 'view-locationMap',
       done: (p) => locationsOf(p).some(hasHandEdits),
     },
+    {
+      id: 'linkedMap',
+      title: 'Put a place inside another',
+      body: 'Select a house, landmark or cellar door on a map and press Create linked map: a floor plan or dungeon opens, its entrance on the matching side. Double-click to go in, use the breadcrumb to come out.',
+      section: 'locations',
+      target: 'view-locationMap',
+      done: (p) => locationsOf(p).some((l) => l.parent && currentMap(l)),
+    },
+    {
+      id: 'worldMap',
+      title: 'Draw the whole world',
+      body: 'Add a location of type World and generate its map: the land is shared out among your biomes, and every place that is not inside another one gets a site you can click to open.',
+      section: 'locations',
+      target: 'view-locationMap',
+      done: (p) => locationsOf(p).some((l) => l.type === 'World' && currentMap(l)),
+      action: { label: 'Insert example location…', examples: 'locations' },
+    },
+    {
+      id: 'playable',
+      title: 'Make every map playable',
+      body: 'The Checks box under the layers lists rooms or creatures nobody can reach, locks that cannot be opened, broken house rules and links that went stale. Fix them by hand or reroll the layer; the hints panel shows the same.',
+      section: 'locations',
+      target: 'view-locationMap',
+      done: (p) => {
+        const mapped = locationsOf(p).filter((l) => currentMap(l))
+        return mapped.length > 0 && mapped.every((l) => cachedMapChecks(l, currentMap(l)!, p).length === 0)
+      },
+    },
   ],
   examples: [
     worldExample('tiered', 'Six-biome tiered world', 'Starter meadow, two Early biomes (one boss-gated, one faction-gated), a Mid swamp, a Late peak and the Final spire, each opened by the guardian of the previous one.', TIERED),
@@ -322,6 +350,12 @@ export const WORLD_GUIDE: ModuleGuide = {
       traps: true,
       layoutStyle: 'Rooms and corridors',
       description: 'Burial halls under a ruined chapel.',
+    })),
+    locationExample('knownLands', 'World map of the setting', 'A continent shared out among your biomes, with a site for every place already in Locations, linked to its map.', 12, () => ({
+      name: 'The Known Lands',
+      type: 'World',
+      size: 'Medium',
+      description: 'The whole setting at a glance.',
     })),
     locationExample('cottage', 'Furnished cottage', 'A four-room house with doors, windows and furniture for each room.', 77, () => ({
       name: 'Miller’s cottage',

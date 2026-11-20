@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type DragEvent, type HTMLAttributes, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type DragEvent, type HTMLAttributes, type ReactNode, type RefObject } from 'react'
 
 /**
  * Native drag-and-drop cue: the picked-up element fades to an outline (`data-dragging`). Set a tick
@@ -22,28 +22,48 @@ import { useJustChanged } from './hooks'
  */
 export function Segmented({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
   const ref = useRef<HTMLDivElement>(null)
+  useSlidingThumb(ref, ':scope>[aria-pressed="true"]', 'aria-pressed')
+  return <div ref={ref} className={'segmented' + (className ? ` ${className}` : '')} {...rest}>{children}</div>
+}
+
+/**
+ * Measures the child matching `selector` (the pressed / current one) and puts its position on the container as
+ * `--thumb-x` / `--thumb-w` with a `data-thumb` attribute, so CSS can slide one indicator between children. The
+ * container must be the children's offset parent. Re-measures when `attribute` moves, children change or resize.
+ */
+export function useSlidingThumb(ref: RefObject<HTMLElement | null>, selector: string, attribute: string) {
   useLayoutEffect(() => {
     const el = ref.current
     if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => place())
     const place = () => {
-      const on = el.querySelector<HTMLElement>(':scope>[aria-pressed="true"]')
+      const on = el.querySelector<HTMLElement>(selector)
       if (!on) return el.removeAttribute('data-thumb')
       el.style.setProperty('--thumb-x', `${on.offsetLeft}px`)
       el.style.setProperty('--thumb-w', `${on.offsetWidth}px`)
       el.setAttribute('data-thumb', '')
     }
+    const watch = () => {
+      ro.disconnect()
+      ro.observe(el)
+      for (const b of el.children) ro.observe(b)
+    }
     place()
-    const mo = new MutationObserver(place)
-    mo.observe(el, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] })
-    const ro = new ResizeObserver(place)
-    ro.observe(el)
-    for (const b of el.children) ro.observe(b)
+    watch()
+    // Slides only from the next frame on: the first placement appears in place instead of sliding in from 0.
+    const raf = requestAnimationFrame(() => el.setAttribute('data-thumb-live', ''))
+    const mo = new MutationObserver((records) => {
+      if (records.some((r) => r.type === 'childList')) watch()
+      place()
+    })
+    mo.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: [attribute] })
     return () => {
+      cancelAnimationFrame(raf)
+      el.removeAttribute('data-thumb-live')
       mo.disconnect()
       ro.disconnect()
     }
-  }, [])
-  return <div ref={ref} className={'segmented' + (className ? ` ${className}` : '')} {...rest}>{children}</div>
+  }, [ref, selector, attribute])
 }
 
 /** Animates its height to fit its content, so swapping what is inside does not make the layout jump. */

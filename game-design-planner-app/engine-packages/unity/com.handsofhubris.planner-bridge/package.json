@@ -1,0 +1,15 @@
+{
+  "name": "com.handsofhubris.planner-bridge",
+  "version": "0.1.0",
+  "displayName": "Game Design Planner Bridge",
+  "description": "Imports the Game Design Planner engine export (hoh-engine v1): copies the generated C#, creates and updates a ScriptableObject per planner record by its stable planner ID, keeps your own class files and the sprites and prefabs you assign, and validates the result.",
+  "unity": "2022.3",
+  "documentationUrl": "",
+  "keywords": ["game design", "planner", "data-driven", "scriptableobject", "import"],
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "author": {
+    "name": "Hands of Hubris"
+  }
+}

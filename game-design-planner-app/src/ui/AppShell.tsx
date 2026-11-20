@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../core/store/store'
@@ -10,6 +10,8 @@ import { ThemeSwitch } from './ThemeSwitch'
 import { writeAutosave } from '../core/persistence/autosave'
 import { createSnapshot, downloadJson, exportMarkdownZip, newProject, openProject, saveProject } from './actions'
 import { Icon } from './Icon'
+import { EngineExportButton, EngineReportButton } from './EngineExportButton'
+import { exportOnSave } from './engineLink'
 import { Menu } from './Menu'
 import { BrandMark } from './BrandMark'
 import { ModuleIcon } from './ModuleIcon'
@@ -24,7 +26,7 @@ import { useEasterEggs } from './flavor/easter'
 const becameClean = (wasDirty: boolean, dirty: boolean) => wasDirty && !dirty
 
 /** "Unsaved" ↔ "All changes saved". The text crossfades on change, and a tick draws in on save. */
-function SaveStatus({ dirty, fileName }: { dirty: boolean; fileName?: string }) {
+export function SaveStatus({ dirty, fileName }: { dirty: boolean; fileName?: string }) {
   const { t } = useTranslation()
   const swapped = useJustChanged(dirty, 300)
   const saved = useJustChanged(dirty, 900, becameClean)
@@ -62,41 +64,14 @@ function Palette({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function AppShell() {
-  const { t } = useTranslation()
-  const project = useStore((s) => s.project)
-  const dirty = useStore((s) => s.dirty)
-  const fileName = useStore((s) => s.fileName)
-  const canUndo = useStore((s) => s.past.length > 0)
-  const canRedo = useStore((s) => s.future.length > 0)
-  const [palette, setPalette] = useState(false)
+/** Autosave, leave-page warning and the global shortcuts (Ctrl+S, Ctrl+K, undo, redo); both shells use it. */
+export function useShellEffects(openPalette: () => void) {
+  const open = useRef(openPalette)
+  useEffect(() => {
+    open.current = openPalette
+  })
   useMilestones()
   useEasterEggs()
-  const nav = useNavigate()
-  const readOnly = useStore((s) => s.readOnly)
-  const cloudEnabled = useCloud((s) => s.enabled)
-  const cloudActive = useCloud((s) => !!s.active)
-  const mode = useCloud((s) => s.mode)
-  const user = useCloud((s) => s.user)
-  const doSignOut = async () => {
-    if (hasUnsyncedChanges() && !confirm(t('cloud.account.signOutUnsaved'))) return
-    await signOut()
-    nav('/welcome')
-  }
-  const issues = validateProject(project).length
-  // Same hook as the panel and home page, so snoozing and the edit debounce apply everywhere.
-  const hintCount = useHints().total
-  const navLinks = (
-    <>
-      <NavLink to="/issues" className="nav-link">{t('nav.issues')}<CountBadge count={issues} /></NavLink>
-      <NavLink to="/settings/hints" className="nav-link" title={t('hints.projectWide', { count: hintCount })} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`}>
-        {t('nav.hints')}<CountBadge count={hintCount} hidden />
-      </NavLink>
-      {/* All project settings (genre, hints, AI, definitions, sharing, data) live on one page. */}
-      <NavLink to="/settings" className="nav-link"><Icon name="settings" /> {t('nav.settings')}</NavLink>
-    </>
-  )
-
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
     const unsub = useStore.subscribe((s, prev) => {
@@ -117,8 +92,8 @@ export function AppShell() {
       const typing = tag === 'INPUT' || tag === 'TEXTAREA'
       if (!mod) return
       const k = e.key.toLowerCase()
-      if (k === 's') { e.preventDefault(); void (useCloud.getState().active && !e.shiftKey ? flushSave() : saveProject(e.shiftKey)) }
-      else if (k === 'k') { e.preventDefault(); setPalette(true) }
+      if (k === 's') { e.preventDefault(); void (useCloud.getState().active && !e.shiftKey ? flushSave().then(() => exportOnSave()) : saveProject(e.shiftKey)) }
+      else if (k === 'k') { e.preventDefault(); open.current() }
       else if (!typing && k === 'z') { e.preventDefault(); if (e.shiftKey) useStore.getState().redo()
         else useStore.getState().undo() }
       else if (!typing && k === 'y') { e.preventDefault(); useStore.getState().redo() }
@@ -127,6 +102,87 @@ export function AppShell() {
     window.addEventListener('keydown', keys)
     return () => { window.removeEventListener('beforeunload', beforeUnload); window.removeEventListener('keydown', keys) }
   }, [])
+}
+
+/** Save (the one filled action) with everything else about files in its menu. `extra` goes before the theme switch. */
+export function SaveMenu({ extra }: { extra?: ReactNode }) {
+  const { t } = useTranslation()
+  const nav = useNavigate()
+  const readOnly = useStore((s) => s.readOnly)
+  const cloudEnabled = useCloud((s) => s.enabled)
+  const cloudActive = useCloud((s) => !!s.active)
+  const mode = useCloud((s) => s.mode)
+  const user = useCloud((s) => s.user)
+  const doSignOut = async () => {
+    if (hasUnsyncedChanges() && !confirm(t('cloud.account.signOutUnsaved'))) return
+    await signOut()
+    nav('/welcome')
+  }
+  return (
+    <div className="split">
+      {cloudActive ? (
+        <button className="primary" disabled={readOnly} title={`${t('cloud.account.saveNow')} (Ctrl+S)`} onClick={() => void flushSave()}>{t('actions.save')}</button>
+      ) : (
+        <button className="primary" title={`${t('actions.save')} (Ctrl+S)`} onClick={() => void saveProject()}>{t('actions.save')}</button>
+      )}
+      <Menu className="split-menu" label={t('actions.more')} summary={<Icon name="chevronDown" />}>
+        {cloudActive ? (
+          <>
+            <button onClick={() => nav('/projects')}>{t('cloud.account.projects')}</button>
+            <button onClick={() => nav('/settings/sharing')}>{t('cloud.account.settings')}</button>
+            <button onClick={() => void saveProject(true)}>{t('cloud.account.saveCopy')}</button>
+          </>
+        ) : (
+          <>
+            <button onClick={newProject}>{t('actions.new')}</button>
+            <button onClick={() => void openProject()}>{t('actions.open')}</button>
+            <button onClick={() => void saveProject(true)}>{t('actions.saveAs')}</button>
+          </>
+        )}
+        {cloudEnabled && mode === 'local' && (
+          <button onClick={() => { leaveLocalMode(); nav(user ? '/projects' : '/welcome') }}>{user ? t('cloud.account.projects') : t('cloud.account.signIn')}</button>
+        )}
+        {user && (
+          <button onClick={() => void doSignOut()}>{t('cloud.account.signOutAs', { email: user.email })}</button>
+        )}
+        <hr />
+        <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
+        <EngineExportButton />
+        <EngineReportButton />
+        <button onClick={downloadJson}>{t('actions.exportJson')}</button>
+        <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
+        <hr />
+        <ThemeSwitch showLabels />
+        {extra}
+      </Menu>
+    </div>
+  )
+}
+
+export function AppShell() {
+  const { t } = useTranslation()
+  const project = useStore((s) => s.project)
+  const dirty = useStore((s) => s.dirty)
+  const fileName = useStore((s) => s.fileName)
+  const canUndo = useStore((s) => s.past.length > 0)
+  const canRedo = useStore((s) => s.future.length > 0)
+  const [palette, setPalette] = useState(false)
+  useShellEffects(() => setPalette(true))
+  const readOnly = useStore((s) => s.readOnly)
+  const cloudActive = useCloud((s) => !!s.active)
+  const issues = validateProject(project).length
+  // Same hook as the panel and home page, so snoozing and the edit debounce apply everywhere.
+  const hintCount = useHints().total
+  const navLinks = (
+    <>
+      <NavLink to="/issues" className="nav-link">{t('nav.issues')}<CountBadge count={issues} /></NavLink>
+      <NavLink to="/settings/hints" className="nav-link" title={t('hints.projectWide', { count: hintCount })} aria-label={`${t('nav.hints')}: ${t('hints.projectWide', { count: hintCount })}`}>
+        {t('nav.hints')}<CountBadge count={hintCount} hidden />
+      </NavLink>
+      {/* All project settings (genre, hints, AI, definitions, sharing, data) live on one page. */}
+      <NavLink to="/settings" className="nav-link"><Icon name="settings" /> {t('nav.settings')}</NavLink>
+    </>
+  )
 
   return (
     <div className="shell">
@@ -144,46 +200,9 @@ export function AppShell() {
           </button>
           <button className="icon-btn" disabled={!canUndo} aria-label={t('actions.undo')} title={`${t('actions.undo')} (Ctrl+Z)`} onClick={() => useStore.getState().undo()}><Icon name="undo" /></button>
           <button className="icon-btn" disabled={!canRedo} aria-label={t('actions.redo')} title={`${t('actions.redo')} (Ctrl+Y)`} onClick={() => useStore.getState().redo()}><Icon name="redo" /></button>
-          {/* Save is the one filled action; everything else about files lives in its menu. */}
-          <div className="split">
-            {cloudActive ? (
-              <button className="primary" disabled={readOnly} title={`${t('cloud.account.saveNow')} (Ctrl+S)`} onClick={() => void flushSave()}>{t('actions.save')}</button>
-            ) : (
-              <button className="primary" title={`${t('actions.save')} (Ctrl+S)`} onClick={() => void saveProject()}>{t('actions.save')}</button>
-            )}
-            <Menu className="split-menu" label={t('actions.more')} summary={<Icon name="chevronDown" />}>
-              {cloudActive ? (
-                <>
-                  <button onClick={() => nav('/projects')}>{t('cloud.account.projects')}</button>
-                  <button onClick={() => nav('/settings/sharing')}>{t('cloud.account.settings')}</button>
-                  <button onClick={() => void saveProject(true)}>{t('cloud.account.saveCopy')}</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={newProject}>{t('actions.new')}</button>
-                  <button onClick={() => void openProject()}>{t('actions.open')}</button>
-                  <button onClick={() => void saveProject(true)}>{t('actions.saveAs')}</button>
-                </>
-              )}
-              {cloudEnabled && mode === 'local' && (
-                <button onClick={() => { leaveLocalMode(); nav(user ? '/projects' : '/welcome') }}>{user ? t('cloud.account.projects') : t('cloud.account.signIn')}</button>
-              )}
-              {user && (
-                <button onClick={() => void doSignOut()}>{t('cloud.account.signOutAs', { email: user.email })}</button>
-              )}
-              <hr />
-              <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
-              <button onClick={downloadJson}>{t('actions.exportJson')}</button>
-              <button onClick={() => void createSnapshot()}>{t('actions.snapshot')}</button>
-              <hr />
-              <ThemeSwitch showLabels />
-              {/* On narrow screens the nav row is hidden and its links appear here instead. */}
-              <div className="menu-nav">
-                <hr />
-                {navLinks}
-              </div>
-            </Menu>
-          </div>
+          {/* Save is the one filled action; everything else about files lives in its menu.
+              On narrow screens the nav row is hidden and its links appear in the menu instead. */}
+          <SaveMenu extra={<div className="menu-nav"><hr />{navLinks}</div>} />
         </div>
       </header>
       <CloudBanners />

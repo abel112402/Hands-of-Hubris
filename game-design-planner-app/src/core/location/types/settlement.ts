@@ -1,8 +1,12 @@
 import type { Entity } from '../../model/types'
 import { blob, crossings, dist, distToPolyline, inPolygon, pointAlong, polylineLength, radiusOf, toDeg } from '../geometry'
+import { attachFor } from '../attach'
+import { poolAt } from './cave'
+import { lightOf } from '../light'
+import { replaceObjects } from '../order'
 import type { GenContext, LayerDef, LocationMap, LocationTypeDef, MapObject, MapPoint as Pt, NewMapObject, RoadRank, ZoneKind } from '../types'
 import { area, assignZones, centroid, clipToBox, convexHull, districtAt, districtsOf, neighbours, relax, voronoi, ZONE_LABEL, zoneCounts, zoneOf, type Ward, type ZoneShares } from '../zoning'
-import { between, biomeTint, clamp, objects, outlineOf, path, pos, refsOf, roadRank, sizeKey, touches, widthOf } from './shared'
+import { between, biomeTint, clamp, objects, outlineOf, param, path, pos, refsOf, roadRank, sizeKey, touches, widthOf } from './shared'
 
 /**
  * Settlements: Village and City share one engine and differ only in their Plan.
@@ -115,7 +119,7 @@ type Scene = {
   w: number
   h: number
   centre: Pt
-  roads: { pts: Pt[]; width: number; rank: RoadRank }[]
+  roads: { pts: Pt[]; width: number; rank: RoadRank; obj: MapObject }[]
   river?: { pts: Pt[]; width: number }
   coast?: Pt[]
   ponds: MapObject[]
@@ -132,7 +136,7 @@ function sceneOf(map: LocationMap, alleys = true): Scene {
     w: map.w,
     h: map.h,
     centre: plaza ? pos(plaza) : [map.w / 2, map.h / 2],
-    roads: roads.flatMap((r) => (r.points ? [{ pts: r.points, width: widthOf(r, 12), rank: roadRank(r) }] : [])),
+    roads: roads.flatMap((r) => (r.points ? [{ pts: r.points, width: widthOf(r, 12), rank: roadRank(r), obj: r }] : [])),
     river: river?.points ? { pts: river.points, width: widthOf(river, 30) } : undefined,
     coast: objects(map, 'water', 'coast')[0]?.points,
     ponds: objects(map, 'water', 'pond'),
@@ -185,20 +189,22 @@ function layersOf(plan: Plan): LayerDef[] {
 
   function roads({ location, map, rand }: GenContext): NewMapObject[] {
     const { w, h } = map
+    // How much the roads wander (the Irregularity slider).
+    const sway = 30 * param(map, 'sway', 1)
     const coast = objects(map, 'water', 'coast').length > 0
     const centre: Pt = [w / 2 + rand.range(-40, 40), (coast ? h * 0.42 : h / 2) + rand.range(-25, 25)]
     // The main roads are the trade routes: in at one edge, through the market square, out at another.
-    const main = path(rand, [[-20, centre[1] + rand.range(-90, 90)], between([-20, centre[1]], centre, 0.5), centre, between(centre, [w + 20, centre[1]], 0.5), [w + 20, centre[1] + rand.range(-90, 90)]], 30)
+    const main = path(rand, [[-20, centre[1] + rand.range(-90, 90)], between([-20, centre[1]], centre, 0.5), centre, between(centre, [w + 20, centre[1]], 0.5), [w + 20, centre[1] + rand.range(-90, 90)]], sway)
     const out: NewMapObject[] = [{ kind: 'road', rank: 'main', x: centre[0], y: centre[1], ...main, props: { width: ROAD_WIDTH.main } }]
     const lane = (from: Pt, to: Pt, width: number) =>
-      out.push({ kind: 'road', rank: 'street', x: from[0], y: from[1], ...path(rand, [from, between(from, to, 0.35), between(from, to, 0.7), to], 30), props: { width } })
+      out.push({ kind: 'road', rank: 'street', x: from[0], y: from[1], ...path(rand, [from, between(from, to, 0.35), between(from, to, 0.7), to], sway), props: { width } })
 
     if (plan.streets) {
       // The second main street, north to south (only north when the sea is to the south).
       const top: Pt = [centre[0] + rand.range(-90, 90), -20]
       const cross = coast
-        ? path(rand, [top, between(top, centre, 0.5), centre], 30)
-        : path(rand, [top, between(top, centre, 0.5), centre, between(centre, [centre[0], h + 20], 0.5), [centre[0] + rand.range(-90, 90), h + 20]], 30)
+        ? path(rand, [top, between(top, centre, 0.5), centre], sway)
+        : path(rand, [top, between(top, centre, 0.5), centre, between(centre, [centre[0], h + 20], 0.5), [centre[0] + rand.range(-90, 90), h + 20]], sway)
       out.push({ kind: 'road', rank: 'main', x: centre[0], y: centre[1], ...cross, props: { width: ROAD_WIDTH.main } })
       // A ring street around the centre, stored as a curve that ends where it starts.
       const ring = outlineOf(blob(centre[0], centre[1], w * 0.19, h * 0.2, rand, 10, 0.1))
@@ -373,10 +379,10 @@ function layersOf(plan: Plan): LayerDef[] {
 
   function buildings({ location, map, rand }: GenContext): NewMapObject[] {
     const s = sceneOf(map)
-    const density = DENSITY[String(location.density)] ?? 1
+    const density = (DENSITY[String(location.density)] ?? 1) * param(map, 'density', 1)
     const population = Number(location.population)
     const target = population > 0 ? clamp(Math.round(population / plan.peoplePerHouse), 4, plan.maxHouses) : Math.round(scaleOf(location).houses * density)
-    type Slot = { p: Pt; w: number; h: number; rot: number; order: number; front: boolean; district?: MapObject; keep: number }
+    type Slot = { p: Pt; w: number; h: number; rot: number; order: number; front: boolean; district?: MapObject; keep: number; road: MapObject }
     const slots: Slot[] = []
     for (const road of s.roads) {
       const length = polylineLength(road.pts)
@@ -397,7 +403,7 @@ function layersOf(plan: Plan): LayerDef[] {
             // The house belongs to the district it ends up in (none outside the settled area); its size came from
             // the one beside the road.
             const home = districtAt(map, p)
-            slots.push({ p, w, h, rot: toDeg(at.angle) + rand.range(-6, 6), order: dist(p, s.centre) + row * 70 + rand.range(0, 40), front: row === 0 && road.rank === 'main', district: home, keep })
+            slots.push({ p, w, h, rot: toDeg(at.angle) + rand.range(-6, 6), order: dist(p, s.centre) + row * 70 + rand.range(0, 40), front: row === 0 && road.rank === 'main', district: home, keep, road: road.obj })
           }
         }
       }
@@ -417,7 +423,9 @@ function layersOf(plan: Plan): LayerDef[] {
       if (use === 'barracks') props.roof = 2
       // A barracks is a long hall; a stall is a small booth.
       const [w, h] = use === 'barracks' ? [slot.w * 1.5, slot.h] : use === 'stall' ? [slot.w * 0.6, slot.h * 0.7] : [slot.w, slot.h]
-      out.push({ kind: 'house', x: slot.p[0], y: slot.p[1], w, h, rot: slot.rot, props, ...(slot.district ? { zone: slot.district.id } : {}) })
+      // Attached to its road (attach.ts), so it moves with the road when the road is redrawn by hand.
+      const attach = attachFor(slot.road, slot.p)
+      out.push({ kind: 'house', x: slot.p[0], y: slot.p[1], w, h, rot: slot.rot, props, ...(slot.district ? { zone: slot.district.id } : {}), ...(attach ? { attach } : {}) })
     }
     // Every special quarter shows what it is: when chance gave it none of its buildings, the house nearest its
     // middle becomes one. Stalls are left to chance, since they only stand on the main road.
@@ -437,7 +445,7 @@ function layersOf(plan: Plan): LayerDef[] {
     const solid = [...objects(map, 'landmarks'), ...objects(map, 'buildings'), ...objects(map, 'fields'), ...objects(map, 'roads', 'bridge')]
     const groves = Array.from({ length: rand.int(6, 10) }, () => [rand.range(0, map.w), rand.range(0, map.h)] as Pt)
     const out: NewMapObject[] = []
-    const want = scaleOf(location).trees
+    const want = Math.round(scaleOf(location).trees * param(map, 'greenery', 1))
     for (let tries = 0; tries < want * 8 && out.length < want; tries++) {
       const grove = rand.pick(groves)
       const p: Pt = rand.chance(0.25) ? [rand.range(0, map.w), rand.range(0, map.h)] : [grove[0] + rand.range(-90, 90), grove[1] + rand.range(-70, 70)]
@@ -475,6 +483,85 @@ function layersOf(plan: Plan): LayerDef[] {
     return out
   }
 
+  /** Lamps along the trade routes and round the square (fewer in a village), braziers either side of each gate. */
+  function lights({ map }: GenContext): NewMapObject[] {
+    const s = sceneOf(map)
+    const out: NewMapObject[] = []
+    const free = (p: Pt) => inBounds(s, p, 10) && !wet(s, p, 4) && !out.some((o) => dist(pos(o), p) < 60)
+    const solid = [...objects(map, 'buildings'), ...objects(map, 'landmarks')]
+    const spacing = plan.streets ? 120 : 190
+    for (const road of s.roads.filter((r) => r.rank === 'main')) {
+      const len = polylineLength(road.pts)
+      for (let d = spacing / 2, side = 1; d < len; d += spacing, side = -side) {
+        const at = pointAlong(road.pts, d)
+        const off = road.width / 2 + 6
+        const p: Pt = [at.p[0] - Math.sin(at.angle) * off * side, at.p[1] + Math.cos(at.angle) * off * side]
+        const attach = attachFor(road.obj, p)
+        if (free(p) && withinWall(s, p, 6) && !touches(p, 6, solid)) out.push(lightOf('lamp', p[0], p[1], attach ? { attach } : {}))
+      }
+    }
+    if (s.plaza) {
+      const r = (s.plaza.w ?? 60) / 2 - 6
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2 + Math.PI / 4
+        out.push(lightOf('lamp', s.centre[0] + Math.cos(a) * r, s.centre[1] + Math.sin(a) * r))
+      }
+    }
+    for (const g of objects(map, 'walls', 'gate')) {
+      for (const side of [-1, 1]) {
+        const a = ((g.rot ?? 0) * Math.PI) / 180 + Math.PI / 2
+        const reach = (g.h ?? 18) / 2 + 12
+        out.push(lightOf('brazier', g.x + Math.cos(a) * reach * side, g.y + Math.sin(a) * reach * side))
+      }
+    }
+    return out
+  }
+
+  /**
+   * People as spawn points: merchants at the market stalls (else on the trade route in the market), residents by
+   * the landmarks and in front of houses spread over the town.
+   */
+  function people({ project, location, map, rand }: GenContext): NewMapObject[] {
+    const s = sceneOf(map)
+    const merchants = refsOf(project, location.merchants, 'design.trade', 'merchants')
+    const residents = refsOf(project, location.residents, 'design.npc', 'archetypes')
+    if (!merchants.length && !residents.length) return []
+    const out: NewMapObject[] = []
+    const solid = [...objects(map, 'buildings'), ...objects(map, 'landmarks')]
+    /** A walkable spot beside a building, on its road side when it can. */
+    const beside = (o: MapObject): Pt | null => {
+      for (let tries = 0; tries < 16; tries++) {
+        const a = rand.range(0, Math.PI * 2)
+        const reach = Math.max(o.w ?? 20, o.h ?? 20) / 2 + 12
+        const p: Pt = [o.x + Math.cos(a) * reach, o.y + Math.sin(a) * reach]
+        if (inBounds(s, p, EDGE) && !wet(s, p, 4) && !touches(p, 9, solid) && !touches(p, 9, out)) return p
+      }
+      return null
+    }
+    const stalls = objects(map, 'buildings', 'house').filter((h) => h.props?.use === 'stall')
+    const market = districtsOf(map).filter((d) => zoneOf(d) === 'market')
+    const roadside = s.roads.filter((r) => r.rank === 'main').flatMap((r) => {
+      const len = polylineLength(r.pts)
+      return Array.from({ length: Math.floor(len / 30) }, (_, i) => {
+        const at = pointAlong(r.pts, i * 30 + 15)
+        return [at.p[0] - Math.sin(at.angle) * (r.width / 2 + 8), at.p[1] + Math.cos(at.angle) * (r.width / 2 + 8)] as Pt
+      })
+    }).filter((p) => !market.length || market.some((d) => inPolygon(p, d.points!)))
+    merchants.forEach((m, i) => {
+      const p = stalls[i] ? beside(stalls[i]) : roadside.length ? rand.pick(roadside) : null
+      if (p) out.push({ kind: 'marker', x: p[0], y: p[1], w: 18, h: 18, label: m.name, refId: m.id, props: { type: 'merchant' }, spawn: { role: 'merchant', refId: m.id } })
+    })
+    const homes = [...objects(map, 'landmarks', 'landmark'), ...objects(map, 'buildings', 'house').filter((h) => h.props?.use !== 'stall')]
+    const per = clamp(Math.round(homes.length / 12), 1, 4)
+    for (const r of residents) {
+      for (let k = 0; k < per && homes.length; k++) {
+        const p = beside(k === 0 && objects(map, 'landmarks', 'landmark').length ? rand.pick(objects(map, 'landmarks', 'landmark')) : rand.pick(homes))
+        if (p) out.push({ kind: 'marker', x: p[0], y: p[1], w: 18, h: 18, label: r.name, refId: r.id, props: { type: 'npc' }, spawn: { role: 'npc', refId: r.id } })
+      }
+    }
+    return out
+  }
+
   // Drawing order. Districts are drawn under the roads but made from them; alleys come off the streets.
   return [
     { id: 'ground', label: 'Ground', dependsOn: [], generate: ground },
@@ -487,16 +574,59 @@ function layersOf(plan: Plan): LayerDef[] {
     { id: 'fields', label: 'Fields', dependsOn: ['water', 'roads', 'alleys', 'walls', 'landmarks'], generate: fields, addable: ['field'] },
     { id: 'buildings', label: 'Houses', dependsOn: ['water', 'roads', 'alleys', 'walls', 'districts', 'landmarks', 'fields'], generate: buildings, addable: ['house'] },
     { id: 'vegetation', label: 'Trees', dependsOn: ['water', 'roads', 'alleys', 'walls', 'landmarks', 'fields', 'buildings'], generate: vegetation, addable: ['tree'] },
+    { id: 'people', label: 'People', dependsOn: ['roads', 'alleys', 'districts', 'landmarks', 'buildings'], generate: people, addable: ['marker'] },
+    { id: 'lights', label: 'Lights', dependsOn: ['roads', 'walls', 'landmarks', 'buildings'], generate: lights, addable: ['light'] },
     { id: 'labels', label: 'Labels', dependsOn: ['roads', 'districts', 'landmarks'], generate: labels, addable: ['label'] },
   ]
 }
 
-const typeOf = (plan: Plan): LocationTypeDef => ({
-  id: plan.id,
-  size: (location) => ({ w: plan.scales[sizeKey(location)].w, h: plan.scales[sizeKey(location)].h }),
-  layers: layersOf(plan),
-  nav: { cell: 10, open: true },
-})
+/**
+ * After a road, river or wall is edited by hand, each bridge moves to the nearest place where a road crosses the
+ * river, and each gate to the nearest place where a road crosses the wall (houses and lamps follow their road by
+ * themselves, being attached to it). Pinned bridges and gates stay.
+ */
+function healCrossings(map: LocationMap, after: MapObject, type: LocationTypeDef): LocationMap {
+  if (!['road', 'river', 'wall'].includes(after.kind)) return map
+  const roads = [...objects(map, 'roads', 'road'), ...objects(map, 'alleys', 'road')].filter((r) => r.points)
+  const changed = new Map<string, MapObject>()
+  const snap = (items: MapObject[], line: Pt[] | undefined, closed: boolean) => {
+    if (!line) return
+    const spots = roads.flatMap((r) => crossings(r.points!, line, closed))
+    for (const o of items) {
+      if (o.pinned) continue
+      const best = spots.sort((p, q) => dist(p.p, pos(o)) - dist(q.p, pos(o)))[0]
+      if (best && dist(best.p, pos(o)) < 250 && dist(best.p, pos(o)) > 0.5) changed.set(o.id, { ...o, x: Math.round(best.p[0]), y: Math.round(best.p[1]), rot: Math.round(toDeg(best.angle)) })
+    }
+  }
+  snap(objects(map, 'roads', 'bridge'), objects(map, 'water', 'river')[0]?.points, false)
+  snap(objects(map, 'walls', 'gate'), objects(map, 'walls', 'wall')[0]?.points, true)
+  return replaceObjects(map, changed, type)
+}
+
+const typeOf = (plan: Plan): LocationTypeDef => {
+  const def: LocationTypeDef = {
+    id: plan.id,
+    size: (location) => ({ w: plan.scales[sizeKey(location)].w, h: plan.scales[sizeKey(location)].h }),
+    layers: layersOf(plan),
+    nav: { cell: 10, open: true },
+    heal: (map, _before, after) => healCrossings(map, after, def),
+    params: [
+      { id: 'density', label: 'Density', min: 0.4, max: 1.8, step: 0.1, default: 1, layers: ['buildings'], help: 'How closely houses stand along the roads.' },
+      { id: 'sway', label: 'Irregularity', min: 0, max: 2.5, step: 0.1, default: 1, layers: ['roads'], help: 'How much the roads wander.' },
+      { id: 'greenery', label: 'Trees', min: 0, max: 2.5, step: 0.1, default: 1, layers: ['vegetation'] },
+    ],
+    stamps: [
+      {
+        id: 'houses',
+        label: 'Cluster of houses',
+        layer: 'buildings',
+        make: (x, y) => [[-22, -16, 0], [22, -16, 1], [-22, 16, 2], [22, 16, 3]].map(([dx, dy, roof]) => ({ kind: 'house', x: x + dx, y: y + dy, w: 34, h: 24, rot: 0, props: { roof, chimney: roof % 2 === 0 } })),
+      },
+      { id: 'pond', label: 'Pond', layer: 'water', make: (x, y) => [poolAt(x, y, 46, 34)] },
+    ],
+  }
+  return def
+}
 
 export const VILLAGE = typeOf(VILLAGE_PLAN)
 export const CITY = typeOf(CITY_PLAN)

@@ -148,7 +148,8 @@ describe('editing by hand', () => {
     const got = findObject(next, house.id)!
     expect(got.layerId).toBe('buildings')
     expect([got.object.x, got.object.y, got.object.pinned]).toEqual([house.x + 12, house.y - 7, true])
-    expect(staleLayers(next)).toEqual(['vegetation'])
+    // Trees, people and street lamps are placed around the houses.
+    expect(staleLayers(next).sort()).toEqual(['lights', 'people', 'vegetation'])
     expect(findObject(map, house.id)!.object.pinned).toBeUndefined()
     expect(regenerateLayer(project, location, next, 'buildings').layers.buildings.objects).toContainEqual(got.object)
   })
@@ -253,7 +254,8 @@ describe('rendering and export', () => {
     p.documents[WORLD_DOC].data.locations = [{ ...location, map: gen(location) }, { id: 'v2', name: 'Unmapped', type: 'Village' }]
     const mod = getModule(WORLD_DOC)!
     const assets = exportAssets(p, mod)
-    expect(assets.map((a) => a.path)).toEqual([locationMapPath(location)])
+    // The picture, and the same map as engine data next to it.
+    expect(assets.map((a) => a.path)).toEqual([locationMapPath(location), locationMapPath(location).replace(/.svg$/, '.json')])
     expect(assets[0].content).toContain('<svg')
     const md = moduleToMarkdown(p, mod)
     expect(md).toContain(`](${locationMapPath(location)})`)

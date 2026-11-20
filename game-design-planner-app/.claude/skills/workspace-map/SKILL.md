@@ -18,7 +18,7 @@ Browser planner for the Hands of Hubris design docs (`../docs`). Vite 8 · React
 | `src/core/persistence/` | `serialize.ts` (`MIGRATIONS`), `file.ts` (`*.hohplan.json`), `autosave.ts` (IndexedDB) |
 | `src/core/export/markdown.ts` | MD/CSV/JSON/ZIP export, ordered like the docs |
 | `src/core/<domain>.ts` | Pure domain logic per planner (combat, items, npc, player, story, trade, timeWeather, town, world, ui, …) |
-| `src/core/location/` | Location maps (World › Locations): `registry.ts` + `types/` (one generator per location type), `generate.ts` (layers, reroll, stale), `edit.ts` (manual edits, pinning), `objects.ts` (`KINDS`: how each object kind is handled), `render/` (`glyphs.ts`, `theme.ts`, `svg.ts`), `schema.ts` (Zod for stored maps), `analysis.ts`. UI in `src/ui/editors/location/` |
+| `src/core/location/` | Location maps (World › Locations): `registry.ts` + `types/` (one generator per type: settlement, dungeon, cave, dwelling, world), `generate.ts` (layers, reroll, stale, sliders `withParams`), `order.ts` (layer order, cycle-free helpers for type files), `edit.ts` + `heal.ts` + `attach.ts` + `snap.ts` + `brush.ts` (hand edits, healing, glue, snapping, brushes, masks), `objects.ts` (`KINDS`), `zoning.ts`, `mission.ts` + `topology.ts` (room graph, locks and keys), `rooms.ts`, `architecture.ts` (house rules), `nav.ts`, `light.ts`, `links.ts` (maps inside maps), `visibility.ts` (player view), `snapshots.ts`, `render/` (`glyphs.ts`, `theme.ts` `THEMES`, `svg.ts`, `overlays.ts`), `export/` (JSON, Tiled, Universal VTT), `schema.ts` (Zod, map v2), `analysis.ts` (`mapChecks`, caches). UI in `src/ui/editors/location/` |
 | `src/core/hints/`, `guides/`, `references/` | Hint engine + rules, guide types, cross-module refs |
 | `src/core/walkthrough/` | Walkthrough engine: `types`, `schema` (Zod), `compose` (base + packs, localize), `evaluate` (done rules, progress, `meta.guide` edits), `project` (per-project walkthrough, content validation), `focus` (step hints, page steps, AI data) |
 | `src/core/genre.ts`, `progress.ts` | Genre profile → `editorGroups`; planner fill and next milestone |
@@ -44,7 +44,7 @@ Data flow: module def → registry → project creation → `SectionRenderer` �
 | `MARKDOWN_PREVIEW_GUIDE.md` (15K) | guide | per-doc markdown preview work |
 | `STORY_QUESTS_PLAN.md`, `TRADE_ECONOMY_PLAN.md`, `UI_UX_PLAN.md` | implemented | reference for finished v2 planners |
 | `LOCATIONS_MAP_PLAN.md` | implemented | location types, layered map generation, map editing, how to add a type, glyph or theme |
-| `LOCATIONS_V2_PLAN.md` | proposed | zoning, topology/lock-and-key, floor-plan rules, nav/light metadata, heal/masks/brushes, linked maps, world map, sliders, themes, engine/VTT export |
+| `LOCATIONS_V2_PLAN.md` | implemented | zoning, topology/lock-and-key, floor-plan rules, nav/light metadata, heal/masks/brushes, linked maps, world map, sliders, themes, engine/VTT export |
 | `COMBAT_PLAN.md`, `ITEMS_CRAFTING_PLAN.md`, `PLAYER_CHARACTER_PLAN.md`, `TIME_WEATHER_PLAN.md`, `OPEN_QUESTIONS_UPGRADE_PLAN.md` | marked proposed (check source; may be partly done) | planner-specific upgrade work |
 | `IMPLEMENTATION_PLAN.md` (48K, Hungarian, historical) | partly outdated | avoid; README "Deviations" summarises it |
 | `AI_PROJECT_REVIEW_PROMPT.md`, `templates/` | review prompts | used by `game-planner-review` |

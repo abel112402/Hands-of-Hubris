@@ -24,11 +24,12 @@ const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const empty = (v: unknown) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)
 const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 
-/** Adds the default formats that are missing (by name); returns name → id. */
+/** Adds the default formats that are missing (by name; the native one also by its fixed id, whatever it is called); returns name → id. */
 const ensureFormats = (p: Project) => {
   const list = ensureList(p, 'formats')
-  for (const f of DEFAULT_FORMATS) if (!byName(list, f.name)) list.push({ ...f, id: list.some((x) => x.id === f.id) ? makeId() : f.id })
-  return (name: string) => byName(list, name)!.id
+  const native = () => list.find((x) => x.id === 'format-so')
+  for (const f of DEFAULT_FORMATS) if (!byName(list, f.name) && !(f.id === 'format-so' && native())) list.push({ ...f, id: list.some((x) => x.id === f.id) ? makeId() : f.id })
+  return (name: string) => (byName(list, name) ?? (name === 'Native data asset' ? native() : undefined))!.id
 }
 /** Content planner whose label starts with the schema’s name (Item → Items — Items & Crafting). */
 const guessSource = (name: string) => {
@@ -46,19 +47,19 @@ const prefixFor = (name: string) => {
 const formatsExample: GuideExample = {
   id: 'data-unity-formats',
   section: 'formats',
-  title: 'ScriptableObject, JSON and CSV',
-  description: 'ScriptableObjects for content edited in Unity, JSON for nested data mods can write, CSV for flat tables balanced in a spreadsheet.',
+  title: 'Native data asset, JSON and CSV',
+  description: 'Native data assets (Unity ScriptableObject, Godot Resource, Unreal Data Asset) for content edited in the engine, JSON for nested data mods can write, CSV for flat tables balanced in a spreadsheet.',
   preview: 'dataFormats',
   apply: (p) => void ensureFormats(p),
 }
 
 type Spec = { required: string[]; optional?: string[]; prefix: string; format: string; avgSizeKb: number; editorTool?: string; records?: number; moddable?: boolean }
 const SCHEMAS: [string, Spec][] = [
-  ['Item', { required: ['name: string', 'icon: Sprite', 'rarity: enum', 'value: int', 'stackSize: int'], optional: ['tags: string[]', 'description: text'], prefix: 'item.', format: 'ScriptableObject', avgSizeKb: 6, editorTool: 'Item inspector with icon preview', moddable: true }],
-  ['Building', { required: ['name: string', 'prefab: Prefab', 'buildCost: Item[]', 'workers: int', 'footprint: Vector2'], optional: ['produces: Recipe[]'], prefix: 'bld.', format: 'ScriptableObject', avgSizeKb: 40, editorTool: 'Footprint gizmo' }],
-  ['NPC need', { required: ['name: string', 'decayPerHour: float', 'icon: Sprite'], optional: ['satisfiedBy: Item[]'], prefix: 'need.', format: 'ScriptableObject', avgSizeKb: 2, records: 8 }],
+  ['Item', { required: ['name: string', 'icon: Sprite', 'rarity: enum', 'value: int', 'stackSize: int'], optional: ['tags: string[]', 'description: text'], prefix: 'item.', format: 'Native data asset', avgSizeKb: 6, editorTool: 'Item inspector with icon preview', moddable: true }],
+  ['Building', { required: ['name: string', 'prefab: Prefab', 'buildCost: Item[]', 'workers: int', 'footprint: Vector2'], optional: ['produces: Recipe[]'], prefix: 'bld.', format: 'Native data asset', avgSizeKb: 40, editorTool: 'Footprint gizmo' }],
+  ['NPC need', { required: ['name: string', 'decayPerHour: float', 'icon: Sprite'], optional: ['satisfiedBy: Item[]'], prefix: 'need.', format: 'Native data asset', avgSizeKb: 2, records: 8 }],
   ['Recipe', { required: ['inputs: Item[]', 'output: Item', 'seconds: float', 'station: Building'], prefix: 'rcp.', format: 'CSV', avgSizeKb: 1, moddable: true }],
-  ['Enemy', { required: ['name: string', 'prefab: Prefab', 'health: int', 'damage: int'], optional: ['drops: Item[]'], prefix: 'enemy.', format: 'ScriptableObject', avgSizeKb: 30 }],
+  ['Enemy', { required: ['name: string', 'prefab: Prefab', 'health: int', 'damage: int'], optional: ['drops: Item[]'], prefix: 'enemy.', format: 'Native data asset', avgSizeKb: 30 }],
   ['Quest', { required: ['title: localizedString', 'giver: string', 'steps: string[]'], optional: ['rewards: Item[]', 'requires: Quest[]'], prefix: 'quest.', format: 'JSON', avgSizeKb: 3, moddable: true }],
 ]
 

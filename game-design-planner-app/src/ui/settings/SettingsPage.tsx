@@ -8,6 +8,7 @@ import { deleteSnapshot, listSnapshots, type Snapshot } from '../../core/persist
 import { deserializeProject } from '../../core/persistence/serialize'
 import { createSnapshot, downloadJson, exportMarkdownZip } from '../actions'
 import { GenreProfilePanel } from '../genres/GenreProfilePanel'
+import { EngineExportButton, EngineReportButton } from '../EngineExportButton'
 import { HintsPage } from '../hints/HintsPage'
 import { AiSettings } from '../ai/AiSettings'
 import { Definitions } from '../pages/Definitions'
@@ -18,6 +19,20 @@ import { useFlavorLevel } from '../flavor/Flavor'
 import { Wardrobe } from '../mascots/Wardrobe'
 import { MASCOTS_ENABLED } from '../../core/mascots/config'
 import { ThemeSwitch } from '../ThemeSwitch'
+import { Segmented } from '../motion'
+import { setUiVersion, useUiVersion } from '../../core/uiVersion'
+
+/** Classic interface or the v3 Design Atlas preview; a device preference like the theme. */
+function InterfaceSwitch() {
+  const { t } = useTranslation()
+  const version = useUiVersion()
+  return (
+    <Segmented role="group" aria-label={t('v3.setting.label')}>
+      <button type="button" aria-pressed={version === 'v2'} onClick={() => setUiVersion('v2')}>{t('v3.setting.classic')}</button>
+      <button type="button" aria-pressed={version === 'v3'} onClick={() => setUiVersion('v3')}>{t('v3.setting.preview')}</button>
+    </Segmented>
+  )
+}
 
 /**
  * Every project setting in one place. Each tab reuses the existing page or panel, so behaviour and
@@ -91,6 +106,11 @@ function GeneralSettings() {
         <ThemeSwitch showLabels />
       </div>
       <p className="muted">{t('theme.hint')}</p>
+      <div className="settings-field">
+        <span>{t('v3.setting.label')}</span>
+        <InterfaceSwitch />
+      </div>
+      <p className="muted">{t('v3.setting.hint')}</p>
       <label className="settings-field">
         <span>{t('flavor.settings.label')}</span>
         <select value={flavorLevel} onChange={(e) => setFlavorLevel(e.target.value as FlavorLevel)}>
@@ -122,6 +142,8 @@ function DataSettings() {
       <h3>{t('settingsPage.export')}</h3>
       <div className="row">
         <button onClick={() => void exportMarkdownZip()}>{t('actions.exportMd')}</button>
+        <EngineExportButton />
+        <EngineReportButton />
         <button onClick={downloadJson}>{t('actions.exportJson')}</button>
       </div>
       <h3>{t('settingsPage.snapshots')}</h3>

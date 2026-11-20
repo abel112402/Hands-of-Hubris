@@ -32,6 +32,12 @@ export type KindInfo = {
   make?: (x: number, y: number) => NewMapObject
   /** What the object does to walking (nav.ts). Kinds without it are only drawn. */
   nav?: NavRule
+  /** Moving it moves what stands inside it (a room's furniture and creatures). */
+  carries?: boolean
+  /** Can be selected and edited but not dragged (a district). */
+  fixed?: boolean
+  /** Grid to snap to when dragged, in map units (rooms keep to a 10-unit grid). */
+  grid?: number
 }
 
 /**
@@ -57,7 +63,12 @@ export const KINDS: Record<string, KindInfo> = {
   coast: { label: 'Coast', nav: { effect: 'water', cost: 30 }, shape: 'backdrop' },
   river: { label: 'River', nav: { effect: 'water', cost: 30, line: 30 }, shape: 'curve' },
   pond: { label: 'Pond', nav: { effect: 'water', cost: 20 }, shape: 'outline' },
-  district: { label: 'District', shape: 'backdrop' },
+  district: {
+    label: 'District',
+    shape: 'outline',
+    fixed: true,
+    variants: [{ prop: 'zone', label: 'Zone', options: ['residential', 'market', 'industrial', 'military', 'sacred'] }],
+  },
   road: { label: 'Road', nav: { effect: 'floor', line: 11 }, shape: 'curve', make: (x, y) => ({ kind: 'road', rank: 'street', x, y, points: line(x, y), ctrl: line(x, y), props: { width: 11 } }) },
   plaza: { label: 'Green', nav: { effect: 'floor' }, shape: 'box', square: true, fixedAngle: true },
   bridge: { label: 'Bridge', nav: { effect: 'opening' }, shape: 'box', make: (x, y) => ({ kind: 'bridge', x, y, w: 48, h: 22, rot: 0 }) },
@@ -98,10 +109,23 @@ export const KINDS: Record<string, KindInfo> = {
   // Interiors and underground.
   rock: { label: 'Rock', shape: 'backdrop' },
   hollow: { label: 'Chamber', shape: 'backdrop' },
+  // The world map.
+  sea: { label: 'Sea', shape: 'backdrop' },
+  land: { label: 'Land', shape: 'backdrop', nav: { effect: 'floor' } },
+  region: { label: 'Biome region', shape: 'outline', fixed: true, text: true },
+  site: {
+    label: 'Place',
+    shape: 'point',
+    text: true,
+    variants: [{ prop: 'type', label: 'Kind', options: ['City', 'Village', 'Dungeon', 'Cave', 'Dwelling'] }],
+    make: (x, y) => ({ kind: 'site', x, y, w: 24, h: 24, label: 'Place', props: { type: 'Village' } }),
+  },
   cavern: { label: 'Cavern', nav: { effect: 'floor' }, shape: 'backdrop' },
   rockpile: { label: 'Rock pile', nav: { effect: 'block' }, shape: 'outline' },
   room: {
     label: 'Room', nav: { effect: 'floor', walled: true },
+    carries: true,
+    grid: 10,
     shape: 'box',
     fixedAngle: true,
     text: true,
@@ -110,6 +134,8 @@ export const KINDS: Record<string, KindInfo> = {
   },
   chamber: {
     label: 'Room', nav: { effect: 'floor' },
+    carries: true,
+    grid: 10,
     shape: 'box',
     fixedAngle: true,
     variants: [
@@ -135,6 +161,12 @@ export const KINDS: Record<string, KindInfo> = {
     make: (x, y) => ({ kind: 'furniture', x, y, w: 32, h: 20, rot: 0, props: { type: 'table' } }),
   },
   stairs: { label: 'Stairs', nav: { effect: 'floor' }, shape: 'box', make: (x, y) => ({ kind: 'stairs', x, y, w: 30, h: 22, rot: 0 }) },
+  light: {
+    label: 'Light',
+    shape: 'point',
+    variants: [{ prop: 'type', label: 'Kind', options: ['torch', 'brazier', 'lamp', 'candle', 'hearth', 'campfire', 'crystal'] }],
+    make: (x, y) => ({ kind: 'light', x, y, w: 12, h: 12, props: { type: 'torch' } }),
+  },
   key: { label: 'Key', shape: 'point', text: true, make: (x, y) => ({ kind: 'key', x, y, w: 16, h: 16, key: 'red', label: 'Red key' }) },
   trap: { label: 'Trap', nav: { effect: 'cost', cost: 8 }, shape: 'point', make: (x, y) => ({ kind: 'trap', x, y, w: 14, h: 14 }) },
   pillar: { label: 'Pillar', nav: { effect: 'block' }, shape: 'point', make: (x, y) => ({ kind: 'pillar', x, y, w: 12, h: 12 }) },
@@ -142,7 +174,7 @@ export const KINDS: Record<string, KindInfo> = {
     label: 'Creature',
     shape: 'point',
     text: true,
-    variants: [{ prop: 'type', label: 'Kind', options: ['enemy', 'boss'] }],
+    variants: [{ prop: 'type', label: 'Kind', options: ['enemy', 'boss', 'npc', 'merchant'] }],
     make: (x, y) => ({ kind: 'marker', x, y, w: 18, h: 18, label: 'Enemy', props: { type: 'enemy' } }),
   },
   stalagmite: { label: 'Stalagmite', nav: { effect: 'block' }, shape: 'point', make: (x, y) => ({ kind: 'stalagmite', x, y, w: 11, h: 12 }) },

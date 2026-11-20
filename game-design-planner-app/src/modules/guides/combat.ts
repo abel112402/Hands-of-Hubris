@@ -187,24 +187,25 @@ export const COMBAT_EXAMPLES: GuideExample[] = [
 
 export const COMBAT_GUIDE: ModuleGuide = {
   map: {
-    width: 790,
+    // Laid out so no edge runs through a node or crosses another: neighbours or open diagonals only.
+    width: 1000,
     height: 330,
     nodes: [
-      { id: 'system', label: 'Combat system', section: 'system', x: 10, y: 14 },
+      { id: 'difficulty', label: 'Difficulty', doc: 'design.difficulty', x: 10, y: 14 },
       { id: 'damageModel', label: 'Damage model', section: 'damageModel', x: 220, y: 14 },
-      { id: 'statusEffects', label: 'Status effects', section: 'statusEffects', x: 430, y: 14 },
-      { id: 'difficulty', label: 'Difficulty', doc: 'design.difficulty', x: 640, y: 14 },
+      { id: 'system', label: 'Combat system', section: 'system', x: 430, y: 14 },
+      { id: 'statusEffects', label: 'Status effects', section: 'statusEffects', x: 640, y: 14 },
       { id: 'items', label: 'Items', doc: 'design.items', x: 10, y: 102 },
       { id: 'loadouts', label: 'Test loadouts', section: 'loadouts', x: 220, y: 102 },
       { id: 'enemies', label: 'Enemies', section: 'enemies', x: 430, y: 102 },
       { id: 'world', label: 'World', doc: 'design.world', x: 640, y: 102 },
       { id: 'player', label: 'Player', doc: 'design.player', x: 10, y: 190 },
-      { id: 'timeWeather', label: 'Time & Weather', doc: 'design.timeWeather', x: 220, y: 190 },
+      { id: 'siege', label: 'Sieges', section: 'siege', x: 220, y: 190 },
       { id: 'variants', label: 'Variants', section: 'variants', x: 430, y: 190 },
       { id: 'bosses', label: 'Bosses', section: 'bosses', x: 640, y: 190 },
-      { id: 'siege', label: 'Sieges', section: 'siege', x: 220, y: 278 },
-      { id: 'ai', label: 'Technical AI', doc: 'technical.ai', x: 430, y: 278 },
-      { id: 'phases', label: 'Boss phases', section: 'phases', x: 640, y: 278 },
+      { id: 'phases', label: 'Boss phases', section: 'phases', x: 850, y: 190 },
+      { id: 'timeWeather', label: 'Time & Weather', doc: 'design.timeWeather', x: 430, y: 278 },
+      { id: 'ai', label: 'Technical AI', doc: 'technical.ai', x: 640, y: 278 },
     ],
     edges: [
       { from: 'system', to: 'damageModel', label: 'rules' },

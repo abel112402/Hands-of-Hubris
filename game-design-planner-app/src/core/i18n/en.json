@@ -153,6 +153,8 @@
     "undo": "Undo",
     "redo": "Redo",
     "exportMd": "Export Markdown (.zip)",
+    "exportEngine": "Export for {{engine}} (.zip)",
+    "importEngineReport": "Import engine report…",
     "exportJson": "Download project JSON",
     "search": "Search (Ctrl+K)",
     "snapshot": "Create snapshot",
@@ -729,6 +731,24 @@
       "body_one": "{{count}} location has no map yet: {{names}}. Open the Map view and press Generate map.",
       "body_other": "{{count}} locations have no map yet: {{names}}. Open the Map view and press Generate map."
     },
+    "worldLocLocks": {
+      "title": "Locks that cannot be opened",
+      "body": "{{count}} maps have a lock whose key is missing or lies behind it: {{names}}. The Checks box in the Map view shows which; reroll the contents, or move the key.",
+      "body_one": "{{count}} map has a lock whose key is missing or lies behind it: {{names}}. The Checks box in the Map view shows which; reroll the contents, or move the key.",
+      "body_other": "{{count}} maps have a lock whose key is missing or lies behind it: {{names}}. The Checks box in the Map view shows which; reroll the contents, or move the key."
+    },
+    "worldLocLinks": {
+      "title": "Links between maps to look at",
+      "body": "{{count}} maps link to a place that is gone, or sit on a parent map that changed: {{names}}. The Checks box in the Map view says what to do.",
+      "body_one": "{{count}} map links to a place that is gone, or sits on a parent map that changed: {{names}}. The Checks box in the Map view says what to do.",
+      "body_other": "{{count}} maps link to a place that is gone, or sit on a parent map that changed: {{names}}. The Checks box in the Map view says what to do."
+    },
+    "worldLocLayout": {
+      "title": "Maps that break their own rules",
+      "body": "{{count}} maps have rooms or creatures nobody can reach, or a house plan that breaks its rules: {{names}}. The Checks box in the Map view lists them; a click selects the room.",
+      "body_one": "{{count}} map has rooms or creatures nobody can reach, or a house plan that breaks its rules: {{names}}. The Checks box in the Map view lists them; a click selects the room.",
+      "body_other": "{{count}} maps have rooms or creatures nobody can reach, or a house plan that breaks its rules: {{names}}. The Checks box in the Map view lists them; a click selects the room."
+    },
     "worldLocStale": {
       "title": "Maps with layers out of date",
       "body": "{{count}} maps have layers that no longer fit the layers below them: {{names}}. In the Map view, press “Update out of date”, or keep them as they are.",
@@ -903,6 +923,20 @@
       "title": "Schemas without validation",
       "body_other": "{{count}} schemas have no validator and no written rules: {{names}}.",
       "body_one": "{{count}} schema has no validator and no written rules: {{names}}."
+    },
+    "engineIncomplete": {
+      "title": "Records to finish in the engine",
+      "body_one": "{{engine}} reports {{count}} record that is incomplete or has no asset yet: {{names}}. Assign its sprites or prefabs there, or fill the missing planner fields.",
+      "body_other": "{{engine}} reports {{count}} records that are incomplete or have no asset yet: {{names}}. Assign their sprites or prefabs there, or fill the missing planner fields."
+    },
+    "engineStale": {
+      "title": "Engine report is from an older export",
+      "body": "The plan changed since the {{engine}} project was imported. Export again, import it in the engine and write a new report."
+    },
+    "engineClasses": {
+      "title": "Classes not written yet",
+      "body_one": "{{engine}} reports {{count}} class that is missing or still has TODO method bodies: {{names}}.",
+      "body_other": "{{engine}} reports {{count}} classes that are missing or still have TODO method bodies: {{names}}."
     },
     "dataLegacy": {
       "title": "Notes from the earlier version",
@@ -2156,5 +2190,202 @@
     "light": "Light",
     "dark": "Dark",
     "hint": "System follows your device's light or dark setting. Saved in this browser only."
+  },
+  "v3": {
+    "companion": "Companion",
+    "useClassic": "Use the classic interface",
+    "theme": {
+      "toLight": "Switch to light mode",
+      "toDark": "Switch to dark mode"
+    },
+    "rail": {
+      "atlas": "Atlas",
+      "book": "Book"
+    },
+    "sheet": {
+      "close": "Close",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "setting": {
+      "label": "Interface",
+      "classic": "Classic",
+      "preview": "Design Atlas",
+      "hint": "Design Atlas is the new interface. Classic is the previous one and stays available. Saved in this browser only; your projects are not changed."
+    },
+    "palette": {
+      "label": "Jump to",
+      "open": "Search and jump to anything (Ctrl+K)",
+      "button": "Jump to a planner, section or entry…",
+      "placeholder": "Planners, sections, entries, actions…",
+      "results": "Results",
+      "empty": "Nothing matches.",
+      "keys": "↑ ↓ to choose · Enter to open · Esc to close · Elsewhere: J / K sections, M section map, A Atlas, N next step, . hints, / search",
+      "kind": {
+        "planner": "Planner",
+        "section": "Section",
+        "entity": "Entry",
+        "page": "Page",
+        "action": "Action"
+      }
+    },
+    "section": {
+      "unknown": "Unknown planner.",
+      "filled": "{{filled}}/{{total}} sections started",
+      "about": "About this section",
+      "more": "More: Markdown preview, export, help",
+      "map": "Section map",
+      "mapHint": "How this planner's sections feed each other. Click a landmark to open it.",
+      "mapOther": "Other planner",
+      "mapFeeds": "Feeds into",
+      "hints_one": "{{count}} hint",
+      "hints_other": "{{count}} hints",
+      "state": {
+        "empty": "Empty",
+        "started": "Started",
+        "done": "Done"
+      }
+    },
+    "record": {
+      "basics": "Basics",
+      "links": "Links",
+      "unnamed": "(unnamed)",
+      "position": "{{n}} of {{total}}",
+      "prev": "Previous {{what}}",
+      "next": "Next {{what}}",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "groups": "Field groups",
+      "moreDetail": "Add detail",
+      "expand": "Open as a page",
+      "collapse": "Back to the list (as a panel)"
+    },
+    "collection": {
+      "views": "View",
+      "filter": "Filter",
+      "csv": "Download as CSV",
+      "add": "Add {{what}}"
+    },
+    "frame": {
+      "hidePanel": "Hide side panel",
+      "showPanel": "Show side panel",
+      "full": "Full screen",
+      "exitFull": "Exit full screen",
+      "exitFullKey": "Exit full screen (Esc)"
+    },
+    "compass": {
+      "explored": "{{pct}}% explored",
+      "filled": "{{pct}}% filled"
+    },
+    "crumbs": {
+      "label": "You are here",
+      "planners": "{{current}}: other planners in {{phase}}",
+      "sections": "{{current}}: other sections of {{planner}}"
+    },
+    "step": {
+      "current": "Current walkthrough step: {{title}}",
+      "region": "Next walkthrough step",
+      "next": "Next step",
+      "hide": "Hide until the next step"
+    },
+    "atlas": {
+      "eyebrow": "Game design atlas",
+      "lede": "Every planner is a landmark in the region of its phase. Fog lifts as you fill them in; follow the lit route, or jump anywhere.",
+      "viewLabel": "Atlas view",
+      "map": "Map",
+      "list": "List",
+      "stepOf": "Walkthrough · step {{n}} of {{total}}",
+      "openStep": "Open step",
+      "markDone": "Mark done",
+      "skip": "Skip",
+      "allDone": "The walkthrough is done. Every planner is still here to refine.",
+      "uncharted": "Uncharted",
+      "here": "You are here",
+      "fullWalkthrough": "The whole walkthrough, hints and AI",
+      "legend": {
+        "walked": "Route walked",
+        "ahead": "Route ahead",
+        "links": "Planners that feed each other"
+      },
+      "stepCard": "Your next step"
+    },
+    "emblem": {
+      "label": "Design emblem: {{rank}}, {{pct}}% explored",
+      "figure": "{{figure}}, {{built}} of 5 parts begun",
+      "complete": "Every part is built. The design is ready to ship.",
+      "next": "Fill {{phase}} planners to {{part}}.",
+      "nextRank": "Next rank, {{rank}}, at {{at}}%.",
+      "knight": {
+        "name": "Knight",
+        "ranks": {
+          "0": "Wanderer",
+          "1": "Squire",
+          "2": "Knight",
+          "3": "Champion",
+          "4": "Legend"
+        },
+        "parts": {
+          "concept": "forge the helmet",
+          "systems": "forge the armor",
+          "content": "arm sword and shield",
+          "production": "stitch cape and boots",
+          "ship": "earn the plume and the aura"
+        }
+      },
+      "camp": {
+        "name": "Camp",
+        "ranks": {
+          "0": "Castaway",
+          "1": "Scavenger",
+          "2": "Settler",
+          "3": "Pathfinder",
+          "4": "Warden"
+        },
+        "parts": {
+          "concept": "pitch the tent",
+          "systems": "gather firewood",
+          "content": "light the fire",
+          "production": "grow the forest",
+          "ship": "clear the night sky"
+        }
+      },
+      "castle": {
+        "name": "Castle",
+        "ranks": {
+          "0": "Outpost",
+          "1": "Hamlet",
+          "2": "Stronghold",
+          "3": "Citadel",
+          "4": "Empire"
+        },
+        "parts": {
+          "concept": "raise the keep",
+          "systems": "build the walls",
+          "content": "open the gate",
+          "production": "add the towers",
+          "ship": "fly the banner"
+        }
+      }
+    },
+    "mode": {
+      "label": "Mode",
+      "guided": "Guided",
+      "studio": "Studio",
+      "guidedHint": "Guided: core fields first, fog on the Atlas, the next step always in view",
+      "studioHint": "Studio: every field shown, no fog or next-step pill",
+      "toStudio": "Switch to Studio mode",
+      "toGuided": "Switch to Guided mode",
+      "offer": "You have finished {{count}} walkthrough steps. Studio mode shows every field and drops the beginner aids.",
+      "tryStudio": "Try Studio",
+      "noThanks": "No thanks"
+    },
+    "companionPanel": {
+      "pin": "Pin beside the page",
+      "unpin": "Unpin (show as a panel over the page)"
+    },
+    "empty": {
+      "fromExample": "Start from an example",
+      "blank": "Start blank ({{singular}})"
+    }
   }
 }

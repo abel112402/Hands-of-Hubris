@@ -1,5 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { addMissingArrows, flowAnalysis, UI_DOC } from '../../core/ui'
+import { PlusChip } from '../Icon'
 import {
   Background,
   Controls,
@@ -186,7 +187,7 @@ export function GraphEditor({ docId, sec }: { docId: string; sec: GSec }) {
             {sourceItems.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
           </select>
         )}
-        <button className="primary" onClick={addNode}>+ Add node</button>
+        <button className="primary" onClick={addNode}><PlusChip /> Add node</button>
         <button onClick={layout}>Auto layout</button>
         {docId === UI_DOC && sec.id === 'flow' && (() => {
           const missing = flowAnalysis(project).missingInGraph.length

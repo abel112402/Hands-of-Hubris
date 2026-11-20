@@ -1,9 +1,14 @@
 import type { Entity, Project } from '../model/types'
 import { staleLayers } from './generate'
+import { lightGrid, type LightGrid } from './light'
+import { anchorMoved, linkedObjects, locationById, wayOut } from './links'
 import { buildNav, reachable, type NavGrid } from './nav'
+import { inRoom } from './rooms'
 import { getLocationType } from './registry'
 import { mapOf } from './schema'
-import { buildGraph, checkLocks, nodeAt, type KeyAt, type LockCheck, type MapGraph } from './topology'
+import { checkPlan } from './architecture'
+import { buildGraph, checkLocks, metrics, nodeAt, type KeyAt, type LockCheck, type MapGraph } from './topology'
+import { privacyOf } from './types/dwelling'
 import type { LocationMap, MapObject, MapPoint as Pt, NavSpec } from './types'
 
 /** Questions about the Locations section as a whole, for hints and the guide. Pure reads of the project. */
@@ -50,6 +55,14 @@ export function mapNav(map: LocationMap): NavGrid {
   return g
 }
 
+const lightCache = new WeakMap<LocationMap, LightGrid>()
+/** Light over the map's walkability grid (light.ts). Cached per map object. */
+export function mapLight(map: LocationMap): LightGrid {
+  let g = lightCache.get(map)
+  if (!g) lightCache.set(map, (g = lightGrid(map, mapNav(map))))
+  return g
+}
+
 /** The map's room graph; null for types that are not made of rooms. */
 export function mapGraph(map: LocationMap): MapGraph | null {
   if (!graphCache.has(map)) {
@@ -84,6 +97,86 @@ export function keysOnMap(map: LocationMap): KeyAt[] {
 export function lockCheck(map: LocationMap): LockCheck | null {
   const g = mapGraph(map)
   return g && checkLocks(g, keysOnMap(map))
+}
+
+/** One problem with a map, and the objects it is about (the first is the one to select). */
+export type MapCheck = { id: string; text: string; objects: string[] }
+
+/**
+ * What a map's own rules say is wrong with it as it stands, hand edits included: house rules for a dwelling
+ * (architecture.ts), locks whose key cannot be reached in time, and rooms no way leads into. Empty when all is well.
+ */
+export function mapChecks(location: Entity, map: LocationMap, project?: Project): MapCheck[] {
+  const all = Object.values(map.layers).flatMap((l) => l.objects)
+  const linked = project ? linkChecks(project, location, map) : []
+  // Creatures, people and keys one cannot walk to (locks open, secrets known), on every kind of map.
+  const stranded: MapCheck[] = unreachableObjects(map, ['marker', 'key']).map((o) => ({
+    id: `reach-${o.id}`,
+    text: `${o.label ?? (o.kind === 'key' ? 'A key' : 'A creature')} cannot be reached from the entrance.`,
+    objects: [o.id],
+  }))
+  const graph = mapGraph(map)
+  if (!graph) return [...linked, ...stranded]
+  const unreachable = metrics(graph).unreachable
+  const name = (id: string) => String(all.find((o) => o.id === id)?.label ?? 'a room')
+  if (map.type === 'Dwelling') {
+    const rooms = all.filter((o) => o.kind === 'room')
+    return [...linked, ...checkPlan(graph, rooms, privacyOf(location), unreachable).map((issue, i) => ({ id: `${issue.rule}-${i}`, text: issue.text, objects: issue.rooms })), ...stranded]
+  }
+  const out: MapCheck[] = unreachable.map((id) => ({ id: `unreachable-${id}`, text: `Nothing leads into ${name(id) === 'a room' ? 'a room' : `the ${name(id)}`}.`, objects: [id] }))
+  out.push(...linked, ...stranded)
+  // The boss waits in the boss room.
+  const bossRoom = all.find((o) => o.kind === 'chamber' && o.props?.role === 'boss')
+  for (const boss of all.filter((o) => o.kind === 'marker' && o.props?.type === 'boss')) {
+    if (bossRoom && !inRoom(bossRoom, [boss.x, boss.y])) out.push({ id: `boss-${boss.id}`, text: `${boss.label ?? 'The boss'} is not in the boss room.`, objects: [boss.id, bossRoom.id] })
+  }
+  const locks = lockCheck(map)
+  if (locks) {
+    for (const lock of locks.stuck) {
+      const doors = graph.edges.filter((e) => e.lock === lock).flatMap((e) => e.via)
+      out.push({ id: `lock-${lock}`, text: `The ${lock} lock cannot be opened: its key is missing or lies behind it.`, objects: doors })
+    }
+  }
+  return out
+}
+
+const checkCache = new WeakMap<LocationMap, { project?: Project; location: Entity; checks: MapCheck[] }>()
+
+/** `mapChecks`, kept per stored map until the map, the location or the project changes. */
+export function cachedMapChecks(location: Entity, map: LocationMap, project?: Project): MapCheck[] {
+  const hit = checkCache.get(map)
+  if (hit && hit.project === project && hit.location === location) return hit.checks
+  const checks = mapChecks(location, map, project)
+  checkCache.set(map, { project, location, checks })
+  return checks
+}
+
+/** The kinds of problem the hints tell apart. */
+export type CheckGroup = 'locks' | 'links' | 'layout'
+export const checkGroup = (c: MapCheck): CheckGroup => (c.id.startsWith('lock-') ? 'locks' : c.id.startsWith('link-') || c.id === 'anchor' ? 'links' : 'layout')
+
+/** Locations whose current map has problems of one kind. */
+export const locationsWithChecks = (project: Project, group: CheckGroup): Entity[] =>
+  locationsOf(project).filter((l) => {
+    const map = currentMap(l)
+    return !!map && cachedMapChecks(l, map, project).some((c) => checkGroup(c) === group)
+  })
+
+/**
+ * Problems with links between maps: an object that opens a location that no longer exists, and an inner map whose
+ * object on the parent map has changed since it was generated (its entrance may no longer match).
+ */
+function linkChecks(project: Project, location: Entity, map: LocationMap): MapCheck[] {
+  const out: MapCheck[] = []
+  for (const o of linkedObjects(map)) {
+    if (!locationById(project, o.link!.locationId)) out.push({ id: `link-${o.id}`, text: `${o.label ?? 'An object'} opens a location that no longer exists.`, objects: [o.id] })
+  }
+  if (anchorMoved(project, location, map)) {
+    const parent = locationById(project, location.parent)
+    const door = wayOut(map)
+    out.push({ id: 'anchor', text: `This place has changed on the map of ${String(parent?.name ?? 'its parent')}; generate a new map (or reroll its doors) so the entrance matches again.`, objects: door ? [door.id] : [] })
+  }
+  return out
 }
 
 /**

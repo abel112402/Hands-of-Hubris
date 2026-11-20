@@ -14,6 +14,12 @@ export const between = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * 
 export const snap = (n: number, step = 10) => Math.round(n / step) * step
 export const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
 
+/** A generator slider's value on this map (`map.params`), or `fallback` when it was never moved. */
+export const param = (map: LocationMap, id: string, fallback: number): number => {
+  const v = map.params?.[id]
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback
+}
+
 /** The `size` input as one of three steps; anything else counts as Medium. */
 export const sizeKey = (location: Entity): 'Small' | 'Medium' | 'Large' => (location.size === 'Small' || location.size === 'Large' ? location.size : 'Medium')
 

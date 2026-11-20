@@ -21,20 +21,67 @@ const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 // ---- Fields and the data model ----
 
-const PRIMITIVES = ['string', 'text', 'int', 'long', 'float', 'double', 'bool', 'boolean', 'id', 'color', 'vector2', 'vector3', 'date', 'enum', 'localizedstring', 'curve', 'animationcurve']
-const ASSETS = ['sprite', 'texture', 'texture2d', 'prefab', 'gameobject', 'audioclip', 'material', 'mesh', 'animationclip', 'animatorcontroller', 'scriptableobject']
+/** Engine-neutral primitive types. Every spelling below (Unity/C#, Godot, Unreal) maps to one of these. */
+export type PrimitiveType = 'string' | 'id' | 'text' | 'int' | 'float' | 'bool' | 'color' | 'vec2' | 'vec3' | 'date' | 'enum' | 'localized' | 'curve'
+export type AssetType = 'image' | 'scene' | 'audio' | 'material' | 'mesh' | 'animation' | 'animator' | 'data'
+
+/** Type spellings (lower case, letters and digits only) of Unity/C#, Godot and Unreal, by neutral type. */
+const PRIMITIVE_SPELLINGS: Record<PrimitiveType, string[]> = {
+  string: ['string', 'fstring', 'fname', 'stringname'],
+  id: ['id'],
+  text: ['text'],
+  int: ['int', 'long', 'int32', 'int64', 'uint8', 'byte', 'short'],
+  float: ['float', 'double', 'real', 'float32', 'float64'],
+  bool: ['bool', 'boolean'],
+  color: ['color', 'color32', 'fcolor', 'flinearcolor'],
+  vec2: ['vector2', 'vector2i', 'fvector2d', 'fintpoint'],
+  vec3: ['vector3', 'vector3i', 'fvector', 'fvector3f', 'fintvector'],
+  date: ['date', 'datetime', 'fdatetime'],
+  enum: ['enum'],
+  localized: ['localizedstring', 'ftext'],
+  curve: ['curve', 'animationcurve', 'ucurvefloat', 'curvefloat', 'fruntimefloatcurve'],
+}
+const ASSET_SPELLINGS: Record<AssetType, string[]> = {
+  image: ['sprite', 'texture', 'texture2d', 'compressedtexture2d', 'imagetexture', 'utexture2d', 'utexture', 'upapersprite', 'papersprite'],
+  scene: ['prefab', 'gameobject', 'packedscene', 'aactor', 'actor', 'ublueprint', 'blueprint'],
+  audio: ['audioclip', 'audiostream', 'audiostreamwav', 'audiostreamoggvorbis', 'usoundbase', 'soundbase', 'usoundwave', 'soundwave', 'usoundcue', 'soundcue'],
+  material: ['material', 'shadermaterial', 'standardmaterial3d', 'umaterialinterface', 'materialinterface', 'umaterial'],
+  mesh: ['mesh', 'arraymesh', 'ustaticmesh', 'staticmesh', 'uskeletalmesh', 'skeletalmesh'],
+  animation: ['animationclip', 'animation', 'uanimsequence', 'animsequence', 'uanimmontage', 'animmontage', 'spriteframes'],
+  animator: ['animatorcontroller', 'runtimeanimatorcontroller', 'animationtree', 'animationlibrary', 'uanimblueprint', 'animblueprint'],
+  data: ['scriptableobject', 'resource', 'udataasset', 'dataasset', 'uprimarydataasset', 'primarydataasset'],
+}
+const invert = <T extends string>(m: Record<T, string[]>) => new Map(Object.entries<string[]>(m).flatMap(([t, ks]) => ks.map((k) => [k, t as T])))
+const PRIMITIVE_OF = invert(PRIMITIVE_SPELLINGS)
+const ASSET_OF = invert(ASSET_SPELLINGS)
 
 export type FieldKind = 'primitive' | 'asset' | 'ref' | 'unknown' | 'missing'
-export type FieldSpec = { raw: string; name: string; type: string; base: string; array: boolean; optional: boolean; kind: FieldKind; target?: Entity }
+export type FieldSpec = {
+  raw: string
+  name: string
+  type: string
+  base: string
+  array: boolean
+  optional: boolean
+  kind: FieldKind
+  target?: Entity
+  /** The neutral type when kind is 'primitive'. */
+  primitive?: PrimitiveType
+  /** The neutral asset type when kind is 'asset'. */
+  asset?: AssetType
+}
 
-/** Parses “name: type”. Types: primitives, Unity assets, another schema’s name (a reference), with [] or List<…> for lists. */
+/**
+ * Parses “name: type”. Types: primitives, assets, another schema’s name (a reference), in Unity/C#, Godot or Unreal spelling;
+ * lists as T[], List<T>, Array[T] or TArray<T>; Unreal pointers (UTexture2D*, TSoftObjectPtr<…>) count as the type they point at.
+ */
 export function parseField(raw: string, schemas: Entity[], optional = false): FieldSpec {
   const i = raw.indexOf(':')
   const name = (i < 0 ? raw : raw.slice(0, i)).trim()
   const type = i < 0 ? '' : raw.slice(i + 1).trim()
   let base = type.replace(/^ref\s+/i, '')
   let array = false
-  const list = base.match(/^(?:List|IList|IReadOnlyList)<(.+)>$/i)
+  const list = base.match(/^(?:List|IList|IReadOnlyList|TArray|Array)<(.+)>$/i) ?? base.match(/^Array\[(.+)\]$/i)
   if (list) {
     base = list[1].trim()
     array = true
@@ -43,11 +90,16 @@ export function parseField(raw: string, schemas: Entity[], optional = false): Fi
     base = base.slice(0, -2).trim()
     array = true
   }
+  const ptr = base.match(/^(?:TSoftObjectPtr|TObjectPtr|TSoftClassPtr|TSubclassOf|TWeakObjectPtr)<(.+)>$/i)
+  if (ptr) base = ptr[1].trim()
+  base = base.replace(/\s*\*$/, '')
   if (/^enum\b/i.test(base)) base = 'enum'
   const k = key(base)
   const target = schemas.find((s) => key(str(s.name)) === k && k)
-  const kind: FieldKind = !type ? 'missing' : target ? 'ref' : PRIMITIVES.includes(k) ? 'primitive' : ASSETS.includes(k) ? 'asset' : 'unknown'
-  return { raw, name, type, base, array, optional, kind, target }
+  const primitive = target ? undefined : PRIMITIVE_OF.get(k)
+  const asset = target || primitive ? undefined : ASSET_OF.get(k)
+  const kind: FieldKind = !type ? 'missing' : target ? 'ref' : primitive ? 'primitive' : asset ? 'asset' : 'unknown'
+  return { raw, name, type, base, array, optional, kind, target, ...(primitive && { primitive }), ...(asset && { asset }) }
 }
 
 export function schemaFields(p: Project, schema: Entity): FieldSpec[] {
@@ -89,19 +141,20 @@ export const idRegex = (p: Project, schema: Entity) => new RegExp(`^${escape(str
 export const makeRecordId = (p: Project, schema: Entity, name: string) => `${str(schema.idPrefix)}${toCasing(words(name), idCasing(p)) || 'example'}`
 
 const ASSET_PATH: Record<string, string> = { sprite: 'Sprites', texture: 'Textures', texture2d: 'Textures', prefab: 'Prefabs', gameobject: 'Prefabs', audioclip: 'Audio', material: 'Materials', mesh: 'Models', animationclip: 'Animations', animatorcontroller: 'Animations' }
+const ASSET_FOLDER: Record<AssetType, string> = { image: 'Textures', scene: 'Prefabs', audio: 'Audio', material: 'Materials', mesh: 'Models', animation: 'Animations', animator: 'Animations', data: 'Data' }
 function sampleValue(p: Project, f: FieldSpec, name: string): unknown {
   const k = key(f.base)
   if (f.target) return makeRecordId(p, f.target, firstEntry(p, f.target) ?? 'example')
-  if (['int', 'long'].includes(k)) return 1
-  if (['float', 'double'].includes(k)) return 1.5
-  if (['bool', 'boolean'].includes(k)) return false
-  if (k === 'color') return '#ffffff'
-  if (k === 'vector2') return [0, 0]
-  if (k === 'vector3') return [0, 0, 0]
-  if (k === 'id') return 'id'
-  if (ASSETS.includes(k)) return `Assets/_Project/${ASSET_PATH[k] ?? 'Data'}/${toCasing(words(name), 'PascalCase')}`
+  if (f.primitive === 'int') return 1
+  if (f.primitive === 'float') return 1.5
+  if (f.primitive === 'bool') return false
+  if (f.primitive === 'color') return '#ffffff'
+  if (f.primitive === 'vec2') return [0, 0]
+  if (f.primitive === 'vec3') return [0, 0, 0]
+  if (f.primitive === 'id') return 'id'
+  if (f.asset) return `Assets/_Project/${ASSET_PATH[k] ?? ASSET_FOLDER[f.asset]}/${toCasing(words(name), 'PascalCase')}`
   if (f.name.toLowerCase() === 'name' || f.name.toLowerCase() === 'displayname') return name
-  return k === 'enum' ? 'Option' : '…'
+  return f.primitive === 'enum' ? 'Option' : '…'
 }
 const firstEntry = (p: Project, schema: Entity) => {
   const src = sourceOf(schema)
@@ -125,17 +178,17 @@ export function sampleRecord(p: Project, schema: Entity): Record<string, unknown
 export type RecordIssue = { level: 'error' | 'warning'; field?: string; message: string }
 
 function typeIssue(f: FieldSpec, v: unknown): string | null {
-  const k = key(f.base)
   if (f.target) {
     if (typeof v !== 'string') return `should be a ${nameOf(f.target)} ID`
     const pre = str(f.target.idPrefix)
     return pre && !v.startsWith(pre) ? `should be a ${nameOf(f.target)} ID starting with “${pre}”` : null
   }
-  if (['int', 'long'].includes(k)) return Number.isInteger(v) ? null : 'should be a whole number'
-  if (['float', 'double'].includes(k)) return typeof v === 'number' ? null : 'should be a number'
-  if (['bool', 'boolean'].includes(k)) return typeof v === 'boolean' ? null : 'should be true or false'
-  if (k === 'vector2' || k === 'vector3') return Array.isArray(v) && v.length === (k === 'vector2' ? 2 : 3) && v.every((x) => typeof x === 'number') ? null : `should be [${k === 'vector2' ? 'x, y' : 'x, y, z'}]`
-  if (k === 'color') return typeof v === 'string' && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(v) ? null : 'should be a colour like #aabbcc'
+  const t = f.primitive
+  if (t === 'int') return Number.isInteger(v) ? null : 'should be a whole number'
+  if (t === 'float') return typeof v === 'number' ? null : 'should be a number'
+  if (t === 'bool') return typeof v === 'boolean' ? null : 'should be true or false'
+  if (t === 'vec2' || t === 'vec3') return Array.isArray(v) && v.length === (t === 'vec2' ? 2 : 3) && v.every((x) => typeof x === 'number') ? null : `should be [${t === 'vec2' ? 'x, y' : 'x, y, z'}]`
+  if (t === 'color') return typeof v === 'string' && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(v) ? null : 'should be a colour like #aabbcc'
   if (f.kind === 'primitive' || f.kind === 'asset') return typeof v === 'string' ? null : 'should be text'
   return null
 }
@@ -280,3 +333,20 @@ export function loadPlan(p: Project, scale = 1) {
 
 /** Validators per stage (earliest first), for the readiness view. */
 export const validatorsByStage = (p: Project) => VALIDATION_STAGES.map((stage) => ({ stage, validators: dataList(p, 'validators').filter((v) => (v.when || 'Build / CI') === stage) }))
+
+// ---- Field mapping (engine export) ----
+
+/** Mapping target meaning “no planner field fills this schema field”. */
+export const NO_FIELD = '—'
+/** One mapping line as stored in a schema's `fieldMap`. */
+export const fieldMapLine = (field: string, from: string) => `${field} ← ${from}`
+
+/** A schema's field mapping, schema field → planner field, from lines like “health ← hp” (also “<-” or “=”). Later lines win. */
+export function fieldMapOf(schema: Entity): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const line of ids(schema.fieldMap)) {
+    const m = line.match(/^\s*([^←<=]+?)\s*(?:←|<-|=)\s*(.+?)\s*$/)
+    if (m) out.set(m[1], m[2])
+  }
+  return out
+}

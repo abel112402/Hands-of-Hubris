@@ -32,6 +32,7 @@ import { CATEGORIES as DIFFICULTY_CATEGORIES, DIFFICULTY_DOC, levelPressure, lev
 import { difficultyImpact } from '../difficultyImpact'
 import { DIPLOMACY_DOC, factionStandings, relationPairs, startValue, levelAt } from '../diplomacy'
 import { locationSvg } from '../location/render/svg'
+import { locationJson } from '../location/export/json'
 import { mapOf } from '../location/schema'
 import { biomeCoverage, biomesInOrder, biomeThreat, COVERAGE_COLUMNS, unlockPath, WORLD_DOC } from '../world'
 import { factionFootprints } from '../diplomacyFootprint'
@@ -966,7 +967,12 @@ export type ExportAsset = { path: string; mime: string; content: string }
  */
 export function exportAssets(project: Project, mod: PlannerModule): ExportAsset[] {
   if (mod.id === UI_DOC) return screensOf(project).filter((s) => layoutOf(s).length).map((s) => ({ path: wireframePath(s), mime: 'image/svg+xml', content: layoutSvg(project, s) }))
-  if (mod.id === WORLD_DOC) return mappedLocations(project).map((l) => ({ path: locationMapPath(l), mime: 'image/svg+xml', content: locationSvg(project, l) ?? '' }))
+  // Each map as a picture, and as data for an engine (core/location/export/json.ts).
+  if (mod.id === WORLD_DOC)
+    return mappedLocations(project).flatMap((l) => [
+      { path: locationMapPath(l), mime: 'image/svg+xml', content: locationSvg(project, l) ?? '' },
+      { path: locationMapPath(l).replace(/\.svg$/, '.json'), mime: 'application/json', content: JSON.stringify(locationJson(l, mapOf(l)!), null, 2) },
+    ])
   return []
 }
 

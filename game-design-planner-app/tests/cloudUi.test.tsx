@@ -171,7 +171,8 @@ describe('signed in', () => {
     render(<App cloudBackend={fake} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Work offline (local)' }))
     await waitFor(() => expect(location.hash).toBe('#/'), SLOW)
-    expect(await screen.findByText('Game design workspace')).toBeTruthy()
+    // The workspace opens (this test clears storage, so it gets the default interface, the Atlas).
+    expect(await screen.findByRole('navigation', { name: 'Main' })).toBeTruthy()
     expect(useCloud.getState().mode).toBe('local')
   })
 })

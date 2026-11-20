@@ -1,12 +1,15 @@
 import type { Entity } from '../../model/types'
 import { crossings, dist, pointAlong, polylineLength, toDeg } from '../geometry'
 import { MinHeap } from '../heap'
+import { lightOf } from '../light'
+import { locationById } from '../links'
+import { replaceObjects } from '../order'
 import { LOCK_NAMES, planMission } from '../mission'
 import type { Rng } from '../rng'
 import { inRoom, roomAnchor, roomOutline, shapeOf, type RoomShape } from '../rooms'
 import { buildGraph, nodeName as nodeOf, parseLinks, reach } from '../topology'
 import type { GenContext, LayerDef, LocationMap, LocationTypeDef, MapObject, MapPoint as Pt, NewMapObject, TopologySpec } from '../types'
-import { clamp, objects, pos, refsOf, sizeKey, snap, splitRects, touches } from './shared'
+import { clamp, objects, param, pos, refsOf, sizeKey, snap, splitRects, touches } from './shared'
 
 /**
  * Dungeon: rooms cut out of solid rock and joined by corridors. The map is partitioned and a room placed in each
@@ -55,7 +58,8 @@ function rooms({ location, map, rand }: GenContext): NewMapObject[] {
   const secret = clamp(Math.round(Number(location.secretRooms)) || 0, 0, 6)
   const parts = splitRects({ x: MARGIN, y: MARGIN, w: map.w - MARGIN * 2, h: map.h - MARGIN * 2 }, wanted + secret, rand, 90)
   // A room fills part of its cell; a labyrinth has smaller rooms and so longer corridors between them.
-  const fill: [number, number] = maze ? [0.4, 0.6] : [0.55, 0.85]
+  const size = param(map, 'roomSize', 1)
+  const fill = (maze ? [0.4, 0.6] : [0.55, 0.85]).map((v) => Math.min(0.95, v * size)) as [number, number]
   // Rooms keep a band of rock to the edge of their part, so two rooms never share a wall without a door.
   const GAP = 10
   const made: NewMapObject[] = parts.map((p) => {
@@ -69,7 +73,7 @@ function rooms({ location, map, rand }: GenContext): NewMapObject[] {
     made.map((o) => ({ at: pos(o), area: (o.w ?? 0) * (o.h ?? 0) })),
     rand,
     {
-      loops: clamp(Math.round(loops ?? (made.length - secret) * (maze ? 0.4 : 0.18)), 0, 20),
+      loops: clamp(Math.round(loops ?? (made.length - secret) * param(map, 'loopRate', maze ? 0.4 : 0.18)), 0, 20),
       chain: CHAIN[String(location.branching)] ?? CHAIN.Balanced,
       deadEnds: location.deadEnds === 'Few' || location.deadEnds === 'Many' ? location.deadEnds : 'Some',
       secret,
@@ -88,6 +92,8 @@ function rooms({ location, map, rand }: GenContext): NewMapObject[] {
     const { shape, cut } = shapeFor(role, o.w ?? 0, o.h ?? 0, rand)
     return {
       ...o,
+      // A secret room is for the game master's map only.
+      ...(role === 'secret' ? { secret: true as const } : {}),
       props: {
         role,
         node: node(i),
@@ -279,6 +285,7 @@ function corridors({ location, map, rand }: GenContext): NewMapObject[] {
       y: corner[1],
       points,
       ctrl: points,
+      ...(l.secret ? { secret: true as const } : {}),
       props: {
         width: CORRIDOR,
         ...(nodeOf(l.a) ? { from: nodeOf(l.a)! } : {}),
@@ -317,7 +324,8 @@ function doors({ map, rand }: GenContext): NewMapObject[] {
         for (let i = k; i >= 0 && i < steps.length; i += inside ? -1 : 1) if (steps[i] && steps[i] !== room) { other = steps[i]; break }
         const lock = other && regionOf(room) > regionOf(other) ? LOCK_NAMES[regionOf(room) - 1] : undefined
         const style = roleOf(room) === 'secret' ? 'secret' : roleOf(room) === 'boss' ? 'gate' : lock ? 'door' : rand.chance(0.3) ? 'open' : 'door'
-        found.push({ kind: 'door', x: c.p[0], y: c.p[1], w: CORRIDOR + 2, h: 8, rot: toDeg(c.angle) + 90, props: { style }, ...(lock ? { lock } : {}) })
+        // `run` names the corridor, so a hand edit that re-routes it can move the door along (heal below).
+        found.push({ kind: 'door', x: c.p[0], y: c.p[1], w: CORRIDOR + 2, h: 8, rot: toDeg(c.angle) + 90, props: { style, run: run.id }, ...(lock ? { lock } : {}), ...(style === 'secret' ? { secret: true as const } : {}) })
       }
     }
   }
@@ -383,7 +391,8 @@ function features({ location, map, rand }: GenContext): NewMapObject[] {
       if (!room || !rand.chance(0.3)) continue
       const towards = Math.atan2(room.y - d.y, room.x - d.x)
       const p: Pt = [d.x + Math.cos(towards) * 18, d.y + Math.sin(towards) * 18]
-      if (inRoom(room, p, -4) && !touches(p, 10, out)) out.push({ kind: 'trap', x: p[0], y: p[1], w: 14, h: 14 })
+      // Traps are hidden from the players.
+      if (inRoom(room, p, -4) && !touches(p, 10, out)) out.push({ kind: 'trap', x: p[0], y: p[1], w: 14, h: 14, secret: true })
     }
   }
   return out
@@ -407,7 +416,7 @@ function contents({ project, location, map, rand }: GenContext): NewMapObject[] 
     } else if (role === 'treasure' || role === 'secret') {
       const p = spot(room, 12)
       const item = loot.length ? loot[nextLoot++ % loot.length] : undefined
-      if (p) out.push({ kind: 'furniture', x: p[0], y: p[1], w: 20, h: 14, rot: 0, props: { type: 'chest' }, ...(item ? { label: item.name, refId: item.id } : {}) })
+      if (p) out.push({ kind: 'furniture', x: p[0], y: p[1], w: 20, h: 14, rot: 0, props: { type: 'chest' }, ...(item ? { label: item.name, refId: item.id } : {}), ...(role === 'secret' ? { secret: true as const } : {}) })
     } else if (role === 'room' && enemies.length && rand.chance(0.7)) {
       const foe = rand.pick(enemies)
       const p = spot(room, 12)
@@ -440,13 +449,43 @@ function contents({ project, location, map, rand }: GenContext): NewMapObject[] 
   return out
 }
 
+/**
+ * Torches just inside most doors and at some corridor bends, braziers either side of the boss; secret rooms stay
+ * dark. Each light keeps clear of the others, so rooms far from any door are left in shadow.
+ */
+function lights({ map, rand }: GenContext): NewMapObject[] {
+  const out: NewMapObject[] = []
+  const free = (p: Pt) => !out.some((o) => dist(pos(o), p) < 46)
+  for (const d of objects(map, 'doors', 'door')) {
+    const room = chambers(map).find((r) => inRoom(r, pos(d), 8))
+    if (!room || room.secret || !rand.chance(0.7)) continue
+    const a = Math.atan2(room.y - d.y, room.x - d.x)
+    const p: Pt = [d.x + Math.cos(a) * 16, d.y + Math.sin(a) * 16]
+    if (inRoom(room, p, -4) && free(p)) out.push(lightOf('torch', p[0], p[1]))
+  }
+  for (const run of objects(map, 'corridors', 'corridor')) {
+    if (run.secret) continue
+    for (const bend of (run.points ?? []).slice(1, -1)) if (rand.chance(0.4) && free(bend) && !chambers(map).some((r) => inRoom(r, bend, 6))) out.push(lightOf('torch', bend[0], bend[1]))
+  }
+  const boss = chambers(map).find((r) => roleOf(r) === 'boss')
+  if (boss) {
+    for (const side of [-1, 1]) {
+      const p: Pt = [boss.x + side * (boss.w ?? 0) * 0.3, boss.y]
+      if (inRoom(boss, p, -8)) out.push(lightOf('brazier', p[0], p[1]))
+    }
+  }
+  return out
+}
+
 const ROLE_LABEL: Record<string, string> = { entrance: 'Entrance', treasure: 'Treasury', secret: 'Secret room' }
 
-function labels({ map }: GenContext): NewMapObject[] {
+function labels({ project, location, map }: GenContext): NewMapObject[] {
   const out: NewMapObject[] = []
+  // Under another place (a cellar door, a ruin): the entrance says where its stairs lead.
+  const parent = locationById(project, location.parent)
   for (const room of chambers(map)) {
-    const text = ROLE_LABEL[roleOf(room)]
-    if (text) out.push({ kind: 'label', x: room.x, y: room.y - (room.h ?? 0) / 2 + 18, label: text })
+    const text = roleOf(room) === 'entrance' && parent ? `Up to ${String(parent.name ?? 'the surface')}` : ROLE_LABEL[roleOf(room)]
+    if (text) out.push({ kind: 'label', x: room.x, y: room.y - (room.h ?? 0) / 2 + 18, label: text, ...(room.secret ? { secret: true as const } : {}) })
   }
   for (const o of objects(map, 'contents')) if (o.label) out.push({ kind: 'label', x: o.x, y: o.y + (o.h ?? 16) / 2 + 14, label: o.label, ...(o.props?.type === 'boss' ? { props: { size: 'large' } } : {}) })
   return out
@@ -459,8 +498,42 @@ const LAYERS: LayerDef[] = [
   { id: 'doors', label: 'Doors', dependsOn: ['rooms', 'corridors'], generate: doors, addable: ['door'] },
   { id: 'features', label: 'Stairs, pillars, traps', dependsOn: ['rooms', 'doors'], generate: features, addable: ['stairs', 'pillar', 'trap'] },
   { id: 'contents', label: 'Boss, enemies, loot, keys', dependsOn: ['rooms', 'corridors', 'doors', 'features'], generate: contents, addable: ['marker', 'furniture', 'key'] },
+  { id: 'lights', label: 'Lights', dependsOn: ['rooms', 'corridors', 'doors'], generate: lights, addable: ['light'] },
   { id: 'labels', label: 'Labels', dependsOn: ['rooms', 'contents'], generate: labels, addable: ['label'] },
 ]
+
+/**
+ * A room moved or resized by hand keeps its corridors: each corridor to it is drawn again from room to room (the
+ * same way round as before), and the corridor's doors move to where it now meets the rooms, keeping their lock and
+ * style. Pinned corridors and doors stay as they are.
+ */
+function heal(map: LocationMap, before: MapObject, after: MapObject): LocationMap {
+  if (after.kind !== 'chamber' || !nodeOf(after)) return map
+  const rooms = chambers(map)
+  const byNode = new Map(rooms.flatMap((r) => (nodeOf(r) ? [[nodeOf(r)!, r] as const] : [])))
+  const changed = new Map<string, MapObject>()
+  const [dx, dy] = [after.x - before.x, after.y - before.y]
+  for (const run of objects(map, 'corridors', 'corridor')) {
+    const [from, to] = [byNode.get(String(run.props?.from)), byNode.get(String(run.props?.to))]
+    if (run.pinned || !from || !to || (from.id !== after.id && to.id !== after.id)) continue
+    const [a, b] = [roomAnchor(from), roomAnchor(to)]
+    const old = run.points ?? []
+    const acrossFirst = old.length > 1 && Math.abs(old[0][1] - old[1][1]) < 1
+    const points: Pt[] = [a, acrossFirst ? [b[0], a[1]] : [a[0], b[1]], b]
+    changed.set(run.id, { ...run, x: points[1][0], y: points[1][1], points, ctrl: points })
+    for (const d of objects(map, 'doors', 'door')) {
+      if (d.pinned || d.props?.run !== run.id) continue
+      // The door's room: the edited one if the door was on it, else whichever room it stands on.
+      const onEdited = inRoom(before, pos(d), 10)
+      const room = onEdited ? after : rooms.find((r) => inRoom(r, pos(d), 10))
+      if (!room) continue
+      const aim: Pt = onEdited ? [d.x + dx, d.y + dy] : pos(d)
+      const hit = crossings(points, roomOutline(room), true).sort((p, q) => dist(p.p, aim) - dist(q.p, aim))[0]
+      if (hit) changed.set(d.id, { ...d, x: Math.round(hit.p[0]), y: Math.round(hit.p[1]), rot: Math.round(toDeg(hit.angle) + 90) })
+    }
+  }
+  return replaceObjects(map, changed, DUNGEON)
+}
 
 export const DUNGEON: LocationTypeDef = {
   id: 'Dungeon',
@@ -468,4 +541,20 @@ export const DUNGEON: LocationTypeDef = {
   layers: LAYERS,
   topology: TOPOLOGY,
   nav: { cell: 8, open: false },
+  heal,
+  params: [
+    { id: 'roomSize', label: 'Room size', min: 0.6, max: 1.25, step: 0.05, default: 1, layers: ['rooms'], help: 'How much of its share of the map each room fills.' },
+    { id: 'loopRate', label: 'Loops', min: 0, max: 0.6, step: 0.02, default: 0.18, layers: ['rooms'], help: 'Extra links for every room, when the Loops input is empty.' },
+  ],
+  stamps: [
+    { id: 'roundHall', label: 'Round hall', layer: 'rooms', make: (x, y) => [{ kind: 'chamber', x, y, w: 140, h: 140, props: { role: 'room', shape: 'round' } }] },
+    { id: 'crossRoom', label: 'Cross-shaped room', layer: 'rooms', make: (x, y) => [{ kind: 'chamber', x, y, w: 160, h: 150, props: { role: 'room', shape: 'cross' } }] },
+    { id: 'lRoom', label: 'L-shaped room', layer: 'rooms', make: (x, y) => [{ kind: 'chamber', x, y, w: 150, h: 120, props: { role: 'room', shape: 'L', cut: 1 } }] },
+    {
+      id: 'pillars',
+      label: 'Two rows of pillars',
+      layer: 'features',
+      make: (x, y) => [-1, 1].flatMap((side) => [-45, -15, 15, 45].map((dx) => ({ kind: 'pillar', x: x + dx, y: y + side * 30, w: 12, h: 12 }))),
+    },
+  ],
 }

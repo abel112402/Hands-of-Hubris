@@ -3,6 +3,20 @@ import { catalog, f, mod, s, section, v } from './helpers'
 const ADR_STATUS = ['Proposed', 'Accepted', 'Deprecated', 'Superseded']
 const STATUS = ['Planned', 'In progress', 'Done', 'Blocked']
 
+/** Kinds of class in the class diagram (core/classes), engine-neutral. */
+export const CLASS_KINDS = [
+  { id: 'component', label: 'Component', help: 'Unity MonoBehaviour, Godot Node, Unreal ActorComponent' },
+  { id: 'actor', label: 'Actor / prefab root', help: 'Unity MonoBehaviour on a prefab root, Godot scene root, Unreal Actor' },
+  { id: 'data', label: 'Data asset', help: 'Unity ScriptableObject, Godot Resource, Unreal DataAsset' },
+  { id: 'class', label: 'Class', help: 'A plain class' },
+  { id: 'struct', label: 'Struct', help: 'A value type' },
+  { id: 'interface', label: 'Interface', help: 'Methods others implement' },
+  { id: 'enum', label: 'Enum', help: 'Fields are the values' },
+  { id: 'static', label: 'Static class', help: 'Helpers and constants, no instances' },
+  { id: 'event', label: 'Event channel', help: 'An asset others raise and listen to; fields are the payload' },
+] as const
+const CLASS_KIND_LABELS = CLASS_KINDS.map((k) => k.label)
+
 /** Default layers, lowest first. Fixed ids so the v1 → v2 migration can point modules at them. */
 export const DEFAULT_LAYERS = [
   { id: 'layer-core', name: 'Core', order: 0, description: 'Engine-independent foundations: ids, events, math, services.' },
@@ -40,9 +54,14 @@ function migrateArchitecture(data: Record<string, any>) {
 const LOD = 'Level of detail'
 
 // ---- Data-driven Design ----
+const NATIVE_FORMAT_USE = 'Content designers edit in the engine editor with references to sprites and prefabs (Unity ScriptableObject, Godot Resource, Unreal Data Asset).'
+/** The v2 seed of the native format, written for Unity only; the v3 upgrade replaces it when it was never edited. */
+const UNITY_FORMAT_SEED = { name: 'ScriptableObject', editedIn: 'Unity Inspector', whenToUse: 'Content designers edit in Unity with references to sprites and prefabs.' }
+/** Format names a v1 schema may give for the native format. */
+const NATIVE_FORMAT_NAMES = ['scriptableobject', 'so', 'resource', 'dataasset', 'native data asset']
 /** Default formats with fixed ids so the v1 → v2 migration can point schemas at them. */
 export const DEFAULT_FORMATS = [
-  { id: 'format-so', name: 'ScriptableObject', editedIn: 'Unity Inspector', merge: 'Merges poorly', loadsAt: 'Runtime', moddable: false, whenToUse: 'Content designers edit in Unity with references to sprites and prefabs.' },
+  { id: 'format-so', name: 'Native data asset', editedIn: 'Engine editor', merge: 'Merges poorly', loadsAt: 'Runtime', moddable: false, whenToUse: NATIVE_FORMAT_USE },
   { id: 'format-json', name: 'JSON', editedIn: 'Text editor', merge: 'Merges well', loadsAt: 'Runtime', moddable: true, whenToUse: 'Nested data that mods or tools must read and write.' },
   { id: 'format-csv', name: 'CSV', editedIn: 'Spreadsheet', merge: 'Merges well', loadsAt: 'Build time', moddable: true, whenToUse: 'Flat tables balanced in a spreadsheet: prices, stats, drop rates.' },
 ]
@@ -71,7 +90,7 @@ export const CONTENT_SOURCES = [
 export const LOAD_STRATEGIES = ['Preload at boot', 'With scene', 'On demand', 'Streamed']
 export const VALIDATION_STAGES = ['In the editor', 'On import', 'Build / CI', 'At load']
 
-/** v1 kept five free-text fields and the format as plain text. Text goes to notes; formats become entries with fixed ids. */
+/** v1 kept five free-text fields and the format as plain text. Text goes to notes; formats become entries with fixed ids. v3 makes an untouched Unity-only native-format seed engine-neutral. */
 function migrateDataDriven(data: Record<string, any>) {
   const pr = data.principle && typeof data.principle === 'object' ? data.principle : (data.principle = {})
   const notes: string[] = []
@@ -86,9 +105,14 @@ function migrateDataDriven(data: Record<string, any>) {
   for (const sc of Array.isArray(data.schemas) ? data.schemas : []) {
     const name = typeof sc?.format === 'string' ? sc.format.trim() : ''
     if (!name || formats.some((x) => x.id === name)) continue
-    let fm = formats.find((x) => String(x.name ?? '').toLowerCase() === name.toLowerCase())
+    let fm = formats.find((x) => String(x.name ?? '').toLowerCase() === name.toLowerCase()) ?? (NATIVE_FORMAT_NAMES.includes(name.toLowerCase()) ? formats.find((x) => x.id === 'format-so') : undefined)
     if (!fm) formats.push((fm = { id: `format-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, name }))
     sc.format = fm.id
+  }
+  // v3: the native format's seed becomes engine-neutral, but only where nobody edited its wording.
+  const so = formats.find((x) => x.id === 'format-so')
+  if (so && so.name === UNITY_FORMAT_SEED.name && so.editedIn === UNITY_FORMAT_SEED.editedIn && so.whenToUse === UNITY_FORMAT_SEED.whenToUse) {
+    Object.assign(so, { name: 'Native data asset', editedIn: 'Engine editor', whenToUse: NATIVE_FORMAT_USE })
   }
 }
 
@@ -176,6 +200,24 @@ export const technicalModules = [
         ],
         [v.archLayers(), v.archMatrix(), v.archCoupling(), v.cards(), v.table(['name', 'layer', 'dependsOn', 'status'])],
         { description: 'One entry per assembly. Draw dependencies here; the views check layer direction, cycles and coupling.' },
+      ),
+      s.collection(
+        'classes',
+        'Classes (code structure)',
+        'class',
+        [
+          f.enm('kind', 'Kind', CLASS_KIND_LABELS, { help: 'Component = Unity MonoBehaviour / Godot Node / Unreal ActorComponent; Data asset = ScriptableObject / Resource / DataAsset; Event channel = an asset others raise and listen to.' }),
+          f.ref('module', 'Module', section('modules'), { help: 'Gives the namespace; class references are checked against the layer rule.' }),
+          f.ref('base', 'Inherits from', section('classes'), { help: 'Empty = the kind’s engine base (MonoBehaviour, ScriptableObject…).' }),
+          f.multi('implements', 'Implements', section('classes'), { help: 'Interfaces from this list.' }),
+          f.list('fields', 'Fields (name: Type)', { placeholder: 'e.g. -maxHealth: float', help: '+ public, - private (default), # protected, “static” before the name. Types: int, float, Vector3, another class, a data schema (Item), Item[] or any engine type (Transform). Enum: one value per line.' }),
+          f.list('methods', 'Methods (Name(arg: Type): Type)', { placeholder: 'e.g. +TakeDamage(amount: float): float', help: 'No return type = void. The export writes the signature; the body is yours.' }),
+          f.multi('requires', 'Requires components', section('classes'), { help: 'Components that must sit on the same object (Unity RequireComponent).' }),
+          f.long('responsibility', 'Responsibility'),
+          f.enm('status', 'Status', STATUS),
+        ],
+        [v.archClasses(), v.cards(), v.table(['name', 'kind', 'module', 'base', 'status'])],
+        { description: 'The code structure as a class diagram: components, data assets, plain classes, interfaces, enums and event channels. The engine export writes them as code skeletons.' },
       ),
       s.graph('dependencies', 'External systems diagram (optional)', ['Module', 'Layer', 'External'], {
         nodeSource: section('modules'),
@@ -403,7 +445,7 @@ export const technicalModules = [
         'Data formats',
         'format',
         [
-          f.enm('editedIn', 'Edited in', ['Unity Inspector', 'Spreadsheet', 'Text editor', 'Custom tool']),
+          f.enm('editedIn', 'Edited in', ['Engine editor', 'Unity Inspector', 'Godot Inspector', 'Unreal Editor', 'Spreadsheet', 'Text editor', 'Custom tool']),
           f.enm('merge', 'Version control', ['Merges well', 'Merges poorly', 'Binary']),
           f.enm('loadsAt', 'Read at', ['Build time', 'Runtime']),
           f.bool('moddable', 'Players can add files'),
@@ -426,10 +468,11 @@ export const technicalModules = [
           f.text('editorTool', 'Editor tool', { placeholder: 'e.g. Custom inspector with preview', group: 'Pipeline' }),
           f.num('avgSizeKb', 'Average record size (KB)', { min: 0, step: 0.1, help: 'Including referenced sprites or audio. Default 4.', group: 'Pipeline' }),
           f.num('records', 'Record count', { min: 0, help: 'Used when no content planner is set, or to override it.', group: 'Pipeline' }),
+          f.list('fieldMap', 'Field mapping (schema field ← planner field)', { placeholder: 'e.g. health ← hp', help: 'Which content-planner field fills a schema field in the engine export, when the names differ. “—” = no planner field. Set it from the Engine export view.', group: 'Engine export' }),
           f.num('version', 'Schema version', { min: 1, group: 'Pipeline' }),
           f.bool('moddable', 'Moddable', { group: 'Pipeline' }),
         ],
-        [v.dataModel(), v.dataTester(), v.dataReadiness(), v.table(['name', 'format', 'source', 'idPrefix', 'required'])],
+        [v.dataModel(), v.dataTester(), v.dataReadiness(), v.engineExport(), v.table(['name', 'format', 'source', 'idPrefix', 'required'])],
         { description: 'One schema per content type. A type that names another schema (Item, Item[]) is a reference and shows as an arrow in the Data model.', seed: ['Item', 'Building', 'NPC need', 'Recipe', 'Enemy', 'Quest'].map((name) => ({ name })) },
       ),
       s.form(
@@ -487,7 +530,7 @@ export const technicalModules = [
         'Mark moddable schemas under Data schemas → Pipeline. Pipeline readiness shows which have an Architecture extension point.',
       ),
     ]),
-    version: 2,
+    version: 3,
     migrate: migrateDataDriven,
   },
   mod('technical', 'save', 'Save System', 'docs/02_technical/save_system.md', '💾', 'What and how to save.', [

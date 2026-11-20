@@ -5,7 +5,7 @@ import type { Rng } from './rng'
  * Location maps: a layered, procedurally generated and hand-editable top-down map stored on a location entity
  * (`location.map`). See plans/LOCATIONS_MAP_PLAN.md.
  */
-export const LOCATION_TYPES_ALL = ['City', 'Village', 'Dungeon', 'Cave', 'Dwelling'] as const
+export const LOCATION_TYPES_ALL = ['World', 'City', 'Village', 'Dungeon', 'Cave', 'Dwelling'] as const
 export type LocationTypeId = (typeof LOCATION_TYPES_ALL)[number]
 
 export type MapPoint = [number, number]
@@ -36,8 +36,11 @@ export type MapObject = {
   rank?: RoadRank
   /** Id of the `district` object the object stands in. */
   zone?: string
-  /** Glued to another object: `t` is the position along the host's outline or line (0–1). */
-  attach?: { to: string; t: number; side?: number }
+  /**
+   * Glued to another object (attach.ts): `t` is the position along the host's outline or line (0–1), `side` and
+   * `off` how far to which side of it, `rot` the host's direction there when it was attached.
+   */
+  attach?: { to: string; t: number; side?: number; off?: number; rot?: number }
   /** Opens another location's map (house → floor plan, cellar door → dungeon). */
   link?: { locationId: string; anchor?: string }
   /** Lock id on a door, gate or chest; the object with the same `key` opens it. */
@@ -97,6 +100,11 @@ export type LocationMap = {
   masks?: MapMask[]
   env?: MapEnv
   snapshots?: MapSnapshot[]
+  /**
+   * For a map inside another (a house in a town, a cellar under a house): a fingerprint of the object on the
+   * parent map it was generated for. When that object changes, the entrance may no longer match (links.ts).
+   */
+  anchorStamp?: number
 }
 
 /** Map settings a new roll keeps: they are the designer's choices, not generated content. */
@@ -156,4 +164,22 @@ export type LocationTypeDef = {
   topology?: TopologySpec
   /** Defaults to open ground with 10-unit cells. */
   nav?: NavSpec
+  /**
+   * Repairs the map after `before` was edited by hand into `after` (heal.ts): corridors that follow their rooms,
+   * neighbouring rooms that follow a shared wall. Must not move pinned objects. Returns the map unchanged when there
+   * is nothing to do.
+   */
+  heal?: (map: LocationMap, before: MapObject, after: MapObject) => LocationMap
+  /** Redraws what is drawn from a raster field after the field was painted by hand (a cave's outline from its rock). */
+  fromField?: (map: LocationMap, fieldId: string) => LocationMap
+  /** Ready-made groups of objects the user can drop on a layer. */
+  stamps?: Stamp[]
+  /** Sliders for the generators (stored in `map.params`); each lists the layers it changes. */
+  params?: ParamDef[]
 }
+
+/** A generator slider: a number between `min` and `max`, read by the generators of `layers`. */
+export type ParamDef = { id: string; label: string; min: number; max: number; step: number; default: number; layers: string[]; help?: string }
+
+/** A ready-made group of objects for a layer: a round hall, a cluster of houses, a pond. Made around a point. */
+export type Stamp = { id: string; label: string; layer: string; make: (x: number, y: number) => NewMapObject[] }

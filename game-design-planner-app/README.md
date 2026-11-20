@@ -14,6 +14,9 @@ Interactive visual editors for every planning document in `../docs` (Vite + Reac
 - **System map**: opens on your first visit to a planner; after that it remembers whether you closed it and shows a one-line progress summary when closed.
 - `Ctrl+K` search, `Ctrl+S` save, `Ctrl+Z/Y` undo/redo. On windows narrower than 900px the top-bar links move into the Save `▾` menu.
 
+## Example project
+`examples/cinderholm.hohplan.json` is a complete sample game, *Cinderholm*: a steam-and-aether colony survival game on a volcanic island. Every planner and every section is filled, references between planners resolve, formulas evaluate, and the maps, graphs and timelines render. To open it, choose **Save ▾ → Open…** and pick the file. `tests/exampleProject.test.ts` loads it through the normal import path and checks that it stays complete and valid. The older `hands-of-hubris.hohplan.json` and `seeded.hohplan.json` are smaller fixtures.
+
 ## Hints
 - The **top bar** badge counts project-wide hints. In an editor, the hint panel lists **This page** first and collapses hints about **Other planners**.
 - Each hint has one main action (Go / Create). The `⋯` menu holds *Remind me later (30 min)*, *Dismiss this hint* and *Never show this kind of hint*.

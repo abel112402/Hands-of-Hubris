@@ -58,6 +58,13 @@ const PATHS = {
   bug: 'M8 2l1.9 1.9M16 2l-1.9 1.9M9 7.1V6a3 3 0 0 1 6 0v1.1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6ZM12 20v-9M6 13H2M22 13h-4M3 21c0-2.1 1.6-3.8 3.5-4M21 21c0-2.1-1.6-3.8-3.5-4M3 5c0 2.1 1.8 3.8 4 4M21 5c0 2.1-1.8 3.8-4 4',
   pen: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z',
   blocks: 'M3 3h7v7H3ZM14 3h7v7h-7ZM14 14h7v7h-7ZM3 14h7v7H3Z',
+  expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
+  shrink: 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7',
+  panel: 'M3 4h18v16H3ZM15 4v16',
+  table: 'M3 4h18v16H3ZM3 10h18M3 15h18M9 10v10',
+  board: 'M4 4h4v16H4ZM10 4h4v11h-4ZM16 4h4v7h-4Z',
+  timeline: 'M3 12h18M7 8v8M12 5v14M17 9v6',
+  download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
 } as const
 
 export type IconName = keyof typeof PATHS
@@ -84,4 +91,12 @@ export function Icon({ name, className, strokeWidth }: { name: IconName; classNa
       <path d={PATHS[name]} />
     </svg>
   )
+}
+
+/**
+ * The "+" of an Add button, drawn as a small light tile with a bold plus (primary buttons). The glyph stays in
+ * the text, so the button's name still reads "+ Add …"; CSS hides it and draws the plus instead.
+ */
+export function PlusChip() {
+  return <span className="plus-chip">+</span>
 }

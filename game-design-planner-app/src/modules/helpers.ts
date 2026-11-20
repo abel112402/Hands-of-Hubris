@@ -10,7 +10,7 @@ import type {
 } from '../core/model/types'
 
 type K<T> = Omit<T, 'key' | 'label' | 'type'>
-type Opt = { help?: string; placeholder?: string; required?: boolean; group?: string }
+type Opt = { help?: string; placeholder?: string; required?: boolean; group?: string; tier?: 'core' | 'detail' }
 
 export const catalog = (c: string): Source => ({ catalog: c })
 export const section = (s: string, doc?: string): Source => ({ section: s, ...(doc ? { doc } : {}) })
@@ -94,6 +94,7 @@ export const v = {
   archExtensions: (): CollectionView => ({ kind: 'archExtensions' }),
   archTicks: (): CollectionView => ({ kind: 'archTicks' }),
   archBoot: (): CollectionView => ({ kind: 'archBoot' }),
+  archClasses: (): CollectionView => ({ kind: 'archClasses' }),
   codingNaming: (): CollectionView => ({ kind: 'codingNaming' }),
   codingFolders: (): CollectionView => ({ kind: 'codingFolders' }),
   codingGit: (): CollectionView => ({ kind: 'codingGit' }),
@@ -102,6 +103,7 @@ export const v = {
   dataTester: (): CollectionView => ({ kind: 'dataTester' }),
   dataReadiness: (): CollectionView => ({ kind: 'dataReadiness' }),
   dataLoadPlan: (): CollectionView => ({ kind: 'dataLoadPlan' }),
+  engineExport: (): CollectionView => ({ kind: 'engineExport' }),
   depletion: (): CollectionView => ({ kind: 'depletion' }),
   levelCurve: (): CollectionView => ({ kind: 'levelCurve' }),
   skillTree: (): CollectionView => ({ kind: 'skillTree' }),

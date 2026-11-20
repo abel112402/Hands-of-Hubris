@@ -153,6 +153,8 @@
     "undo": "Visszavonás",
     "redo": "Újra",
     "exportMd": "Markdown export (.zip)",
+    "exportEngine": "Export: {{engine}} (.zip)",
+    "importEngineReport": "Motor-riport importálása…",
     "exportJson": "Projekt JSON letöltése",
     "search": "Keresés (Ctrl+K)",
     "snapshot": "Pillanatkép készítése",
@@ -619,6 +621,18 @@
       "title": "Térkép nélküli helyszínek",
       "body": "{{count}} helyszínnek még nincs térképe: {{names}}. Nyisd meg a Map nézetet, és nyomd meg a Generate map gombot."
     },
+    "worldLocLocks": {
+      "title": "Nem nyitható zárak",
+      "body": "{{count}} térképen van zár, amelynek a kulcsa hiányzik vagy a zár mögött van: {{names}}. A Map nézet Checks doboza megmutatja, melyik; generáld újra a tartalmat, vagy tedd át a kulcsot."
+    },
+    "worldLocLinks": {
+      "title": "Ellenőrizendő kapcsolatok a térképek között",
+      "body": "{{count}} térkép már nem létező helyre linkel, vagy a szülő térképe megváltozott: {{names}}. A Map nézet Checks doboza megmondja, mi a teendő."
+    },
+    "worldLocLayout": {
+      "title": "Saját szabályaikat sértő térképek",
+      "body": "{{count}} térképen van elérhetetlen terem vagy lény, vagy szabályt sértő alaprajz: {{names}}. A Map nézet Checks doboza felsorolja őket; kattintásra kijelöli a termet."
+    },
     "worldLocStale": {
       "title": "Elavult rétegek a térképeken",
       "body": "{{count}} térképen vannak rétegek, amelyek már nem illeszkednek az alattuk lévőkhöz: {{names}}. A Map nézetben nyomd meg az „Update out of date” gombot, vagy hagyd őket így."
@@ -746,6 +760,18 @@
     "dataUnvalidated": {
       "title": "Ellenőrzés nélküli sémák",
       "body": "{{count}} sémának nincs validátora és írott szabálya sem: {{names}}."
+    },
+    "engineIncomplete": {
+      "title": "Befejezendő rekordok a motorban",
+      "body": "A(z) {{engine}} szerint {{count}} rekord hiányos vagy még nincs assetje: {{names}}. Állítsd be ott a sprite-okat vagy prefabokat, vagy töltsd ki a hiányzó tervezői mezőket."
+    },
+    "engineStale": {
+      "title": "A motor-riport egy régebbi exportból készült",
+      "body": "A terv változott, mióta a(z) {{engine}}-projektbe importáltad. Exportálj újra, importáld a motorban, és írj új riportot."
+    },
+    "engineClasses": {
+      "title": "Még meg nem írt osztályok",
+      "body": "A(z) {{engine}} szerint {{count}} osztály hiányzik, vagy még TODO-s metódustörzsei vannak: {{names}}."
     },
     "dataLegacy": {
       "title": "Jegyzetek a korábbi verzióból",
@@ -1911,5 +1937,202 @@
     "light": "Világos",
     "dark": "Sötét",
     "hint": "A Rendszer beállítás az eszköz világos vagy sötét módját követi. Csak ebben a böngészőben mentjük."
+  },
+  "v3": {
+    "companion": "Segítő",
+    "useClassic": "Klasszikus felület használata",
+    "theme": {
+      "toLight": "Váltás világos módra",
+      "toDark": "Váltás sötét módra"
+    },
+    "rail": {
+      "atlas": "Atlasz",
+      "book": "Könyv"
+    },
+    "sheet": {
+      "close": "Bezárás",
+      "prev": "Előző",
+      "next": "Következő"
+    },
+    "setting": {
+      "label": "Felület",
+      "classic": "Klasszikus",
+      "preview": "Design Atlasz",
+      "hint": "A Design Atlasz az új felület. A Klasszikus az előző, és továbbra is elérhető. Csak ebben a böngészőben mentődik; a projektjeid nem változnak."
+    },
+    "palette": {
+      "label": "Ugrás",
+      "open": "Keresés és ugrás bárhová (Ctrl+K)",
+      "button": "Ugrás tervezőre, szakaszra vagy elemre…",
+      "placeholder": "Tervezők, szakaszok, elemek, műveletek…",
+      "results": "Találatok",
+      "empty": "Nincs találat.",
+      "keys": "↑ ↓ választás · Enter megnyitás · Esc bezárás · Máshol: J / K szakaszok, M szakasztérkép, A Atlasz, N következő lépés, . tippek, / keresés",
+      "kind": {
+        "planner": "Tervező",
+        "section": "Szakasz",
+        "entity": "Elem",
+        "page": "Oldal",
+        "action": "Művelet"
+      }
+    },
+    "section": {
+      "unknown": "Ismeretlen tervező.",
+      "filled": "{{filled}}/{{total}} szakasz elkezdve",
+      "about": "A szakaszról",
+      "more": "Továbbiak: Markdown-előnézet, export, súgó",
+      "map": "Szakasztérkép",
+      "mapHint": "Hogyan táplálják egymást a tervező szakaszai. Kattints egy pontra a megnyitásához.",
+      "mapOther": "Másik tervező",
+      "mapFeeds": "Ebbe táplál",
+      "hints_one": "{{count}} tipp",
+      "hints_other": "{{count}} tipp",
+      "state": {
+        "empty": "Üres",
+        "started": "Elkezdve",
+        "done": "Kész"
+      }
+    },
+    "record": {
+      "basics": "Alapok",
+      "links": "Kapcsolatok",
+      "unnamed": "(névtelen)",
+      "position": "{{n}} / {{total}}",
+      "prev": "Előző: {{what}}",
+      "next": "Következő: {{what}}",
+      "duplicate": "Másolat",
+      "delete": "Törlés",
+      "groups": "Mezőcsoportok",
+      "moreDetail": "Részletek hozzáadása",
+      "expand": "Megnyitás külön oldalon",
+      "collapse": "Vissza a listához (panelként)"
+    },
+    "collection": {
+      "views": "Nézet",
+      "filter": "Szűrés",
+      "csv": "Letöltés CSV-ként",
+      "add": "Új: {{what}}"
+    },
+    "frame": {
+      "hidePanel": "Oldalpanel elrejtése",
+      "showPanel": "Oldalpanel megjelenítése",
+      "full": "Teljes képernyő",
+      "exitFull": "Kilépés a teljes képernyőből",
+      "exitFullKey": "Kilépés a teljes képernyőből (Esc)"
+    },
+    "compass": {
+      "explored": "{{pct}}% felfedezve",
+      "filled": "{{pct}}% kitöltve"
+    },
+    "crumbs": {
+      "label": "Itt vagy",
+      "planners": "{{current}}: további tervezők itt: {{phase}}",
+      "sections": "{{current}}: {{planner}} további szakaszai"
+    },
+    "step": {
+      "current": "Aktuális lépés: {{title}}",
+      "region": "Következő lépés",
+      "next": "Következő lépés",
+      "hide": "Elrejtés a következő lépésig"
+    },
+    "atlas": {
+      "eyebrow": "Játéktervezési atlasz",
+      "lede": "Minden tervező egy tereptárgy a fázisa régiójában. A köd eloszlik, ahogy kitöltöd őket; kövesd a kivilágított útvonalat, vagy ugorj bárhová.",
+      "viewLabel": "Atlasz nézet",
+      "map": "Térkép",
+      "list": "Lista",
+      "stepOf": "Végigvezetés · {{n}}. lépés / {{total}}",
+      "openStep": "Lépés megnyitása",
+      "markDone": "Késznek jelöl",
+      "skip": "Kihagyás",
+      "allDone": "A végigvezetés kész. Minden tervező itt marad a finomításhoz.",
+      "uncharted": "Feltérképezetlen",
+      "here": "Itt tartasz",
+      "fullWalkthrough": "A teljes végigvezetés, tippek és MI",
+      "legend": {
+        "walked": "Bejárt út",
+        "ahead": "Előttünk álló út",
+        "links": "Egymást tápláló tervezők"
+      },
+      "stepCard": "A következő lépésed"
+    },
+    "emblem": {
+      "label": "Tervezési jelvény: {{rank}}, {{pct}}% felfedezve",
+      "figure": "{{figure}}, 5 részből {{built}} elkezdve",
+      "complete": "Minden rész elkészült. A terv kiadható.",
+      "next": "Töltsd ki a(z) {{phase}} tervezőket: {{part}}.",
+      "nextRank": "Következő rang: {{rank}}, {{at}}%-nál.",
+      "knight": {
+        "name": "Lovag",
+        "ranks": {
+          "0": "Vándor",
+          "1": "Fegyverhordozó",
+          "2": "Lovag",
+          "3": "Bajnok",
+          "4": "Legenda"
+        },
+        "parts": {
+          "concept": "a sisak kovácsolása",
+          "systems": "a páncél kovácsolása",
+          "content": "kard és pajzs",
+          "production": "köpeny és csizma",
+          "ship": "a forgó és a fénykör"
+        }
+      },
+      "camp": {
+        "name": "Tábor",
+        "ranks": {
+          "0": "Hajótörött",
+          "1": "Guberáló",
+          "2": "Telepes",
+          "3": "Ösvényjáró",
+          "4": "Őrző"
+        },
+        "parts": {
+          "concept": "a sátor felállítása",
+          "systems": "tűzifa gyűjtése",
+          "content": "a tűz meggyújtása",
+          "production": "az erdő megnövesztése",
+          "ship": "a tiszta éjszakai ég"
+        }
+      },
+      "castle": {
+        "name": "Vár",
+        "ranks": {
+          "0": "Előőrs",
+          "1": "Falucska",
+          "2": "Erőd",
+          "3": "Fellegvár",
+          "4": "Birodalom"
+        },
+        "parts": {
+          "concept": "a lakótorony felhúzása",
+          "systems": "a falak építése",
+          "content": "a kapu megnyitása",
+          "production": "a tornyok hozzáadása",
+          "ship": "a zászló kitűzése"
+        }
+      }
+    },
+    "mode": {
+      "label": "Mód",
+      "guided": "Vezetett",
+      "studio": "Stúdió",
+      "guidedHint": "Vezetett: előbb az alapmezők, köd az Atlaszon, a következő lépés mindig látható",
+      "studioHint": "Stúdió: minden mező látható, nincs köd és lépésjelző",
+      "toStudio": "Váltás Stúdió módra",
+      "toGuided": "Váltás Vezetett módra",
+      "offer": "Már {{count}} lépést teljesítettél a végigvezetésből. A Stúdió mód minden mezőt mutat, és elhagyja a kezdő segítségeket.",
+      "tryStudio": "Kipróbálom",
+      "noThanks": "Köszönöm, nem"
+    },
+    "companionPanel": {
+      "pin": "Rögzítés az oldal mellé",
+      "unpin": "Rögzítés feloldása (panel az oldal fölött)"
+    },
+    "empty": {
+      "fromExample": "Kezdés egy példából",
+      "blank": "Üres kezdés ({{singular}})"
+    }
   }
 }

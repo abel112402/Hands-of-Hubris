@@ -18,6 +18,8 @@ import { guideOf } from '../../modules/guides'
 import { GuidePanel } from '../guides/GuidePanel'
 import { Icon } from '../Icon'
 import { CountBadge } from '../motion'
+import { getUiVersion } from '../../core/uiVersion'
+import { entityRoute } from '../../core/palette'
 
 const WIDTH_KEY = 'hohplan:hintWidth'
 const MIN_WIDTH = 220
@@ -58,7 +60,11 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
   const run = () => {
     if (!a) return
     if (a.kind === 'goto') {
-      nav(`/doc/${a.docId}${a.sectionId ? `?s=${a.sectionId}` : ''}`)
+      // v3: a hint about one entry opens that entry's record sheet, not only its section.
+      const entity = hint.target.entityId
+      const section = a.sectionId ?? hint.target.sectionId
+      if (getUiVersion() === 'v3' && entity && section && hint.target.docId === a.docId) nav(entityRoute(a.docId, section, entity))
+      else nav(`/doc/${a.docId}${a.sectionId ? `?s=${a.sectionId}` : ''}`)
       return
     }
     const mod = getModule(a.docId)
@@ -111,12 +117,14 @@ export function HintCard({ hint, onExplain }: { hint: Hint; onExplain?: (h: Hint
   )
 }
 
-export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: string }) {
+/**
+ * The hints themselves: this page's first, then (folded) those about other planners. Without a page (the v3
+ * home) every hint of the project is listed together.
+ */
+export function HintList({ docId, sectionId }: { docId?: string; sectionId?: string }) {
   const { t } = useTranslation()
-  // Below 768px the panel sits under the editor (see styles.css), so it starts collapsed there.
-  const [open, setOpen] = useState(() => !isNarrow())
   const { all } = useHints(docId, sectionId)
-  const { here, elsewhere } = splitByScope(all, { docId })
+  const { here, elsewhere } = docId ? splitByScope(all, { docId }) : { here: all, elsewhere: [] }
   const [showAll, setShowAll] = useState(false)
   const shownHere = showAll ? here : here.slice(0, MAX_ACTIVE_HINTS)
   const [elsewhereOpen, setElsewhereOpen] = useState(() => readFlag(ELSEWHERE_KEY))
@@ -124,14 +132,48 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
     setElsewhereOpen(o)
     writeFlag(ELSEWHERE_KEY, o)
   }
-  const { tab, setTab, explain } = useAiUi()
+  const explain = useAiUi((s) => s.explain)
+  const provider = useAiSettings((s) => s.settings.provider)
+  const aiReady = useAiSession((s) => s.hasKey[provider])
+  return (
+    <>
+      <h4 className="hint-group">{docId ? t('hints.thisPage') : t('hints.projectWide', { count: here.length })}</h4>
+      {here.length === 0 && (docId
+        ? <><p className="muted">{t('hints.allClear')}</p><Flavor keys="flavor.allClear" ctx={docId} costume={costumeFor(docId)} /></>
+        : <p className="muted">{t('hints.none')}</p>)}
+      <ul className="list">{shownHere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
+      {here.length > MAX_ACTIVE_HINTS && (
+        <button className="small" onClick={() => setShowAll(!showAll)}>
+          {showAll ? t('hints.showLess') : t('hints.showMore', { count: here.length - MAX_ACTIVE_HINTS })}
+        </button>
+      )}
+      {elsewhere.length > 0 && (
+        <details className="hint-elsewhere" open={elsewhereOpen} onToggle={(e) => rememberElsewhere((e.target as HTMLDetailsElement).open)}>
+          <summary>{t('hints.otherPlanners', { count: elsewhere.length })}</summary>
+          <ul className="list">{elsewhere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
+        </details>
+      )}
+    </>
+  )
+}
+
+/**
+ * Hints, the planner guide and AI for a page, in tabs. Classic: a resizable, collapsible column beside the
+ * editor. `embedded`: fills its host, always open, no resize handle or collapse toggle. (The v3 companion shows
+ * one tool at a time with `HintList`, `GuidePanel` and `AiPanel` directly.)
+ */
+export function HintPanel({ docId, sectionId, embedded = false }: { docId: string; sectionId?: string; embedded?: boolean }) {
+  const { t } = useTranslation()
+  // Below 768px the panel sits under the editor (see styles.css), so it starts collapsed there.
+  const [open, setOpen] = useState(() => embedded || !isNarrow())
+  const { all } = useHints(docId, sectionId)
+  const { here } = splitByScope(all, { docId })
+  const { tab, setTab } = useAiUi()
   // Picking a tab on a collapsed panel opens it (on phones it starts collapsed, as a bar under the editor).
   const openTab = (next: typeof tab) => {
     setTab(next)
     setOpen(true)
   }
-  const provider = useAiSettings((s) => s.settings.provider)
-  const aiReady = useAiSession((s) => s.hasKey[provider])
   const guide = guideOf(docId)
   const showGuide = tab === 'guide' && !!guide
   const showAi = tab === 'ai'
@@ -169,8 +211,8 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
     localStorage.setItem(WIDTH_KEY, String(w))
   }
   return (
-    <aside className="hint-panel" style={{ width }} aria-label={t('hints.panel')}>
-      <div
+    <aside className={'hint-panel' + (embedded ? ' embedded' : '')} style={embedded ? undefined : { width }} aria-label={t('hints.panel')}>
+      {!embedded && <div
         className="hint-resize"
         role="separator"
         aria-orientation="vertical"
@@ -181,7 +223,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
         tabIndex={0}
         onPointerDown={startResize}
         onKeyDown={resizeByKey}
-      />
+      />}
       <span className="sr-only" role="status">{t('hints.thisPageCount', { count: here.length })}</span>
       <div className="hint-head">
         <div className="tabs">
@@ -195,7 +237,7 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
           {guide && <button className={showGuide ? 'active' : ''} onClick={() => openTab('guide')}><Icon name="compass" /> {t('guide.tab')}</button>}
           <button className={showAi ? 'active' : ''} onClick={() => openTab('ai')}><Icon name="sparkle" /> AI</button>
         </div>
-        <button
+        {!embedded && <button
           className="hint-toggle"
           aria-expanded={open}
           aria-label={open ? t('hints.hide') : t('hints.show')}
@@ -203,28 +245,11 @@ export function HintPanel({ docId, sectionId }: { docId: string; sectionId?: str
           onClick={() => setOpen(!open)}
         >
           <Icon name={open ? 'chevronRight' : 'chevronLeft'} />
-        </button>
+        </button>}
       </div>
       {open && showAi && <AiPanel docId={docId} sectionId={sectionId} />}
       {open && showGuide && <GuidePanel docId={docId} guide={guide} />}
-      {open && !showAi && !showGuide && (
-        <>
-          <h4 className="hint-group">{t('hints.thisPage')}</h4>
-          {here.length === 0 && <><p className="muted">{t('hints.allClear')}</p><Flavor keys="flavor.allClear" ctx={docId} costume={costumeFor(docId)} /></>}
-          <ul className="list">{shownHere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
-          {here.length > MAX_ACTIVE_HINTS && (
-            <button className="small" onClick={() => setShowAll(!showAll)}>
-              {showAll ? t('hints.showLess') : t('hints.showMore', { count: here.length - MAX_ACTIVE_HINTS })}
-            </button>
-          )}
-          {elsewhere.length > 0 && (
-            <details className="hint-elsewhere" open={elsewhereOpen} onToggle={(e) => rememberElsewhere((e.target as HTMLDetailsElement).open)}>
-              <summary>{t('hints.otherPlanners', { count: elsewhere.length })}</summary>
-              <ul className="list">{elsewhere.map((h) => <HintCard key={h.id} hint={h} onExplain={aiReady ? explain : undefined} />)}</ul>
-            </details>
-          )}
-        </>
-      )}
+      {open && !showAi && !showGuide && <HintList docId={docId} sectionId={sectionId} />}
     </aside>
   )
 }

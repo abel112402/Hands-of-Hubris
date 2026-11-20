@@ -1,0 +1,241 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { getModule, getSections } from '../../core/modules/registry'
+import { exportAssets, exportPath, moduleToMarkdown } from '../../core/export/markdown'
+import { sectionStates, type SectionState } from '../../core/progress'
+import { useStore } from '../../core/store/store'
+import type { Project, SectionDef } from '../../core/model/types'
+import { guideOf } from '../../modules/guides'
+import { HelpPopup } from '../HelpPopup'
+import { SectionRenderer } from '../editors/SectionRenderer'
+import { MarkdownPreview } from '../editors/simple'
+import { exportDocumentJson, exportDocumentMarkdown, importDocument } from '../actions'
+import { SectionMap } from './SectionMap'
+import { ConceptCard } from '../guides/concepts'
+import { Spotlight } from '../guides/Spotlight'
+import { ExamplePicker } from '../guides/ExamplePicker'
+import { useGuideUi } from '../guides/guideStore'
+import { WalkthroughChip } from '../workspace/WalkthroughChip'
+import { Icon } from '../Icon'
+import { Menu } from '../Menu'
+import { ModuleIcon } from '../ModuleIcon'
+import { Sheet } from './Sheet'
+import { useFreshEntries } from '../hints/useHints'
+import { countOf } from '../../core/text'
+import { SectionToolsSlot } from './sectionTools'
+import { SECTION_MAP_EVENT } from './shortcuts'
+import { useSlidingThumb } from '../motion'
+
+const isEmptyCollection = (project: Project, docId: string, sec: SectionDef) => {
+  if (sec.kind !== 'collection') return false
+  const list = project.documents[docId]?.data[sec.id]
+  return !Array.isArray(list) || list.length === 0
+}
+
+/** Marks which ends of a horizontal scroller have content scrolled off (`data-more="start end"`), for the edge fades. */
+function markOverflow(el: HTMLElement) {
+  const more = [el.scrollLeft > 1 && 'start', el.scrollLeft + el.clientWidth < el.scrollWidth - 1 && 'end'].filter(Boolean).join(' ')
+  if (more) el.setAttribute('data-more', more)
+  else el.removeAttribute('data-more')
+}
+
+/** ○ empty · ◐ started · ● done: a shape, not only a colour (coding conventions). */
+export function StateGlyph({ state }: { state: SectionState }) {
+  return <span className={'glyph3 ' + state} aria-hidden="true" />
+}
+
+/**
+ * A planner in the v3 frame (plans/UI_V3_PLAN.md, Phase 1): one compact section header (planner, title, state,
+ * about, actions), the walkthrough step when this section is one, a strip of the planner's sections, then the
+ * section with the full width. The system map opens in a sheet; hints live in the shell's companion tray.
+ */
+export function EditorPageV3() {
+  const { t } = useTranslation()
+  const { docId = '' } = useParams()
+  const [sp, setSp] = useSearchParams()
+  const project = useStore((s) => s.project)
+  const mod = getModule(docId)
+  const [help, setHelp] = useState(false)
+  const [about, setAbout] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
+  const [toolsEl, setToolsEl] = useState<HTMLElement | null>(null)
+  // The section strip: one underline slides to the current section, and the edges fade only where it scrolls.
+  const stripRef = useRef<HTMLElement>(null)
+  useSlidingThumb(stripRef, ':scope>.step3[aria-current]', 'aria-current')
+  // Opening a planner or section moves focus to its heading, so keyboard and screen-reader users land on the
+  // new page instead of the top of the document. Not while a field or sheet already has focus.
+  const heading = useRef<HTMLHeadingElement>(null)
+  const sectionKey = `${docId}/${sp.get('s') ?? ''}`
+  useEffect(() => {
+    const active = document.activeElement
+    if (!active || active === document.body || !document.body.contains(active)) heading.current?.focus({ preventScroll: true })
+  }, [sectionKey])
+  // The current section scrolls into view in the strip, and the fade follows what is scrolled off.
+  useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    strip.querySelector<HTMLElement>('.step3[aria-current]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    markOverflow(strip)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => markOverflow(strip))
+    ro.observe(strip)
+    return () => ro.disconnect()
+  }, [sectionKey])
+  // M (shortcuts.ts) opens the section map.
+  useEffect(() => {
+    const open = () => setMapOpen(true)
+    window.addEventListener(SECTION_MAP_EVENT, open)
+    return () => window.removeEventListener(SECTION_MAP_EVENT, open)
+  }, [])
+  useEffect(() => {
+    if (mod) useStore.getState().ensureDoc(docId)
+  }, [docId, mod])
+  // Entries in their hint grace period (ui/hints/useHints.ts) do not count towards the badges either.
+  const fresh = useFreshEntries((s) => s.until)
+  // An entry leaves the list when its grace ends, so being listed is enough.
+  const states = useMemo(() => (mod ? sectionStates(project, docId, (h) => !!h.target.entityId && h.target.entityId in fresh) : {}), [project, docId, mod, fresh])
+  const sections = mod ? getSections(mod, project.registry) : []
+  const sec = sections.find((s) => s.id === sp.get('s')) ?? sections[0]
+  // Opening another section (from the strip or the map) closes the map and the about panel.
+  const [shownFor, setShownFor] = useState(sec?.id)
+  if (sec?.id !== shownFor) {
+    setShownFor(sec?.id)
+    setMapOpen(false)
+    setAbout(false)
+  }
+
+  if (!mod) return <div className="page">{t('v3.section.unknown')} <Link to="/">{t('nav.home')}</Link></div>
+  const guide = guideOf(docId)
+  const preview = sp.get('v') === 'md'
+  const togglePreview = () => {
+    const n = new URLSearchParams(sp)
+    if (preview) n.delete('v')
+    else n.set('v', 'md')
+    setSp(n, { replace: true })
+  }
+  const goSection = (id: string) => {
+    const n = new URLSearchParams()
+    n.set('s', id)
+    if (preview) n.set('v', 'md')
+    setSp(n)
+  }
+  /** Arrow keys move focus along the strip (the focused button is the only one in the Tab order on Tab-out). */
+  const stripKeys = (e: React.KeyboardEvent<HTMLElement>) => {
+    const steps = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('.step3'))
+    const at = steps.indexOf(document.activeElement as HTMLButtonElement)
+    if (at < 0) return
+    const to = e.key === 'ArrowRight' ? at + 1 : e.key === 'ArrowLeft' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? steps.length - 1 : null
+    if (to === null || !steps[to]) return
+    e.preventDefault()
+    steps.forEach((b, i) => (b.tabIndex = i === to ? 0 : -1))
+    steps[to].focus()
+  }
+  const state = sec ? states[sec.id] : undefined
+  const filled = sections.filter((s) => states[s.id] && states[s.id].state !== 'empty').length
+  const concept = sec ? guide?.concepts[sec.id] : undefined
+  // A collection's size goes in the header line, so its own tools need no count.
+  const list = sec?.kind === 'collection' ? project.documents[docId]?.data[sec.id] : undefined
+  const entries = sec?.kind === 'collection' ? countOf(Array.isArray(list) ? list.length : 0, sec.singular, sec.plural) : undefined
+  const hasExamples = !!sec && !!guide?.examples.some((e) => e.section === sec.id) && !isEmptyCollection(project, docId, sec)
+
+  return (
+    <div className="editor3">
+      <header className="sec3-head">
+        <div className="sec3-top">
+          <div className="sec3-titles">
+            <div
+              className="eyebrow sec3-planner"
+              title={[mod.title, t('v3.section.filled', { filled, total: sections.length }), state && t(`v3.section.state.${state.state}`), state?.hints && t('v3.section.hints', { count: state.hints }), entries].filter(Boolean).join(' · ')}
+            >
+              <ModuleIcon id={mod.id} /> {mod.title}
+              <span className="sec3-count">· {t('v3.section.filled', { filled, total: sections.length })}</span>
+              {state && (
+                <span className={'sec3-state ' + state.state}>
+                  · <StateGlyph state={state.state} /> {t(`v3.section.state.${state.state}`)}
+                  {state.hints > 0 && <> · {t('v3.section.hints', { count: state.hints })}</>}
+                  {entries !== undefined && <> · {entries}</>}
+                </span>
+              )}
+            </div>
+            <div className="sec3-titlerow">
+              <h1 className="sec3-title" ref={heading} tabIndex={-1}>{sec?.title ?? mod.title}</h1>
+              {(sec?.description || concept) && (
+                <button type="button" className="icon-btn" aria-expanded={about} aria-label={t('v3.section.about')} title={t('v3.section.about')} onClick={() => setAbout(!about)}>
+                  <Icon name="help" />
+                </button>
+              )}
+            </div>
+          </div>
+          <span className="spacer" />
+          {/* The section's own tools (a collection's views, filter, Add) render here; see sectionTools.ts. */}
+          <div className="sec3-tools" ref={setToolsEl} />
+          {hasExamples && (
+            <button type="button" className="icon-btn" data-guide="examples" aria-label={t('guide.insertExample')} title={t('guide.insertExample')} onClick={() => useGuideUi.getState().openPicker(sec!.id)}>
+              <Icon name="sparkle" />
+            </button>
+          )}
+          <Menu className="doc-menu" label={t('v3.section.more')} summary={<Icon name="more" />}>
+            <button onClick={togglePreview}>{preview ? t('editor.visual') : t('editor.markdown')}</button>
+            <hr />
+            <button onClick={() => exportDocumentMarkdown(docId)}>{t('editor.downloadMd')}</button>
+            <button onClick={() => exportDocumentJson(docId)}>{t('editor.exportDoc')}</button>
+            <button onClick={() => void importDocument(docId)}>{t('editor.importDoc')}</button>
+            <hr />
+            <button onClick={() => setHelp(true)}>{t('editor.help')}</button>
+          </Menu>
+        </div>
+        {about && sec && (
+          <div className="sec3-about">
+            {sec.description && <p>{sec.description}</p>}
+            {concept && <ConceptCard concept={concept} />}
+          </div>
+        )}
+        {sec && <WalkthroughChip docId={docId} sectionId={sec.id} />}
+        <div className="sec3-tabs">
+        {/* One Tab stop: ← → (Home, End) move between sections, Enter opens one (roving tabindex). */}
+        <nav ref={stripRef} className="sec3-strip" aria-label={t('editor.sections')} onKeyDown={stripKeys} onScroll={(e) => markOverflow(e.currentTarget)}>
+          {sections.map((s) => {
+            const st = states[s.id]
+            const on = s.id === sec?.id
+            return (
+              <button key={s.id} type="button" className={'step3' + (on ? ' on' : '')} aria-current={on ? 'step' : undefined} tabIndex={on ? 0 : -1} onClick={() => goSection(s.id)}>
+                <StateGlyph state={st?.state ?? 'empty'} />
+                <span className="step3-name">{s.title}</span>
+                <span className="sr-only">, {t(`v3.section.state.${st?.state ?? 'empty'}`)}</span>
+                {!!st?.hints && <span className="step3-hints" aria-label={t('v3.section.hints', { count: st.hints })}>{st.hints}</span>}
+              </button>
+            )
+          })}
+        </nav>
+        {/* Outside the scrolling strip, so the map stays in reach however many sections there are. */}
+        {guide && (
+          <button type="button" className="ghost step3-map" onClick={() => setMapOpen(true)}>
+            <Icon name="map" /> <span className="step3-map-label">{t('v3.section.map')}</span>
+          </button>
+        )}
+        </div>
+      </header>
+      <div className="sec3-body">
+        {preview ? (
+          <MarkdownPreview text={moduleToMarkdown(project, mod)} assets={exportAssets(project, mod)} fromPath={exportPath(mod)} />
+        ) : sec ? (
+          <div key={`${docId}/${sec.id}`} className="section-swap">
+            <SectionToolsSlot.Provider value={toolsEl}>
+              <SectionRenderer docId={docId} sec={sec} />
+            </SectionToolsSlot.Provider>
+          </div>
+        ) : null}
+      </div>
+      {mapOpen && guide && (
+        <Sheet label={t('map.title')} eyebrow={t('v3.section.map')} title={mod.title} width={820} onClose={() => setMapOpen(false)}>
+          <p className="muted secmap3-hint">{t('v3.section.mapHint')}</p>
+          <SectionMap docId={docId} map={guide.map} current={sec?.id} />
+        </Sheet>
+      )}
+      {guide && <Spotlight docId={docId} guide={guide} sectionId={sec?.id} />}
+      {guide && <ExamplePicker guide={guide} />}
+      {help && <HelpPopup docId={docId} title={sec ? `${mod.title} › ${sec.title}` : mod.title} sec={sec} onClose={() => setHelp(false)} />}
+    </div>
+  )
+}

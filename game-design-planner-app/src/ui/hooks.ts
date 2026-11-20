@@ -6,11 +6,11 @@ export function useSection<T = any>(docId: string, sectionId: string) {
   const data = useStore((s) => s.project.documents[docId]?.data[sectionId]) as T | undefined
   const mutate = useStore((s) => s.mutate)
   const update = useCallback(
-    (fn: (draft: T) => void, key?: string) =>
+    (fn: (draft: T) => void, key?: string, label?: string) =>
       mutate((p) => {
         const d = p.documents[docId]?.data
         if (d && d[sectionId] !== undefined) fn(d[sectionId])
-      }, key),
+      }, key, label),
     [mutate, docId, sectionId],
   )
   const set = useCallback(
