@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { Link, matchPath, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, matchPath, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../core/store/store'
 import { validateProject } from '../../core/references/refs'
@@ -48,7 +48,6 @@ function RailLink({ to, icon, label, end, badge }: { to: string; icon: IconName;
  */
 export function AppShellV3() {
   const { t, i18n } = useTranslation()
-  const nav = useNavigate()
   const project = useStore((s) => s.project)
   const dirty = useStore((s) => s.dirty)
   const fileName = useStore((s) => s.fileName)
@@ -66,13 +65,13 @@ export function AppShellV3() {
   const sectionId = search.get('s') ?? undefined
   const entityId = search.get('r') ?? search.get('e') ?? undefined
   const nextStep = useNextStep(docId, sectionId)
-  useShortcuts({ docId, sectionId, nextLink: nextStep?.link, openPalette: () => setPalette(true), openHints: () => (docId ? showCompanion('hints') : nav('/settings/hints')) })
+  useShortcuts({ docId, sectionId, nextLink: nextStep?.link, openPalette: () => setPalette(true), openHints: () => showCompanion('hints') })
   // The companion docks as a column when pinned on a wide screen, else it is an overlay that closes on navigation.
   const vw = useViewportWidth()
   const companionOpen = useCompanion((s) => s.open)
   const showCompanion = useCompanion((s) => s.show)
   const pinned = useCompanionPinned()
-  const layout = shellLayout(vw, { companionPinned: pinned && companionOpen && !!docId })
+  const layout = shellLayout(vw, { companionPinned: pinned && companionOpen })
   const mode = useUiMode()
   useEffect(() => {
     if (!getCompanionPinned() || window.innerWidth < DOCK_FROM) useCompanion.getState().close()
@@ -138,13 +137,13 @@ export function AppShellV3() {
       <div className="body3" style={{ gridTemplateColumns: shellColumns(layout) }}>
         {!layout.compact && <nav className="rail3" aria-label={t('nav.main')}>{rail}</nav>}
         <main className="surface3 shell-body"><Outlet />{/* The Atlas has the step card instead. */}{loc.pathname !== '/' && mode === 'guided' && <NextStepPill docId={docId} sectionId={sectionId} />}</main>
-        {!layout.compact && (layout.companionDocked && docId
-          ? <CompanionPanel docId={docId} sectionId={sectionId} docked canPin />
+        {!layout.compact && (layout.companionDocked
+          ? <div className="companion3-col"><CompanionPanel docId={docId} sectionId={sectionId} docked canPin /><CompanionTray docId={docId} hintCount={hintCount} /></div>
           : <CompanionTray docId={docId} hintCount={hintCount} />)}
       </div>
       {layout.compact && <nav className="rail3 bottom" aria-label={t('nav.main')}>{rail}</nav>}
       {palette && <CommandPalette extras={extras} onClose={() => setPalette(false)} />}
-      {companionOpen && docId && !layout.companionDocked && <CompanionPanel docId={docId} sectionId={sectionId} docked={false} canPin={vw >= DOCK_FROM} />}
+      {companionOpen && !layout.companionDocked &&<CompanionPanel docId={docId} sectionId={sectionId} docked={false} canPin={vw >= DOCK_FROM} />}
       <FlavorToast />
     </div>
   )

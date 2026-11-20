@@ -6,7 +6,7 @@
 export type ShellLayout = {
   /** Phase compass rail on the left; 0 when it moves to a bottom bar. */
   rail: number
-  /** Companion: the icon tray, or the docked panel when pinned and there is room for it. */
+  /** Companion: the icon tray, plus the docked panel when pinned and there is room for it. */
   companion: number
   /** Whether the companion is a docked panel (else a tray that opens an overlay). */
   companionDocked: boolean
@@ -28,7 +28,8 @@ export function shellLayout(viewport: number, opts: { companionPinned?: boolean 
   const width = Math.max(0, Math.floor(viewport))
   if (width < COMPACT_BELOW) return { rail: 0, companion: 0, companionDocked: false, surface: width, compact: true }
   const companionDocked = !!opts.companionPinned && width >= DOCK_FROM
-  const companion = companionDocked ? DOCK_WIDTH : TRAY_WIDTH
+  // Docked, the panel sits beside the tray, so another tool is one click away.
+  const companion = companionDocked ? DOCK_WIDTH + TRAY_WIDTH : TRAY_WIDTH
   return { rail: RAIL_WIDTH, companion, companionDocked, surface: width - RAIL_WIDTH - companion, compact: false }
 }
 

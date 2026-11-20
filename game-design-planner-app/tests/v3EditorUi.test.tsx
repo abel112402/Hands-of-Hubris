@@ -46,6 +46,15 @@ describe('v3 planner page', () => {
     expect(screen.getByRole('dialog', { name: 'System map' })).toBeTruthy()
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
+    // Atlas-style landmarks: the current section is marked, other planners say so, and a landmark opens its section.
+    fireEvent.click(screen.getByRole('button', { name: /Section map/ }))
+    const map = within(screen.getByRole('dialog', { name: 'System map' })).getByRole('group', { name: 'System map' })
+    const here = within(map).getByRole('link', { name: /^Enemies,.*You are here/ })
+    expect(here.getAttribute('aria-current')).toBe('location')
+    expect(within(map).getByRole('link', { name: /^Items, Other planner/ }).getAttribute('href')).toBe('#/doc/design.items')
+    fireEvent.click(within(map).getByRole('link', { name: /^Bosses,/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bosses' })).toBeTruthy()
+    expect(screen.queryByRole('dialog', { name: 'System map' })).toBeNull()
   })
 
   it('edits an entry in the record sheet: tabs, detail chips and stepping, while the table keeps its width', async () => {

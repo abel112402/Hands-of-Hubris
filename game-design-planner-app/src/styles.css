@@ -1271,6 +1271,16 @@ button,a.button,.rail-item,.nav-link,.milestone-card,.walk-step,.walk-phase>summ
 .segmented{position:relative;isolation:isolate}
 .segmented[data-thumb]::before{content:"";position:absolute;z-index:-1;top:2px;bottom:2px;left:0;width:var(--thumb-w);transform:translateX(var(--thumb-x));border-radius:var(--radius-xs);background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-strong),0 1px 2px var(--shadow);transition:transform var(--dur-med) var(--ease-out),width var(--dur-med) var(--ease-out)}
 .segmented[data-thumb]>button[aria-pressed=true]{background:none;box-shadow:none}
+/* Prominent: a collection's views (Table / Cards / …): icon + label, taller, the chosen one in the brand tint. */
+.segmented.prominent{padding:3px;gap:2px;border-radius:var(--radius-md);background:var(--surface-0);border-color:var(--line-strong)}
+.segmented.prominent>button{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 12px;border-radius:calc(var(--radius-md) - 3px);font-size:var(--fs-sm);font-weight:600;white-space:nowrap}
+.segmented.prominent>button svg{flex:none;font-size:15px;opacity:.85}
+.segmented.prominent>button[aria-pressed=true]{color:var(--brand-text);background:color-mix(in srgb,var(--brand) 14%,var(--surface-3));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand) 45%,transparent)}
+.segmented.prominent>button[aria-pressed=true] svg{opacity:1}
+.segmented.prominent[data-thumb]::before{top:3px;bottom:3px;border-radius:calc(var(--radius-md) - 3px);background:color-mix(in srgb,var(--brand) 14%,var(--surface-3));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand) 45%,transparent),0 1px 3px var(--shadow)}
+.segmented.prominent[data-thumb]>button[aria-pressed=true]{background:none;box-shadow:none}
+/* Narrow headers: the other views fold to their icons; the chosen one keeps its name (titles name them all). */
+@media (max-width:900px){.segmented.prominent>button{padding:0 9px}.segmented.prominent>button:not([aria-pressed=true]) .seg-label{display:none}}
 /* P2.7 landing card: its height follows the chosen path (<AutoHeight>), and the new content fades in. */
 .auto-height{overflow:clip;overflow-clip-margin:8px}
 .auto-height[data-ready]{transition:height var(--dur-med) var(--ease-out)}
@@ -1575,7 +1585,9 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 /* Blueprint dot grid behind canvases (Atlas, planner maps, editors). */
 .bp-grid{background-image:radial-gradient(var(--grid-dot) 1px,transparent 1px);background-size:18px 18px}
 
-.shell3{display:flex;flex-direction:column;height:100vh}
+/* The v3 frame fills the viewport exactly: the page itself never scrolls, only the regions inside it do. */
+html:has(.shell3),body:has(.shell3){height:100%;overflow:hidden}
+.shell3{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100%;overflow:hidden}
 .bar3{display:flex;align-items:center;gap:var(--space-2);height:56px;flex:none;padding:0 var(--space-3);background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
 .bar3 .brand{flex:none}
 .bar3-name{flex:0 1 220px;min-width:80px;white-space:nowrap;font:600 var(--fs-md) var(--font-display);background:transparent;border-color:transparent;text-overflow:ellipsis}
@@ -1599,7 +1611,9 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .rail3-icon .badge,.tray3-item .badge{position:absolute;top:-6px;right:-12px;margin:0;font-size:10px;line-height:16px;min-width:16px;text-align:center}
 .rail3-spacer{flex:1}
 .rail3.bottom .rail3-spacer{display:none}
-.tray3{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);padding:var(--space-3) 0;background:var(--panel);border-left:1px solid var(--line)}
+.tray3{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);padding:var(--space-3) 0;background:var(--panel);border-left:1px solid var(--line);min-height:0;overflow-x:clip}
+/* The tray is the last column: its badges stay inside the window instead of pushing the page wider. */
+.tray3-item .badge{right:-6px}
 .tray3-item{position:relative;display:grid;place-items:center;width:36px;height:36px;padding:0;font-size:18px;background:none;border:1px solid transparent;color:var(--muted)}
 .tray3-item:hover{color:var(--text);background:var(--panel2)}
 
@@ -1607,6 +1621,8 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .sheet3-scrim{position:absolute;inset:0;background:var(--scrim)}
 .sheet3{position:relative;display:flex;flex-direction:column;max-width:100%;height:100%;background:var(--surface-sheet);border-left:1px solid var(--line);box-shadow:var(--shadow-sheet);outline:none;animation:hoh-in-side var(--dur-med) var(--ease-out)}
 .sheet3.split{height:auto;box-shadow:none;animation:none}
+/* The sheet's mode class shares its name with the classic modal's .overlay: undo that rule's centring and 12vh offset. */
+.sheet3.overlay{inset:auto;padding-top:0;justify-content:flex-start;z-index:auto}
 .sheet-head{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-4) var(--space-4) var(--space-3);border-bottom:1px solid var(--line)}
 .sheet-head .icon-btn{width:var(--control-min);height:var(--control-min)}
 .sheet-titles{flex:1;min-width:0}
@@ -1645,14 +1661,30 @@ button.landing-cta,a.landing-cta{background-image:linear-gradient(110deg,transpa
 .sec3-about{margin-top:var(--space-3);padding:var(--space-3) var(--space-4);max-width:80ch;border-radius:var(--radius-md);background:var(--surface-note);animation:hoh-rise var(--dur-fast) var(--ease-out)}
 .sec3-about p{margin:0 0 var(--space-2)}
 .sec3-head .walk-chip,.sec3-head [class*="walkthrough"]{margin-top:var(--space-3)}
-/* contain:paint keeps the strip's scrolled-off pills out of the page's width (Chrome otherwise widens the surface on phones). */
-.sec3-strip{display:flex;align-items:center;gap:4px;padding:var(--space-2) 2px;overflow-x:auto;contain:paint;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+/* Section tabs: plain labels on the header's bottom line, one brand underline sliding to the current one. */
+.sec3-tabs{display:flex;align-items:flex-end;gap:var(--space-3);margin-top:var(--space-2);margin-bottom:-1px}
+/* contain:paint keeps the strip's scrolled-off tabs out of the page's width (Chrome otherwise widens the surface on phones). */
+.sec3-strip{position:relative;flex:1;min-width:0;display:flex;align-items:stretch;gap:2px;overflow-x:auto;contain:paint;scrollbar-width:none;scroll-padding-inline:24px}
 .sec3-strip::-webkit-scrollbar{display:none}
-.step3{display:inline-flex;align-items:center;gap:6px;height:var(--control-min);padding:0 10px;border:1px solid transparent;border-radius:var(--radius-pill);background:none;color:var(--muted);white-space:nowrap;flex:none}
-.step3:hover{color:var(--text);background:var(--panel2)}
-.step3.on{color:var(--text);background:var(--panel2);border-color:var(--line-strong)}
-.step3-hints{min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--brand);color:var(--on-brand);font-size:10px;font-weight:700;line-height:16px;text-align:center}
-.step3-map{margin-left:auto;flex:none}
+.sec3-strip[data-more=end]{mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
+.sec3-strip[data-more=start]{mask-image:linear-gradient(90deg,transparent,#000 40px)}
+.sec3-strip[data-more="start end"]{mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent)}
+.sec3-strip::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--thumb-w,0);transform:translateX(var(--thumb-x,0));border-radius:2px 2px 0 0;background:var(--brand);opacity:0}
+.sec3-strip[data-thumb]::after{opacity:1}
+.sec3-strip[data-thumb-live]::after{transition:transform var(--dur-med) var(--ease-out),width var(--dur-med) var(--ease-out)}
+.step3{position:relative;display:inline-flex;align-items:center;gap:7px;height:42px;padding:0 12px;border:0;border-radius:var(--radius-sm) var(--radius-sm) 0 0;background:none;color:var(--muted);font-weight:500;white-space:nowrap;flex:none;transition:color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out)}
+.step3:hover{color:var(--text);background:color-mix(in srgb,var(--panel2) 60%,transparent)}
+.step3.on{color:var(--text);font-weight:600;background:none}
+/* Without layout measuring (tests, old engines) the current tab draws its own underline. */
+.sec3-strip:not([data-thumb]) .step3.on{box-shadow:inset 0 -2px 0 var(--brand)}
+.step3:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+.step3 .glyph3{width:8px;height:8px;border-width:1.5px;opacity:.85}
+.step3-hints{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--surface-3);color:var(--muted);font-size:10.5px;font-weight:700;line-height:18px;text-align:center;font-variant-numeric:tabular-nums}
+.step3.on .step3-hints{background:color-mix(in srgb,var(--brand) 18%,transparent);color:var(--brand-text)}
+.step3-map{flex:none;align-self:center;margin-bottom:6px;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:var(--radius-pill);color:var(--muted);font-size:var(--fs-sm);font-weight:600}
+.step3-map:hover{color:var(--text);border-color:var(--line-strong)}
+@media (max-width:640px){.step3-map-label{display:none}.step3-map{padding:0 9px}}
+@media (prefers-reduced-motion:reduce){.sec3-strip[data-thumb-live]::after{transition:none}}
 /* State shapes: ring = empty, half = started, solid = done (never colour alone). */
 .glyph3{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;flex:none}
 .glyph3.started{background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
@@ -1766,12 +1798,37 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .atlas3-lm.here .atlas3-ring{animation:hoh-halo 1.8s var(--ease-out) infinite;--halo:var(--brand);box-shadow:0 0 0 2px var(--brand)}
 .atlas3-here{position:absolute;top:-24px;padding:2px 8px;border-radius:var(--radius-pill);background:var(--brand);color:var(--on-brand);font-size:var(--fs-xs);font-weight:700;white-space:nowrap}
 .atlas3-here.inline{position:static;padding:0;background:none;color:var(--brand-text)}
-.atlas3-legend{position:absolute;right:16px;bottom:10px;display:flex;gap:var(--space-4);font-size:var(--fs-xs);color:var(--muted)}
+.atlas3-mapblock{display:flex;flex-direction:column;gap:var(--space-2);min-width:0}
+.atlas3-legend{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--space-2) var(--space-4);font-size:var(--fs-xs);color:var(--muted)}
 .atlas3-legend i{display:inline-block;width:22px;height:2px;margin-right:6px;vertical-align:middle}
 .atlas3-legend i.walked{background:var(--brand)}
 .atlas3-legend i.ahead{background:repeating-linear-gradient(90deg,var(--brand) 0 5px,transparent 5px 10px)}
 .atlas3-legend i.link{background:color-mix(in srgb,var(--muted) 55%,transparent)}
 .atlas3-mapwrap{overflow-x:auto;border-radius:var(--radius-md)}
+/* A planner's section map (v3): the Atlas's paper, landmarks and links, sized to its own nodes. */
+.secmap3{display:flex;flex-direction:column;gap:var(--space-3);overflow-x:auto}
+.secmap3-hint{margin:0 0 var(--space-3)}
+.secmap3-map{color:var(--brand)}
+.secmap3-edge line{stroke:color-mix(in srgb,var(--muted) 45%,transparent);stroke-width:1.4}
+.secmap3-edge text{fill:var(--muted);font:500 10.5px var(--font-body);paint-order:stroke;stroke:var(--atlas-paper);stroke-width:4px;stroke-linejoin:round}
+.secmap3-arrowhead{fill:color-mix(in srgb,var(--muted) 70%,transparent)}
+.secmap3-edge.lit line{stroke:var(--brand);stroke-width:1.8}
+.secmap3-edge.lit text{fill:var(--brand-text)}
+.secmap3-lm{color:var(--brand)}
+.secmap3-lm.done{color:var(--ok)}
+.secmap3-lm.started{color:var(--warn)}
+.secmap3-lm:is(.empty,.external) .ring3-fill{display:none}
+.secmap3-lm.external{color:var(--muted)}
+.secmap3-lm.external .atlas3-ring{background:transparent;box-shadow:0 0 0 1px var(--line);border:1px dashed var(--line-strong)}
+.secmap3-lm .glyph3{width:12px;height:12px;border-width:2px;color:currentColor}
+.secmap3-lm.empty .glyph3{color:var(--muted)}
+.secmap3-lm.here .atlas3-ring{--halo:var(--brand);box-shadow:0 0 0 2px var(--brand)}
+.secmap3-badge{position:absolute;top:-4px;right:-6px;margin:0;font-size:10px;line-height:16px;min-width:16px;text-align:center}
+.secmap3-legend{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);font-size:var(--fs-xs);color:var(--muted)}
+.secmap3-legend>span{display:inline-flex;align-items:center;gap:6px}
+.secmap3-legend .glyph3.done{color:var(--ok)}.secmap3-legend .glyph3.started{color:var(--warn)}
+.secmap3-key-other{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--line-strong)}
+.secmap3-key-link{display:inline-block;width:22px;height:2px;background:color-mix(in srgb,var(--muted) 55%,transparent)}
 .atlas3-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-4)}
 .atlas3-group{padding:var(--space-3);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel)}
 .atlas3-group h2{margin:4px 8px 8px;font-size:var(--fs-sm);letter-spacing:.12em;text-transform:uppercase}
@@ -1791,6 +1848,18 @@ a.crumb3:hover{color:var(--text);background:var(--panel2)}
 .studio3-offer{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
 .sheet-body:has(> .hint-panel.embedded),.companion3-body{overflow-x:hidden}
 .hint-panel.embedded .hint-head{width:auto;box-sizing:border-box}
+/* The companion shows one tool, titled after it: no tab row, and the host (sheet or docked column) does the scrolling. */
+.shell3:not(.compact) .companion3-layer{top:56px;right:56px}
+.companion3-layer .sheet3{border-right:1px solid var(--line)}
+.companion3-col{display:grid;grid-template-columns:minmax(0,1fr) 56px;min-height:0;min-width:0}
+.companion3-col>.companion3{min-width:0}
+.companion3-title{display:inline-flex;align-items:center;gap:var(--space-2)}
+.companion3-title svg{flex:none;font-size:.8em;color:var(--brand-text)}
+.hint-panel.companion3-tool{overflow:visible;min-width:0;scrollbar-gutter:auto}
+.companion3-tool .hint-group:first-child{margin-top:0}
+.companion3-tool .ai-panel :is(select,input,textarea){width:100%;box-sizing:border-box}
+.companion3-tool .ai-panel .ai-row :is(select,input){width:auto}
+.companion3-tool .ai-panel input[type=checkbox]{width:auto}
 /* v3 Phase 5: the Atlas on paper. Dark keeps the blueprint canvas; light turns the map into warm parchment. */
 :root{--atlas-paper:var(--surface-canvas);--atlas-dot:var(--grid-dot)}
 :root[data-theme=light]{--atlas-paper:#f7f1e3;--atlas-dot:color-mix(in srgb,#8a6a3a 24%,transparent)}

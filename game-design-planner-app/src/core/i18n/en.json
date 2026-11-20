@@ -2218,6 +2218,9 @@
       "about": "About this section",
       "more": "More: Markdown preview, export, help",
       "map": "Section map",
+      "mapHint": "How this planner's sections feed each other. Click a landmark to open it.",
+      "mapOther": "Other planner",
+      "mapFeeds": "Feeds into",
       "hints_one": "{{count}} hint",
       "hints_other": "{{count}} hints",
       "state": {

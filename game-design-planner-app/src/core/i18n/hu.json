@@ -1967,6 +1967,9 @@
       "about": "A szakaszról",
       "more": "Továbbiak: Markdown-előnézet, export, súgó",
       "map": "Szakasztérkép",
+      "mapHint": "Hogyan táplálják egymást a tervező szakaszai. Kattints egy pontra a megnyitásához.",
+      "mapOther": "Másik tervező",
+      "mapFeeds": "Ebbe táplál",
       "hints_one": "{{count}} tipp",
       "hints_other": "{{count}} tipp",
       "state": {

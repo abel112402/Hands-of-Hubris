@@ -11,7 +11,7 @@ import { HelpPopup } from '../HelpPopup'
 import { SectionRenderer } from '../editors/SectionRenderer'
 import { MarkdownPreview } from '../editors/simple'
 import { exportDocumentJson, exportDocumentMarkdown, importDocument } from '../actions'
-import { GuideMap } from '../guides/GuideMap'
+import { SectionMap } from './SectionMap'
 import { ConceptCard } from '../guides/concepts'
 import { Spotlight } from '../guides/Spotlight'
 import { ExamplePicker } from '../guides/ExamplePicker'
@@ -25,11 +25,19 @@ import { useFreshEntries } from '../hints/useHints'
 import { countOf } from '../../core/text'
 import { SectionToolsSlot } from './sectionTools'
 import { SECTION_MAP_EVENT } from './shortcuts'
+import { useSlidingThumb } from '../motion'
 
 const isEmptyCollection = (project: Project, docId: string, sec: SectionDef) => {
   if (sec.kind !== 'collection') return false
   const list = project.documents[docId]?.data[sec.id]
   return !Array.isArray(list) || list.length === 0
+}
+
+/** Marks which ends of a horizontal scroller have content scrolled off (`data-more="start end"`), for the edge fades. */
+function markOverflow(el: HTMLElement) {
+  const more = [el.scrollLeft > 1 && 'start', el.scrollLeft + el.clientWidth < el.scrollWidth - 1 && 'end'].filter(Boolean).join(' ')
+  if (more) el.setAttribute('data-more', more)
+  else el.removeAttribute('data-more')
 }
 
 /** ○ empty · ◐ started · ● done: a shape, not only a colour (coding conventions). */
@@ -52,6 +60,9 @@ export function EditorPageV3() {
   const [about, setAbout] = useState(false)
   const [mapOpen, setMapOpen] = useState(false)
   const [toolsEl, setToolsEl] = useState<HTMLElement | null>(null)
+  // The section strip: one underline slides to the current section, and the edges fade only where it scrolls.
+  const stripRef = useRef<HTMLElement>(null)
+  useSlidingThumb(stripRef, ':scope>.step3[aria-current]', 'aria-current')
   // Opening a planner or section moves focus to its heading, so keyboard and screen-reader users land on the
   // new page instead of the top of the document. Not while a field or sheet already has focus.
   const heading = useRef<HTMLHeadingElement>(null)
@@ -59,6 +70,17 @@ export function EditorPageV3() {
   useEffect(() => {
     const active = document.activeElement
     if (!active || active === document.body || !document.body.contains(active)) heading.current?.focus({ preventScroll: true })
+  }, [sectionKey])
+  // The current section scrolls into view in the strip, and the fade follows what is scrolled off.
+  useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    strip.querySelector<HTMLElement>('.step3[aria-current]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+    markOverflow(strip)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => markOverflow(strip))
+    ro.observe(strip)
+    return () => ro.disconnect()
   }, [sectionKey])
   // M (shortcuts.ts) opens the section map.
   useEffect(() => {
@@ -170,8 +192,9 @@ export function EditorPageV3() {
           </div>
         )}
         {sec && <WalkthroughChip docId={docId} sectionId={sec.id} />}
+        <div className="sec3-tabs">
         {/* One Tab stop: ← → (Home, End) move between sections, Enter opens one (roving tabindex). */}
-        <nav className="sec3-strip" aria-label={t('editor.sections')} onKeyDown={stripKeys}>
+        <nav ref={stripRef} className="sec3-strip" aria-label={t('editor.sections')} onKeyDown={stripKeys} onScroll={(e) => markOverflow(e.currentTarget)}>
           {sections.map((s) => {
             const st = states[s.id]
             const on = s.id === sec?.id
@@ -184,12 +207,14 @@ export function EditorPageV3() {
               </button>
             )
           })}
-          {guide && (
-            <button type="button" className="ghost step3-map" onClick={() => setMapOpen(true)}>
-              <Icon name="map" /> {t('v3.section.map')}
-            </button>
-          )}
         </nav>
+        {/* Outside the scrolling strip, so the map stays in reach however many sections there are. */}
+        {guide && (
+          <button type="button" className="ghost step3-map" onClick={() => setMapOpen(true)}>
+            <Icon name="map" /> <span className="step3-map-label">{t('v3.section.map')}</span>
+          </button>
+        )}
+        </div>
       </header>
       <div className="sec3-body">
         {preview ? (
@@ -203,9 +228,9 @@ export function EditorPageV3() {
         ) : null}
       </div>
       {mapOpen && guide && (
-        <Sheet label={t('map.title')} eyebrow={t('map.title')} title={mod.title} width={760} onClose={() => setMapOpen(false)}>
-          <p className="muted">{t('map.hint')}</p>
-          <GuideMap docId={docId} map={guide.map} current={sec?.id} />
+        <Sheet label={t('map.title')} eyebrow={t('v3.section.map')} title={mod.title} width={820} onClose={() => setMapOpen(false)}>
+          <p className="muted secmap3-hint">{t('v3.section.mapHint')}</p>
+          <SectionMap docId={docId} map={guide.map} current={sec?.id} />
         </Sheet>
       )}
       {guide && <Spotlight docId={docId} guide={guide} sectionId={sec?.id} />}

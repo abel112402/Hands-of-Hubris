@@ -23,6 +23,7 @@ export function Sheet({
   mode = 'overlay',
   width = 480,
   selectFirst = false,
+  layerClassName,
   children,
 }: {
   /** Accessible name of the sheet. */
@@ -44,6 +45,8 @@ export function Sheet({
   width?: number | string
   /** Select the text of the first field when the sheet opens (a placeholder value the user will replace). */
   selectFirst?: boolean
+  /** Extra class on the overlay layer (the companion leaves the command bar and its tray uncovered). */
+  layerClassName?: string
   children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -127,7 +130,7 @@ export function Sheet({
   )
   if (mode === 'split') return sheet
   return (
-    <div className="sheet3-layer">
+    <div className={'sheet3-layer' + (layerClassName ? ' ' + layerClassName : '')}>
       {/* Clicking beside the sheet closes it; keyboard users have Escape and the Close button. */}
       <div className="sheet3-scrim" aria-hidden="true" onClick={onClose} />
       {sheet}

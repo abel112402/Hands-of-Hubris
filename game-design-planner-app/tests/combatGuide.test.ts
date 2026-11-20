@@ -24,6 +24,27 @@ describe('combat guide', () => {
     for (const n of COMBAT_GUIDE.map.nodes) if (n.doc) expect(getModule(n.doc), n.doc).toBeTruthy()
   })
 
+  it('lays the map out so no link runs through a landmark or crosses another link', () => {
+    const { nodes, edges } = COMBAT_GUIDE.map
+    // Landmark centres of the 140×44 node boxes; a landmark (ring and name) keeps a 40-unit radius clear.
+    const c = Object.fromEntries(nodes.map((n) => [n.id, { x: n.x + 70, y: n.y + 22 }]))
+    const segs = edges.map((e) => ({ id: `${e.from}>${e.to}`, ends: [e.from, e.to], a: c[e.from], b: c[e.to] }))
+    const distToSeg = (p: { x: number; y: number }, a: typeof p, b: typeof p) => {
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)))
+      return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+    }
+    for (const s of segs)
+      for (const n of nodes) if (!s.ends.includes(n.id)) expect(distToSeg(c[n.id], s.a, s.b), `${s.id} passes ${n.id}`).toBeGreaterThan(40)
+    const cross = (p: { a: { x: number; y: number }; b: { x: number; y: number } }, q: typeof p) => {
+      const o = (a: typeof p.a, b: typeof p.a, r: typeof p.a) => Math.sign((b.x - a.x) * (r.y - a.y) - (b.y - a.y) * (r.x - a.x))
+      return o(p.a, p.b, q.a) * o(p.a, p.b, q.b) < 0 && o(q.a, q.b, p.a) * o(q.a, q.b, p.b) < 0
+    }
+    for (const [i, s] of segs.entries())
+      for (const t of segs.slice(i + 1)) if (!s.ends.some((e) => t.ends.includes(e))) expect(cross(s, t), `${s.id} crosses ${t.id}`).toBe(false)
+  })
+
   it('ticks steps from data and quick actions', () => {
     const p = createProject('T')
     expect(step('status').done!(p)).toBe(false)

@@ -31,34 +31,66 @@ const setWidth = (w: number) => act(() => {
 })
 
 describe('v3 companion', () => {
-  it('opens hints, guide and AI from the tray and closes when you move on', async () => {
+  it('shows only the tool you click and switches between them from the tray', async () => {
     setWidth(1280)
     open('#/doc/design.combat?s=enemies')
     const tray = await screen.findByRole('complementary', { name: 'Companion' })
     expect(within(tray).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? '')).toEqual([expect.stringMatching(/^Hints/), 'Guide', 'AI'])
     fireEvent.click(within(tray).getByRole('button', { name: 'Guide' }))
-    const panel = screen.getByRole('dialog', { name: 'Companion' })
-    expect(within(panel).getByRole('complementary', { name: 'Hints' })).toBeTruthy()
-    // Embedded: no resize handle or collapse toggle.
-    expect(within(panel).queryByRole('separator', { name: /resize/i })).toBeNull()
+    const guide = screen.getByRole('dialog', { name: 'Guide' })
+    expect(within(guide).getByRole('heading', { level: 2, name: 'Guide' })).toBeTruthy()
+    // One tool at a time: no tab row, and nothing from the other tools.
+    expect(within(guide).queryByRole('button', { name: /^Hints/ })).toBeNull()
+    expect(within(guide).queryByRole('button', { name: 'AI' })).toBeNull()
+    expect(guide.querySelector('.hint-group, .ai-panel')).toBeNull()
     expect(within(tray).getByRole('button', { name: 'Guide' }).getAttribute('aria-pressed')).toBe('true')
-    // Shortcuts are off while this modal panel is open; moving to another page closes it.
+    // Another tray button switches tools; the open tool's own button closes the panel.
+    fireEvent.click(within(tray).getByRole('button', { name: /^Hints/ }))
+    const hints = screen.getByRole('dialog', { name: 'Hints' })
+    expect(hints.querySelector('.hint-group')?.textContent).toBe('This page')
+    expect(screen.queryByRole('dialog', { name: 'Guide' })).toBeNull()
+    fireEvent.click(within(tray).getByRole('button', { name: /^Hints/ }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('closes the companion when you move to another page', async () => {
+    setWidth(1280)
+    open('#/doc/design.combat?s=enemies')
+    const tray = await screen.findByRole('complementary', { name: 'Companion' })
+    fireEvent.click(within(tray).getByRole('button', { name: 'AI' }))
+    expect(screen.getByRole('dialog', { name: 'AI' })).toBeTruthy()
     act(() => void (window.location.hash = '#/doc/design.combat?s=bosses'))
     expect(await screen.findByRole('heading', { level: 1, name: 'Bosses' })).toBeTruthy()
-    expect(screen.queryByRole('dialog', { name: 'Companion' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'AI' })).toBeNull()
+  })
+
+  it('offers hints and AI on the home page too', async () => {
+    setWidth(1280)
+    open('#/')
+    const tray = await screen.findByRole('complementary', { name: 'Companion' })
+    expect(within(tray).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? '')).toEqual([expect.stringMatching(/^Hints/), 'AI'])
+    fireEvent.click(within(tray).getByRole('button', { name: 'AI' }))
+    expect(screen.getByRole('dialog', { name: 'AI' }).querySelector('.ai-panel')).toBeTruthy()
+    fireEvent.click(within(tray).getByRole('button', { name: /^Hints/ }))
+    // Away from a planner every hint of the project is listed, instead of a trip to the settings.
+    expect(screen.getByRole('dialog', { name: 'Hints' }).querySelector('.hint-group')?.textContent).toMatch(/project-wide hint/)
+    expect(window.location.hash).toBe('#/')
   })
 
   it('docks beside the page when pinned on a wide screen, and stays docked while moving', async () => {
     setWidth(1500)
     open('#/doc/design.combat?s=enemies')
     fireEvent.click(within(await screen.findByRole('complementary', { name: 'Companion' })).getByRole('button', { name: /^Hints/ }))
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Companion' })).getByRole('button', { name: 'Pin beside the page' }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Hints' })).getByRole('button', { name: 'Pin beside the page' }))
     expect(localStorage.getItem(COMPANION_PIN_KEY)).toBe('1')
-    expect(screen.queryByRole('dialog', { name: 'Companion' })).toBeNull()
-    const docked = screen.getByRole('complementary', { name: 'Companion' })
-    expect(within(docked).getByRole('heading', { name: 'Companion' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    const docked = screen.getByRole('region', { name: 'Hints' })
+    expect(within(docked).getByRole('heading', { name: 'Hints' })).toBeTruthy()
+    // The tray stays beside the docked panel, so switching tools works there too.
+    fireEvent.click(within(screen.getByRole('complementary', { name: 'Companion' })).getByRole('button', { name: 'AI' }))
+    expect(within(screen.getByRole('region', { name: 'AI' })).getByRole('heading', { name: 'AI' })).toBeTruthy()
     fireEvent.keyDown(document.body, { key: 'j' })
-    expect(within(screen.getByRole('complementary', { name: 'Companion' })).getByRole('heading', { name: 'Companion' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'AI' })).toBeTruthy()
     setWidth(1280)
   })
 })

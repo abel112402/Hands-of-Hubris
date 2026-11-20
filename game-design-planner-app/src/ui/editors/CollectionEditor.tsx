@@ -37,7 +37,7 @@ import { ActionSimulatorView, FactionFootprintView, RelationsWebView, Reputation
 import { BiomeCoverageView, BiomeDossierView, BiomeThreatView, UnlockPathView, WorldAtlasView } from './worldViews'
 import { LocationGalleryView } from './locationViews'
 import { LocationMapView } from './location/LocationMapView'
-import { Icon } from '../Icon'
+import { Icon, type IconName } from '../Icon'
 import { useTranslation } from 'react-i18next'
 import { useUiVersion } from '../../core/uiVersion'
 import { coreFieldKeys, splitByTier } from '../../core/fieldTier'
@@ -138,6 +138,17 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   biomeCoverage: 'Coverage',
   locationGallery: 'Gallery',
   locationMap: 'Map',
+}
+/** Icons for the common views; every other view is some chart, and keeps its label to tell it apart. */
+const VIEW_ICON: Partial<Record<CollectionView['kind'], IconName>> = {
+  cards: 'blocks',
+  table: 'table',
+  kanban: 'board',
+  timeline: 'timeline',
+  radar: 'target',
+  grid2d: 'table',
+  worldAtlas: 'map',
+  locationMap: 'map',
 }
 
 export type ViewProps = {
@@ -263,10 +274,11 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
         // v3: the tools join the section header's row (views as a segmented switch, per the conventions).
         <div className="sec3-coll-tools">
           {sec.views.length > 1 && (
-            <Segmented role="group" aria-label={t('v3.collection.views')}>
+            <Segmented role="group" aria-label={t('v3.collection.views')} className="prominent">
               {sec.views.map((vw, i) => (
-                <button key={i} type="button" data-guide={`view-${vw.kind}`} aria-pressed={i === viewIdx} onClick={() => setViewIdx(i)}>
-                  {VIEW_LABEL[vw.kind]}
+                <button key={i} type="button" data-guide={`view-${vw.kind}`} aria-pressed={i === viewIdx} aria-label={VIEW_LABEL[vw.kind]} title={VIEW_LABEL[vw.kind]} onClick={() => setViewIdx(i)}>
+                  <Icon name={VIEW_ICON[vw.kind] ?? 'chart'} />
+                  <span className="seg-label">{VIEW_LABEL[vw.kind]}</span>
                 </button>
               ))}
             </Segmented>

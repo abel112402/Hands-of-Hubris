@@ -101,11 +101,18 @@ function AtlasMap({ atlas }: { atlas: AtlasModel }) {
           {l.id === atlas.here && <span className="atlas3-here">{t('v3.atlas.here')}</span>}
         </Link>
       ))}
-      <div className="atlas3-legend" aria-hidden="true">
-        <span><i className="walked" />{t('v3.atlas.legend.walked')}</span>
-        <span><i className="ahead" />{t('v3.atlas.legend.ahead')}</span>
-        <span><i className="link" />{t('v3.atlas.legend.links')}</span>
-      </div>
+    </div>
+  )
+}
+
+/** The map's key, under it (outside its scroller) so it never covers a region or scrolls out of sight. */
+function AtlasLegend() {
+  const { t } = useTranslation()
+  return (
+    <div className="atlas3-legend" aria-hidden="true">
+      <span><i className="walked" />{t('v3.atlas.legend.walked')}</span>
+      <span><i className="ahead" />{t('v3.atlas.legend.ahead')}</span>
+      <span><i className="link" />{t('v3.atlas.legend.links')}</span>
     </div>
   )
 }
@@ -200,7 +207,7 @@ export function Atlas() {
         </div>
       )}
       <StepCard />
-      {mode === 'map' ? <div className="atlas3-mapwrap"><AtlasMap atlas={atlas} /></div> : <AtlasList atlas={atlas} />}
+      {mode === 'map' ? <div className="atlas3-mapblock"><div className="atlas3-mapwrap"><AtlasMap atlas={atlas} /></div><AtlasLegend /></div> : <AtlasList atlas={atlas} />}
       <details className="atlas3-walk">
         <summary>{t('v3.atlas.fullWalkthrough')}</summary>
         <GuideCenter view={view} />

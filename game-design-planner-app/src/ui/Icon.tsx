@@ -61,6 +61,9 @@ const PATHS = {
   expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
   shrink: 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7',
   panel: 'M3 4h18v16H3ZM15 4v16',
+  table: 'M3 4h18v16H3ZM3 10h18M3 15h18M9 10v10',
+  board: 'M4 4h4v16H4ZM10 4h4v11h-4ZM16 4h4v7h-4Z',
+  timeline: 'M3 12h18M7 8v8M12 5v14M17 9v6',
   download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
 } as const
 

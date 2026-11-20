@@ -30,12 +30,13 @@ let embeddedIndex: Promise<DocFile[]> | null = null
 const NO_TEMPLATES: never[] = []
 
 export function AiPanel({
-  docId,
+  docId = '',
   sectionId,
   initialInstruction = '',
   step: initialStep,
 }: {
-  docId: string
+  /** The page the AI works on; left out on the v3 home, where only project-wide context is offered. */
+  docId?: string
   sectionId?: string
   /** Pre-filled question, e.g. from a walkthrough step; remount (key) to apply a new one. */
   initialInstruction?: string
@@ -49,7 +50,9 @@ export function AiPanel({
   const cfg = currentConfig()
 
   const [task, setTask] = useState<TaskId>('chat')
-  const [scope, setScope] = useState<Scope>('section')
+  // Away from a planner there is no section or document to send, so the context is the project.
+  const home = !docId
+  const [scope, setScope] = useState<Scope>(home ? 'project' : 'section')
   const [docIds, setDocIds] = useState<string[]>([])
   const [includeRef, setIncludeRef] = useState(false)
   const [instruction, setInstruction] = useState(initialInstruction)
@@ -88,8 +91,9 @@ export function AiPanel({
   useEffect(() => { if (hintRequest) { setTask('hint'); resetResult() } }, [hintRequest])
   useEffect(() => {
     const defaults: Record<TaskId, Scope> = { chat: 'section', generate: 'document', rewrite: 'section', review: 'document', formula: 'document', summary: 'document', docs: 'none', hint: 'section' }
-    setScope(defaults[task])
-  }, [task])
+    const d = defaults[task]
+    setScope(home && (d === 'section' || d === 'document') ? 'project' : d)
+  }, [task, home])
   /* eslint-enable react-hooks/set-state-in-effect */
   useEffect(() => () => run.current?.abort(), [])
 
@@ -226,8 +230,8 @@ export function AiPanel({
           <legend>{t('ai.context')}</legend>
           <select value={scope} onChange={(e) => setScope(e.target.value as Scope)}>
             <option value="none">{t('ai.scope.none')}</option>
-            <option value="section">{t('ai.scope.section')}</option>
-            <option value="document">{t('ai.scope.document')}</option>
+            {!home && <option value="section">{t('ai.scope.section')}</option>}
+            {!home && <option value="document">{t('ai.scope.document')}</option>}
             <option value="documents">{t('ai.scope.documents')}</option>
             <option value="project">{t('ai.scope.project')}</option>
           </select>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createProject } from '../src/core/model/project'
 import { buildPaletteIndex, entityRoute, searchPalette } from '../src/core/palette'
-import { COMPACT_BELOW, DOCK_WIDTH, shellColumns, shellLayout } from '../src/core/shellLayout'
+import { COMPACT_BELOW, DOCK_WIDTH, shellColumns, shellLayout, TRAY_WIDTH } from '../src/core/shellLayout'
 
 const withEnemies = () => {
   const p = createProject('Palette')
@@ -58,7 +58,7 @@ describe('v3 layout budget', () => {
 
   it('docks a pinned companion only on wide screens', () => {
     expect(shellLayout(1439, { companionPinned: true }).companionDocked).toBe(false)
-    expect(shellLayout(1440, { companionPinned: true })).toMatchObject({ companionDocked: true, companion: DOCK_WIDTH })
+    expect(shellLayout(1440, { companionPinned: true })).toMatchObject({ companionDocked: true, companion: DOCK_WIDTH + TRAY_WIDTH })
     expect(shellLayout(1920).companionDocked).toBe(false)
   })
 
