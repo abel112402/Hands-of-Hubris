@@ -7,6 +7,7 @@ import { tryEvaluate, variablesOf } from '../../core/formula'
 import { ASYMMETRY_TOLERANCE } from '../../core/diplomacy'
 import { useSection, useProject } from '../hooks'
 import { FieldInput } from '../FieldInput'
+import { PlusChip } from '../Icon'
 import { useTranslation } from 'react-i18next'
 import { useUiVersion } from '../../core/uiVersion'
 import { useUiMode } from '../../core/uiMode'
@@ -233,7 +234,7 @@ export function ChecklistEditor({ docId, sec }: { docId: string; sec: Extract<Se
           <button className="small" onClick={() => update((d) => void d.groups[gi].items.push({ id: makeId(), text: '', done: false }))}>+ Add item</button>
         </div>
       ))}
-      <button className="primary" onClick={() => update((d) => void d.groups.push({ id: makeId(), title: 'New group', items: [] }))}>+ Add group</button>
+      <button className="primary" onClick={() => update((d) => void d.groups.push({ id: makeId(), title: 'New group', items: [] }))}><PlusChip /> Add group</button>
     </div>
   )
 }
@@ -297,7 +298,7 @@ export function FormulaEditor({ docId, sec }: { docId: string; sec: Extract<Sect
       {items.map((it, i) => (
         <FormulaCard key={it.id} item={it} onChange={(fn) => update((d) => fn(d.items[i]), it.id)} onDelete={() => update((d) => void d.items.splice(i, 1))} />
       ))}
-      <button className="primary" onClick={() => update((d) => void d.items.push({ id: makeId(), name: 'New formula', expr: '', vars: {} }))}>+ Add formula</button>
+      <button className="primary" onClick={() => update((d) => void d.items.push({ id: makeId(), name: 'New formula', expr: '', vars: {} }))}><PlusChip /> Add formula</button>
     </div>
   )
 }

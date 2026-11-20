@@ -92,3 +92,11 @@ export function Icon({ name, className, strokeWidth }: { name: IconName; classNa
     </svg>
   )
 }
+
+/**
+ * The "+" of an Add button, drawn as a small light tile with a bold plus (primary buttons). The glyph stays in
+ * the text, so the button's name still reads "+ Add …"; CSS hides it and draws the plus instead.
+ */
+export function PlusChip() {
+  return <span className="plus-chip">+</span>
+}

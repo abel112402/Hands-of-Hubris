@@ -25,8 +25,24 @@ h1{font-weight:700}h2{font-weight:600}
 .num,.ring-text{font-family:var(--font-display);font-variant-numeric:tabular-nums}
 button,input,select,textarea{font:inherit;color:inherit;background:var(--panel2);border:1px solid var(--control-border);border-radius:var(--radius-sm);padding:5px 9px}
 button{cursor:pointer}button:hover:not(:disabled){border-color:var(--accent)}button:disabled{opacity:.4;cursor:default}
-button.primary,button.active{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
-button.primary:hover:not(:disabled),button.active:hover:not(:disabled){border-color:var(--text)}
+button.active{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
+button.active:hover:not(:disabled){border-color:var(--text)}
+/* Primary buttons: a near-flat fill lit slightly from above and a touch lighter towards the corners, a thin
+   bright rim with a top sheen, a crisp dark shadow that lifts it off the page, and a soft glow of its own colour. */
+/* Dark: a deep blue; light: a brighter, airier blue. */
+:root{--primary-top:var(--accent-strong);--primary-bottom:color-mix(in srgb,var(--accent-strong) 82%,#000);--primary-rim:color-mix(in srgb,var(--accent) 72%,#fff);--primary-corners:rgb(255 255 255/.1);--primary-glow:color-mix(in srgb,var(--accent) 60%,transparent);--primary-inset:inset 0 1px 0 rgb(255 255 255/.28),inset 0 -6px 12px -6px rgb(0 0 0/.18);--primary-lift:0 2px 3px rgb(0 0 0/.5);--primary-halo:0 6px 20px -6px var(--primary-glow),0 0 32px -10px color-mix(in srgb,var(--primary-glow) 60%,transparent)}
+:root[data-theme=light]{--primary-top:color-mix(in srgb,var(--accent) 80%,#fff);--primary-bottom:color-mix(in srgb,var(--accent) 96%,#fff);--primary-rim:color-mix(in srgb,var(--accent) 40%,#fff);--primary-corners:rgb(255 255 255/.12);--primary-glow:color-mix(in srgb,var(--accent) 34%,transparent);--primary-lift:0 1px 2px rgb(16 24 40/.22);--primary-halo:0 4px 16px -6px var(--primary-glow),0 0 24px -10px var(--primary-glow)}
+button.primary,a.button.primary,.split .split-menu>summary{background:radial-gradient(120% 140% at 50% 50%,transparent 58%,var(--primary-corners)),linear-gradient(180deg,var(--primary-top),var(--primary-bottom));border:1px solid var(--primary-rim);border-radius:var(--radius-sm);color:#fff;font-weight:400;box-shadow:var(--primary-inset),var(--primary-lift),var(--primary-halo)}
+button.primary:hover:not(:disabled),a.button.primary:hover,.split .split-menu>summary:hover{border-color:color-mix(in srgb,var(--primary-rim) 70%,#fff);filter:brightness(1.08);box-shadow:var(--primary-inset),var(--primary-lift),0 8px 26px -6px var(--primary-glow),0 0 40px -10px var(--primary-glow)}
+/* The "+" of an Add button: a small light tile with a bold plus in the button's own blue (see PlusChip). */
+.plus-chip{position:relative;display:inline-block;flex:none;width:1.25em;height:1.25em;margin:-.15em 0 -.15em -.1em;border-radius:.32em;vertical-align:middle;overflow:hidden;color:transparent;text-align:center;line-height:1.25em;background:color-mix(in srgb,#fff 74%,var(--primary-top));box-shadow:inset 0 1px 0 rgb(255 255 255/.6)}
+.plus-chip::before,.plus-chip::after{content:"";position:absolute;left:50%;top:50%;width:.66em;height:.14em;border-radius:.07em;background:var(--primary-bottom);transform:translate(-50%,-50%)}
+.plus-chip::after{transform:translate(-50%,-50%) rotate(90deg)}
+/* Flex, so the tile and the label share the button's vertical centre whatever the font's baseline. */
+button:has(>.plus-chip){display:inline-flex;align-items:center;gap:.45em;white-space:nowrap}
+@media (forced-colors:active){.plus-chip{forced-color-adjust:none;background:ButtonText}.plus-chip::before,.plus-chip::after{background:ButtonFace}}
+button.primary:focus-visible{outline:2px solid var(--primary-rim);outline-offset:2px}
+button.primary:disabled{box-shadow:none;filter:none}
 button.danger{color:var(--danger)}button.small{padding:1px 6px;font-size:var(--fs-sm);min-height:24px;min-width:24px}
 textarea{width:100%;resize:vertical}input[type=checkbox]{width:auto}
 a{color:var(--accent);text-decoration:none}
@@ -51,9 +67,11 @@ h1,h2,h3{margin:.6em 0 .3em}
 .search-btn span{flex:1;text-align:left}
 .search-btn kbd{font:11px/1 system-ui,sans-serif;border:1px solid var(--line);border-radius:var(--radius-xs);padding:2px var(--space-1)}
 .split{display:inline-flex;align-items:stretch}
-.split>button.primary{border-top-right-radius:0;border-bottom-right-radius:0}
-.split .split-menu>summary{height:100%;display:flex;align-items:center;padding:0 7px;background:var(--accent-strong);color:#fff;border:1px solid var(--accent-strong);border-left:1px solid #ffffff55;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
-.split .split-menu>summary:hover{background:var(--accent)}
+.split>button.primary{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}
+.split .split-menu>summary{height:100%;display:flex;align-items:center;padding:0 7px;border-left:1px solid rgb(255 255 255/.28);border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+/* A split button glows as one piece: the halo sits on the pair, its halves keep only their own highlights. */
+.split:has(>button.primary){border-radius:var(--radius-sm);box-shadow:var(--primary-lift),var(--primary-halo)}
+.split>button.primary,.split>button.primary:hover:not(:disabled),.split .split-menu>summary,.split .split-menu>summary:hover{box-shadow:var(--primary-inset)}
 .menu>summary::-webkit-details-marker{display:none}
 .menu>div hr{border:none;border-top:1px solid var(--line);margin:2px 0;width:100%}
 .menu>div>button,.menu-nav>a{text-align:left}
@@ -887,7 +905,6 @@ tr.clickable{cursor:pointer}tr.clickable:hover td,tr.clickable:hover th{backgrou
 /* Accounts and cloud projects */
 .ok-text{color:var(--ok)}
 a.button{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px 9px;color:var(--text)}
-a.button.primary{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
 .cloud-loading{display:flex;align-items:center;justify-content:center;min-height:40vh;color:var(--muted)}
 .landing,.projects-page{min-height:100vh;display:flex;flex-direction:column}
 .landing-top{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--line);background:var(--panel)}
@@ -1039,7 +1056,7 @@ button.ghost:hover:not(:disabled),a.button.ghost:hover{background:var(--surface-
 .step-crumb{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2)}
 .step-crumb .walk-genres{margin-left:0;text-transform:none;letter-spacing:0;font-weight:400}
 .step-actions{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-3)}
-.step-hero .step-actions a.button.primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600;padding:6px 14px}
+.step-hero .step-actions a.button.primary{--primary-glow:color-mix(in srgb,var(--brand) 55%,transparent);--primary-halo:0 0 26px -4px var(--primary-glow),0 8px 22px -8px var(--primary-glow);background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600;padding:6px 14px;text-shadow:none}
 .step-hero .step-actions a.button.primary:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
 .step-tips{margin:var(--space-1) 0;padding-left:18px;font-size:var(--fs-md-sm)}
 /* Step tips: notes inside the step, not cards with their own buttons. */
@@ -1305,7 +1322,7 @@ button,a.button,.rail-item,.nav-link,.milestone-card,.walk-step,.walk-phase>summ
 .section-swap{animation:hoh-fade 160ms var(--ease-out)}
 /* ── P4: micro-interactions ── */
 /* Press: buttons give a little under the pointer. `scale` composes with any transform a button already has. */
-button:not(:disabled),a.button,.menu>summary{transition-property:background-color,border-color,color,box-shadow,scale;transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
+button:not(:disabled),a.button,.menu>summary{transition-property:background-color,border-color,color,box-shadow,scale,filter;transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
 button:not(:disabled):active,a.button:active,.menu>summary:active{scale:.97;transition-duration:90ms}
 /* The few brand calls to action lift on hover; the landing one also catches a single sheen when it first shows. */
 /* (Element-qualified so they outrank `button:not(:disabled)` above and the `button.primary` background shorthand.) */

@@ -3,6 +3,7 @@ import type { CanvasItem, SectionDef } from '../../core/model/types'
 import { makeId } from '../../core/model/project'
 import { resolveSource } from '../../core/references/refs'
 import { useProject, useSection } from '../hooks'
+import { PlusChip } from '../Icon'
 
 type CSec = Extract<SectionDef, { kind: 'canvas' }>
 const W = 1000
@@ -81,7 +82,7 @@ export function CanvasEditor({ docId, sec }: { docId: string; sec: CSec }) {
         <select value={kind} onChange={(e) => setKind(e.target.value)}>
           {sec.itemKinds.map((k) => <option key={k}>{k}</option>)}
         </select>
-        <button className="primary" onClick={add}>+ Add element</button>
+        <button className="primary" onClick={add}><PlusChip /> Add element</button>
         <label className="muted"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Grid</label>
         {unplaced.length > 0 && <button onClick={placeMissing} title="Add a zone for each entry that has none">Add zones for {unplaced.length} unplaced</button>}
         <span className="muted">Drag to move, drag the corner to resize (snaps to {SNAP}px).</span>

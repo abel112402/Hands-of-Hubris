@@ -37,7 +37,7 @@ import { ActionSimulatorView, FactionFootprintView, RelationsWebView, Reputation
 import { BiomeCoverageView, BiomeDossierView, BiomeThreatView, UnlockPathView, WorldAtlasView } from './worldViews'
 import { LocationGalleryView } from './locationViews'
 import { LocationMapView } from './location/LocationMapView'
-import { Icon, type IconName } from '../Icon'
+import { Icon, PlusChip, type IconName } from '../Icon'
 import { useTranslation } from 'react-i18next'
 import { useUiVersion } from '../../core/uiVersion'
 import { coreFieldKeys, splitByTier } from '../../core/fieldTier'
@@ -291,7 +291,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
             <button type="button" className="icon-btn" aria-label={t('v3.collection.filter')} title={t('v3.collection.filter')} onClick={() => setFilterOpen(true)}><Icon name="search" /></button>
           )}
           <button type="button" className="icon-btn" aria-label={t('v3.collection.csv')} title={t('v3.collection.csv')} onClick={downloadCsv}><Icon name="download" /></button>
-          {items.length > 0 && <button type="button" className="primary" data-guide="add" onClick={() => add()}>+ {t('v3.collection.add', { what: sec.singular })}</button>}
+          {items.length > 0 && <button type="button" className="primary" data-guide="add" onClick={() => add()}><PlusChip /> {t('v3.collection.add', { what: sec.singular })}</button>}
         </div>,
         toolsSlot,
       ) : (
@@ -309,7 +309,7 @@ export function CollectionEditor({ docId, sec }: { docId: string; sec: Collectio
           <button className="small" onClick={downloadCsv}>
             CSV
           </button>
-          {items.length > 0 && <button className="primary" data-guide="add" onClick={() => add()}>+ Add {sec.singular}</button>}
+          {items.length > 0 && <button className="primary" data-guide="add" onClick={() => add()}><PlusChip /> Add {sec.singular}</button>}
         </div>
       )}
       <div className={'collection-body' + (besideInspector ? ' with-inspector' : '')}>
