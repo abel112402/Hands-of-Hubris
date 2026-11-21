@@ -17,3 +17,4 @@
 - Greybox scenes from the location maps (floor, walls, doors, keys, spawns, lights, NavMesh with AI Navigation); channel assets for the Architecture's ScriptableObject channels; the generated Telemetry log added up into the report's metrics.
 - Screens.asset filled with the planned screens' UXML after each import; the zip import also owns Unity/Tests, Unity/Input and Unity/UI (stale files there are removed).
 - Performance budgets measured by the generated PlannerBudgets go into the report; audio event assets kept in step with the plan; a pseudo-locale with Unity Localization (made once).
+- Build Settings scenes by roadmap phase (window section and PlannerCI.BuildScenes), from the generated PlannerScenes.

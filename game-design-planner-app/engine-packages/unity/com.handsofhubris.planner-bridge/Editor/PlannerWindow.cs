@@ -12,6 +12,8 @@ namespace HoHPlanner.Bridge.Editor
         private Vector2 scroll;
         private string status = "";
         private List<ValidationIssue> issues;
+        private int buildPhase;
+        private string buildStatus = "";
 
         [MenuItem("Window/Game Design Planner")]
         public static void Open() => GetWindow<PlannerWindow>("Game Design Planner");
@@ -179,6 +181,23 @@ namespace HoHPlanner.Bridge.Editor
             {
                 if (GUILayout.Button("Create planned folders and assemblies")) PlannerSetup.CreateFoldersMenu();
                 if (GUILayout.Button("Install .editorconfig, .gitattributes, .gitignore")) PlannerSetup.InstallFilesMenu();
+            }
+
+            var phases = PlannerBuildScenes.Phases();
+            if (phases.Length > 0)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Build scenes", EditorStyles.boldLabel);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    buildPhase = EditorGUILayout.Popup(new GUIContent("Roadmap phase", "The planned scenes of this phase and the phases before it go first in the Build Settings, in load order."), Mathf.Clamp(buildPhase, 0, phases.Length - 1), phases);
+                    if (GUILayout.Button("Set Build Settings", GUILayout.Width(130)))
+                    {
+                        var missing = PlannerBuildScenes.Apply(buildPhase);
+                        buildStatus = missing.Length == 0 ? $"Build Settings: the scenes of {phases[buildPhase]}." : $"Build Settings set; no scene asset yet for {string.Join(", ", missing)}.";
+                    }
+                }
+                if (!string.IsNullOrEmpty(buildStatus)) EditorGUILayout.HelpBox(buildStatus, MessageType.None);
             }
 
             EditorGUILayout.Space();

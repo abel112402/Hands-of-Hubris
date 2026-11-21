@@ -4,8 +4,612 @@
   "meta": {
     "name": "Cinderholm (example)",
     "createdAt": "2026-09-07T09:00:00.000Z",
-    "updatedAt": "2026-11-20T09:00:00.000Z",
-    "appVersion": "0.1.0"
+    "updatedAt": "2026-11-21T17:18:20.063Z",
+    "appVersion": "0.1.0",
+    "engine": {
+      "target": "unity",
+      "report": {
+        "engine": "unity",
+        "engineVersion": "6000.0.40f1",
+        "generatedAt": "2026-11-21T17:14:02.5811996Z",
+        "importedAt": "2026-11-21T17:17:28.961Z",
+        "irHash": "096b1a5e",
+        "records": {
+          "PpPBNyOw": {
+            "s": "incomplete",
+            "k": "item.aether_crystal",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "u99q-T_l": {
+            "s": "incomplete",
+            "k": "item.aether_staff",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "_-aPgFdn": {
+            "s": "incomplete",
+            "k": "item.boiled_water",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "0x45uGkj": {
+            "s": "incomplete",
+            "k": "item.brass_gear",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "9PRlAwsE": {
+            "s": "incomplete",
+            "k": "item.calming_tea",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "okksskxH": {
+            "s": "incomplete",
+            "k": "item.hatchet",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "y0CBFtVA": {
+            "s": "incomplete",
+            "k": "item.healing_tonic",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "t_ljdckd": {
+            "s": "incomplete",
+            "k": "item.iron_blade",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "eoaOZlpo": {
+            "s": "incomplete",
+            "k": "item.iron_longsword",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "R2ZRdkfr": {
+            "s": "incomplete",
+            "k": "item.leather_vest",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "wSbjiFu4": {
+            "s": "incomplete",
+            "k": "item.metal_ingot",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "KRBMoYA-": {
+            "s": "incomplete",
+            "k": "item.plank",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "wK88_H2G": {
+            "s": "incomplete",
+            "k": "item.smoked_fish",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "KD2ZNQQW": {
+            "s": "incomplete",
+            "k": "item.steam_lantern",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "ImLUI1dA": {
+            "s": "incomplete",
+            "k": "item.tinker_s_wrench",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "TBWPlQf1": {
+            "s": "incomplete",
+            "k": "item.wooden_handle",
+            "sc": "UgNzlgZV",
+            "i": [
+              "icon: still a placeholder."
+            ]
+          },
+          "LZa-3vMF": {
+            "s": "incomplete",
+            "k": "bld.farm",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "Jk24EFLC": {
+            "s": "incomplete",
+            "k": "bld.farmer",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "0k8ZyN2I": {
+            "s": "incomplete",
+            "k": "bld.house",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "3awD0k8G": {
+            "s": "incomplete",
+            "k": "bld.lumber_camp",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "YH75x7PW": {
+            "s": "incomplete",
+            "k": "bld.lumberjack",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "3FvCM-Ho": {
+            "s": "incomplete",
+            "k": "bld.market_square",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "7XTqDATc": {
+            "s": "incomplete",
+            "k": "bld.miner",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "mzQmXWK6": {
+            "s": "incomplete",
+            "k": "bld.sawmill",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "pmMEJEo6": {
+            "s": "incomplete",
+            "k": "bld.school",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "nsnBnnC_": {
+            "s": "incomplete",
+            "k": "bld.tavern",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "JDVndHPG": {
+            "s": "incomplete",
+            "k": "bld.well",
+            "sc": "cekBueN8",
+            "i": [
+              "prefab: still a placeholder.",
+              "buildCost: required, but empty."
+            ]
+          },
+          "-aWpr-sv": {
+            "s": "incomplete",
+            "k": "enemy.ashen_mire_brute",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "wMxkmAc0": {
+            "s": "incomplete",
+            "k": "enemy.ashen_mire_spitter",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "BJ1LqVT8": {
+            "s": "incomplete",
+            "k": "enemy.ashen_mire_swarmling",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "3hXv9MRB": {
+            "s": "incomplete",
+            "k": "enemy.ashen_mire_warden",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "vEP4oCQ1": {
+            "s": "incomplete",
+            "k": "enemy.cinder_spire_brute",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "_rtcedhX": {
+            "s": "incomplete",
+            "k": "enemy.cinder_spire_spitter",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "2cHqeDLl": {
+            "s": "incomplete",
+            "k": "enemy.cinder_spire_swarmling",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "Odz1MSR0": {
+            "s": "incomplete",
+            "k": "enemy.cinder_spire_warden",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "8OpPVXj-": {
+            "s": "incomplete",
+            "k": "enemy.frostpeak_brute",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "nzCYTFQx": {
+            "s": "incomplete",
+            "k": "enemy.frostpeak_spitter",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "FFHut4Mf": {
+            "s": "incomplete",
+            "k": "enemy.frostpeak_swarmling",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "TMR9zAIt": {
+            "s": "incomplete",
+            "k": "enemy.frostpeak_warden",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "YSoFdcY8": {
+            "s": "incomplete",
+            "k": "enemy.greenhollow_brute",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "iQbv_HCL": {
+            "s": "incomplete",
+            "k": "enemy.greenhollow_spitter",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "EPNn63CF": {
+            "s": "incomplete",
+            "k": "enemy.greenhollow_swarmling",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "IrMk5Vkd": {
+            "s": "incomplete",
+            "k": "enemy.greenhollow_warden",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "07EsjNeL": {
+            "s": "incomplete",
+            "k": "enemy.saltcoast_brute",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "B9eg0p4c": {
+            "s": "incomplete",
+            "k": "enemy.saltcoast_spitter",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "Fvf0nq89": {
+            "s": "incomplete",
+            "k": "enemy.saltcoast_swarmling",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "n1jn8qF-": {
+            "s": "incomplete",
+            "k": "enemy.saltcoast_warden",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "4N-v5fnk": {
+            "s": "incomplete",
+            "k": "enemy.thornwood_brute",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "JPWAZQp3": {
+            "s": "incomplete",
+            "k": "enemy.thornwood_spitter",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "oLXISTsn": {
+            "s": "incomplete",
+            "k": "enemy.thornwood_swarmling",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "FgKzevH6": {
+            "s": "incomplete",
+            "k": "enemy.thornwood_warden",
+            "sc": "VOS_sAP0",
+            "i": [
+              "prefab: still a placeholder."
+            ]
+          },
+          "qCWgfsCV": {
+            "s": "implemented",
+            "k": "rcp.plank",
+            "sc": "0Dx8qXVn"
+          },
+          "e-CG-cOY": {
+            "s": "implemented",
+            "k": "rcp.wooden_handle",
+            "sc": "0Dx8qXVn"
+          },
+          "ouTh-1St": {
+            "s": "implemented",
+            "k": "rcp.hatchet",
+            "sc": "0Dx8qXVn"
+          },
+          "Pd5EGa2h": {
+            "s": "implemented",
+            "k": "rcp.metal_ingot",
+            "sc": "0Dx8qXVn"
+          },
+          "Wh8fF0_N": {
+            "s": "implemented",
+            "k": "rcp.iron_blade",
+            "sc": "0Dx8qXVn"
+          },
+          "bVnUfJhG": {
+            "s": "implemented",
+            "k": "rcp.iron_longsword",
+            "sc": "0Dx8qXVn"
+          },
+          "QGvv9cEy": {
+            "s": "implemented",
+            "k": "rcp.brass_gear",
+            "sc": "0Dx8qXVn"
+          },
+          "GFZdj0BW": {
+            "s": "implemented",
+            "k": "rcp.steam_lantern",
+            "sc": "0Dx8qXVn"
+          },
+          "Ur6NQwIu": {
+            "s": "implemented",
+            "k": "rcp.leather_vest",
+            "sc": "0Dx8qXVn"
+          },
+          "sfDqLsIC": {
+            "s": "implemented",
+            "k": "rcp.smoked_fish",
+            "sc": "0Dx8qXVn"
+          },
+          "Yot91Tqg": {
+            "s": "implemented",
+            "k": "rcp.boiled_water",
+            "sc": "0Dx8qXVn"
+          },
+          "EDLqGu94": {
+            "s": "implemented",
+            "k": "rcp.aether_staff",
+            "sc": "0Dx8qXVn"
+          },
+          "TmVauK8J": {
+            "s": "implemented",
+            "k": "rcp.tinker_s_wrench",
+            "sc": "0Dx8qXVn"
+          },
+          "eKR6fRph": {
+            "s": "implemented",
+            "k": "rcp.healing_tonic",
+            "sc": "0Dx8qXVn"
+          },
+          "6e17g1eN": {
+            "s": "implemented",
+            "k": "rcp.calming_tea",
+            "sc": "0Dx8qXVn"
+          },
+          "Z-YdgwLT": {
+            "s": "implemented",
+            "k": "quest.escort_the_peddler",
+            "sc": "2soy5zgP"
+          },
+          "5DNa7eM6": {
+            "s": "implemented",
+            "k": "quest.into_the_dark_tide",
+            "sc": "2soy5zgP"
+          },
+          "3o-ey99u": {
+            "s": "implemented",
+            "k": "quest.keep_the_light_burning",
+            "sc": "2soy5zgP"
+          },
+          "_TuJLFia": {
+            "s": "implemented",
+            "k": "quest.rat_hunt",
+            "sc": "2soy5zgP"
+          },
+          "TvZ4GG54": {
+            "s": "implemented",
+            "k": "quest.the_island_s_secret",
+            "sc": "2soy5zgP"
+          },
+          "7DZe7rvA": {
+            "s": "implemented",
+            "k": "quest.the_lost_crate",
+            "sc": "2soy5zgP"
+          },
+          "iQBA3cnJ": {
+            "s": "implemented",
+            "k": "quest.the_old_lighthouse",
+            "sc": "2soy5zgP"
+          },
+          "v02vp_lT": {
+            "s": "implemented",
+            "k": "quest.voices_in_the_fog",
+            "sc": "2soy5zgP"
+          },
+          "1UImIJ2K": {
+            "s": "implemented",
+            "k": "quest.washed_ashore",
+            "sc": "2soy5zgP"
+          }
+        },
+        "classes": {
+          "clsDmg01": {
+            "s": "implemented",
+            "todo": 0,
+            "m": 1
+          },
+          "clsEvt01": {
+            "s": "implemented",
+            "todo": 0,
+            "m": 0
+          },
+          "clsHp001": {
+            "s": "stub",
+            "todo": 2,
+            "m": 2
+          },
+          "clsPly01": {
+            "s": "stub",
+            "todo": 2,
+            "m": 2
+          },
+          "clsNpcB1": {
+            "s": "stub",
+            "todo": 2,
+            "m": 2
+          },
+          "clsNeed1": {
+            "s": "implemented",
+            "todo": 0,
+            "m": 0
+          },
+          "clsMood1": {
+            "s": "implemented",
+            "todo": 0,
+            "m": 0
+          },
+          "clsLedg1": {
+            "s": "stub",
+            "todo": 2,
+            "m": 2
+          },
+          "clsSave1": {
+            "s": "stub",
+            "todo": 2,
+            "m": 2
+          },
+          "clsHud01": {
+            "s": "stub",
+            "todo": 1,
+            "m": 1
+          }
+        },
+        "metrics": []
+      }
+    }
   },
   "registry": {
     "catalogs": {
@@ -15747,9 +16351,8 @@
           },
           {
             "id": "eoaOZlpo",
-            "name": "Iron sword",
+            "name": "Iron longsword",
             "type": "weapon",
-            "value": 70,
             "rarity": "common",
             "quality": "normal",
             "weight": 3,
@@ -15757,7 +16360,8 @@
             "damage": 12,
             "equipSlot": "Main hand",
             "damageType": "physical",
-            "attackSpeed": 1
+            "attackSpeed": 1,
+            "value": 1100
           },
           {
             "id": "PpPBNyOw",
@@ -15964,7 +16568,7 @@
           },
           {
             "id": "bVnUfJhG",
-            "name": "Iron sword",
+            "name": "Iron longsword",
             "result": "eoaOZlpo",
             "ingredients": {
               "t_ljdckd": 1,
@@ -19558,7 +20162,8 @@
             "loadSeconds": 1.5,
             "next": [
               "RQTWe6f7"
-            ]
+            ],
+            "phase": "phase0"
           },
           {
             "id": "ooQjjJC3",
@@ -19570,7 +20175,8 @@
               "M29H6JSJ"
             ],
             "loadSeconds": 0.8,
-            "next": []
+            "next": [],
+            "phase": "phase1"
           },
           {
             "id": "RQTWe6f7",
@@ -19581,7 +20187,8 @@
             "loadSeconds": 0.5,
             "next": [
               "Q4E1Cfja"
-            ]
+            ],
+            "phase": "phase1"
           },
           {
             "id": "Q4E1Cfja",
@@ -19592,7 +20199,8 @@
               "lY-1vNDq"
             ],
             "loadSeconds": 4,
-            "next": []
+            "next": [],
+            "phase": "phase1"
           },
           {
             "id": "H51PpVL8",
@@ -19603,7 +20211,8 @@
               "4yIatbB1"
             ],
             "loadSeconds": 0.3,
-            "next": []
+            "next": [],
+            "phase": "phase2"
           }
         ],
         "classes": [
@@ -20308,7 +20917,7 @@
       }
     },
     "technical.dataDriven": {
-      "moduleVersion": 2,
+      "moduleVersion": 3,
       "data": {
         "principle": {
           "principle": "Designers change content without code: every item, building, need, recipe, enemy and quest is a data asset with a stable id."
@@ -20316,12 +20925,12 @@
         "formats": [
           {
             "id": "format-so",
-            "name": "ScriptableObject",
-            "editedIn": "Unity Inspector",
+            "name": "Native data asset",
+            "editedIn": "Engine editor",
             "merge": "Merges poorly",
             "loadsAt": "Runtime",
             "moddable": false,
-            "whenToUse": "Content designers edit in Unity with references to sprites and prefabs."
+            "whenToUse": "Content designers edit in the engine editor with references to sprites and prefabs (Unity ScriptableObject, Godot Resource, Unreal Data Asset)."
           },
           {
             "id": "format-json",
@@ -20569,8 +21178,48 @@
           "format": "Compressed JSON per system, one file per save; ids not references.",
           "versioning": "Save version number with ordered migrations; old saves always load.",
           "autosave": "At every dawn and before entering a boss arena.",
-          "performance": "Under 200 ms on the target PC; written on a background thread."
-        }
+          "performance": "Under 200 ms on the target PC; written on a background thread.",
+          "version": 3,
+          "manualSlots": 3,
+          "autoSlots": 3
+        },
+        "parts": [
+          {
+            "id": "sp1Town0",
+            "name": "Town",
+            "module": "NeFQCRv7",
+            "since": 1,
+            "notes": "Buildings, stockpiles and prices; ids, not references."
+          },
+          {
+            "id": "sp2Npcs0",
+            "name": "Villagers",
+            "module": "M29H6JSJ",
+            "since": 1,
+            "notes": "Each NPC: needs, job, relationships, life stage."
+          },
+          {
+            "id": "sp3Hero0",
+            "name": "Hero",
+            "module": "lY-1vNDq",
+            "since": 1,
+            "notes": "Position, health, inventory, skills."
+          },
+          {
+            "id": "sp4Quest",
+            "name": "Quest log",
+            "module": "lY-1vNDq",
+            "since": 2,
+            "notes": "Finished quests and the choices made."
+          },
+          {
+            "id": "sp5Clock",
+            "name": "World clock",
+            "module": "NeFQCRv7",
+            "since": 3,
+            "notes": "Day, hour and weather; older saves start at dawn of day 1."
+          }
+        ]
       }
     },
     "technical.ai": {

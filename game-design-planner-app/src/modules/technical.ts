@@ -293,6 +293,7 @@ export const technicalModules = [
           f.multi('loads', 'Initialises modules', section('modules')),
           f.multi('next', 'Can go to', section('scenes')),
           f.num('loadSeconds', 'Estimated load time (s)', { min: 0, step: 0.1 }),
+          f.ref('phase', 'In builds from', section('phases', 'overview.roadmap'), { help: 'The roadmap phase from which builds include this scene. Empty: from the start.' }),
           f.long('notes', 'Notes'),
         ],
         [v.archBoot(), v.table(['name', 'kind', 'loadOrder', 'loads', 'next'])],
@@ -540,7 +541,22 @@ export const technicalModules = [
       f.long('versioning', 'Versioning and migration'),
       f.long('autosave', 'Autosave and integrity'),
       f.long('performance', 'Performance'),
+      f.num('version', 'Current save version', { min: 1, help: 'Raise it when the saved data changes shape; the engine code migrates older saves up to it.', group: 'Engine' }),
+      f.num('manualSlots', 'Manual slots', { min: 0, group: 'Engine' }),
+      f.num('autoSlots', 'Autosave slots', { min: 0, help: 'Rotating autosaves.', group: 'Engine' }),
     ]),
+    s.collection(
+      'parts',
+      'Saved parts',
+      'part',
+      [
+        f.ref('module', 'Module', section('modules', 'technical.architecture'), { help: 'The module whose code saves this part.' }),
+        f.num('since', 'Since save version', { min: 1, help: 'The save version that added it; older saves do not have it.' }),
+        f.long('notes', 'What it holds'),
+      ],
+      [v.table(['name', 'module', 'since', 'notes'])],
+      { description: 'What one save holds, part by part. The engine export turns each into a save key and an interface the saving code implements.' },
+    ),
   ]),
   mod('technical', 'ai', 'AI Systems', 'docs/02_technical/ai_systems.md', '🤖', 'NPC, enemy and economy AI.', [
     s.form('approach', 'Approach', [

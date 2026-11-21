@@ -65,6 +65,36 @@ namespace HoHPlanner.Bridge.Editor
             EditorApplication.Exit(r.Notes.Any(n => !n.StartsWith("The export has no maps")) ? 1 : 0);
         }
 
+        /// <summary>
+        /// -executeMethod HoHPlanner.Bridge.Editor.PlannerCI.BuildScenes -plannerPhase "Vertical Slice": the planned scenes
+        /// of that roadmap phase (its name or index) into the Build Settings. Exit code 0, 1 when a planned scene has no
+        /// scene asset, 2 when the phase is unknown or there is no generated PlannerScenes.
+        /// </summary>
+        public static void BuildScenes()
+        {
+            try
+            {
+                var phases = PlannerBuildScenes.Phases();
+                var arg = Arg("-plannerPhase") ?? "";
+                var phase = int.TryParse(arg, out var i) ? i : Array.FindIndex(phases, p => string.Equals(p, arg, StringComparison.OrdinalIgnoreCase));
+                if (phase < 0 || phase >= phases.Length)
+                {
+                    Debug.LogError($"[Planner bridge] -plannerPhase: “{arg}” is not one of {string.Join(", ", phases)}.");
+                    EditorApplication.Exit(2);
+                    return;
+                }
+                var missing = PlannerBuildScenes.Apply(phase);
+                Debug.Log($"[Planner bridge] Build Settings for {phases[phase]}: {string.Join(", ", EditorBuildSettings.scenes.Select(s => s.path))}.");
+                if (missing.Length > 0) Debug.LogWarning($"[Planner bridge] No scene asset yet for: {string.Join(", ", missing)}.");
+                EditorApplication.Exit(missing.Length > 0 ? 1 : 0);
+            }
+            catch (PlannerImportException e)
+            {
+                Debug.LogError($"[Planner bridge] {e.Message}");
+                EditorApplication.Exit(2);
+            }
+        }
+
         /// <summary>-executeMethod HoHPlanner.Bridge.Editor.PlannerCI.SetupProject: planned folders, assemblies and project files (never overwrites).</summary>
         public static void SetupProject()
         {

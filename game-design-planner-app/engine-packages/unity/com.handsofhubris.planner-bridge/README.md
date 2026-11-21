@@ -121,6 +121,17 @@ These parts are separate assemblies that compile only when the package is there,
   - Pick it in the Game view to find cut-off text and text that bypasses the tables.
 - **Architecture guard**: the EditMode test `PlannerArchitecture` fails when a planned module's assembly references a module its Depends on (Architecture › Modules) does not allow.
 
+### Quests, saves, build scenes
+
+- **Quest graph** (Story & Quests): `PlannerStory` holds the planned quests, choices and endings; `PlannerQuestLog` tracks the player through them and only allows what the plan allows.
+  - A quest can start when the quests it requires are done, nothing has closed it, and (when choices lead to it) one of those choices was made. One choice per decision, after its quest.
+  - The EditMode test `PlannerStoryTests` plays the graph once per combination of choices and fails when a quest or an ending cannot be reached.
+- **Save system** (Technical › Save System): `PlannerSave` has the planned version, manual and autosave slots, and one key per saved part (`PlannerSaveKeys`).
+  - Your systems implement `IPlannerSaveable` and `Register`. Saves are JSON (gzip when the plan says compressed), written to a temporary file first.
+  - Older saves go through the migrations you add with `AddMigration(fromVersion, file => …)`; a part an old save does not have keeps its current state.
+- **Build scenes** (Technical Architecture › Scenes, *In builds from*): the window's *Build scenes* section, or `PlannerCI.BuildScenes -plannerPhase "Vertical Slice"`, puts the scenes of a roadmap phase first in the Build Settings, in load order.
+  - Scenes are found by file name; the ones without a scene asset yet are listed. Scenes that are not in the plan stay after them.
+
 ### Set up the project from the plan
 
 *Tools ▸ Game Design Planner ▸ Set up project* (or the window's buttons) uses what the planner wrote into `Unity/ProjectFiles/`:

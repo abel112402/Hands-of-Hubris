@@ -5,6 +5,7 @@ import type { ClassKind } from '../../classes'
 import { setupFiles } from './unitySetup'
 import { channelFiles, checkFiles, consoleFile, telemetryFile, testsAsmdef, type UnityNames } from './unityExtras'
 import { architectureTest, audioFiles, budgetFiles } from './unityPolish'
+import { saveFiles, sceneFiles, storyFiles } from './unityContent'
 import { inputFiles, inputIssues, stateMachineFiles, uiFiles } from './unityScaffold'
 import type { EngineIR, EngineIssue, IrClass, IrEnum, IrFormat, IrMethod, IrSchema, NeutralType } from '../ir'
 
@@ -381,8 +382,11 @@ function asmdef(ir: EngineIR): string {
 }
 
 /** The generated EditMode tests (data checks, architecture guard) and, when there is one, their assembly. */
+/** Quest graph, save system and scenes; the tests among them go with the other tests. */
+const content = (ir: EngineIR) => [...storyFiles(ir, names(ir)), ...saveFiles(ir, names(ir)), ...sceneFiles(ir, names(ir))]
+
 function tests(ir: EngineIR): EmittedFile[] {
-  const files = [...checkFiles(ir, names(ir)), ...architectureTest(ir, names(ir))]
+  const files = [...checkFiles(ir, names(ir)), ...architectureTest(ir, names(ir)), ...content(ir).filter((f) => f.path.startsWith('Tests/'))]
   return files.length ? [testsAsmdef(names(ir)), ...files] : []
 }
 
@@ -401,7 +405,7 @@ export const unity: EngineAdapter = {
   id: 'unity',
   label: 'Unity',
   language: 'C#',
-  version: 6,
+  version: 7,
   root: 'Unity',
   ownDir: 'Scripts/Classes/',
   generatedDirs: ['Scripts/Generated/', 'ProjectFiles/', 'Tests/', 'Input/', 'UI/'],
@@ -428,6 +432,7 @@ export const unity: EngineAdapter = {
       ...stateMachineFiles(ir, names(ir)),
       ...budgetFiles(ir, names(ir)),
       ...audioFiles(ir, names(ir)),
+      ...content(ir).filter((f) => !f.path.startsWith('Tests/')),
     ]
   },
   checks(ir): EngineIssue[] {

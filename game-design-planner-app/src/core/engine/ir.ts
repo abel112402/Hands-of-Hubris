@@ -8,6 +8,7 @@ import { classIssues, classModel, type ClassKind, type MemberType, type Visibili
 import { archList } from '../architecture'
 import { codingList, folderTree, lfsCoverage } from '../coding'
 import { buildAudio, buildBudgets, type IrAudio, type IrBudget } from './irPolish'
+import { buildSave, buildScenes, buildStory, type IrSave, type IrScenes, type IrStory } from './irContent'
 import { buildInput, buildStateMachines, buildUi, type IrInput, type IrStateMachine, type IrUi } from './irScaffold'
 import { buildArt, buildChannels, buildChecks, buildCheats, buildTelemetry, type IrArt, type IrChannel, type IrCheat, type IrCheck, type IrTelemetry } from './irExtras'
 
@@ -15,8 +16,8 @@ import { buildArt, buildChannels, buildChecks, buildCheats, buildTelemetry, type
  * Engine IR: the project's data-driven content in engine-neutral form. Every engine adapter
  * (Unity now, Godot and Unreal later) works from this and never reads the project itself.
  */
-/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. 7: performance budgets, audio events. */
-export const IR_VERSION = 7
+/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. 7: performance budgets, audio events. 8: quest graph, save system, scenes by roadmap phase. */
+export const IR_VERSION = 8
 
 export type AssetKind = AssetType
 const ASSET_KINDS: AssetKind[] = ['image', 'scene', 'audio', 'material', 'mesh', 'animation', 'animator', 'data']
@@ -111,6 +112,12 @@ export type EngineIR = {
   budgets: IrBudget[]
   /** Audio Direction's music and sound effects as audio events. */
   audio: IrAudio
+  /** Story & Quests: quests, choices and endings, for the quest log and its reachability test. */
+  story: IrStory
+  /** Save System: version, slots and the parts a save holds. */
+  save: IrSave
+  /** Technical Architecture scenes with the roadmap phase from which builds include them. */
+  scenes: IrScenes
 }
 
 export type IssueLevel = 'error' | 'warning' | 'info'
@@ -448,6 +455,9 @@ export function buildIR(p: Project): { ir: EngineIR; issues: EngineIssue[] } {
     stateMachines: buildStateMachines(p, issues),
     budgets: buildBudgets(p),
     audio: buildAudio(p),
+    story: buildStory(p),
+    save: buildSave(p),
+    scenes: buildScenes(p),
   }
   return { ir, issues }
 }
