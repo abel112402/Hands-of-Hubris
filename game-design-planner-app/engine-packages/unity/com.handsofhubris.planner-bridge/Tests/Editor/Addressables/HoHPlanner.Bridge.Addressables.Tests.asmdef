@@ -1,0 +1,14 @@
+{
+  "name": "HoHPlanner.Bridge.Addressables.Tests",
+  "rootNamespace": "HoHPlanner.Bridge.Tests",
+  "references": ["HoHPlanner.Bridge", "HoHPlanner.Bridge.Editor", "HoHPlanner.Bridge.Addressables", "HoHPlanner.Bridge.Tests", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "Unity.Addressables", "Unity.Addressables.Editor", "Unity.ResourceManager"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS", "HOH_ADDRESSABLES"],
+  "versionDefines": [{ "name": "com.unity.addressables", "expression": "1.19.0", "define": "HOH_ADDRESSABLES" }],
+  "noEngineReferences": false
+}

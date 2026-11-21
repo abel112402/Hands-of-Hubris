@@ -44,8 +44,33 @@ namespace HoHPlanner.Bridge.Editor
                 ["irHash"] = irHash ?? "",
                 ["records"] = Records(root, manifest),
                 ["classes"] = Classes(root),
-                ["metrics"] = new JArray(),
+                ["metrics"] = Metrics(),
             };
+        }
+
+/// <summary>
+        /// Playtest measurements: PlannerMetrics (the mean of each key, with its sample count, spread and build) and the
+        /// generated Telemetry log added up (PlannerTelemetry). A key recorded both ways keeps the PlannerMetrics value.
+        /// A telemetry count (&lt;event&gt;.count) is reported as how many times the event was logged.
+        /// </summary>
+        private static JArray Metrics()
+        {
+            var output = new JArray();
+            var all = PlannerMetrics.Load().ToDictionary(m => m.key, StringComparer.Ordinal);
+            foreach (var t in PlannerTelemetry.Summaries())
+                if (!all.ContainsKey(t.key)) all[t.key] = t;
+            foreach (var m in all.Values.OrderBy(m => m.key, StringComparer.Ordinal))
+            {
+                var count = m.key.EndsWith(".count", StringComparison.Ordinal) && !PlannerMetrics.Load().Any(x => x.key == m.key);
+                var o = new JObject { ["key"] = m.key, ["value"] = count ? m.samples : Math.Round(m.Mean, 4), ["samples"] = m.samples, ["build"] = m.build ?? "" };
+                if (!count)
+                {
+                    o["min"] = m.min;
+                    o["max"] = m.max;
+                }
+                output.Add(o);
+            }
+            return output;
         }
 
         private static JObject Record(string plannerId, string schema, string key, string status, string assetPath = null, IEnumerable<string> issues = null)

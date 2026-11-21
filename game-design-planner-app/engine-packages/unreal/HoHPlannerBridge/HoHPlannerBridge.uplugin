@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Game Design Planner Bridge",
+	"Description": "Imports the Game Design Planner's engine export (hoh-engine v1): data assets and DataTables kept in step with the plan, validation, a report for the planner. Editor Python scripts; no code to build.",
+	"Category": "Game Design Planner",
+	"CreatedBy": "Hands of Hubris",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"Plugins": [
+		{ "Name": "PythonScriptPlugin", "Enabled": true },
+		{ "Name": "EditorScriptingUtilities", "Enabled": true },
+		{ "Name": "EnhancedInput", "Enabled": true }
+	]
+}

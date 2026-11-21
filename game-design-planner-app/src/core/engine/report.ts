@@ -57,7 +57,7 @@ export const reportSchema = z.object({
     .max(20_000)
     .default([]),
   metrics: z
-    .array(z.object({ key: str(200), value: z.number().finite(), samples: z.number().int().min(0).optional(), build: str(100).optional() }))
+    .array(z.object({ key: str(200), value: z.number().finite(), samples: z.number().int().min(0).optional(), min: z.number().finite().optional(), max: z.number().finite().optional(), build: str(100).optional() }))
     .max(10_000)
     .default([]),
 })
@@ -72,7 +72,9 @@ export const storedReportSchema = z.object({
   irHash: z.string().optional(),
   records: z.record(z.string(), z.object({ s: z.enum(RECORD_STATUSES), k: z.string(), sc: z.string(), i: z.array(z.string()).optional() })),
   classes: z.record(z.string(), z.object({ s: z.enum(CLASS_STATUSES), todo: z.number(), m: z.number() })),
-  metrics: z.array(z.object({ key: z.string(), value: z.number(), samples: z.number().optional(), build: z.string().optional() })),
+  metrics: z.array(z.object({ key: z.string(), value: z.number(), samples: z.number().optional(), min: z.number().optional(), max: z.number().optional(), build: z.string().optional() })),
+  /** Status suggestions the user dismissed (core/engine/suggestions); cleared by the next report. */
+  dismissed: z.array(z.string()).optional(),
 })
 export type StoredReport = z.infer<typeof storedReportSchema>
 

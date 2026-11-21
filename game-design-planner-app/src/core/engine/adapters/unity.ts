@@ -2,6 +2,9 @@ import { camel, pascal, uniqueNames, type EmittedFile, type EngineAdapter, type 
 import { words } from '../../coding'
 import type { FormulaNode } from '../formulaAst'
 import type { ClassKind } from '../../classes'
+import { setupFiles } from './unitySetup'
+import { channelFiles, checkFiles, consoleFile, telemetryFile, type UnityNames } from './unityExtras'
+import { inputFiles, inputIssues, stateMachineFiles, uiFiles } from './unityScaffold'
 import type { EngineIR, EngineIssue, IrClass, IrEnum, IrFormat, IrMethod, IrSchema, NeutralType } from '../ir'
 
 /** Unity 6 adapter: C# ScriptableObjects (native format) or [Serializable] record classes (JSON, CSV), enums, ID constants and formulas. */
@@ -366,7 +369,7 @@ function classFiles(ir: EngineIR): EmittedFile[] {
     ...(needsOwnFile(c) ? [{ path: ownFilePath(c), content: classOwnFile(ir, c) }] : []),
   ])
   // Which file belongs to which planner class, so the engine package can report each class's state back.
-  const index = ir.classes.map((c) => ({ plannerId: c.id, name: c.name, kind: c.kind, generated: `Unity/${generatedFilePath(c)}`, own: needsOwnFile(c) ? `Unity/${ownFilePath(c)}` : null, methods: c.methods.length }))
+  const index = ir.classes.map((c) => ({ plannerId: c.id, name: c.name, kind: c.kind, generated: `Unity/${generatedFilePath(c)}`, own: needsOwnFile(c) ? `Unity/${ownFilePath(c)}` : null, ownFiles: needsOwnFile(c) ? [`Unity/${ownFilePath(c)}`] : [], tokens: [className(c)], methods: c.methods.length }))
   return ir.classes.length ? [...files, { path: 'Scripts/Generated/classes.json', content: JSON.stringify(index, null, 2) + '\n' }] : files
 }
 
@@ -376,12 +379,26 @@ function asmdef(ir: EngineIR): string {
   return JSON.stringify({ name: root, rootNamespace: root, references: [], autoReferenced: true }, null, 2) + '\n'
 }
 
+function names(ir: EngineIR): UnityNames {
+  return {
+    root: projectNamespace(ir),
+    ns: namespaceOf(ir),
+    schemaType: schemaTypeName,
+    field: (s, planner) => fieldNames(s)[s.fields.findIndex((f) => f.name === planner)],
+    identifier: (ws) => identifier(ws, 'method'),
+    csString,
+  }
+}
+
 export const unity: EngineAdapter = {
   id: 'unity',
   label: 'Unity',
   language: 'C#',
-  version: 3,
+  version: 5,
   root: 'Unity',
+  ownDir: 'Scripts/Classes/',
+  generatedDirs: ['Scripts/Generated/', 'ProjectFiles/', 'Tests/', 'Input/', 'UI/'],
+  classIndex: 'Scripts/Generated/classes.json',
   reservedWords: CS_KEYWORDS,
   typeName,
   identifier,
@@ -394,10 +411,18 @@ export const unity: EngineAdapter = {
       { path: `${dir}Ids.cs`, content: idsFile(ir) },
       { path: `${dir}Formulas.cs`, content: formulasFile(ir) },
       ...classFiles(ir),
+      ...setupFiles(ir, projectNamespace(ir), (ws) => identifier(ws, 'type').replace(/^@/, '')),
+      ...consoleFile(ir, names(ir)),
+      ...checkFiles(ir, names(ir)),
+      ...channelFiles(ir, names(ir)),
+      ...telemetryFile(ir, names(ir)),
+      ...inputFiles(ir, names(ir)),
+      ...uiFiles(ir, names(ir)),
+      ...stateMachineFiles(ir, names(ir)),
     ]
   },
   checks(ir): EngineIssue[] {
-    const out: EngineIssue[] = []
+    const out: EngineIssue[] = [...inputIssues(ir)]
     for (const s of ir.schemas) {
       const base = identifier(s.words, 'type')
       if (UNITY_TYPES.has(base)) out.push({ level: 'info', code: 'unity.typeName', schema: s.id, message: `${s.name}: the type is called ${schemaTypeName(s)} so it does not hide Unity's ${base}.` })

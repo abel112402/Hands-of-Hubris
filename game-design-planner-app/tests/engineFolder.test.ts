@@ -68,3 +68,16 @@ describe('writing the export into a linked folder', () => {
     expect((await exportFolderIn(folder)).path).toBe('')
   })
 })
+
+describe('saving again without changes', () => {
+  it('does not rewrite the manifest only for a new export time', async () => {
+    const dir = new MemoryFolder('HoHPlanner')
+    const p = cinderholm()
+    await writeExport(dir, buildBundle(p, 'unity', '2026-01-01T00:00:00Z').files)
+    dir.log.length = 0
+    const r = await writeExport(dir, buildBundle(p, 'unity', '2026-02-02T00:00:00Z').files)
+    expect(r.written).toBe(0)
+    expect(dir.log).toEqual([])
+    expect(JSON.parse(dir.read('hoh-engine.json')!).exportedAt).toBe('2026-01-01T00:00:00Z')
+  })
+})

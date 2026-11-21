@@ -9,7 +9,12 @@ import type { Entity } from '../../core/model/types'
 import { countOf } from '../../core/text'
 import { exportEngineZip, importEngineReport, setEngineTarget } from '../actions'
 import { canLinkFolders, linkEngineFolder, readReportFromLinkedFolder, setExportOnSave, unlinkEngineFolder, useEngineLink, writeToLinkedFolder } from '../engineLink'
-import { classProblems, reportBySchema, reportProblems, reportStale, reportSummary, storedReport } from '../../core/engine/report'
+import { classProblems, reportBySchema, reportLabel, reportProblems, reportStale, reportSummary, storedReport } from '../../core/engine/report'
+import { applySuggestions, dismissSuggestions, statusSuggestions, type StatusSuggestion } from '../../core/engine/suggestions'
+import { getModule } from '../../core/modules/registry'
+import { liveLinkAvailable, livePing, livePushValues, liveStatus, type LiveLink, type LiveStatus } from '../../core/engine/liveLink'
+import { buildIR } from '../../core/engine/ir'
+import { useStore } from '../../core/store/store'
 import { useProject } from '../hooks'
 import type { ViewProps } from './CollectionEditor'
 
@@ -56,6 +61,7 @@ export function EngineExportView({ items, onSelect, patch }: ViewProps) {
         </button>
       </div>
       <LinkedFolderPanel />
+      {target.id === 'unity' && <LiveLinkPanel />}
       {!target.hasAdapter && (
         <p className="engine-note" role="note">
           There is no {target.label} code generator yet: the zip holds the engine-neutral part (records, enums, formulas, strings, maps and <code>ir/engine-ir.json</code>), not {target.label} code.
@@ -82,6 +88,7 @@ export function EngineExportView({ items, onSelect, patch }: ViewProps) {
         )}
       </section>
       <EngineStatusPanel />
+      <StatusSuggestionsPanel />
       <FieldMapping schemas={items} issues={bundle.issues} patch={patch} />
       <div className="engine-files">
         <ul className="engine-tree" aria-label="Files in the export">
@@ -176,7 +183,7 @@ function EngineStatusPanel() {
     return (
       <section aria-label="Engine status" className="engine-map">
         <strong>Engine status</strong>
-        <p className="muted">No engine report yet. In Unity, with the planner bridge package: Tools ▸ Game Design Planner ▸ Write report for the planner (it is also written after every import); then import its hoh-engine-report.json here.</p>
+        <p className="muted">No engine report yet. In Unity, with the planner bridge package: Tools ▸ Game Design Planner ▸ Write report for the planner; in Godot, with the planner addon: Project ▸ Tools ▸ Game Design Planner ▸ Write report; in Unreal, with the bridge plugin: Tools ▸ Game Design Planner ▸ Write report. Each also writes it after every import; then import its hoh-engine-report.json here.</p>
         <div className="row" style={{ margin: 0 }}>
           <button onClick={() => void importEngineReport()}>Import engine report…</button>
         </div>
@@ -291,7 +298,7 @@ function LinkedFolderPanel() {
       <strong>Engine folder</strong>
       {!link ? (
         <>
-          <p className="muted">Link the engine project once (for Unity: its project folder, the export goes to Assets/HoHPlanner). Then every save writes the export there, unchanged files are left alone, your own class files are never overwritten, and the engine's report is read back when you return here.</p>
+          <p className="muted">Link the engine project once (for Unity: its project folder, the export goes to Assets/HoHPlanner; for Godot: the folder with project.godot, the export goes to res://HoHPlanner; for Unreal: the folder with the .uproject, the export goes to Plugins/HoHPlanner). Then every save writes the export there, unchanged files are left alone, your own class files are never overwritten, and the engine's report is read back when you return here.</p>
           <div className="row" style={{ margin: 0 }}>
             <button disabled={busy} onClick={() => run(linkEngineFolder)}>Link engine folder…</button>
           </div>
@@ -316,6 +323,141 @@ function LinkedFolderPanel() {
             </p>
           )}
         </>
+      )}
+      {message && <p role="status">{message}</p>}
+    </section>
+  )
+}
+
+/**
+ * Status changes the engine report suggests (core/engine/suggestions). Nothing changes until accepted; accepting is one
+ * undo step, and dismissed suggestions stay hidden until the next report. Warnings say where the plan claims more than
+ * the engine shows; they are never applied.
+ */
+function StatusSuggestionsPanel() {
+  const project = useProject()
+  const { suggestions, warnings, report } = statusSuggestions(project)
+  if (!report || (!suggestions.length && !warnings.length)) return null
+  const accept = (chosen: StatusSuggestion[]) =>
+    useStore.getState().mutate((p) => void applySuggestions(p, chosen), undefined, chosen.length === 1 ? `Set status of ${chosen[0].name}` : 'Apply engine status suggestions')
+  const dismiss = (chosen: StatusSuggestion[]) => useStore.getState().mutate((p) => dismissSuggestions(p, chosen), undefined, 'Dismiss engine status suggestions')
+  const where = (s: { docId: string; sectionId: string }) => `${getModule(s.docId)?.title ?? s.docId} › ${s.sectionId}`
+  return (
+    <section aria-label="Status suggestions" className="engine-map engine-status">
+      <strong>Status suggestions from {reportLabel(report)}</strong>
+      {suggestions.length > 0 && (
+        <>
+          <p className="muted">The engine only suggests; nothing changes until you accept. Dismissed ones come back with the next report only if still true.</p>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Entry</th>
+                <th scope="col">Status</th>
+                <th scope="col">Why</th>
+                <th scope="col">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {suggestions.map((s) => (
+                <tr key={s.id}>
+                  <th scope="row">
+                    {s.name} <span className="muted">({where(s)})</span>
+                  </th>
+                  <td>
+                    {s.from || '—'} → <strong>{s.to}</strong>
+                  </td>
+                  <td>{s.reason}</td>
+                  <td className="num">
+                    <button className="small" aria-label={`Accept ${s.name}: ${s.to}`} onClick={() => accept([s])}>Accept</button>{' '}
+                    <button className="ghost small" aria-label={`Dismiss ${s.name}: ${s.to}`} onClick={() => dismiss([s])}>Dismiss</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="row" style={{ margin: 0 }}>
+            <button onClick={() => accept(suggestions)}>Accept all ({suggestions.length})</button>
+            <button className="ghost" onClick={() => dismiss(suggestions)}>Dismiss all</button>
+          </div>
+        </>
+      )}
+      {warnings.length > 0 && (
+        <details open={!suggestions.length}>
+          <summary>{countOf(warnings.length, 'entry', 'entries')} marked further in the plan than in the engine</summary>
+          <ul className="engine-problems">
+            {warnings.map((w) => (
+              <li key={`${w.docId}/${w.entityId}`}>
+                <span aria-hidden="true">⚠ </span>
+                <strong>{w.name}</strong> <span className="muted">({where(w)}, “{w.current}”)</span>: {w.reason}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Live link with the engine (dev server, or a build made with VITE_ENGINE_BRIDGE=1): show a record in the engine, and
+ * push the planner's current values into the running game (Unity Play mode; restored when Play mode ends).
+ */
+function LiveLinkPanel() {
+  const project = useProject()
+  const [port, setPort] = useState(() => sessionStorage.getItem('hohplan:liveLink:port') ?? '51701')
+  const [token, setToken] = useState(() => sessionStorage.getItem('hohplan:liveLink:token') ?? '')
+  const [status, setStatus] = useState<LiveStatus | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [record, setRecord] = useState('')
+  const records = useMemo(() => buildIR(project).ir.records, [project])
+  if (!liveLinkAvailable()) return null
+  const link: LiveLink = { port: Number(port), token: token.trim() }
+  const remember = () => {
+    sessionStorage.setItem('hohplan:liveLink:port', port)
+    sessionStorage.setItem('hohplan:liveLink:token', token.trim())
+  }
+  const connect = async () => {
+    remember()
+    const r = await liveStatus(link)
+    setStatus(r.ok ? r.data : null)
+    setMessage(r.ok ? `Connected to ${r.data.engine === 'unity' ? 'Unity' : r.data.engine} ${r.data.engineVersion}${r.data.project ? `, “${r.data.project}”` : ''}: ${countOf(r.data.records, 'record')}, ${r.data.playing ? 'in Play mode' : 'not playing'}.` : r.error)
+  }
+  const ping = async () => {
+    const r = await livePing(link, record)
+    setMessage(r.ok ? `Selected ${r.data.key} in the engine (${r.data.assetPath}).` : r.error)
+  }
+  const push = async () => {
+    const r = await livePushValues(link, project)
+    setMessage(r.ok ? `${countOf(r.data.applied, 'record')} updated in the running game${r.data.problems.length ? `; ${countOf(r.data.problems.length, 'problem')}: ${r.data.problems.slice(0, 3).join('; ')}` : ''}. Stopping Play mode restores them.` : r.error)
+  }
+  return (
+    <section aria-label="Live link" className="engine-map">
+      <strong>Live link</strong>
+      <p className="muted">With the engine open and its live link on (Unity: Window ▸ Game Design Planner ▸ Live link), show a record there, or try the planner's current numbers in the running game without exporting. Only 127.0.0.1 is contacted.</p>
+      <div className="row" style={{ margin: 0, alignItems: 'center' }}>
+        <label className="row" style={{ margin: 0, alignItems: 'center' }}>
+          Port
+          <input aria-label="Live link port" inputMode="numeric" value={port} onChange={(e) => setPort(e.target.value)} style={{ width: 80 }} />
+        </label>
+        <label className="row" style={{ margin: 0, alignItems: 'center' }}>
+          Token
+          <input aria-label="Live link token" type="password" value={token} onChange={(e) => setToken(e.target.value)} style={{ width: 200 }} />
+        </label>
+        <button onClick={() => void connect()} disabled={!token.trim()}>Connect</button>
+      </div>
+      {status && (
+        <div className="row" style={{ margin: 0, alignItems: 'center' }}>
+          <select aria-label="Record to show in the engine" value={record} onChange={(e) => setRecord(e.target.value)}>
+            <option value="">Choose a record…</option>
+            {records.map((r) => (
+              <option key={r.plannerId} value={r.plannerId}>{r.key}</option>
+            ))}
+          </select>
+          <button onClick={() => void ping()} disabled={!record}>Show in the engine</button>
+          <button onClick={() => void push()}>Push values to Play mode</button>
+        </div>
       )}
       {message && <p role="status">{message}</p>}
     </section>

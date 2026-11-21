@@ -19653,7 +19653,7 @@
           },
           {
             "id": "clsPly01",
-            "name": "PlayerController",
+            "name": "CinderPlayerController",
             "kind": "Actor / prefab root",
             "module": "lY-1vNDq",
             "requires": [
@@ -20429,7 +20429,10 @@
             "idPrefix": "enemy.",
             "format": "format-so",
             "source": "Enemies — Combat",
-            "avgSizeKb": 30
+            "avgSizeKb": 30,
+            "fieldMap": [
+              "health ← hp"
+            ]
           },
           {
             "id": "2soy5zgP",
@@ -21475,14 +21478,20 @@
             "unit": "h",
             "target": 4,
             "current": 5.2,
-            "notes": "Too long: gathering is slow."
+            "notes": "Too long: gathering is slow.",
+            "key": "progress.act1_hours",
+            "min": 3,
+            "max": 5
           },
           {
             "id": "wR5qfmED",
             "name": "Deaths per hour (Medium)",
             "unit": "deaths",
             "target": 0.5,
-            "current": 0.7
+            "current": 0.7,
+            "key": "combat.deaths_per_hour",
+            "min": 0.3,
+            "max": 0.8
           },
           {
             "id": "l-gcFLmL",
@@ -21490,7 +21499,20 @@
             "unit": "%",
             "target": 5,
             "current": 12,
-            "notes": "Farms too slow in winter."
+            "notes": "Farms too slow in winter.",
+            "key": "town.starved_first_winter_pct",
+            "min": 0,
+            "max": 8
+          },
+          {
+            "id": "mTtk0001",
+            "name": "Time to kill (mean)",
+            "unit": "s",
+            "target": 5,
+            "min": 3,
+            "max": 8,
+            "key": "enemy_killed.seconds",
+            "notes": "From the enemy_killed telemetry event."
           }
         ],
         "changes": [
@@ -21507,6 +21529,61 @@
             "date": "2026-11-16",
             "reason": "Starvation above target.",
             "impact": "Starved share expected under 8 %."
+          }
+        ],
+        "checks": [
+          {
+            "id": "chkTough1",
+            "name": "Enemy toughness",
+            "schema": "VOS_sAP0",
+            "expr": "health / damage",
+            "min": 5,
+            "max": 20,
+            "severity": "Error",
+            "notes": "Hits an enemy takes per point of damage it deals: below 5 enemies are glass cannons, above 20 damage sponges."
+          },
+          {
+            "id": "chkHits01",
+            "name": "Hits to kill with a 40-damage weapon",
+            "schema": "VOS_sAP0",
+            "expr": "ceil(health / 40)",
+            "min": 1,
+            "max": 25,
+            "severity": "Warning",
+            "notes": "Late wardens are meant to outgrow a mid-game weapon; a warning, not an error."
+          },
+          {
+            "id": "chkValue1",
+            "name": "Item value",
+            "schema": "UgNzlgZV",
+            "expr": "value",
+            "min": 1,
+            "max": 100,
+            "severity": "Error",
+            "notes": "Shop prices are value × trade margin; above 100 the early economy breaks."
+          }
+        ],
+        "telemetry": [
+          {
+            "id": "telKill01",
+            "name": "Enemy killed",
+            "key": "enemy_killed",
+            "params": "enemy: Enemy, seconds: float, biome: string",
+            "notes": "When an enemy dies to the player; seconds from the first hit."
+          },
+          {
+            "id": "telDeath1",
+            "name": "Player died",
+            "key": "player_died",
+            "params": "enemy: Enemy, biome: string, day: int",
+            "notes": "Every player death, with what killed them."
+          },
+          {
+            "id": "telStarv1",
+            "name": "Townsperson starved",
+            "key": "npc_starved",
+            "params": "npcId, day: int",
+            "notes": "When a townsperson dies of hunger."
           }
         ]
       }

@@ -155,7 +155,7 @@ describe('example project', () => {
     const p = deserializeProject(fs.readFileSync('examples/cinderholm.hohplan.json', 'utf8')).project
     expect(classIssues(p).filter((i) => i.level !== 'info')).toEqual([])
     const files = unity.emit(buildIR(p).ir).map((f) => f.path)
-    expect(files).toContain('Scripts/Classes/GameplayPlayer/PlayerController.cs')
+    expect(files).toContain('Scripts/Classes/GameplayPlayer/CinderPlayerController.cs')
     expect(files).toContain('Scripts/Generated/Classes/NeedChangedEvent.Generated.cs')
   })
 })

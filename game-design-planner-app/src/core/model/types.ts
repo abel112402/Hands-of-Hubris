@@ -91,6 +91,8 @@ export type CollectionView =
   | { kind: 'dataReadiness' }
   | { kind: 'dataLoadPlan' }
   | { kind: 'engineExport' }
+  | { kind: 'balanceMeasured' }
+  | { kind: 'balanceChecks' }
   | { kind: 'depletion' }
   | { kind: 'levelCurve' }
   | { kind: 'skillTree' }

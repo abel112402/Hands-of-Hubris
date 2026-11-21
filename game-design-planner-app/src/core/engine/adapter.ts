@@ -18,6 +18,14 @@ export interface EngineAdapter {
   version: number
   /** Folder in the bundle that holds this adapter's files. */
   root: string
+  /** Folder under root with your own code: written only when a file is missing, never replaced. */
+  ownDir: string
+  /** Folders under root that the export owns completely (stale files in them are deleted). */
+  generatedDirs: string[]
+  /** The class index under root (classes.json): which of your files belong to which class, to follow renames. */
+  classIndex?: string
+  /** Extra files next to the engine-neutral ones (paths from the bundle root), e.g. Godot's .import settings. */
+  sidecars?(paths: string[]): EmittedFile[]
   reservedWords: ReadonlySet<string>
   /** The engine type for a neutral type, inside a schema stored in `format`. */
   typeName(t: NeutralType, ir: EngineIR, format: IrFormat): string

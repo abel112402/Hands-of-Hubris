@@ -924,6 +924,21 @@
       "body_other": "{{count}} schemas have no validator and no written rules: {{names}}.",
       "body_one": "{{count}} schema has no validator and no written rules: {{names}}."
     },
+    "balanceDataCheck": {
+      "title": "Records outside a data check",
+      "body_one": "{{count}} data check finds records outside its range ({{records}} in all): {{names}}. Fix the values in the content planners, or the range if the rule changed; the engine tests would fail the same way.",
+      "body_other": "{{count}} data checks find {{records}} records outside their ranges: {{names}}. Fix the values in the content planners, or the ranges if the rules changed; the engine tests would fail the same way."
+    },
+    "engineMetricOutOfRange": {
+      "title": "Measured values outside their range",
+      "body_one": "In {{engine}} playtests, {{count}} metric came out outside its acceptable range: {{names}}. Tune it, or adjust the range if the target changed.",
+      "body_other": "In {{engine}} playtests, {{count}} metrics came out outside their acceptable range: {{names}}. Tune them, or adjust the ranges if the targets changed."
+    },
+    "engineSuggestions": {
+      "title": "Status changes suggested by the engine",
+      "body_one": "{{engine}} suggests moving {{count}} status forward: {{names}}. Review it under Data schemas › Engine export.",
+      "body_other": "{{engine}} suggests moving {{count}} statuses forward: {{names}}. Review them under Data schemas › Engine export."
+    },
     "engineIncomplete": {
       "title": "Records to finish in the engine",
       "body_one": "{{engine}} reports {{count}} record that is incomplete or has no asset yet: {{names}}. Assign its sprites or prefabs there, or fill the missing planner fields.",

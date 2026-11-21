@@ -8,17 +8,19 @@ const TURNSTILE = 'https://challenges.cloudflare.com'
  * Production CSP. AI hosts: keep in sync with ALLOWED_HOSTS in src/core/ai/security.ts.
  * The cloud backend (and Turnstile) are allowed only when this build is configured for them.
  */
-function buildCsp(env: Record<string, string>) {
+export function buildCsp(env: Record<string, string>) {
   if (env.VITE_SUPABASE_URL && !URL.canParse(env.VITE_SUPABASE_URL))
     throw new Error(`VITE_SUPABASE_URL is not a valid URL: ${env.VITE_SUPABASE_URL}`)
   const backend = env.VITE_SUPABASE_URL ? new URL(env.VITE_SUPABASE_URL).origin : ''
   const turnstile = env.VITE_TURNSTILE_SITE_KEY ? TURNSTILE : ''
+  // The engine live link (engine bridge package, 127.0.0.1 only) is allowed only in builds made for it.
+  const engineBridge = env.VITE_ENGINE_BRIDGE === '1' ? 'http://127.0.0.1:* http://localhost:*' : ''
   return [
     "default-src 'self'",
     `script-src 'self' ${turnstile}`.trim(),
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    `connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com ${backend}`.trim(),
+    `connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com ${backend} ${engineBridge}`.replace(/\s+/g, ' ').trim(),
     `frame-src ${turnstile || "'none'"}`,
     "object-src 'none'",
     "base-uri 'none'",

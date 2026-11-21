@@ -5,6 +5,7 @@ Interactive visual editors for every planning document in `../docs` (Vite + Reac
 ## Commands
 - `npm install`, `npm run dev`, `npm run build`, `npm run preview`
 - `npm run lint`, `npm run typecheck`, `npm test`
+- `npm run export:engine -- <plan.hohplan.json> <out.zip | folder> [--engine unity|godot|unreal] [--strict]`: the engine export from the command line (CI); `--help` for details. Engine-side packages: `engine-packages/unity/com.handsofhubris.planner-bridge` (Unity 6), `engine-packages/godot/addons/hoh_planner` (Godot 4.3+), `engine-packages/unreal/HoHPlannerBridge` (Unreal 5.3+)
 
 ## Usage
 - The menu lists all planners grouped like the docs folder. Pick one to open its visual editor.

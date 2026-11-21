@@ -67,11 +67,14 @@ describe('engine export view', () => {
     expect(schema().fieldMap).toEqual([])
   })
 
-  it('switches the target engine and explains a data-only export', async () => {
+  it('switches the target engine', async () => {
     await open()
-    fireEvent.change(screen.getByLabelText('Target engine'), { target: { value: 'godot' } })
-    expect(useStore.getState().project.meta.engine).toEqual({ target: 'godot' })
-    expect(screen.getByRole('note').textContent).toMatch(/no Godot code generator yet/)
+    fireEvent.change(screen.getByLabelText('Target engine'), { target: { value: 'unreal' } })
+    expect(useStore.getState().project.meta.engine).toEqual({ target: 'unreal' })
+    expect(screen.queryByRole('note')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Unreal/Source/PlannerGame/Generated/ItemDefinition.h' })).toBeTruthy()
+    // The live link talks to the Unity bridge only.
+    expect(screen.queryByRole('region', { name: 'Live link' })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Unity\// })).toBeNull()
     fireEvent.change(screen.getByLabelText('Target engine'), { target: { value: '' } })
     expect(useStore.getState().project.meta.engine).toEqual({})

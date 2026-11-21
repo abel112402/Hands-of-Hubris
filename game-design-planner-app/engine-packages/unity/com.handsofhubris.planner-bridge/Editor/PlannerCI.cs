@@ -27,7 +27,7 @@ namespace HoHPlanner.Bridge.Editor
             try
             {
                 var r = PlannerImporter.Import(path);
-                Debug.Log($"[Planner bridge] Files: {r.Written} written, {r.Unchanged} unchanged, {r.Deleted} removed, {r.KeptYours} of your class files kept. Code changed: {r.CodeChanged}.");
+                Debug.Log($"[Planner bridge] Files: {r.Written} written, {r.Unchanged} unchanged, {r.Deleted} removed, {r.KeptYours} of your class files kept{(r.Moved.Count > 0 ? $", {r.Moved.Count} moved with their renamed class ({string.Join("; ", r.Moved)})" : "")}. Code changed: {r.CodeChanged}.");
                 EditorApplication.Exit(0);
             }
             catch (PlannerImportException e)
@@ -54,6 +54,32 @@ namespace HoHPlanner.Bridge.Editor
             var errors = issues.Count(i => i.Level == IssueLevel.Error);
             Debug.Log($"[Planner bridge] Validation: {errors} error(s), {issues.Count(i => i.Level == IssueLevel.Warning)} warning(s).");
             EditorApplication.Exit(errors > 0 ? 1 : 0);
+        }
+
+        /// <summary>-executeMethod HoHPlanner.Bridge.Editor.PlannerCI.Greybox: a walkable greybox scene per location map (Greybox/). Exit code 0, or 1 when a map could not be built.</summary>
+        public static void Greybox()
+        {
+            var r = PlannerGreybox.Build(PlannerBridgeSettings.instance.Root);
+            Debug.Log($"[Planner bridge] Greybox: {r}");
+            foreach (var s in r.Scenes) Debug.Log($"[Planner bridge]   {s}");
+            EditorApplication.Exit(r.Notes.Any(n => !n.StartsWith("The export has no maps")) ? 1 : 0);
+        }
+
+        /// <summary>-executeMethod HoHPlanner.Bridge.Editor.PlannerCI.SetupProject: planned folders, assemblies and project files (never overwrites).</summary>
+        public static void SetupProject()
+        {
+            try
+            {
+                Debug.Log($"[Planner bridge] Folders: {PlannerSetup.CreateFolders()}.");
+                Debug.Log($"[Planner bridge] Project files: {PlannerSetup.InstallProjectFiles()}.");
+                AssetDatabase.Refresh();
+                EditorApplication.Exit(0);
+            }
+            catch (PlannerImportException e)
+            {
+                Debug.LogError($"[Planner bridge] {e.Message}");
+                EditorApplication.Exit(2);
+            }
         }
 
         private static string Arg(string name)

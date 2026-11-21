@@ -64,6 +64,8 @@ namespace HoHPlanner.Bridge.Editor
                     var v = field.GetValue(e.asset);
                     var empty = v == null || (v is UnityEngine.Object o && o == null) || (v is string s && s.Length == 0) || (v is System.Collections.ICollection c && c.Count == 0);
                     if (empty) issues.Add(new ValidationIssue { Level = typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType) ? IssueLevel.Warning : IssueLevel.Error, Asset = e.asset, Message = $"{e.key}.{planner}: required, but empty." });
+                    // A placeholder fills the gap in the game, but the real asset is still to be made.
+                    else if (v is UnityEngine.Object placeholder && PlannerPlaceholders.IsPlaceholder(placeholder)) issues.Add(new ValidationIssue { Level = IssueLevel.Warning, Asset = e.asset, Message = $"{e.key}.{planner}: still a placeholder." });
                 }
                 foreach (var f in type.GetFields(flags))
                 {

@@ -84,9 +84,10 @@ describe('engine report', () => {
     const p = cinderholm()
     expect(collectHints(makeContext(p, { docId: DATA_DOC })).some((h) => h.ruleId.startsWith('engine.'))).toBe(false)
     applyReport(p, parseReport(JSON.stringify(report(p)), p).report)
-    const data = collectHints(makeContext(p, { docId: DATA_DOC })).filter((h) => h.ruleId.startsWith('engine.'))
+    // engine.suggestions is covered in engineSuggestions.test.ts
+    const data = collectHints(makeContext(p, { docId: DATA_DOC })).filter((h) => h.ruleId.startsWith('engine.') && h.ruleId !== 'engine.suggestions')
     expect(data.map((h) => [h.ruleId, h.params?.count])).toEqual([['engine.incomplete', 25]])
-    const arch = collectHints(makeContext(p, { docId: ARCH_DOC })).filter((h) => h.ruleId.startsWith('engine.'))
+    const arch = collectHints(makeContext(p, { docId: ARCH_DOC })).filter((h) => h.ruleId.startsWith('engine.') && h.ruleId !== 'engine.suggestions')
     expect(arch.map((h) => [h.ruleId, h.params?.count])).toEqual([['engine.classes', 5]])
     const changed = structuredClone(p) // the store gives every edit a new project object
     changed.documents['design.items'].data.items[0].value = 999

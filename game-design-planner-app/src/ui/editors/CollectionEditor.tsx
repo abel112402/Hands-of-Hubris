@@ -30,6 +30,7 @@ import { BootSequenceView, CouplingView, DependencyMatrixView, ExtensionCoverage
 import { BranchFlowView, EnforcementBoardView, FolderTreeView, NamingTesterView } from './codingViews'
 import { DataModelView, LoadPlanView, PipelineReadinessView, RecordTesterView } from './dataDrivenViews'
 import { EngineExportView } from './engineViews'
+import { BalanceChecksView, BalanceMeasuredView } from './balanceViews'
 import { ClassDiagramView } from './classViews'
 import { BindingMapView, ScreenMapView, ScreenReadinessView } from './uiViews'
 import { PillarMatrixView, VisionReadinessView } from './visionViews'
@@ -93,6 +94,8 @@ const VIEW_LABEL: Record<CollectionView['kind'], string> = {
   dataReadiness: 'Pipeline readiness',
   dataLoadPlan: 'Load plan',
   engineExport: 'Engine export',
+  balanceMeasured: 'Measured',
+  balanceChecks: 'Results',
   depletion: 'Depletion',
   levelCurve: 'Level curve',
   skillTree: 'Skill tree',
@@ -364,6 +367,8 @@ export function CollectionViewBody({ view, props, onAdd }: { view: CollectionVie
       {view.kind === 'dataReadiness' && <PipelineReadinessView {...props} />}
       {view.kind === 'dataLoadPlan' && <LoadPlanView {...props} />}
       {view.kind === 'engineExport' && <EngineExportView {...props} />}
+      {view.kind === 'balanceMeasured' && <BalanceMeasuredView {...props} />}
+      {view.kind === 'balanceChecks' && <BalanceChecksView {...props} />}
       {view.kind === 'depletion' && <DepletionView {...props} />}
       {view.kind === 'levelCurve' && <LevelCurveView />}
       {view.kind === 'skillTree' && <SkillTreeView {...props} />}

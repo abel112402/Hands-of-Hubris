@@ -761,6 +761,18 @@
       "title": "Ellenőrzés nélküli sémák",
       "body": "{{count}} sémának nincs validátora és írott szabálya sem: {{names}}."
     },
+    "balanceDataCheck": {
+      "title": "Adatellenőrzésen kívüli rekordok",
+      "body": "{{count}} adatellenőrzés {{records}} rekordot talál a tartományán kívül: {{names}}. Javítsd az értékeket a tartalom-tervezőkben, vagy a tartományt, ha a szabály változott; a motor tesztjei ugyanígy elbuknának."
+    },
+    "engineMetricOutOfRange": {
+      "title": "Tartományon kívüli mért értékek",
+      "body": "A(z) {{engine}} játéktesztjeiben {{count}} mérőszám esett az elfogadható tartományán kívül: {{names}}. Hangold, vagy igazítsd a tartományt, ha a cél változott."
+    },
+    "engineSuggestions": {
+      "title": "A motor státuszváltásokat javasol",
+      "body": "A(z) {{engine}} {{count}} státusz előreléptetését javasolja: {{names}}. Nézd át a Data schemas › Engine export nézetben."
+    },
     "engineIncomplete": {
       "title": "Befejezendő rekordok a motorban",
       "body": "A(z) {{engine}} szerint {{count}} rekord hiányos vagy még nincs assetje: {{names}}. Állítsd be ott a sprite-okat vagy prefabokat, vagy töltsd ki a hiányzó tervezői mezőket."

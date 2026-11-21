@@ -10,7 +10,7 @@ import { ENGINE_TARGETS } from './target'
 import { buildIR, type EngineIR, type EngineIssue, type IrSchema } from './ir'
 import { ENGINE_FORMAT, ENGINE_FORMAT_VERSION, fnv1a, manifestJsonSchema, type EngineManifest } from './manifest'
 
-/** Folder every file of the zip sits in, so unpacking into a Unity Assets folder gives one tidy folder. */
+/** Folder every file of the zip sits in, so unpacking into a Unity Assets folder or a Godot project gives one tidy folder. */
 export const BUNDLE_ROOT = 'HoHPlanner'
 
 export type EngineBundle = { ir: EngineIR; issues: EngineIssue[]; manifest: EngineManifest; files: EmittedFile[] }
@@ -80,8 +80,24 @@ ${adapter?.id === 'unity' ? `
 1. Copy this folder into \`Assets/\`. The scripts compile into their own assembly (\`${adapter.root}/Scripts/*.asmdef\`). Partial methods need C# 9, which Unity 2021.2 and later (Unity 6 included) support.
 2. Native-format schemas are ScriptableObject classes; create assets from *Assets ▸ Create ▸ ${ir.project.name || 'Game'}*. With the Game Design Planner Bridge package (\`engine-packages/unity/com.handsofhubris.planner-bridge\` in the planner's repository) use *Tools ▸ Game Design Planner ▸ Import bundle* instead of copying: it creates one asset per record from \`Data/\`, keeps them in step on every reimport and never overwrites your class files.
 3. JSON and CSV schemas are \`[Serializable]\` record classes; enum fields hold the planner ID, read the enum through the generated \`…Value\` property or \`EnumIds\`.
-4. \`Ids\` holds every record ID as a constant, \`Formulas\` every planner formula as a method.
+4. \`Ids\` holds every record ID as a constant, \`Formulas\` every planner formula as a method. \`PlannerConsole\` (Scripts/Generated) is a debug console with the plan’s commands and IDs; implement \`IPlannerCheats\` for it. \`Tests/Editor/PlannerDataChecks.cs\` runs the Balance plan’s data checks on the record assets (Test Runner › EditMode). \`Scripts/Generated/Channels/\` holds the Architecture’s channels: \`GameEvents\` for the event buses, one ScriptableObject type per ScriptableObject channel (the bridge makes its asset under \`Channels/\`). \`Telemetry\` has one typed call per telemetry event of the Balance plan; the bridge adds its log up into the report’s metrics. \`Input/<Project>.inputactions\` is the plan’s controls as an Input System asset (one map per category; \`PlannerInput\` names the actions). \`UI/Screens/*.uxml\` lays out each planned screen; \`PlannerScreens\` holds the screen IDs and the planned flow, and \`PlannerScreenRouter\` (on a UIDocument, with the bridge’s Screens.asset) shows them and follows it. \`Scripts/Generated/StateMachines/\` turns each state graph of the plan (e.g. the NPC life cycle) into a typed machine that only allows the planned transitions.
 5. Classes from the class diagram (Technical Architecture › Classes): \`Scripts/Generated/Classes/*.Generated.cs\` holds fields, attributes and method signatures and is replaced on every export; \`Scripts/Classes/**/*.cs\` is yours — copy each one once and never overwrite it later, because your method bodies live there. Components and data assets always get that file, since Unity finds them by file name.
+` : ''}${adapter?.id === 'godot' ? `
+## Godot
+
+1. Unpack this folder into the project as \`res://HoHPlanner\` (or link the project folder in the planner). Godot 4.3 or later.
+2. Native-format schemas are \`Resource\` classes (\`${adapter.root}/Scripts/Generated/*_definition.gd\`). With the planner addon (\`engine-packages/godot/addons/hoh_planner\` in the planner's repository, copied to \`res://addons/\` and enabled) each record becomes a \`.tres\` under \`Records/\`, kept in step on every export: *Project ▸ Tools ▸ Game Design Planner ▸ Import*, or automatically when a new export lands.
+3. JSON and CSV schemas are \`RefCounted\` record classes; read a record with \`from_dict()\`. The record CSVs come with a \`.import\` file that keeps Godot from reading them as translations; \`Localization/strings.csv\` is a translation table.
+4. \`<Project>Ids\` holds every record ID as a constant, \`<Project>Formulas\` every planner formula as a static function, \`<Project>Enums\` the catalogs.
+5. Classes from the class diagram: \`Scripts/Generated/Classes/*_base.gd\` (class_name XBase) holds fields, signals and method stubs and is replaced on every export; \`Scripts/Classes/**/*.gd\` (class_name X extends XBase) is yours — created once, never overwritten. GDScript has no interfaces: an interface's methods are put into each class that implements it.
+` : ''}${adapter?.id === 'unreal' ? `
+## Unreal Engine
+
+1. Unpack this folder into the project as \`Plugins/HoHPlanner\` (or link the project folder in the planner). Unreal 5.3 or later. Unreal finds \`${adapter.root}/PlannerGame.uplugin\` and builds its module, PlannerGame, with the game; add \`"PlannerGame"\` to your game module's dependencies to use the types.
+2. Native-format schemas are \`UPrimaryDataAsset\` classes (\`UXDefinition\`). With the bridge plugin (\`engine-packages/unreal/HoHPlannerBridge\` in the planner's repository, copied to \`Plugins/\`; editor Python, nothing to build) *Tools ▸ Game Design Planner ▸ Import* makes one data asset per record under \`/Game/HoHPlanner/Records\` and keeps them in step on every export.
+3. JSON and CSV schemas are DataTable row structs (\`FXRow\`); \`${adapter.root}/DataTables/<Schema>.json\` is in the format Unreal's DataTable import reads (the bridge fills \`/Game/HoHPlanner/DataTables/DT_<Schema>\` from it). Asset fields are soft references and need Unreal paths (/Game/…) in the plan.
+4. \`<Project>Ids\` holds every record ID as a constant, \`U<Project>Formulas\` every planner formula as a Blueprint-pure function, \`<Project>Enums.h\` the catalogs as UENUMs (\`<Project>EnumIds.h\` maps planner IDs to them), \`UPlannerMetrics::Record\` collects playtest values for the Balance plan.
+5. Classes from the class diagram: \`Generated/Classes/XBase.h\` (properties, pure virtual methods) is replaced on every export; \`Source/PlannerGame/Classes/**\` (\`UX : UXBase\`, header and .cpp) is yours — created once, never overwritten, like the module's Build.cs.
 ` : ''}`
 }
 
@@ -102,6 +118,7 @@ export function buildBundle(p: Project, engine: EngineId, exportedAt = new Date(
     ...maps,
     ...(adapter?.emit(ir).map((f) => ({ path: `${adapter.root}/${f.path}`, content: f.content })) ?? []),
   ]
+  if (adapter?.sidecars) files.push(...adapter.sidecars(files.map((f) => f.path)))
   const manifest: EngineManifest = {
     format: ENGINE_FORMAT,
     v: ENGINE_FORMAT_VERSION,

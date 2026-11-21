@@ -3,7 +3,7 @@
   "v": 1,
   "engine": {
     "id": "unity",
-    "adapterVersion": 3
+    "adapterVersion": 5
   },
   "generator": {
     "app": "Game Design Planner",
@@ -109,7 +109,7 @@
   "files": [
     {
       "path": "README.md",
-      "hash": "11300abb"
+      "hash": "3a4e2d56"
     },
     {
       "path": "hoh-engine.schema.json",
@@ -117,7 +117,7 @@
     },
     {
       "path": "ir/engine-ir.json",
-      "hash": "8ab33868"
+      "hash": "e0c23b52"
     },
     {
       "path": "Data/Item/item.plank.json",
@@ -233,99 +233,99 @@
     },
     {
       "path": "Data/Enemy/enemy.greenhollow_swarmling.json",
-      "hash": "51952255"
+      "hash": "fdd1bd23"
     },
     {
       "path": "Data/Enemy/enemy.greenhollow_spitter.json",
-      "hash": "edc29416"
+      "hash": "9d1913d7"
     },
     {
       "path": "Data/Enemy/enemy.greenhollow_brute.json",
-      "hash": "4eb6a5a1"
+      "hash": "68f912d6"
     },
     {
       "path": "Data/Enemy/enemy.greenhollow_warden.json",
-      "hash": "e1ce3017"
+      "hash": "dc2827eb"
     },
     {
       "path": "Data/Enemy/enemy.thornwood_swarmling.json",
-      "hash": "003171e8"
+      "hash": "149cd127"
     },
     {
       "path": "Data/Enemy/enemy.thornwood_spitter.json",
-      "hash": "728ed73c"
+      "hash": "db54caae"
     },
     {
       "path": "Data/Enemy/enemy.thornwood_brute.json",
-      "hash": "91ba9c41"
+      "hash": "449b3396"
     },
     {
       "path": "Data/Enemy/enemy.thornwood_warden.json",
-      "hash": "d9c8df28"
+      "hash": "5d228e79"
     },
     {
       "path": "Data/Enemy/enemy.saltcoast_swarmling.json",
-      "hash": "cf83e05a"
+      "hash": "95fb6645"
     },
     {
       "path": "Data/Enemy/enemy.saltcoast_spitter.json",
-      "hash": "58164bee"
+      "hash": "0fca1810"
     },
     {
       "path": "Data/Enemy/enemy.saltcoast_brute.json",
-      "hash": "e9c87ebc"
+      "hash": "309f2cc1"
     },
     {
       "path": "Data/Enemy/enemy.saltcoast_warden.json",
-      "hash": "5ccab51c"
+      "hash": "59444e6d"
     },
     {
       "path": "Data/Enemy/enemy.ashen_mire_swarmling.json",
-      "hash": "55956e6a"
+      "hash": "5db5d7e1"
     },
     {
       "path": "Data/Enemy/enemy.ashen_mire_spitter.json",
-      "hash": "4df5c4fd"
+      "hash": "5f1eab86"
     },
     {
       "path": "Data/Enemy/enemy.ashen_mire_brute.json",
-      "hash": "ec682365"
+      "hash": "f3e268c3"
     },
     {
       "path": "Data/Enemy/enemy.ashen_mire_warden.json",
-      "hash": "a6d27fd0"
+      "hash": "5bb43854"
     },
     {
       "path": "Data/Enemy/enemy.frostpeak_swarmling.json",
-      "hash": "c9d4b0e1"
+      "hash": "6b3772c6"
     },
     {
       "path": "Data/Enemy/enemy.frostpeak_spitter.json",
-      "hash": "480bfa53"
+      "hash": "4c01ee0a"
     },
     {
       "path": "Data/Enemy/enemy.frostpeak_brute.json",
-      "hash": "4f51823d"
+      "hash": "0a536cad"
     },
     {
       "path": "Data/Enemy/enemy.frostpeak_warden.json",
-      "hash": "2dac754a"
+      "hash": "0f0190f1"
     },
     {
       "path": "Data/Enemy/enemy.cinder_spire_swarmling.json",
-      "hash": "88a0f3dc"
+      "hash": "95bd5758"
     },
     {
       "path": "Data/Enemy/enemy.cinder_spire_spitter.json",
-      "hash": "18a9d4fd"
+      "hash": "8d202fcf"
     },
     {
       "path": "Data/Enemy/enemy.cinder_spire_brute.json",
-      "hash": "22317339"
+      "hash": "ba21a72c"
     },
     {
       "path": "Data/Enemy/enemy.cinder_spire_warden.json",
-      "hash": "1adfca34"
+      "hash": "880854a5"
     },
     {
       "path": "Data/Quest/quest.washed_ashore.json",
@@ -385,47 +385,47 @@
     },
     {
       "path": "Unity/Scripts/Generated/ItemDefinition.cs",
-      "hash": "b0e8909d"
+      "hash": "177a4953"
     },
     {
       "path": "Unity/Scripts/Generated/BuildingDefinition.cs",
-      "hash": "0dc60684"
+      "hash": "a81b380a"
     },
     {
       "path": "Unity/Scripts/Generated/NpcNeedDefinition.cs",
-      "hash": "94d9c3b9"
+      "hash": "ee329687"
     },
     {
       "path": "Unity/Scripts/Generated/RecipeRecord.cs",
-      "hash": "3d12afec"
+      "hash": "8bfde72e"
     },
     {
       "path": "Unity/Scripts/Generated/EnemyDefinition.cs",
-      "hash": "f97792e0"
+      "hash": "da078476"
     },
     {
       "path": "Unity/Scripts/Generated/QuestRecord.cs",
-      "hash": "eaabe6a9"
+      "hash": "01345f73"
     },
     {
       "path": "Unity/Scripts/Generated/Enums.cs",
-      "hash": "76b7003d"
+      "hash": "00f91da3"
     },
     {
       "path": "Unity/Scripts/Generated/Ids.cs",
-      "hash": "10e23918"
+      "hash": "d54d202e"
     },
     {
       "path": "Unity/Scripts/Generated/Formulas.cs",
-      "hash": "c74f27f7"
+      "hash": "8d009af1"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/IDamageable.Generated.cs",
-      "hash": "5db81a65"
+      "hash": "4e9ce503"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NeedChangedEvent.Generated.cs",
-      "hash": "a5f5b6fa"
+      "hash": "e648b01c"
     },
     {
       "path": "Unity/Scripts/Classes/CoreEvents/NeedChangedEvent.cs",
@@ -433,23 +433,23 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/Health.Generated.cs",
-      "hash": "2272cc01"
+      "hash": "150a785f"
     },
     {
       "path": "Unity/Scripts/Classes/GameplayPlayer/Health.cs",
       "hash": "c70c8c21"
     },
     {
-      "path": "Unity/Scripts/Generated/Classes/PlayerController.Generated.cs",
-      "hash": "b60a272d"
+      "path": "Unity/Scripts/Generated/Classes/CinderPlayerController.Generated.cs",
+      "hash": "1c2c8c5c"
     },
     {
-      "path": "Unity/Scripts/Classes/GameplayPlayer/PlayerController.cs",
-      "hash": "a7dae046"
+      "path": "Unity/Scripts/Classes/GameplayPlayer/CinderPlayerController.cs",
+      "hash": "37f49e8b"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NpcBrain.Generated.cs",
-      "hash": "f23442a7"
+      "hash": "3f98e081"
     },
     {
       "path": "Unity/Scripts/Classes/SimulationNpc/NpcBrain.cs",
@@ -457,15 +457,15 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NeedState.Generated.cs",
-      "hash": "008ba2fb"
+      "hash": "c0dc1a05"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NpcMood.Generated.cs",
-      "hash": "60cbd261"
+      "hash": "272d440f"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/TownLedger.Generated.cs",
-      "hash": "56034acd"
+      "hash": "3368425b"
     },
     {
       "path": "Unity/Scripts/Classes/SimulationTown/TownLedger.cs",
@@ -473,7 +473,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/SaveService.Generated.cs",
-      "hash": "3a5c3c3d"
+      "hash": "f84f2e57"
     },
     {
       "path": "Unity/Scripts/Classes/PersistenceSave/SaveService.cs",
@@ -481,7 +481,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/HealthBar.Generated.cs",
-      "hash": "8cb5ad07"
+      "hash": "eb313f6d"
     },
     {
       "path": "Unity/Scripts/Classes/UiHud/HealthBar.cs",
@@ -489,7 +489,139 @@
     },
     {
       "path": "Unity/Scripts/Generated/classes.json",
-      "hash": "ef0ec52e"
+      "hash": "d18c4b21"
+    },
+    {
+      "path": "Unity/ProjectFiles/.editorconfig",
+      "hash": "1c944906"
+    },
+    {
+      "path": "Unity/ProjectFiles/.gitattributes",
+      "hash": "8f807ad5"
+    },
+    {
+      "path": "Unity/ProjectFiles/.gitignore",
+      "hash": "924c5266"
+    },
+    {
+      "path": "Unity/ProjectFiles/setup.json",
+      "hash": "7f3d8ce0"
+    },
+    {
+      "path": "Unity/Scripts/Generated/PlannerConsole.cs",
+      "hash": "c1a73c83"
+    },
+    {
+      "path": "Unity/Scripts/Generated/PlannerConsoleOverlay.cs",
+      "hash": "f18d4847"
+    },
+    {
+      "path": "Unity/Tests/Editor/CinderholmExample.PlannerTests.asmdef",
+      "hash": "b461e8fc"
+    },
+    {
+      "path": "Unity/Tests/Editor/PlannerDataChecks.cs",
+      "hash": "6558c6c5"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Channels/GameEvents.cs",
+      "hash": "3589e623"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Channels/SaveRequestedChannel.cs",
+      "hash": "62ec446c"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Telemetry.cs",
+      "hash": "ed1b9d72"
+    },
+    {
+      "path": "Unity/Input/CinderholmExample.inputactions",
+      "hash": "22323a02"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Input/PlannerInput.cs",
+      "hash": "61c3ef06"
+    },
+    {
+      "path": "Unity/UI/Screens/Hud.uxml",
+      "hash": "dd9e37e9"
+    },
+    {
+      "path": "Unity/UI/Screens/Inventory.uxml",
+      "hash": "9e5e6f48"
+    },
+    {
+      "path": "Unity/UI/Screens/Crafting.uxml",
+      "hash": "51102b1b"
+    },
+    {
+      "path": "Unity/UI/Screens/CharacterSkillTree.uxml",
+      "hash": "4fd9757a"
+    },
+    {
+      "path": "Unity/UI/Screens/Map.uxml",
+      "hash": "2b7d9a22"
+    },
+    {
+      "path": "Unity/UI/Screens/TownOverview.uxml",
+      "hash": "29b118cf"
+    },
+    {
+      "path": "Unity/UI/Screens/NpcSheet.uxml",
+      "hash": "b768a475"
+    },
+    {
+      "path": "Unity/UI/Screens/Trade.uxml",
+      "hash": "b9e45d47"
+    },
+    {
+      "path": "Unity/UI/Screens/Diplomacy.uxml",
+      "hash": "a887682b"
+    },
+    {
+      "path": "Unity/UI/Screens/QuestLog.uxml",
+      "hash": "1c393c77"
+    },
+    {
+      "path": "Unity/UI/Screens/Settings.uxml",
+      "hash": "cd9d92d9"
+    },
+    {
+      "path": "Unity/UI/Screens/MainMenu.uxml",
+      "hash": "c4ae1bcc"
+    },
+    {
+      "path": "Unity/UI/Screens/Pause.uxml",
+      "hash": "6ff3820b"
+    },
+    {
+      "path": "Unity/UI/Screens/Confirm.uxml",
+      "hash": "8a0e9402"
+    },
+    {
+      "path": "Unity/UI/PlannerUI.uss",
+      "hash": "44069bb3"
+    },
+    {
+      "path": "Unity/Scripts/Generated/UI/PlannerScreens.cs",
+      "hash": "8242d008"
+    },
+    {
+      "path": "Unity/Scripts/Generated/UI/PlannerScreenSet.cs",
+      "hash": "f5e99bce"
+    },
+    {
+      "path": "Unity/Scripts/Generated/UI/PlannerScreenRouter.cs",
+      "hash": "86647a5b"
+    },
+    {
+      "path": "Unity/Scripts/Generated/StateMachines/PlannerStateMachine.cs",
+      "hash": "6d1c5009"
+    },
+    {
+      "path": "Unity/Scripts/Generated/StateMachines/NpcLifecycleStates.cs",
+      "hash": "b6d86ac2"
     }
   ]
 }

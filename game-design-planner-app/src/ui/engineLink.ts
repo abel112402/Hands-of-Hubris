@@ -74,7 +74,7 @@ export async function linkEngineFolder(): Promise<string | null> {
   const p = useStore.getState().project
   const state = await folderState(root)
   if (state.hasExport && state.projectName && state.projectName !== p.meta.name && !confirm(`This folder holds the export of “${state.projectName}”, not “${p.meta.name}”. Link it anyway? The next write replaces that export.`)) return null
-  if (!state.hasExport && !state.empty && !state.unityProject && !confirm(`“${root.name}” is not empty and holds no planner export. Write the export into it anyway? (Nothing in it is deleted until it holds an export.)`)) return null
+  if (!state.hasExport && !state.empty && !state.unityProject && !state.godotProject && !state.unrealProject && !confirm(`“${root.name}” is not empty and holds no planner export. Write the export into it anyway? (Nothing in it is deleted until it holds an export.)`)) return null
   const { folder, path } = await exportFolderIn(root)
   await saveLink(p, { folder: folder as EngineLink['folder'], label: path ? `${root.name}/${path}` : root.name, exportOnSave: true })
   return null

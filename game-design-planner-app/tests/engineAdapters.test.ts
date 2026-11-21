@@ -6,6 +6,7 @@ import { unity } from '../src/core/engine/adapters/unity'
 import { ALL_NEUTRAL_TYPES, buildIR } from '../src/core/engine/ir'
 import { BUNDLE_ROOT, buildBundle, bundleZip } from '../src/core/engine/bundle'
 import { fnv1a, manifestSchema, parseManifest } from '../src/core/engine/manifest'
+import type { EngineId } from '../src/core/engine/adapter'
 
 const fs: { readFileSync: (path: string, enc: string) => string } = await import('node:fs' as string)
 const cinderholm = () => deserializeProject(fs.readFileSync('examples/cinderholm.hohplan.json', 'utf8')).project
@@ -119,7 +120,7 @@ describe('target engine', () => {
     const p = cinderholm()
     expect(engineTarget(p)).toMatchObject({ id: 'unity', from: 'stack', hasAdapter: true })
     p.documents['technical.architecture'].data.stack = [{ id: 'e', name: 'Godot 4.4', category: 'Engine' }]
-    expect(engineTarget(p)).toMatchObject({ id: 'godot', from: 'stack', hasAdapter: false })
+    expect(engineTarget(p)).toMatchObject({ id: 'godot', from: 'stack', hasAdapter: true })
     p.meta.engine = { target: 'unreal' }
     expect(engineTarget(p)).toMatchObject({ id: 'unreal', from: 'setting', label: 'Unreal Engine' })
     p.meta.engine = { target: 'cryengine' }
@@ -129,10 +130,10 @@ describe('target engine', () => {
   })
 
   it('exports the engine-neutral part for an engine without an adapter', () => {
-    const b = buildBundle(cinderholm(), 'godot', 'T')
-    expect(b.manifest.engine).toEqual({ id: 'godot', adapterVersion: 0 })
-    expect(parseManifest(b.files[0].content).ok).toBe(true)
-    expect(b.files.some((f) => f.path.startsWith('Unity/'))).toBe(false)
+    // Every engine the planner knows has an adapter now; a new one starts without.
+    const b = buildBundle(cinderholm(), 'cryengine' as EngineId, 'T')
+    expect(b.manifest.engine).toEqual({ id: 'cryengine', adapterVersion: 0 })
+    expect(b.files.some((f) => /^(Unity|Godot|Unreal)\//.test(f.path))).toBe(false)
     expect(b.files.some((f) => f.path === 'ir/engine-ir.json')).toBe(true)
     expect(b.files.find((f) => f.path === 'README.md')!.content).toContain('engine-neutral part only')
   })

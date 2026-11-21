@@ -1,0 +1,14 @@
+{
+  "name": "HoHPlanner.Bridge.Localization",
+  "rootNamespace": "HoHPlanner.Bridge.Editor",
+  "references": ["HoHPlanner.Bridge", "HoHPlanner.Bridge.Editor", "Unity.Localization", "Unity.Localization.Editor"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": ["HOH_LOCALIZATION"],
+  "versionDefines": [{ "name": "com.unity.localization", "expression": "1.0.0", "define": "HOH_LOCALIZATION" }],
+  "noEngineReferences": false
+}

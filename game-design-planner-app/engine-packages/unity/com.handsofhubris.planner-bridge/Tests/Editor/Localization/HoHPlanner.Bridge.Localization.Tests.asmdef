@@ -1,0 +1,14 @@
+{
+  "name": "HoHPlanner.Bridge.Localization.Tests",
+  "rootNamespace": "HoHPlanner.Bridge.Tests",
+  "references": ["HoHPlanner.Bridge", "HoHPlanner.Bridge.Editor", "HoHPlanner.Bridge.Localization", "HoHPlanner.Bridge.Tests", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "Unity.Localization", "Unity.Localization.Editor"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS", "HOH_LOCALIZATION"],
+  "versionDefines": [{ "name": "com.unity.localization", "expression": "1.0.0", "define": "HOH_LOCALIZATION" }],
+  "noEngineReferences": false
+}

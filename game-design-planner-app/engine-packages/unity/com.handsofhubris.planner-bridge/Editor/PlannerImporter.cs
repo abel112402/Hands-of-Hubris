@@ -18,6 +18,8 @@ namespace HoHPlanner.Bridge.Editor
         public int Deleted;
         /// <summary>Your own class files that already existed and were left alone.</summary>
         public int KeptYours;
+        /// <summary>Your class files moved with their renamed class, “old → new”.</summary>
+        public readonly List<string> Moved = new List<string>();
         public bool CodeChanged;
         public PlannerManifest Manifest;
         public readonly List<string> Notes = new List<string>();
@@ -51,9 +53,15 @@ namespace HoHPlanner.Bridge.Editor
         private const string PendingMarker = "Library/HoHPlannerPendingImport.txt";
         private const string YoursPrefix = "Unity/Scripts/Classes/";
         /// <summary>Folders and files the export owns completely; anything in them that the bundle no longer has is deleted.</summary>
-        private static readonly string[] OwnedPrefixes = { "Unity/Scripts/Generated/", "Data/", "ir/", "Localization/", "Maps/" };
+        private static readonly string[] OwnedPrefixes = { "Unity/Scripts/Generated/", "Unity/ProjectFiles/", "Unity/Tests/", "Unity/Input/", "Unity/UI/", "Data/", "ir/", "Localization/", "Maps/" };
 
         public static event Action<RecordStepResult> RecordsImported;
+
+        /// <summary>
+        /// Runs after every record step, for optional steps that need other packages (Addressables groups, Localization
+        /// tables; see Editor/Addressables and Editor/Localization). A step adds its own problems to the result.
+        /// </summary>
+        public static event Action<string, PlannerManifest, RecordStepResult> AfterRecords;
 
         /// <summary>True while <see cref="Import"/> runs, so the folder watcher does not start a second record step.</summary>
         public static bool ImportInProgress { get; private set; }
@@ -123,6 +131,9 @@ namespace HoHPlanner.Bridge.Editor
             var manifest = bundle.Manifest();
             var result = new FileStepResult { Manifest = manifest };
             if (!manifest.HasUnityCode) result.Notes.Add(manifest.Engine == "unity" ? "The bundle has no Unity code." : $"The bundle was exported for {manifest.Engine}; only its engine-neutral data is imported. Set the planner's target engine to Unity for C#.");
+            // Before anything is written: your files of renamed classes move to their new names, so they are not left behind.
+            result.Moved.AddRange(PlannerRenames.Apply(root, bundle.Files.TryGetValue(PlannerRenames.ClassIndex, out var index) ? index : null));
+            if (result.Moved.Count > 0) result.CodeChanged = true;
             foreach (var kv in bundle.Files)
             {
                 var target = $"{root}/{kv.Key}";
@@ -289,6 +300,19 @@ namespace HoHPlanner.Bridge.Editor
                 result.Deprecated++;
             }
             EditorUtility.SetDirty(index);
+            AssetDatabase.SaveAssets();
+            if (AfterRecords != null)
+                foreach (Action<string, PlannerManifest, RecordStepResult> step in AfterRecords.GetInvocationList())
+                {
+                    try
+                    {
+                        step(root, manifest, result);
+                    }
+                    catch (Exception e)
+                    {
+                        result.Problems.Add($"{step.Method.DeclaringType?.Name}: {e.Message}");
+                    }
+                }
             AssetDatabase.SaveAssets();
             return result;
         }

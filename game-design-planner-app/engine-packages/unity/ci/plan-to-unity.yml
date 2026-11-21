@@ -1,0 +1,115 @@
+# Example workflow for the GAME's repository (copy to .github/workflows/plan-to-unity.yml there).
+#
+# When the plan file changes, it exports the plan into the Unity project with the planner's CLI, lets Unity compile the
+# generated code, import the records and validate them (planner bridge package), and opens a pull request with the
+# result, so design changes are reviewed as a normal diff.
+#
+# Needs, in the game repository:
+#   - the planner bridge package installed (Packages/manifest.json) and the plan saved at PLAN_FILE below;
+#   - secrets UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD for game-ci (https://game.ci/docs/github/activation);
+#   - Settings › Actions › General › “Allow GitHub Actions to create and approve pull requests”.
+# Change PLANNER_REPO to the repository that holds the planner (game-design-planner-app).
+
+name: Plan → Unity
+
+on:
+  push:
+    branches: [main]
+    paths: ['Design/*.hohplan.json']
+  workflow_dispatch:
+
+env:
+  PLAN_FILE: Design/game.hohplan.json
+  PLANNER_REPO: your-org/Hands-of-Hubris
+  PLANNER_APP: planner/game-design-planner-app
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Game repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Planner
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PLANNER_REPO }}
+          path: planner
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ env.PLANNER_APP }}/package-lock.json
+
+      - name: Install the planner
+        run: npm ci
+        working-directory: ${{ env.PLANNER_APP }}
+
+      # Unchanged files are left alone, your class files under Unity/Scripts/Classes are never overwritten, and
+      # generated files the plan dropped are removed. --strict fails the job on export errors (not on warnings).
+      - name: Export the plan into Assets/HoHPlanner
+        run: npm run export:engine -- "$GITHUB_WORKSPACE/$PLAN_FILE" "$GITHUB_WORKSPACE/Assets/HoHPlanner" --engine unity --strict
+        working-directory: ${{ env.PLANNER_APP }}
+
+      - name: Remove the planner checkout
+        run: rm -rf planner
+
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Packages/packages-lock.json') }}
+          restore-keys: Library-
+
+      # Opening the project compiles the generated code; the bridge then creates and updates the record assets,
+      # validates them and writes Assets/HoHPlanner/hoh-engine-report.json. Validation errors (exit 1) do not stop the
+      # pull request: they are listed in it, the same as the planner shows them.
+      - name: Import and validate in Unity
+        id: unity
+        continue-on-error: true
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneLinux64
+          buildMethod: HoHPlanner.Bridge.Editor.PlannerCI.Validate
+          allowDirtyBuild: true
+
+      - name: Summary of the engine report
+        id: summary
+        run: |
+          node -e '
+            const r = require("./Assets/HoHPlanner/hoh-engine-report.json");
+            const n = (s) => r.records.filter((x) => x.status === s).length;
+            const lines = [
+              `Records: ${r.records.length} (${n("implemented")} done, ${n("incomplete")} incomplete, ${n("missing")} missing, ${n("deprecated")} removed from the plan)`,
+              `Classes: ${r.classes.length} (${r.classes.filter((c) => c.status === "implemented").length} written, ${r.classes.filter((c) => c.status === "stub").length} with TODOs, ${r.classes.filter((c) => c.status === "missing").length} missing)`,
+              ...r.records.filter((x) => x.status === "incomplete").slice(0, 30).map((x) => `- ${x.key}: ${(x.issues || []).join("; ")}`),
+            ];
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, `text<<EOF\n${lines.join("\n")}\nEOF\n`);
+          '
+
+      - name: Open a pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: plan-to-unity
+          commit-message: 'Plan → Unity: export and import of ${{ env.PLAN_FILE }}'
+          title: 'Plan → Unity'
+          body: |
+            Export of `${{ env.PLAN_FILE }}`, imported and validated by the planner bridge.
+            Unity validation: ${{ steps.unity.outcome == 'success' && 'no errors' || 'errors, see below and the job log' }}.
+
+            ${{ steps.summary.outputs.text }}
+
+            Import `Assets/HoHPlanner/hoh-engine-report.json` in the planner (Save ▾ › Import engine report…) to see this per record.
+          add-paths: |
+            Assets/HoHPlanner/**
+            Assets/HoHPlanner.meta

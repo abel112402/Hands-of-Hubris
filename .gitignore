@@ -111,6 +111,8 @@ InitTestScene*.unity*
 # Game Design Planner web app (Node/Vite)
 /game-design-planner-app/node_modules/
 /game-design-planner-app/dist/
+/game-design-planner-app/dist-cli/
+__pycache__/
 /game-design-planner-app/coverage/
 /game-design-planner-app/test-results/
 /game-design-planner-app/playwright-report/

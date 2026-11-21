@@ -239,7 +239,8 @@ namespace HoHPlanner.Bridge.Tests
             Assert.AreEqual("hoh-engine-report", (string)report["format"]);
             var blade = report["records"].Single(r => (string)r["plannerId"] == "p1");
             Assert.AreEqual("incomplete", (string)blade["status"]);
-            CollectionAssert.AreEqual(new[] { "icon: required, but empty." }, blade["issues"].Select(x => (string)x));
+            // The import gave the blade a placeholder icon; the report still counts it as missing art.
+            CollectionAssert.AreEqual(new[] { "icon: still a placeholder." }, blade["issues"].Select(x => (string)x));
             var classes = report["classes"].ToDictionary(c => (string)c["plannerId"], c => c);
             Assert.AreEqual("stub", (string)classes["c1"]["status"]);
             Assert.AreEqual(1, (int)classes["c1"]["todo"]);
@@ -267,6 +268,49 @@ namespace HoHPlanner.Bridge.Tests
             Assert.AreEqual("Blade", Asset("item.blade").displayName);
             Assert.IsTrue(File.Exists($"{Root}/{PlannerReport.FileName}"), "the report for the planner is written too");
             Assert.IsNull(PlannerImporter.ResumePendingNow(), "nothing left waiting");
+        }
+
+        [Test]
+        public void SetsUpPlannedFoldersAssembliesAndProjectFilesWithoutOverwriting()
+        {
+            Write("Unity/ProjectFiles/.editorconfig", "root = true\n");
+            Write("Unity/ProjectFiles/.gitattributes", "*.png filter=lfs\n");
+            Write("Unity/ProjectFiles/.gitignore", "/Library/\n");
+            Write("Unity/ProjectFiles/setup.json", $"{{\"generatedAssembly\":\"Gen\",\"folders\":[{{\"path\":\"{Root}/Planned\"}},{{\"path\":\"{Root}/Planned/Core\",\"asmdef\":{{\"name\":\"My.Core\",\"rootNamespace\":\"My.Core\",\"references\":[\"Gen\"]}}}},{{\"path\":\"{Root}/Planned/Kept\",\"asmdef\":{{\"name\":\"My.Kept\",\"references\":[]}}}},{{\"path\":\"../Outside\"}}]}}");
+            // A folder that already has its own assembly definition keeps it.
+            Directory.CreateDirectory($"{Root}/Planned/Kept");
+            File.WriteAllText($"{Root}/Planned/Kept/Mine.asmdef", "{\"name\":\"Mine\"}");
+
+            var folders = PlannerSetup.CreateFolders(Root);
+            File.Delete($"{Root}/Planned/Kept/Mine.asmdef"); // removed again before anything refreshes and compiles it
+            Assert.AreEqual(1, folders.Created);
+            Assert.AreEqual(2, folders.Unchanged);
+            Assert.AreEqual(1, folders.Assemblies);
+            Assert.IsFalse(File.Exists($"{Root}/Planned/Kept/My.Kept.asmdef"));
+            var asm = JObject.Parse(File.ReadAllText($"{Root}/Planned/Core/My.Core.asmdef"));
+            File.Delete($"{Root}/Planned/Core/My.Core.asmdef");
+            Assert.AreEqual("My.Core", (string)asm["name"]);
+            CollectionAssert.AreEqual(new[] { "Gen" }, asm["references"].Select(x => (string)x));
+            Assert.IsFalse(Directory.Exists("Outside"), "paths outside Assets/ are ignored");
+
+            var project = Path.Combine(Path.GetTempPath(), "hoh-setup-" + System.Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(project);
+            try
+            {
+                File.WriteAllText(Path.Combine(project, ".gitignore"), "# mine\n");
+                File.WriteAllText(Path.Combine(project, ".gitattributes"), "*.png filter=lfs\r\n");
+                var files = PlannerSetup.InstallProjectFiles(Root, project);
+                Assert.AreEqual(1, files.Created);
+                Assert.AreEqual(1, files.Unchanged, "line endings do not count as a difference");
+                CollectionAssert.AreEqual(new[] { ".gitignore" }, files.Differs);
+                Assert.AreEqual("# mine\n", File.ReadAllText(Path.Combine(project, ".gitignore")), "yours is kept");
+                Assert.AreEqual("/Library/\n", File.ReadAllText(Path.Combine(project, ".gitignore.planner")));
+                Assert.AreEqual("root = true\n", File.ReadAllText(Path.Combine(project, ".editorconfig")));
+            }
+            finally
+            {
+                Directory.Delete(project, true);
+            }
         }
 
         [Test]
@@ -301,6 +345,245 @@ namespace HoHPlanner.Bridge.Tests
             Assert.IsFalse(File.Exists($"{Root}/Data/Item/item.gone.json"));
             Assert.AreEqual(2, r.Deleted);
             Assert.Throws<PlannerImportException>(() => PlannerImporter.WriteFiles(bundle, "Packages/elsewhere"));
+        }
+    }
+}
+
+namespace HoHPlanner.Bridge.Tests
+{
+    public class RenameTests
+    {
+        private const string Root = "Assets/HoHPlannerRenameTest";
+
+        [SetUp]
+        public void SetUp() => Clean();
+
+        [TearDown]
+        public void TearDown() => Clean();
+
+        private static void Clean()
+        {
+            AssetDatabase.DeleteAsset(Root);
+            if (Directory.Exists(Root)) Directory.Delete(Root, true);
+            if (File.Exists(Root + ".meta")) File.Delete(Root + ".meta");
+        }
+
+        private static string Index(string path, string name) => "[{\"plannerId\":\"c1\",\"own\":\"" + path + "\",\"ownFiles\":[\"" + path + "\"],\"tokens\":[\"" + name + "\"]}]";
+
+        [Test]
+        public void ChangesWholeNamesOnly()
+        {
+            var replace = new[] { new KeyValuePair<string, string>("Health", "Vitality") };
+            Assert.AreEqual("partial class Vitality : HealthBar // Vitality", PlannerRenames.RenameIn("partial class Health : HealthBar // Health", replace));
+        }
+
+        [Test]
+        public void MovesYourFileAndItsMetaWithTheRenamedClass()
+        {
+            const string oldPath = "Unity/Scripts/Classes/Player/PlayerController.cs";
+            const string newPath = "Unity/Scripts/Classes/Player/IslandPlayer.cs";
+            Directory.CreateDirectory($"{Root}/Unity/Scripts/Generated");
+            Directory.CreateDirectory($"{Root}/Unity/Scripts/Classes/Player");
+            File.WriteAllText($"{Root}/{PlannerRenames.ClassIndex}", Index(oldPath, "PlayerController"));
+            File.WriteAllText($"{Root}/{oldPath}", "public partial class PlayerController { void Jump() { /* mine */ } }");
+            File.WriteAllText($"{Root}/{oldPath}.meta", "guid: 0123456789abcdef");
+            var bundle = new PlannerBundle(new Dictionary<string, byte[]>
+            {
+                ["hoh-engine.json"] = Encoding.UTF8.GetBytes(Fixture.Manifest()),
+                [PlannerRenames.ClassIndex] = Encoding.UTF8.GetBytes(Index(newPath, "IslandPlayer")),
+                [newPath] = Encoding.UTF8.GetBytes("public partial class IslandPlayer { }"),
+            });
+            var r = PlannerImporter.WriteFiles(bundle, Root);
+            CollectionAssert.AreEqual(new[] { $"{oldPath} → {newPath}" }, r.Moved);
+            Assert.IsFalse(File.Exists($"{Root}/{oldPath}"));
+            Assert.AreEqual("public partial class IslandPlayer { void Jump() { /* mine */ } }", File.ReadAllText($"{Root}/{newPath}"), "your code, with the new name; the export's empty file is not written over it");
+            Assert.AreEqual("guid: 0123456789abcdef", File.ReadAllText($"{Root}/{newPath}.meta"), "same GUID, so scenes keep the script");
+            Assert.AreEqual(1, r.KeptYours);
+        }
+    }
+
+    public class PlaceholderTests
+    {
+        private const string Root = "Assets/HoHPlannerPlaceholderTest";
+
+        [SetUp]
+        public void SetUp() => Clean();
+
+        [TearDown]
+        public void TearDown() => Clean();
+
+        private static void Clean()
+        {
+            AssetDatabase.DeleteAsset(Root);
+            if (Directory.Exists(Root)) Directory.Delete(Root, true);
+            if (File.Exists(Root + ".meta")) File.Delete(Root + ".meta");
+        }
+
+        private static void Write(string path, string text)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName($"{Root}/{path}"));
+            File.WriteAllText($"{Root}/{path}", text);
+        }
+
+        [Test]
+        public void DrawsInitialsInAContrastingColour()
+        {
+            Assert.AreEqual("IS", PlannerPlaceholders.Initials("item.iron_sword"));
+            Assert.AreEqual("PL", PlannerPlaceholders.Initials("item.plank"));
+            var tex = PlannerPlaceholders.Texture(new Color(0.1f, 0.1f, 0.3f), "IS");
+            Assert.AreEqual(64, tex.width);
+            var pixels = tex.GetPixels();
+            Assert.IsTrue(pixels.Any(p => p == Color.white), "light ink on a dark colour");
+            Assert.IsTrue(pixels.Any(p => Mathf.Abs(p.b - 0.3f) < 0.01f), "the colour itself (8 bits per channel)");
+        }
+
+        [Test]
+        public void FillsOnlyEmptyArtWithLabelledPlaceholdersInThePalette()
+        {
+            Write("hoh-engine.json", Fixture.Manifest());
+            Write("ir/engine-ir.json", "{\"art\":{\"palette\":[\"#2b2135\",\"#f2a65a\"]}}");
+            Write("Data/Item/item.blade.json", Fixture.Record("p1", "item.blade", "Blade"));
+            Write("Data/Item/item.sword.json", Fixture.Record("p2", "item.sword", "Sword"));
+            AssetDatabase.Refresh();
+            PlannerImporter.ImportRecords(Root, new Dictionary<string, System.Type> { ["test-item"] = typeof(TestItemDefinition) });
+            var index = AssetDatabase.LoadAssetAtPath<PlannerIndex>($"{Root}/{PlannerImporter.IndexFile}");
+            index.TryGet<TestItemDefinition>("item.blade", out var blade);
+            index.TryGet<TestItemDefinition>("item.sword", out var sword);
+            Assert.IsNotNull(blade.icon, "the import made a placeholder");
+            Assert.IsTrue(PlannerPlaceholders.IsPlaceholder(blade.icon.texture));
+            Assert.AreEqual($"{Root}/{PlannerPlaceholders.Folder}/TestItemDefinition/item.blade.png", AssetDatabase.GetAssetPath(blade.icon));
+            var palette = PlannerPlaceholders.Palette(Root);
+            Assert.AreEqual(2, palette.Count);
+
+            // A real sprite set by hand is never replaced; running again makes nothing new.
+            var texture = new Texture2D(4, 4);
+            AssetDatabase.CreateAsset(texture, $"{Root}/real.asset");
+            var real = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.zero);
+            real.name = "real";
+            AssetDatabase.AddObjectToAsset(real, texture);
+            sword.icon = real;
+            EditorUtility.SetDirty(sword);
+            var again = PlannerPlaceholders.Apply(Root);
+            Assert.AreEqual(0, again.Created);
+            Assert.AreEqual(0, again.Assigned);
+            Assert.AreSame(real, sword.icon);
+        }
+    }
+
+    public class MetricsTests
+    {
+        private string dir;
+
+        [SetUp]
+        public void SetUp()
+        {
+            dir = Path.Combine(Path.GetTempPath(), "hoh-metrics-" + System.Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            PlannerMetrics.FilePath = Path.Combine(dir, PlannerMetrics.FileName);
+            PlannerMetrics.Clear();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            PlannerMetrics.Clear();
+            PlannerMetrics.FilePath = null;
+            Directory.Delete(dir, true);
+        }
+
+        [Test]
+        public void SumsSamplesSavesThemAndMergesAnotherFile()
+        {
+            PlannerMetrics.Record("combat.ttk", 4);
+            PlannerMetrics.Record("combat.ttk", 6);
+            PlannerMetrics.Record("combat.ttk", double.NaN);
+            PlannerMetrics.Record("", 1);
+            PlannerMetrics.Save();
+            var saved = PlannerMetrics.Load(PlannerMetrics.FilePath).Single();
+            Assert.AreEqual("combat.ttk", saved.key);
+            Assert.AreEqual(2, saved.samples);
+            Assert.AreEqual(5, saved.Mean, 1e-9);
+            Assert.AreEqual(4, saved.min);
+            Assert.AreEqual(6, saved.max);
+
+            var other = Path.Combine(dir, "tester.json");
+            File.WriteAllText(other, "{\"metrics\":[{\"key\":\"combat.ttk\",\"samples\":2,\"sum\":20,\"min\":9,\"max\":11,\"build\":\"0.3.1\",\"lastAt\":\"2999-01-01T00:00:00Z\"},{\"key\":\"progress.act1_hours\",\"samples\":1,\"sum\":4.5,\"min\":4.5,\"max\":4.5}]}");
+            Assert.AreEqual(2, PlannerMetrics.Merge(other));
+            var merged = PlannerMetrics.Load(PlannerMetrics.FilePath).ToDictionary(m => m.key);
+            Assert.AreEqual(4, merged["combat.ttk"].samples);
+            Assert.AreEqual(7.5, merged["combat.ttk"].Mean, 1e-9);
+            Assert.AreEqual(11, merged["combat.ttk"].max);
+            Assert.AreEqual("0.3.1", merged["combat.ttk"].build, "the newest sample's build");
+            Assert.AreEqual(4.5, merged["progress.act1_hours"].Mean, 1e-9);
+            File.WriteAllText(other, "not json");
+            Assert.AreEqual(0, PlannerMetrics.Load(other).Count);
+        }
+    }
+}
+
+namespace HoHPlanner.Bridge.Tests
+{
+    public class LiveLinkTests
+    {
+        [Test]
+        public void AllowsLocalPagesAndThePlannerAddressOnly()
+        {
+            Assert.IsTrue(PlannerLiveLink.AllowedOrigin("http://localhost:5173", ""));
+            Assert.IsTrue(PlannerLiveLink.AllowedOrigin("http://127.0.0.1:4173", ""));
+            Assert.IsTrue(PlannerLiveLink.AllowedOrigin("https://planner.example.org", "https://planner.example.org/"));
+            Assert.IsFalse(PlannerLiveLink.AllowedOrigin("https://evil.example.com", "https://planner.example.org"));
+            Assert.IsFalse(PlannerLiveLink.AllowedOrigin("https://planner.example.org:8443", "https://planner.example.org"));
+            Assert.IsFalse(PlannerLiveLink.AllowedOrigin("file://", ""));
+            Assert.IsTrue(PlannerLiveLink.AllowedOrigin(null, ""), "non-browser clients send no Origin");
+        }
+
+        [Test]
+        public void AnswersStatusAndRefusesValuesOutsidePlayMode()
+        {
+            var (status, reply) = PlannerLiveLink.Answer("GET", "/status", "");
+            Assert.AreEqual(200, status);
+            Assert.AreEqual("unity", (string)reply["engine"]);
+            Assert.IsFalse((bool)reply["playing"]);
+            Assert.AreEqual(409, PlannerLiveLink.Answer("POST", "/values", "{\"records\":[]}").status);
+            Assert.AreEqual(404, PlannerLiveLink.Answer("POST", "/ping", "{\"plannerId\":\"nope\"}").status);
+            Assert.AreEqual(400, PlannerLiveLink.Answer("POST", "/ping", "{bad").status);
+            Assert.AreEqual(404, PlannerLiveLink.Answer("GET", "/secrets", "").status);
+        }
+
+        [Test]
+        public void ChecksTokenAndOriginOverHttp()
+        {
+            const int port = 51799;
+            PlannerLiveLink.Start(port);
+            try
+            {
+                Assert.IsTrue(PlannerLiveLink.Running);
+                int Send(string method, string token, string origin)
+                {
+                    var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create($"http://127.0.0.1:{port}/status");
+                    req.Method = method;
+                    req.Timeout = 5000;
+                    if (token != null) req.Headers["X-HoH-Token"] = token;
+                    if (origin != null) req.Headers["Origin"] = origin;
+                    try
+                    {
+                        using (var res = (System.Net.HttpWebResponse)req.GetResponse()) return (int)res.StatusCode;
+                    }
+                    catch (System.Net.WebException e) when (e.Response is System.Net.HttpWebResponse r)
+                    {
+                        return (int)r.StatusCode;
+                    }
+                }
+                Assert.AreEqual(401, Send("GET", null, null), "no token");
+                Assert.AreEqual(401, Send("GET", "wrong", "http://localhost:5173"));
+                Assert.AreEqual(403, Send("GET", PlannerLiveLink.Token, "https://evil.example.com"));
+                Assert.AreEqual(204, Send("OPTIONS", null, "http://localhost:5173"), "CORS preflight");
+            }
+            finally
+            {
+                PlannerLiveLink.Stop();
+            }
+            Assert.IsFalse(PlannerLiveLink.Running);
         }
     }
 }

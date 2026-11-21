@@ -6,13 +6,16 @@ import { formulaVars, parseFormula, type FormulaNode } from './formulaAst'
 import { variablesOf } from '../formula'
 import { classIssues, classModel, type ClassKind, type MemberType, type Visibility } from '../classes'
 import { archList } from '../architecture'
+import { codingList, folderTree, lfsCoverage } from '../coding'
+import { buildInput, buildStateMachines, buildUi, type IrInput, type IrStateMachine, type IrUi } from './irScaffold'
+import { buildArt, buildChannels, buildChecks, buildCheats, buildTelemetry, type IrArt, type IrChannel, type IrCheat, type IrCheck, type IrTelemetry } from './irExtras'
 
 /**
  * Engine IR: the project's data-driven content in engine-neutral form. Every engine adapter
  * (Unity now, Godot and Unreal later) works from this and never reads the project itself.
  */
-/** 2: classes from the class diagram. */
-export const IR_VERSION = 2
+/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. */
+export const IR_VERSION = 6
 
 export type AssetKind = AssetType
 const ASSET_KINDS: AssetKind[] = ['image', 'scene', 'audio', 'material', 'mesh', 'animation', 'animator', 'data']
@@ -47,6 +50,19 @@ export type IrFormula = { id: string; name: string; words: string[]; where: stri
 export type IrString = { key: string; text: string }
 export type IrMember = { name: string; type: NeutralType | null; visibility: Visibility; isStatic: boolean }
 export type IrMethod = { name: string; params: { name: string; type: NeutralType | null }[]; returns: NeutralType | null; visibility: Visibility; isStatic: boolean }
+/** Project set-up from Coding Standards and Architecture: what an engine's project files and folder skeleton are made from. */
+export type IrSetup = {
+  style: { indent?: 'spaces' | 'tabs'; indentSize?: number; lineLength?: number; braces?: 'newline' | 'same' }
+  /** Naming rules: target as in Coding Standards (“Class / struct”, “Private field”…), casing, optional prefix/suffix, severity. */
+  naming: { target: string; casing: string; prefix?: string; suffix?: string; severity: string; automated: boolean }[]
+  /** Planned folders under Assets/ (or the engine's content root), with the module whose assembly lives there. */
+  folders: { path: string; purpose?: string; module?: string; assembly: boolean }[]
+  modules: { id: string; name: string; words: string[]; assembly: string; dependsOn: string[] }[]
+  /** Git LFS patterns as planned, plus patterns for binary types the folders hold that no pattern catches. */
+  lfs: string[]
+  ignore: string[]
+}
+
 export type IrClass = {
   id: string
   name: string
@@ -73,6 +89,23 @@ export type EngineIR = {
   formulas: IrFormula[]
   strings: IrString[]
   classes: IrClass[]
+  setup: IrSetup
+  /** Balance plan data checks: every record of a schema keeps an expression in range (engine tests). */
+  checks: IrCheck[]
+  /** Debug-console commands with the IDs they accept. */
+  cheats: IrCheat[]
+  /** Colours for placeholder assets. */
+  art: IrArt
+  /** Architecture's communication channels: event buses and ScriptableObject channels with typed payloads. */
+  channels: IrChannel[]
+  /** Balance plan telemetry events: what the game logs in playtests, and the metrics they add up to. */
+  telemetry: IrTelemetry[]
+  /** UI/UX › Controls: the input actions with their keys and buttons. */
+  input: IrInput
+  /** UI/UX › Screens and Screen flow. */
+  ui: IrUi
+  /** State machines drawn in the planner's graphs (e.g. the NPC life cycle). */
+  stateMachines: IrStateMachine[]
 }
 
 export type IssueLevel = 'error' | 'warning' | 'info'
@@ -399,6 +432,15 @@ export function buildIR(p: Project): { ir: EngineIR; issues: EngineIssue[] } {
     formulas,
     strings,
     classes: buildClasses(p, issues),
+    setup: buildSetup(p),
+    checks: buildChecks(p, irSchemas, issues),
+    cheats: buildCheats(p, records),
+    art: buildArt(p),
+    channels: buildChannels(p, irSchemas, issues),
+    telemetry: buildTelemetry(p, irSchemas, issues),
+    input: buildInput(p),
+    ui: buildUi(p),
+    stateMachines: buildStateMachines(p, issues),
   }
   return { ir, issues }
 }
@@ -455,4 +497,30 @@ function buildClasses(p: Project, issues: EngineIssue[]): IrClass[] {
       methods: n.methods.map((x) => ({ name: x.name, params: x.params.map((a) => ({ name: a.name, type: memberType(a.type) })), returns: memberType(x.returns), visibility: x.visibility, isStatic: x.isStatic })),
     }
   })
+}
+
+/** Coding Standards and Architecture as the engine needs them for project files and the folder skeleton. */
+function buildSetup(p: Project): IrSetup {
+  const style = (p.documents['technical.coding']?.data.style ?? {}) as Record<string, unknown>
+  const git = (p.documents['technical.coding']?.data.git ?? {}) as Record<string, unknown>
+  const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map((x) => x.trim()) : [])
+  const num = (v: unknown) => (isNum(v) ? v : undefined)
+  const lfs = list(git.lfs)
+  for (const row of lfsCoverage(p)) if (!row.covered) lfs.push(`*${row.ext}`)
+  const tree = folderTree(p)
+  return {
+    style: {
+      ...(style.indent === 'Spaces' ? { indent: 'spaces' as const } : style.indent === 'Tabs' ? { indent: 'tabs' as const } : {}),
+      ...(num(style.indentSize) && { indentSize: num(style.indentSize) }),
+      ...(num(style.lineLength) && { lineLength: num(style.lineLength) }),
+      ...(typeof style.braces === 'string' && { braces: style.braces.startsWith('Allman') ? ('newline' as const) : ('same' as const) }),
+    },
+    naming: codingList(p, 'naming')
+      .filter((r) => str(r.target) && str(r.casing) && r.casing !== 'Any')
+      .map((r) => ({ target: str(r.target), casing: str(r.casing), ...(str(r.prefix) && { prefix: str(r.prefix) }), ...(str(r.suffix) && { suffix: str(r.suffix) }), severity: str(r.severity) || 'Minor', automated: !!r.enforcement && r.enforcement !== 'Manual' })),
+    folders: tree.flat.map((n) => ({ path: n.path, ...(str(n.folder.purpose) && { purpose: str(n.folder.purpose) }), ...(n.folder.module && { module: String(n.folder.module) }), assembly: !!n.folder.asmdef })),
+    modules: archList(p, 'modules').map((m) => ({ id: String(m.id), name: nameOf(m), words: words(nameOf(m)), assembly: str(m.assembly), dependsOn: Array.isArray(m.dependsOn) ? m.dependsOn.filter((x: unknown): x is string => typeof x === 'string') : [] })),
+    lfs: [...new Set(lfs)],
+    ignore: list(git.ignore),
+  }
 }
