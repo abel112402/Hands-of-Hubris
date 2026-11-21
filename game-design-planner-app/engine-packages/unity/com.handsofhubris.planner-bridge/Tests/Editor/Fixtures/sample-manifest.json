@@ -3,7 +3,7 @@
   "v": 1,
   "engine": {
     "id": "unity",
-    "adapterVersion": 5
+    "adapterVersion": 6
   },
   "generator": {
     "app": "Game Design Planner",
@@ -109,7 +109,7 @@
   "files": [
     {
       "path": "README.md",
-      "hash": "3a4e2d56"
+      "hash": "24b4ef87"
     },
     {
       "path": "hoh-engine.schema.json",
@@ -117,7 +117,7 @@
     },
     {
       "path": "ir/engine-ir.json",
-      "hash": "e0c23b52"
+      "hash": "19a1e52b"
     },
     {
       "path": "Data/Item/item.plank.json",
@@ -385,47 +385,47 @@
     },
     {
       "path": "Unity/Scripts/Generated/ItemDefinition.cs",
-      "hash": "177a4953"
+      "hash": "c2236aa1"
     },
     {
       "path": "Unity/Scripts/Generated/BuildingDefinition.cs",
-      "hash": "a81b380a"
+      "hash": "569be930"
     },
     {
       "path": "Unity/Scripts/Generated/NpcNeedDefinition.cs",
-      "hash": "ee329687"
+      "hash": "468fa14d"
     },
     {
       "path": "Unity/Scripts/Generated/RecipeRecord.cs",
-      "hash": "8bfde72e"
+      "hash": "04c27e00"
     },
     {
       "path": "Unity/Scripts/Generated/EnemyDefinition.cs",
-      "hash": "da078476"
+      "hash": "f6b8499c"
     },
     {
       "path": "Unity/Scripts/Generated/QuestRecord.cs",
-      "hash": "01345f73"
+      "hash": "fc4b0c2d"
     },
     {
       "path": "Unity/Scripts/Generated/Enums.cs",
-      "hash": "00f91da3"
+      "hash": "e94034d9"
     },
     {
       "path": "Unity/Scripts/Generated/Ids.cs",
-      "hash": "d54d202e"
+      "hash": "6e3c210c"
     },
     {
       "path": "Unity/Scripts/Generated/Formulas.cs",
-      "hash": "8d009af1"
+      "hash": "f3ad5493"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/IDamageable.Generated.cs",
-      "hash": "4e9ce503"
+      "hash": "fe83b621"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NeedChangedEvent.Generated.cs",
-      "hash": "e648b01c"
+      "hash": "b7d1ee0e"
     },
     {
       "path": "Unity/Scripts/Classes/CoreEvents/NeedChangedEvent.cs",
@@ -433,7 +433,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/Health.Generated.cs",
-      "hash": "150a785f"
+      "hash": "78090a2d"
     },
     {
       "path": "Unity/Scripts/Classes/GameplayPlayer/Health.cs",
@@ -441,7 +441,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/CinderPlayerController.Generated.cs",
-      "hash": "1c2c8c5c"
+      "hash": "e84b28b6"
     },
     {
       "path": "Unity/Scripts/Classes/GameplayPlayer/CinderPlayerController.cs",
@@ -449,7 +449,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NpcBrain.Generated.cs",
-      "hash": "3f98e081"
+      "hash": "cd235dd3"
     },
     {
       "path": "Unity/Scripts/Classes/SimulationNpc/NpcBrain.cs",
@@ -457,15 +457,15 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NeedState.Generated.cs",
-      "hash": "c0dc1a05"
+      "hash": "25a11b5f"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NpcMood.Generated.cs",
-      "hash": "272d440f"
+      "hash": "7e0d736d"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/TownLedger.Generated.cs",
-      "hash": "3368425b"
+      "hash": "75e4bf41"
     },
     {
       "path": "Unity/Scripts/Classes/SimulationTown/TownLedger.cs",
@@ -473,7 +473,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/SaveService.Generated.cs",
-      "hash": "f84f2e57"
+      "hash": "1d62f109"
     },
     {
       "path": "Unity/Scripts/Classes/PersistenceSave/SaveService.cs",
@@ -481,7 +481,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/HealthBar.Generated.cs",
-      "hash": "eb313f6d"
+      "hash": "02f1c843"
     },
     {
       "path": "Unity/Scripts/Classes/UiHud/HealthBar.cs",
@@ -509,11 +509,11 @@
     },
     {
       "path": "Unity/Scripts/Generated/PlannerConsole.cs",
-      "hash": "c1a73c83"
+      "hash": "532b3b20"
     },
     {
       "path": "Unity/Scripts/Generated/PlannerConsoleOverlay.cs",
-      "hash": "f18d4847"
+      "hash": "5d18d19e"
     },
     {
       "path": "Unity/Tests/Editor/CinderholmExample.PlannerTests.asmdef",
@@ -521,19 +521,23 @@
     },
     {
       "path": "Unity/Tests/Editor/PlannerDataChecks.cs",
-      "hash": "6558c6c5"
+      "hash": "1a0cafae"
+    },
+    {
+      "path": "Unity/Tests/Editor/PlannerArchitecture.cs",
+      "hash": "231061b8"
     },
     {
       "path": "Unity/Scripts/Generated/Channels/GameEvents.cs",
-      "hash": "3589e623"
+      "hash": "769a9c80"
     },
     {
       "path": "Unity/Scripts/Generated/Channels/SaveRequestedChannel.cs",
-      "hash": "62ec446c"
+      "hash": "d752fd25"
     },
     {
       "path": "Unity/Scripts/Generated/Telemetry.cs",
-      "hash": "ed1b9d72"
+      "hash": "c5f71a91"
     },
     {
       "path": "Unity/Input/CinderholmExample.inputactions",
@@ -541,7 +545,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Input/PlannerInput.cs",
-      "hash": "61c3ef06"
+      "hash": "d44556df"
     },
     {
       "path": "Unity/UI/Screens/Hud.uxml",
@@ -605,23 +609,35 @@
     },
     {
       "path": "Unity/Scripts/Generated/UI/PlannerScreens.cs",
-      "hash": "8242d008"
+      "hash": "209a9cb9"
     },
     {
       "path": "Unity/Scripts/Generated/UI/PlannerScreenSet.cs",
-      "hash": "f5e99bce"
+      "hash": "08678fc5"
     },
     {
       "path": "Unity/Scripts/Generated/UI/PlannerScreenRouter.cs",
-      "hash": "86647a5b"
+      "hash": "440cc82e"
     },
     {
       "path": "Unity/Scripts/Generated/StateMachines/PlannerStateMachine.cs",
-      "hash": "6d1c5009"
+      "hash": "666e6a6a"
     },
     {
       "path": "Unity/Scripts/Generated/StateMachines/NpcLifecycleStates.cs",
-      "hash": "b6d86ac2"
+      "hash": "d69751bf"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Perf/PlannerBudgets.cs",
+      "hash": "ae1f36c7"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Audio/PlannerAudioEvent.cs",
+      "hash": "afc7409c"
+    },
+    {
+      "path": "Unity/Scripts/Generated/Audio/PlannerAudioEvents.cs",
+      "hash": "d2254792"
     }
   ]
 }

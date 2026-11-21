@@ -564,6 +564,7 @@ export const technicalModules = [
         f.num('target', 'Target'),
         f.num('current', 'Current'),
         f.text('unit', 'Unit'),
+        f.text('key', 'Engine metric key', { placeholder: 'e.g. perf.frame_time', help: 'The key the engine reports the measured value under; empty = perf.<name>. Frame time, memory, draw calls, batches and triangles are measured by the generated sampler; anything else the game records itself.' }),
       ],
       [v.table(), v.cards()],
     ),

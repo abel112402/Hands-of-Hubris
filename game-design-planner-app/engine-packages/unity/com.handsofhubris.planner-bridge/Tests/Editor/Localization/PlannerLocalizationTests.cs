@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using HoHPlanner.Bridge.Editor;
 using NUnit.Framework;
 using UnityEditor;
@@ -41,6 +42,8 @@ namespace HoHPlanner.Bridge.Tests
             Csv("key,en,hu\nquest.a.title,Washed ashore,Partra vetve\nquest.b.title,\"Rats, again\",Megint patkányok\n");
             var first = PlannerLocalization.Apply(Root, Collection);
             Assert.AreEqual(2, first.Added);
+            Assert.Greater(AssetDatabase.FindAssets("t:PseudoLocale").Length, 0, "a pseudo-locale to find cut-off text");
+            Assert.IsFalse(PlannerLocalization.EnsurePseudoLocale($"{Root}/LocalizationTables"), "only one, however often the plan is imported");
             var collection = LocalizationEditorSettings.GetStringTableCollection(Collection);
             Assert.IsNotNull(collection);
             var en = (StringTable)collection.GetTable("en");

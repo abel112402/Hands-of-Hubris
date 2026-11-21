@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Localization.Pseudo;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
 
@@ -73,6 +74,7 @@ namespace HoHPlanner.Bridge.Editor
                 locales.Add(locale);
             }
 
+            if (EnsurePseudoLocale(folder)) result.Locales++;
             var collection = LocalizationEditorSettings.GetStringTableCollection(collectionName) ?? LocalizationEditorSettings.CreateStringTableCollection(collectionName, folder, locales);
             var keys = new HashSet<string>();
             for (var c = 0; c < codes.Count; c++)
@@ -107,6 +109,27 @@ namespace HoHPlanner.Bridge.Editor
             EditorUtility.SetDirty(collection);
             AssetDatabase.SaveAssets();
             return result;
+        }
+
+        /// <summary>
+        /// A pseudo-locale for the planner's texts, made once when the project has none: accented, about a third longer
+        /// and in brackets, so cut-off text and text that bypasses the tables show before any translation. Pick it in the
+        /// Game view's locale menu. Returns whether it was made.
+        /// </summary>
+        public static bool EnsurePseudoLocale(string folder)
+        {
+            // GetLocales() does not list pseudo-locales, so the assets themselves are looked for.
+            if (AssetDatabase.FindAssets("t:PseudoLocale").Length > 0) return false;
+            var pseudo = PseudoLocale.CreatePseudoLocale();
+            pseudo.name = "Pseudo-Locale";
+            pseudo.Methods.Clear();
+            pseudo.Methods.Add(new PreserveTags());
+            pseudo.Methods.Add(new Expander());
+            pseudo.Methods.Add(new Accenter());
+            pseudo.Methods.Add(new Encapsulator());
+            AssetDatabase.CreateAsset(pseudo, $"{folder}/Pseudo-Locale.asset");
+            LocalizationEditorSettings.AddLocale(pseudo);
+            return true;
         }
 
         /// <summary>RFC 4180 CSV: quoted fields may hold commas, quotes ("") and line breaks.</summary>

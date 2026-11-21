@@ -3,7 +3,8 @@ import { words } from '../../coding'
 import type { FormulaNode } from '../formulaAst'
 import type { ClassKind } from '../../classes'
 import { setupFiles } from './unitySetup'
-import { channelFiles, checkFiles, consoleFile, telemetryFile, type UnityNames } from './unityExtras'
+import { channelFiles, checkFiles, consoleFile, telemetryFile, testsAsmdef, type UnityNames } from './unityExtras'
+import { architectureTest, audioFiles, budgetFiles } from './unityPolish'
 import { inputFiles, inputIssues, stateMachineFiles, uiFiles } from './unityScaffold'
 import type { EngineIR, EngineIssue, IrClass, IrEnum, IrFormat, IrMethod, IrSchema, NeutralType } from '../ir'
 
@@ -379,6 +380,12 @@ function asmdef(ir: EngineIR): string {
   return JSON.stringify({ name: root, rootNamespace: root, references: [], autoReferenced: true }, null, 2) + '\n'
 }
 
+/** The generated EditMode tests (data checks, architecture guard) and, when there is one, their assembly. */
+function tests(ir: EngineIR): EmittedFile[] {
+  const files = [...checkFiles(ir, names(ir)), ...architectureTest(ir, names(ir))]
+  return files.length ? [testsAsmdef(names(ir)), ...files] : []
+}
+
 function names(ir: EngineIR): UnityNames {
   return {
     root: projectNamespace(ir),
@@ -394,7 +401,7 @@ export const unity: EngineAdapter = {
   id: 'unity',
   label: 'Unity',
   language: 'C#',
-  version: 5,
+  version: 6,
   root: 'Unity',
   ownDir: 'Scripts/Classes/',
   generatedDirs: ['Scripts/Generated/', 'ProjectFiles/', 'Tests/', 'Input/', 'UI/'],
@@ -413,12 +420,14 @@ export const unity: EngineAdapter = {
       ...classFiles(ir),
       ...setupFiles(ir, projectNamespace(ir), (ws) => identifier(ws, 'type').replace(/^@/, '')),
       ...consoleFile(ir, names(ir)),
-      ...checkFiles(ir, names(ir)),
+      ...tests(ir),
       ...channelFiles(ir, names(ir)),
       ...telemetryFile(ir, names(ir)),
       ...inputFiles(ir, names(ir)),
       ...uiFiles(ir, names(ir)),
       ...stateMachineFiles(ir, names(ir)),
+      ...budgetFiles(ir, names(ir)),
+      ...audioFiles(ir, names(ir)),
     ]
   },
   checks(ir): EngineIssue[] {

@@ -924,6 +924,11 @@
       "body_other": "{{count}} schemas have no validator and no written rules: {{names}}.",
       "body_one": "{{count}} schema has no validator and no written rules: {{names}}."
     },
+    "engineBudgetOver": {
+      "title": "Over budget in the engine",
+      "body_one": "In {{engine}}, {{count}} budget was measured over its target: {{names}}. Profile it, or change the target if the budget was wrong.",
+      "body_other": "In {{engine}}, {{count}} budgets were measured over their targets: {{names}}. Profile them, or change the targets if the budgets were wrong."
+    },
     "balanceDataCheck": {
       "title": "Records outside a data check",
       "body_one": "{{count}} data check finds records outside its range ({{records}} in all): {{names}}. Fix the values in the content planners, or the range if the rule changed; the engine tests would fail the same way.",

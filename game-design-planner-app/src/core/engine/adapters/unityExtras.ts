@@ -102,6 +102,11 @@ export function checkFiles(ir: EngineIR, n: UnityNames): EmittedFile[] {
   body.pop()
   body.push('}')
   const code = [...HEADER(ir, 'data checks of the Balance plan'), 'using System.Collections.Generic;', 'using System.Linq;', 'using NUnit.Framework;', 'using UnityEditor;', 'using UnityEngine;', `using ${n.ns};`, '', `namespace ${n.root}.PlannerTests`, '{', ...body.map((l) => (l ? '    ' + l : l)), '}', ''].join('\n')
+  return [{ path: 'Tests/Editor/PlannerDataChecks.cs', content: code }]
+}
+
+/** The assembly of the generated EditMode tests (data checks, architecture), written when there is any test. */
+export function testsAsmdef(n: UnityNames): EmittedFile {
   const asmdef = {
     name: `${n.root}.PlannerTests`,
     rootNamespace: `${n.root}.PlannerTests`,
@@ -112,10 +117,7 @@ export function checkFiles(ir: EngineIR, n: UnityNames): EmittedFile[] {
     autoReferenced: false,
     defineConstraints: ['UNITY_INCLUDE_TESTS'],
   }
-  return [
-    { path: `Tests/Editor/${n.root}.PlannerTests.asmdef`, content: JSON.stringify(asmdef, null, 2) + '\n' },
-    { path: 'Tests/Editor/PlannerDataChecks.cs', content: code },
-  ]
+  return { path: `Tests/Editor/${n.root}.PlannerTests.asmdef`, content: JSON.stringify(asmdef, null, 2) + '\n' }
 }
 
 // ---- I5: debug console ----

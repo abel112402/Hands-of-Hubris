@@ -53,10 +53,16 @@ namespace HoHPlanner.Bridge.Editor
         /// generated Telemetry log added up (PlannerTelemetry). A key recorded both ways keeps the PlannerMetrics value.
         /// A telemetry count (&lt;event&gt;.count) is reported as how many times the event was logged.
         /// </summary>
+        /// <summary>Where the generated PlannerBudgets saves the measured performance budgets.</summary>
+        public const string BudgetsFile = "hoh-planner-budgets.json";
+
         private static JArray Metrics()
         {
             var output = new JArray();
             var all = PlannerMetrics.Load().ToDictionary(m => m.key, StringComparer.Ordinal);
+            // The performance budgets measured by the generated PlannerBudgets (same file format).
+            foreach (var b in PlannerMetrics.Load(System.IO.Path.Combine(Application.persistentDataPath, BudgetsFile)))
+                if (!all.ContainsKey(b.key)) all[b.key] = b;
             foreach (var t in PlannerTelemetry.Summaries())
                 if (!all.ContainsKey(t.key)) all[t.key] = t;
             foreach (var m in all.Values.OrderBy(m => m.key, StringComparer.Ordinal))

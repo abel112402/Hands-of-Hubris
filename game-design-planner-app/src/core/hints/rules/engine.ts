@@ -5,6 +5,7 @@ import { statusSuggestions } from '../../engine/suggestions'
 import { BALANCE_DOC, outOfRange } from '../../engine/metrics'
 import { buildIR } from '../../engine/ir'
 import { runChecks } from '../../engine/irExtras'
+import { BUDGET_DOC, budgetsOver } from '../../engine/irPolish'
 import type { Hint, HintRule } from '../types'
 import { hintId, shortList } from '../util'
 
@@ -29,6 +30,18 @@ export const engineRules: HintRule[] = [
     evaluate: ({ project }) => {
       const rows = outOfRange(project)
       return rows.length ? [hint('engine.metricOutOfRange', 'engineMetricOutOfRange', BALANCE_DOC, 'metrics', 'suggest', { count: rows.length, engine: reportLabel(storedReport(project)!), names: shortList(rows.map((r) => String(r.metric.name ?? r.key))) }, String(rows[0].metric.id))] : []
+    },
+  },
+  {
+    id: 'engine.budgetOver',
+    scope: 'section',
+    appliesTo: ({ project, docId }) => docId === BUDGET_DOC && !!storedReport(project),
+    evaluate: ({ project }) => {
+      const r = storedReport(project)!
+      const rows = budgetsOver(project, r.metrics)
+      if (!rows.length) return []
+      const fmt = (n: number) => String(Math.round(n * 100) / 100)
+      return [hint('engine.budgetOver', 'engineBudgetOver', BUDGET_DOC, 'budgets', 'important', { count: rows.length, engine: reportLabel(r), names: shortList(rows.map((x) => `${String(x.budget.name)} (${fmt(x.measured)} / ${fmt(x.target)} ${String(x.budget.unit ?? '')})`.replace(/ \)$/, ')'))) }, String(rows[0].budget.id))]
     },
   },
   {

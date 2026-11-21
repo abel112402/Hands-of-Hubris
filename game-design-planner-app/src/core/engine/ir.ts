@@ -7,6 +7,7 @@ import { variablesOf } from '../formula'
 import { classIssues, classModel, type ClassKind, type MemberType, type Visibility } from '../classes'
 import { archList } from '../architecture'
 import { codingList, folderTree, lfsCoverage } from '../coding'
+import { buildAudio, buildBudgets, type IrAudio, type IrBudget } from './irPolish'
 import { buildInput, buildStateMachines, buildUi, type IrInput, type IrStateMachine, type IrUi } from './irScaffold'
 import { buildArt, buildChannels, buildChecks, buildCheats, buildTelemetry, type IrArt, type IrChannel, type IrCheat, type IrCheck, type IrTelemetry } from './irExtras'
 
@@ -14,8 +15,8 @@ import { buildArt, buildChannels, buildChecks, buildCheats, buildTelemetry, type
  * Engine IR: the project's data-driven content in engine-neutral form. Every engine adapter
  * (Unity now, Godot and Unreal later) works from this and never reads the project itself.
  */
-/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. */
-export const IR_VERSION = 6
+/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. 7: performance budgets, audio events. */
+export const IR_VERSION = 7
 
 export type AssetKind = AssetType
 const ASSET_KINDS: AssetKind[] = ['image', 'scene', 'audio', 'material', 'mesh', 'animation', 'animator', 'data']
@@ -106,6 +107,10 @@ export type EngineIR = {
   ui: IrUi
   /** State machines drawn in the planner's graphs (e.g. the NPC life cycle). */
   stateMachines: IrStateMachine[]
+  /** Technical › Performance budgets, with what the engine can measure by itself. */
+  budgets: IrBudget[]
+  /** Audio Direction's music and sound effects as audio events. */
+  audio: IrAudio
 }
 
 export type IssueLevel = 'error' | 'warning' | 'info'
@@ -441,6 +446,8 @@ export function buildIR(p: Project): { ir: EngineIR; issues: EngineIssue[] } {
     input: buildInput(p),
     ui: buildUi(p),
     stateMachines: buildStateMachines(p, issues),
+    budgets: buildBudgets(p),
+    audio: buildAudio(p),
   }
   return { ir, issues }
 }

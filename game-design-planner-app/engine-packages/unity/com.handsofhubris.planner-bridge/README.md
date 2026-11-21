@@ -109,6 +109,18 @@ These parts are separate assemblies that compile only when the package is there,
   - `Go(state)` only follows a planned transition.
   - `Next` lists the planned transitions with their kind and cause, and `Changed` and `Ended` tell listeners.
 
+### Performance budgets, audio events, pseudo-locale, architecture guard
+
+- **Performance budgets** (Technical › Performance): `PlannerBudgets` measures the budgets while the game runs, in the editor and in development builds.
+  - Frame time, memory, draw calls, batches and triangles are measured by themselves. For the others, the game calls `PlannerBudgets.Record(PlannerBudgets.Keys.SimulationTick, ms)`.
+  - The mean, minimum and maximum go to `hoh-planner-budgets.json` when the game quits, then into the report. The planner warns when a budget is over its target.
+  - A budget is measured whatever device it names, so a Steam Deck budget is only meaningful on the Deck.
+- **Audio events** (Audio Direction): one `PlannerAudioEvent` asset per planned music track or sound under `Audio/`.
+  - Volume, pitch variation, looping and 3D come from the plan; the clips are yours. `Play(source)` plays one of them.
+- **Pseudo-locale**: with Unity Localization, the import adds a pseudo-locale once: accented, about a third longer, in brackets.
+  - Pick it in the Game view to find cut-off text and text that bypasses the tables.
+- **Architecture guard**: the EditMode test `PlannerArchitecture` fails when a planned module's assembly references a module its Depends on (Architecture › Modules) does not allow.
+
 ### Set up the project from the plan
 
 *Tools ▸ Game Design Planner ▸ Set up project* (or the window's buttons) uses what the planner wrote into `Unity/ProjectFiles/`:

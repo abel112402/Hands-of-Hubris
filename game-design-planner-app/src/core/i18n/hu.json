@@ -761,6 +761,10 @@
       "title": "Ellenőrzés nélküli sémák",
       "body": "{{count}} sémának nincs validátora és írott szabálya sem: {{names}}."
     },
+    "engineBudgetOver": {
+      "title": "Büdzsé feletti mért érték a motorban",
+      "body": "A(z) {{engine}} mérése szerint {{count}} büdzsé a cél fölött van: {{names}}. Profilozd, vagy igazítsd a célt, ha a büdzsé volt rossz."
+    },
     "balanceDataCheck": {
       "title": "Adatellenőrzésen kívüli rekordok",
       "body": "{{count}} adatellenőrzés {{records}} rekordot talál a tartományán kívül: {{names}}. Javítsd az értékeket a tartalom-tervezőkben, vagy a tartományt, ha a szabály változott; a motor tesztjei ugyanígy elbuknának."
