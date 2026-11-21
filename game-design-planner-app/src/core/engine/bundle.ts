@@ -90,6 +90,7 @@ ${adapter?.id === 'unity' ? `
 3. JSON and CSV schemas are \`RefCounted\` record classes; read a record with \`from_dict()\`. The record CSVs come with a \`.import\` file that keeps Godot from reading them as translations; \`Localization/strings.csv\` is a translation table.
 4. \`<Project>Ids\` holds every record ID as a constant, \`<Project>Formulas\` every planner formula as a static function, \`<Project>Enums\` the catalogs.
 5. Classes from the class diagram: \`Scripts/Generated/Classes/*_base.gd\` (class_name XBase) holds fields, signals and method stubs and is replaced on every export; \`Scripts/Classes/**/*.gd\` (class_name X extends XBase) is yours — created once, never overwritten. GDScript has no interfaces: an interface's methods are put into each class that implements it.
+6. \`PlannerBudgets\` (an autoload the addon adds) measures the planned performance budgets in debug builds; \`<Project>AudioEvent\` holds each planned sound (the addon makes the resources under \`Audio/\`); \`ProjectFiles/architecture.json\` lets the addon's Validate hold the scripts to the planned module dependencies; the addon sets up Godot's pseudolocalization when the plan has strings.
 ` : ''}${adapter?.id === 'unreal' ? `
 ## Unreal Engine
 
@@ -98,6 +99,7 @@ ${adapter?.id === 'unity' ? `
 3. JSON and CSV schemas are DataTable row structs (\`FXRow\`); \`${adapter.root}/DataTables/<Schema>.json\` is in the format Unreal's DataTable import reads (the bridge fills \`/Game/HoHPlanner/DataTables/DT_<Schema>\` from it). Asset fields are soft references and need Unreal paths (/Game/…) in the plan.
 4. \`<Project>Ids\` holds every record ID as a constant, \`U<Project>Formulas\` every planner formula as a Blueprint-pure function, \`<Project>Enums.h\` the catalogs as UENUMs (\`<Project>EnumIds.h\` maps planner IDs to them), \`UPlannerMetrics::Record\` collects playtest values for the Balance plan.
 5. Classes from the class diagram: \`Generated/Classes/XBase.h\` (properties, pure virtual methods) is replaced on every export; \`Source/PlannerGame/Classes/**\` (\`UX : UXBase\`, header and .cpp) is yours — created once, never overwritten, like the module's Build.cs.
+6. \`UPlannerBudgets\` (a game instance subsystem) measures the planned performance budgets outside Shipping builds; \`UPlannerAudioEvent\` holds each planned sound (the bridge makes the data assets under \`/Game/HoHPlanner/Audio\`); \`ProjectFiles/architecture.json\` lets the bridge's Validate hold the class folders' includes to the planned module dependencies.
 ` : ''}`
 }
 
@@ -146,6 +148,7 @@ export function buildBundle(p: Project, engine: EngineId, exportedAt = new Date(
 export function bundleZip(b: EngineBundle): Promise<Blob> {
   const zip = new JSZip()
   const date = new Date(Date.UTC(2020, 0, 1))
-  for (const f of b.files) zip.file(`${BUNDLE_ROOT}/${f.path}`, f.content, { date })
+  // No folder entries: JSZip would date them now, so two exports a few seconds apart would differ.
+  for (const f of b.files) zip.file(`${BUNDLE_ROOT}/${f.path}`, f.content, { date, createFolders: false })
   return zip.generateAsync({ type: 'blob' })
 }

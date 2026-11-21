@@ -57,6 +57,18 @@ GDScript has no partial classes, namespaces or interfaces, so: your class extend
 - **State machines**: each state graph of the plan becomes a class, e.g. `NpcLifecycleStates.create()`.
   - `go(state)` only follows a planned transition; `next()`, `changed` and `ended()` are there too.
 
+## Budgets, audio, pseudolocalization, architecture
+
+- **Performance budgets** (Technical › Performance): the import adds the autoload `PlannerBudgets`, which measures the budgets in debug builds and the editor.
+  - Frame time, memory, draw calls and triangles are measured by themselves. For the others (batches too: Godot has no counter for them), the game calls `PlannerBudgets.record(PlannerBudgets.SIMULATION_TICK, ms)`.
+  - The mean, minimum and maximum go to `user://hoh-planner-budgets.json` when the game quits, then into the report. The planner warns when a budget is over its target.
+  - A budget is measured whatever device it names, so a Steam Deck budget is only meaningful on the Deck.
+- **Audio events** (Audio Direction): one `<Project>AudioEvent` resource per planned music track or sound under `Audio/`, found again by planner ID.
+  - Volume, pitch variation, looping and 3D come from the plan; the streams are yours. `play(player)` plays one of them on an AudioStreamPlayer (2D/3D).
+- **Pseudolocalization**: when the plan has strings, the import sets up Godot's pseudolocalization once (accents, about a third longer, in brackets, placeholders kept).
+  - Turn it on in Project Settings ▸ Internationalization ▸ Pseudolocalization to find cut-off text and text that is not translated.
+- **Architecture guard**: Validate reports a script in one module's folders (`Scripts/Classes/<module>/` and the planned folders of the module) that uses a class of a module its Depends on (Architecture › Modules) does not allow, by class name or by a `res://` path.
+
 ## Playtest metrics
 
 `PlannerMetrics.record("combat.ttk.greenhollow_brute", seconds)` from the game, with a key a Balance plan metric names. Samples add up in `user://hoh-planner-metrics.json` and go into the report.

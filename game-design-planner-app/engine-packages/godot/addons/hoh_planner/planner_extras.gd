@@ -1,14 +1,17 @@
 @tool
 extends RefCounted
 ## After an import: the autoloads of the generated code (GameEvents for the event-bus channels, PlannerConsole for the
-## debug console), one resource per Resource channel under <root>/Channels/, and the telemetry log added up into
-## metrics for the report.
+## debug console, PlannerBudgets for the performance budgets), one resource per Resource channel under <root>/Channels/
+## and per planned sound under <root>/Audio/, Godot's pseudolocalization set up once, and the telemetry log added up
+## into metrics for the report.
 
 const Bundle := preload("planner_bundle.gd")
 const Placeholders := preload("planner_placeholders.gd")
 
 const TELEMETRY := "user://hoh-telemetry.jsonl"
-const AUTOLOADS := { "GameEvents": "Channels/game_events.gd", "PlannerConsole": "planner_console_overlay.gd" }
+const BUDGETS := "user://hoh-planner-budgets.json"
+const AUTOLOADS := { "GameEvents": "Channels/game_events.gd", "PlannerConsole": "planner_console_overlay.gd", "PlannerBudgets": "Perf/planner_budgets.gd" }
+const PSEUDO := "internationalization/pseudolocalization/"
 
 
 ## Everything that follows a record import. Returns lines for the log.
@@ -23,6 +26,11 @@ static func after_import(at: String) -> PackedStringArray:
 	var channels := make_channels(at)
 	if channels > 0:
 		lines.append("Channels: %d resource(s) made." % channels)
+	var sounds := make_audio(at)
+	if sounds > 0:
+		lines.append("Audio: %d event resource(s) made or updated." % sounds)
+	if setup_pseudolocalization(at):
+		lines.append("Pseudolocalization set up (turn it on in Project Settings ▸ Internationalization ▸ Pseudolocalization).")
 	if bool(ProjectSettings.get_setting(Bundle.SETTING_PLACEHOLDERS, true)):
 		var p := Placeholders.apply(at)
 		if p["made"] > 0 or p["filled"] > 0:
@@ -71,6 +79,60 @@ static func make_channels(at: String) -> int:
 		if ResourceSaver.save(res, target) == OK:
 			made += 1
 	return made
+
+
+## One resource per planned sound (the generated *AudioEvents ALL list) under <root>/Audio/, found again by planner ID;
+## the planned values are kept in step, the streams you assigned stay. Returns how many were made or changed.
+static func make_audio(at: String) -> int:
+	var list: Script = null
+	for path in Bundle.files_in(at + "/" + Bundle.GENERATED + "/Audio", "gd"):
+		var s: Script = load(path)
+		if s != null and s.get_script_constant_map().has("ALL"):
+			list = s
+	if list == null:
+		return 0
+	var consts := list.get_script_constant_map()
+	var event: Script = consts.get("EVENT")
+	var folder := at + "/Audio"
+	var existing := {}
+	for path in Bundle.files_in(folder, "tres"):
+		var r: Resource = load(path)
+		if r != null and r.get_script() == event and str(r.get("planner_id")) != "":
+			existing[str(r.get("planner_id"))] = r
+	var changed := 0
+	for e in consts["ALL"]:
+		var res: Resource = existing.get(e["id"])
+		var path := "%s/%s.tres" % [folder, e["file"]] if res == null else res.resource_path
+		if res == null:
+			res = event.new()
+			res.set("planner_id", e["id"])
+		var values := { "kind": 0 if e["kind"] == "music" else 1, "volume": float(e["volume"]), "pitch_variation": float(e["pitch"]), "loop": e["loop"], "spatial": e["spatial"], "notes": e["notes"] }
+		var dirty := res.resource_path == ""
+		for k in values:
+			if res.get(k) != values[k]:
+				res.set(k, values[k])
+				dirty = true
+		if not dirty:
+			continue
+		DirAccess.make_dir_recursive_absolute(folder)
+		if ResourceSaver.save(res, path) == OK:
+			changed += 1
+	return changed
+
+
+## Godot's pseudolocalization with the planner's settings (accents, about a third longer, in brackets, placeholders
+## kept), set once when the plan has a translation table; it stays off until you turn it on. Returns whether it set it.
+static func setup_pseudolocalization(at: String) -> bool:
+	if Bundle.files_in(at + "/Localization", "csv").is_empty() or ProjectSettings.has_setting(PSEUDO + "expansion_ratio"):
+		return false
+	ProjectSettings.set_setting(PSEUDO + "replace_with_accents", true)
+	ProjectSettings.set_setting(PSEUDO + "double_vowels", false)
+	ProjectSettings.set_setting(PSEUDO + "expansion_ratio", 0.3)
+	ProjectSettings.set_setting(PSEUDO + "prefix", "[")
+	ProjectSettings.set_setting(PSEUDO + "suffix", "]")
+	ProjectSettings.set_setting(PSEUDO + "skip_placeholders", true)
+	ProjectSettings.save()
+	return true
 
 
 ## The telemetry log as metrics: <event>.count (how many lines) and <event>.<number parameter> (mean, count, spread).

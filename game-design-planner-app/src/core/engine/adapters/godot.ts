@@ -5,6 +5,8 @@ import type { ClassKind } from '../../classes'
 import type { EngineIR, EngineIssue, IrClass, IrEnum, IrFormat, IrMethod, IrSchema, IrSetup, NeutralType } from '../ir'
 import { channelFiles, checksFile, consoleFiles, telemetryFile, type GodotNames } from './godotExtras'
 import { inputFile, scaffoldGlobals, screenFiles, stateMachineFiles } from './godotScaffold'
+import { audioFiles, budgetFile, polishGlobals } from './godotPolish'
+import { architectureFile, architecturePlan } from '../architecture'
 
 /**
  * Godot 4 adapter (GDScript, Godot 4.3+): native-format schemas become Resource classes (the planner addon turns each
@@ -573,6 +575,15 @@ function setupFiles(ir: EngineIR): EmittedFile[] {
 /** What Godot writes into a .import file for a file it should keep as it is. */
 export const KEEP_IMPORT = '[remap]\n\nimporter="keep"\n'
 
+/** The architecture guard's plan: each module's class folder and planned folders, and its classes' global names. */
+export const godotArchitecture = (ir: EngineIR) =>
+  architecturePlan(
+    ir,
+    'identifier',
+    (id, ws) => [`Scripts/Classes/${snake(ws)}/`, ...ir.setup.folders.filter((f) => f.module === id).map((f) => 'res://' + f.path.replace(/^Assets\/?/, '').replace(/\/?$/, '/')).filter((p) => p !== 'res:///')],
+    (c) => [className(c), ...(hasOwnFile(c) ? [baseName(c)] : [])],
+  )
+
 function names(ir: EngineIR): GodotNames {
   return {
     project: projectName(ir),
@@ -588,7 +599,7 @@ export const godot: EngineAdapter = {
   id: 'godot',
   label: 'Godot',
   language: 'GDScript',
-  version: 3,
+  version: 4,
   root: 'Godot',
   ownDir: 'Scripts/Classes/',
   generatedDirs: ['Scripts/Generated/', 'ProjectFiles/'],
@@ -613,6 +624,9 @@ export const godot: EngineAdapter = {
       ...inputFile(ir, names(ir)),
       ...screenFiles(ir, names(ir)),
       ...stateMachineFiles(ir, names(ir)),
+      ...budgetFile(ir, names(ir)),
+      ...audioFiles(ir, names(ir)),
+      ...architectureFile(godotArchitecture(ir)),
     ]
   },
   /** Godot would import every .csv as a translation; the record CSVs are data, so they are kept as they are. */
@@ -636,7 +650,7 @@ export const godot: EngineAdapter = {
       })
     }
     const p = projectName(ir)
-    const extras = [`${p}DataChecks`, `${p}Console`, `${p}Telemetry`, ...ir.channels.filter((c) => c.kind === 'asset').map((c) => `${identifier(c.words, 'type')}Channel`), ...scaffoldGlobals(ir, names(ir))]
+    const extras = [`${p}DataChecks`, `${p}Console`, `${p}Telemetry`, ...ir.channels.filter((c) => c.kind === 'asset').map((c) => `${identifier(c.words, 'type')}Channel`), ...scaffoldGlobals(ir, names(ir)), ...polishGlobals(ir, names(ir))]
     for (const n of [enumsClass(ir), idsClass(ir), formulasClass(ir), valuesClass(ir), ...extras]) claim(n, `The generated ${n}`)
     for (const c of ir.classes) {
       claim(className(c), `Class ${c.name}`)

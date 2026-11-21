@@ -192,20 +192,25 @@ def validate(root=None):
     root = root or default_root()
     manifest, types = core.load_manifest(root), core.load_types(root)
     now = state(root, types)
-    return core.validate(root, manifest, types, now) + ideas.run_checks(root, types, now)
+    return core.validate(root, manifest, types, now) + ideas.run_checks(root, types, now) + ideas.check_architecture(root)
 
 
 def telemetry_path():
     return os.path.join(unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_saved_dir()), "hoh-telemetry.jsonl")
 
 
+def budgets_path():
+    return os.path.join(unreal.Paths.convert_relative_path_to_full(unreal.Paths.project_saved_dir()), "hoh-planner-budgets.json")
+
+
 def write_report(root=None):
     root = root or default_root()
     manifest, types = core.load_manifest(root), core.load_types(root)
     now = state(root, types)
-    issues = core.validate(root, manifest, types, now) + ideas.run_checks(root, types, now)
+    issues = core.validate(root, manifest, types, now) + ideas.run_checks(root, types, now) + ideas.check_architecture(root)
     report = core.build_report(root, manifest, types, now, unreal.SystemLibrary.get_engine_version(), metrics_path(), issues=issues)
-    report["metrics"] = ideas.merge_metrics(report["metrics"], ideas.telemetry_metrics(telemetry_path()))
+    measured = core.metric_summaries(budgets_path()) + ideas.telemetry_metrics(telemetry_path())
+    report["metrics"] = ideas.merge_metrics(report["metrics"], measured)
     return core.write_report(root, report)
 
 
@@ -226,6 +231,52 @@ def make_channels(root=None):
         if _asset_tools().create_asset(name, folder, cls, factory) is not None:
             made += 1
     return made
+
+
+def make_audio(root=None):
+    """One PlannerAudioEvent data asset per planned sound under /Game/HoHPlanner/Audio, found again by PlannerId; the
+    planned values are kept in step, the sounds you assigned stay. Returns how many were made or changed."""
+    plan = core.load_types(root or default_root()).get("audio")
+    if not plan:
+        return 0
+    cls = unreal.load_class(None, plan["path"])
+    if cls is None:
+        return 0
+    folder = plan["folder"]
+    existing = {}
+    for path in unreal.EditorAssetLibrary.list_assets(folder, recursive=False):
+        asset = unreal.EditorAssetLibrary.load_asset(path)
+        if asset is not None and asset.get_class() == cls and _get(asset, "planner_id"):
+            existing[str(_get(asset, "planner_id"))] = asset
+    changed = 0
+    for e in plan.get("events", []):
+        asset = existing.get(e["plannerId"])
+        made = asset is None
+        if made:
+            factory = unreal.DataAssetFactory()
+            factory.set_editor_property("data_asset_class", cls)
+            asset = _asset_tools().create_asset(e["asset"], folder, cls, factory)
+            if asset is None:
+                continue
+            asset.set_editor_property("planner_id", e["plannerId"])
+        values = {
+            "kind": unreal.PlannerAudioKind.MUSIC if e["kind"] == "music" else unreal.PlannerAudioKind.SFX,
+            "volume": float(e["volume"]),
+            "pitch_variation": float(e["pitch"]),
+            "loop": bool(e["loop"]),
+            "spatial": bool(e["spatial"]),
+            "notes": e.get("notes", ""),
+        }
+        dirty = made
+        for k, v in values.items():
+            old = _get(asset, k)
+            if (round(old, 4) != round(v, 4)) if isinstance(v, float) else old != v:
+                asset.set_editor_property(k, v)
+                dirty = True
+        if dirty:
+            unreal.EditorAssetLibrary.save_loaded_asset(asset, False)
+            changed += 1
+    return changed
 
 
 def make_input(root=None):
@@ -454,6 +505,9 @@ def after_import(root=None):
     made = make_channels(root)
     if made:
         lines.append(f"Channels: {made} asset(s) made.")
+    sounds = make_audio(root)
+    if sounds:
+        lines.append(f"Audio: {sounds} event asset(s) made or updated.")
     p = make_placeholders(root)
     if p["made"] or p["filled"]:
         lines.append(f"Placeholders: {p['made']} made, {p['filled']} field(s) filled.")

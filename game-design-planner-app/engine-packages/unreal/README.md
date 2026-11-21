@@ -67,6 +67,16 @@ Unreal ignores the U/A/F prefix when it matches names. A class of the plan named
 - **State machines**: each state graph of the plan becomes a struct, e.g. `FNpcLifecycleStates::Create()`, on `TPlannerStateMachine`.
   - `Go(State)` only follows a planned transition; `Next()`, `OnChanged` and `IsEnded()` are there too.
 
+## Budgets, audio, architecture
+
+- **Performance budgets** (Technical › Performance): `UPlannerBudgets`, a game instance subsystem, measures the budgets outside Shipping builds.
+  - Frame time, memory, draw calls and triangles are measured by themselves. For the others (batches too), the game calls `UPlannerBudgets::Record(PlannerBudgetKeys::SimulationTick, Ms)` or the Blueprint node Record Budget.
+  - The mean, minimum and maximum go to `Saved/hoh-planner-budgets.json` when the game instance shuts down, then into the report. The planner warns when a budget is over its target.
+  - Draw calls and triangles need the RHI module, which `Generated/Dependencies.txt` then lists.
+- **Audio events** (Audio Direction): the import makes one `UPlannerAudioEvent` data asset per planned sound under `/Game/HoHPlanner/Audio`, found again by `PlannerId`.
+  - Volume, pitch variation and 3D come from the plan; the sounds are yours. `Play(WorldContext, Location)` plays one of them. Looping is set on the sound itself.
+- **Architecture guard**: Validate reports a file in one module's class folder (`Source/PlannerGame/Classes/<Module>/`) that includes a class header of a module its Depends on (Architecture › Modules) does not allow.
+
 ## Command line / CI
 
 Build the editor target first, then:
@@ -83,5 +93,5 @@ Each prints `HOH_PLANNER_RESULT: ok | errors | unreadable` (the commandlet's exi
 These are in the Unity bridge but not here:
 
 - the live link with the planner;
-- string tables from `Localization/strings.csv` (localized fields hold their key);
+- string tables from `Localization/strings.csv` (localized fields hold their key), and so no pseudo-locale;
 - Asset Manager / loading-group settings.

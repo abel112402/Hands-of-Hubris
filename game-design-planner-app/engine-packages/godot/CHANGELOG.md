@@ -15,3 +15,9 @@
 
 - Godot adapter v3: input actions (registered in the Input Map by the import), the planned screens built at run time with PlannerScreenRouter, typed state machines.
 - Still not run inside Godot.
+
+## 0.4.0
+
+- Godot adapter v4: PlannerBudgets (performance budgets), audio event resources, the architecture plan.
+- Addon: PlannerBudgets autoload and its measurements in the report, audio event resources after the import, Godot's pseudolocalization set up once, the architecture guard in Validate.
+- Still not run inside Godot.

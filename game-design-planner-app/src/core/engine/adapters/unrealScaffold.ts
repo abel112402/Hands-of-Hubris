@@ -2,6 +2,7 @@ import type { EmittedFile } from '../adapter'
 import type { EngineIR } from '../ir'
 import type { IrStateMachine } from '../irScaffold'
 import type { UnrealNames } from './unrealExtras'
+import { budgetModules } from './unrealPolish'
 
 /**
  * Unreal output for the scaffolding ideas (plans/UNITY_INTEGRATION_PLAN.md § 7), the counterparts of unityScaffold.ts:
@@ -539,4 +540,4 @@ export function stateMachineFiles(ir: EngineIR, n: UnrealNames): EmittedFile[] {
 }
 
 /** Engine modules the generated code needs beyond Core, CoreUObject, Engine and Json (Generated/Dependencies.txt). */
-export const extraModules = (ir: EngineIR) => (ir.ui.screens.length ? ['UMG', 'Slate', 'SlateCore'] : [])
+export const extraModules = (ir: EngineIR) => [...(ir.ui.screens.length ? ['UMG', 'Slate', 'SlateCore'] : []), ...budgetModules(ir)]

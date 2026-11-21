@@ -5,6 +5,8 @@ import type { ClassKind } from '../../classes'
 import type { EngineIR, EngineIssue, IrClass, IrEnum, IrFormat, IrMethod, IrRecord, IrSchema, IrSetup, NeutralType } from '../ir'
 import { channelFiles, consoleFiles, telemetryFiles, type UnrealNames } from './unrealExtras'
 import { extraModules, inputFiles as scaffoldInput, inputPlan, screenFiles, stateMachineFiles } from './unrealScaffold'
+import { audioFiles, audioPlan, budgetFiles } from './unrealPolish'
+import { architectureFile, architecturePlan } from '../architecture'
 
 /**
  * Unreal Engine 5 adapter (C++, UE 5.3+). The export is a project plugin: unpacked into <project>/Plugins/HoHPlanner,
@@ -713,7 +715,7 @@ function plannerTypes(ir: EngineIR): string {
   )
   const enums = Object.fromEntries(ir.enums.map((en) => [enumBase(en, ir), { py: enumBase(en, ir), members: Object.fromEntries(en.members.map((m, i) => [m.id, snake(words(enumMembers(en)[i])).toUpperCase()])) }]))
   const channels = ir.channels.filter((c) => c.kind === 'asset').map((c) => ({ id: c.id, name: c.name, path: `/Script/${UE_MODULE}.${identifier(c.words, 'type')}Channel` }))
-  return JSON.stringify({ format: 'hoh-unreal-types', v: 1, module: UE_MODULE, schemas, enums, channels, input: inputPlan(ir) }, null, 2) + '\n'
+  return JSON.stringify({ format: 'hoh-unreal-types', v: 1, module: UE_MODULE, schemas, enums, channels, input: inputPlan(ir), ...(audioPlan(ir, names(ir), UE_MODULE) && { audio: audioPlan(ir, names(ir), UE_MODULE) }) }, null, 2) + '\n'
 }
 
 // ---- Plugin, module and project files ----
@@ -913,6 +915,15 @@ function setupFiles(ir: EngineIR): EmittedFile[] {
   ]
 }
 
+/** The architecture guard's plan: each module's class folder, and the header files of its classes. */
+export const unrealArchitecture = (ir: EngineIR) =>
+  architecturePlan(
+    ir,
+    'include',
+    (_id, ws) => [`${SRC}Classes/${identifier(ws, 'type')}/`],
+    (c) => [...new Set([generatedHeader(c), ...(hasOwnClass(c) ? [ownHeader(c)] : [])].map((h) => h.split('/').pop()!))],
+  )
+
 function names(ir: EngineIR): UnrealNames {
   return { api: API, gen: GEN, project: projectName(ir), schemaType: schemaTypeName, identifier: (ws) => identifier(ws, 'type'), cppString, meta }
 }
@@ -921,7 +932,7 @@ export const unreal: EngineAdapter = {
   id: 'unreal',
   label: 'Unreal Engine',
   language: 'C++',
-  version: 3,
+  version: 4,
   root: 'Unreal',
   // The whole module folder is yours (Build.cs, module file, your classes) except Generated/, which the export owns.
   ownDir: SRC,
@@ -948,6 +959,9 @@ export const unreal: EngineAdapter = {
       ...scaffoldInput(ir, names(ir)),
       ...screenFiles(ir, names(ir)),
       ...stateMachineFiles(ir, names(ir)),
+      ...budgetFiles(ir, names(ir)),
+      ...audioFiles(ir, names(ir)),
+      ...architectureFile(unrealArchitecture(ir)),
       { path: `${GEN}Dependencies.txt`, content: ['# Engine modules the generated code needs beyond Core, CoreUObject, Engine and Json; PlannerGame.Build.cs reads this file.', ...extraModules(ir)].join('\n') + '\n' },
       ...classFiles(ir),
       ...ir.schemas.filter((s) => s.format !== 'native').map((s) => ({ path: `DataTables/${identifier(s.words, 'type')}.json`, content: dataTable(s, ir.records.filter((r) => r.schema === s.id), ir) })),
@@ -977,7 +991,7 @@ export const unreal: EngineAdapter = {
         if (s.format !== 'native' && inner.k === 'asset') out.push({ level: 'info', code: 'unreal.assetPath', schema: s.id, field: f.name, message: `${s.name}.${f.name}: a soft reference in the DataTable; the planner value must be an Unreal path (/Game/…) to be set.` })
       })
     }
-    const extras = [`${projectName(ir)}Telemetry`, 'PlannerGameEvents', 'PlannerConsole', 'PlannerInput', 'PlannerScreens', 'PlannerStateMachine', ...ir.stateMachines.map((m) => `${identifier(m.words, 'type')}States`), ...ir.channels.filter((c) => c.kind === 'asset').map((c) => `${identifier(c.words, 'type')}Channel`)]
+    const extras = [`${projectName(ir)}Telemetry`, 'PlannerGameEvents', 'PlannerConsole', 'PlannerInput', 'PlannerScreens', 'PlannerStateMachine', ...(ir.budgets.length ? ['PlannerBudgets'] : []), ...(ir.audio.events.length ? ['PlannerAudioEvent'] : []), ...ir.stateMachines.map((m) => `${identifier(m.words, 'type')}States`), ...ir.channels.filter((c) => c.kind === 'asset').map((c) => `${identifier(c.words, 'type')}Channel`)]
     for (const n of [`${projectName(ir)}Enums`, `${projectName(ir)}Formulas`, 'PlannerMetrics', ...extras]) claim(n, `${n}.h`, `The generated ${n}`)
     for (const en of ir.enums) if (enumBase(en, ir) !== identifier(en.words, 'type')) out.push({ level: 'info', code: 'unreal.typeName', message: `Enum ${en.name}: called E${enumBase(en, ir)} so it does not clash with Unreal's ${identifier(en.words, 'type')}.` })
     for (const c of ir.classes) {

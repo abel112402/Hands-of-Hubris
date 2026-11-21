@@ -21,3 +21,9 @@
 - Unreal adapter v3: input constants and Enhanced Input assets (made by the bridge), the planned screens as UMG widgets built at run time with UPlannerScreenRouter, typed state machines; Build.cs reads Generated/Dependencies.txt.
 - Bridge: Enhanced Input assets after the import (needs the EnhancedInput plugin).
 - Still not compiled or run inside Unreal.
+
+## 0.4.0
+
+- Unreal adapter v4: UPlannerBudgets (performance budgets), UPlannerAudioEvent, the architecture plan.
+- Bridge: budget measurements in the report, audio event assets after the import, the architecture guard in Validate.
+- Still not compiled or run inside Unreal.

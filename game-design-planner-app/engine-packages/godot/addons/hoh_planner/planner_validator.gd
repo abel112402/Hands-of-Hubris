@@ -1,7 +1,8 @@
 @tool
 extends RefCounted
 ## Checks the imported records against the plan: every native record has its .tres, every required field is filled,
-## no record points at a deprecated one. Required fields come from ir/engine-ir.json.
+## no record points at a deprecated one, the data checks hold, and the code keeps to the planned module dependencies.
+## Required fields come from ir/engine-ir.json.
 
 const Bundle := preload("planner_bundle.gd")
 const Importer := preload("planner_importer.gd")
@@ -56,6 +57,7 @@ static func run(at: String) -> Array[Dictionary]:
 			elif v is Resource and v.has_meta(Importer.DEPRECATED):
 				issues.append({"level": "warning", "key": key, "path": res.resource_path, "message": "%s.%s: points at a deprecated record." % [key, planner]})
 	issues.append_array(data_checks(at, resources))
+	issues.append_array(architecture(at))
 	return issues
 
 
@@ -83,6 +85,85 @@ static func data_checks(at: String, resources: Dictionary) -> Array[Dictionary]:
 			var span := "%s–%s" % [c.get("min", "−∞"), c.get("max", "∞")]
 			out.append({"level": c["level"], "key": "", "path": "", "message": "%s (%s) outside %s: %s" % [c["name"], c["expr"], span, ", ".join(outside)]})
 	return out
+
+
+## The architecture guard (ProjectFiles/architecture.json): a script in one module's folders may not use a class of a
+## planned module its Depends on (Architecture › Modules) does not allow, by class name or by a res:// path into its
+## folders. Comments and strings other than paths are left out.
+static func architecture(at: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var plan: Variant = Bundle.read_json(at + "/ProjectFiles/architecture.json")
+	if not (plan is Dictionary):
+		return out
+	var modules: Array = plan.get("modules", [])
+	var folders := {}
+	for m in modules:
+		var list := PackedStringArray()
+		for f in m.get("folders", []):
+			list.append(str(f) if str(f).begins_with("res://") else at + "/" + str(f))
+		folders[m["name"]] = list
+	var word := RegEx.create_from_string("[A-Za-z_][A-Za-z0-9_]*")
+	var res_path := RegEx.create_from_string("res://[^\"']+")
+	for m in modules:
+		var allowed: Array = m.get("allows", [])
+		var seen := {}
+		for dir in folders[m["name"]]:
+			for path in Bundle.files_in(dir.trim_suffix("/"), "gd"):
+				if seen.has(path):
+					continue
+				seen[path] = true
+				var code := _code_only(FileAccess.get_file_as_string(path))
+				var names := {}
+				for w in word.search_all(code["text"]):
+					names[w.get_string()] = true
+				var used := PackedStringArray()
+				for other in modules:
+					if other["name"] == m["name"] or other["name"] in allowed:
+						continue
+					var hit := ""
+					for t in other.get("tokens", []):
+						if names.has(t):
+							hit = t
+							break
+					if hit == "":
+						for p in res_path.search_all(code["paths"]):
+							for dir in folders[other["name"]]:
+								if p.get_string().begins_with(dir):
+									hit = p.get_string()
+					if hit != "":
+						used.append("%s (%s)" % [other["name"], hit])
+				if not used.is_empty():
+					out.append({"level": "error", "key": "", "path": path, "message": "%s (module %s) uses %s, which its Depends on does not allow. Change the code, or the module's Depends on in the plan." % [path.get_file(), m["name"], ", ".join(used)]})
+	return out
+
+
+## A script without comments and string contents ("text"), and its string literals ("paths"), for the architecture guard.
+static func _code_only(source: String) -> Dictionary:
+	var text := ""
+	var paths := ""
+	var quote := ""
+	var i := 0
+	while i < source.length():
+		var c := source[i]
+		if quote != "":
+			if c == "\\":
+				i += 1
+			elif c == quote:
+				quote = ""
+				paths += "\n"
+			else:
+				paths += c
+		elif c == "#":
+			while i < source.length() and source[i] != "\n":
+				i += 1
+			text += "\n"
+		elif c == "\"" or c == "'":
+			quote = c
+			text += " "
+		else:
+			text += c
+		i += 1
+	return {"text": text, "paths": paths}
 
 
 static func describe(issues: Array[Dictionary]) -> String:

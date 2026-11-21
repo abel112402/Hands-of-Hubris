@@ -153,6 +153,42 @@ class Ideas(unittest.TestCase):
         merged = self.ideas.merge_metrics([{"key": "enemy_killed.count", "value": 99}], list(m.values()))
         self.assertEqual(next(x for x in merged if x["key"] == "enemy_killed.count")["value"], 99)
 
+    def test_holds_the_code_to_the_planned_module_dependencies(self):
+        plan = core.read_json(os.path.join(ROOT, "Unreal", "ProjectFiles", "architecture.json"))
+        self.assertEqual(plan["match"], "include")
+        npc = next(m for m in plan["modules"] if m["name"] == "Simulation.Npc")
+        self.assertEqual(npc["folders"], ["Source/PlannerGame/Classes/SimulationNpc/"])
+        self.assertIn("NpcBrain.h", npc["tokens"])
+        self.assertIn("NpcBrainBase.h", npc["tokens"])
+        folder = os.path.join(ROOT, "Unreal", "Source", "PlannerGame", "Classes", "SimulationTown")
+        os.makedirs(folder, exist_ok=True)
+        bad = os.path.join(folder, "Probe.cpp")
+        with open(bad, "w", encoding="utf-8") as f:
+            f.write('#include "Classes/CoreData/Something.h"\n#include "Classes/SimulationNpc/NpcBrain.h"\n')
+        try:
+            issues = self.ideas.check_architecture(ROOT)
+        finally:
+            os.unlink(bad)
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["path"], "Source/PlannerGame/Classes/SimulationTown/Probe.cpp")
+        self.assertIn("module Simulation.Town", issues[0]["message"])
+        self.assertIn("Simulation.Npc (Classes/SimulationNpc/NpcBrain.h)", issues[0]["message"])
+        self.assertEqual(self.ideas.check_architecture(ROOT), [])
+
+    def test_lists_the_planned_sounds(self):
+        audio = self.types["audio"]
+        self.assertEqual(audio["path"], "/Script/PlannerGame.PlannerAudioEvent")
+        axe = next(e for e in audio["events"] if e["name"] == "Axe chop")
+        self.assertEqual((axe["asset"], axe["kind"], axe["volume"], axe["pitch"], axe["loop"]), ("AE_AxeChop", "sfx", 0.7, 0.05, False))
+
+    def test_reads_measured_budgets_like_metrics(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+            json.dump({"metrics": [{"key": "perf.frame_time", "samples": 4, "sum": 80, "min": 15, "max": 30, "build": "0.3"}]}, f)
+            path = f.name
+        m = core.metric_summaries(path)
+        os.unlink(path)
+        self.assertEqual(m, [{"key": "perf.frame_time", "value": 20.0, "samples": 4, "min": 15.0, "max": 30.0, "build": "0.3"}])
+
     def test_draws_a_valid_png_with_initials(self):
         import struct
         import zlib

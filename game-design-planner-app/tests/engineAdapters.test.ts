@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import JSZip from 'jszip'
 import { deserializeProject } from '../src/core/persistence/serialize'
 import { ENGINE_ADAPTERS } from '../src/core/engine/adapters'
@@ -106,7 +106,13 @@ describe('engine bundle', () => {
 
   it('zips the same bytes for the same project', async () => {
     const zip = async () => new Uint8Array(await (await bundleZip(buildBundle(cinderholm(), 'unity', 'T'))).arrayBuffer())
-    const [a, b] = [await zip(), await zip()]
+    // Minutes apart: nothing in the zip may carry the time it was made (JSZip dates the folders it adds itself).
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-01-01T10:00:00Z'))
+    const a = await zip()
+    vi.setSystemTime(new Date('2026-01-01T10:07:31Z'))
+    const b = await zip()
+    vi.useRealTimers()
     expect(a).toEqual(b)
     const back = await JSZip.loadAsync(a)
     expect(back.file(`${BUNDLE_ROOT}/Unity/Scripts/Generated/Ids.cs`)).toBeTruthy()

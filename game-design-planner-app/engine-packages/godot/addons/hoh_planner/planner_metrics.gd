@@ -43,11 +43,11 @@ func save() -> void:
 		_dirty = false
 
 
-static func load_file() -> Dictionary:
+static func load_file(path: String = FILE) -> Dictionary:
 	var out := {}
-	if not FileAccess.file_exists(FILE):
+	if not FileAccess.file_exists(path):
 		return out
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(FILE))
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:
 		for m in parsed.get("metrics", []):
 			if m is Dictionary and str(m.get("key", "")) != "":
@@ -55,10 +55,10 @@ static func load_file() -> Dictionary:
 	return out
 
 
-## The metrics as the report lists them: the mean of each key's samples.
-static func summaries() -> Array:
+## The metrics as the report lists them: the mean of each key's samples. The budgets file (PlannerBudgets) has the same shape.
+static func summaries(path: String = FILE) -> Array:
 	var out: Array = []
-	var data := load_file()
+	var data := load_file(path)
 	var keys := data.keys()
 	keys.sort()
 	for k in keys:

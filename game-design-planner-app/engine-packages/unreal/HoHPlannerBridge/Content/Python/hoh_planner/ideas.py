@@ -300,3 +300,40 @@ def greybox_plan(location):
         "spawns": [{"role": str(s.get("role", "spawn")), "label": str(s.get("label") or ""), "count": int(s.get("count") or 1), "xy": at(s)} for s in location.get("spawns", [])],
         "lights": [{"xy": at(l), "radius": max(1.0, float(l.get("radius") or cell * 4) / cell), "color": str(l.get("color") or "#ffffff"), "intensity": float(l.get("intensity") or 1)} for l in location.get("lights", [])],
     }
+
+
+# ---- Architecture guard -----------------------------------------------------------------------------------------
+
+_INCLUDE = re.compile(r'^\s*#\s*include\s*[<"]([^">]+)[">]', re.M)
+
+
+def check_architecture(root):
+    """Unreal/ProjectFiles/architecture.json: a header or source file in one module's class folder may not include a class
+    header of a planned module its Depends on (Architecture › Modules) does not allow. Returns issues like
+    core.validate's."""
+    code = os.path.join(root, "Unreal")
+    plan = core.read_json(os.path.join(code, "ProjectFiles", "architecture.json")) or {}
+    modules = plan.get("modules", [])
+    issues = []
+    for m in modules:
+        allowed = set(m.get("allows", []))
+        others = [o for o in modules if o["name"] != m["name"] and o["name"] not in allowed]
+        for folder in m.get("folders", []):
+            base = os.path.join(code, folder)
+            for dirpath, _dirs, files in os.walk(base):
+                for name in sorted(files):
+                    if not name.endswith((".h", ".hpp", ".cpp", ".inl")):
+                        continue
+                    path = os.path.join(dirpath, name)
+                    with open(path, encoding="utf-8", errors="replace") as f:
+                        includes = [i.replace("\\", "/") for i in _INCLUDE.findall(f.read())]
+                    used = []
+                    for o in others:
+                        tokens = set(o.get("tokens", []))
+                        hit = next((i for i in includes if i.rsplit("/", 1)[-1] in tokens), None)
+                        if hit:
+                            used.append(f"{o['name']} ({hit})")
+                    if used:
+                        rel = os.path.relpath(path, code).replace("\\", "/")
+                        issues.append({"level": "error", "key": "", "path": rel, "message": f"{name} (module {m['name']}) includes {', '.join(used)}, which its Depends on does not allow. Change the code, or the module's Depends on in the plan."})
+    return issues

@@ -31,13 +31,14 @@ static func build(at: String) -> Dictionary:
 	}
 
 
-## PlannerMetrics samples, then the telemetry log's metrics for the keys PlannerMetrics did not record.
+## PlannerMetrics samples, then the measured performance budgets and the telemetry log's metrics for the keys not
+## recorded before.
 static func _metrics() -> Array:
 	var out := Metrics.summaries()
 	var seen := {}
 	for m in out:
 		seen[m["key"]] = true
-	for m in Extras.telemetry_metrics():
+	for m in Metrics.summaries(Extras.BUDGETS) + Extras.telemetry_metrics():
 		if not seen.has(m["key"]):
 			out.append(m)
 	out.sort_custom(func(a, b): return str(a["key"]) < str(b["key"]))
