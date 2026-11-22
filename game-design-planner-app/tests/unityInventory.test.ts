@@ -27,6 +27,7 @@ describe('inventory rules from the plan', () => {
       items: [
         { item: IDS.itemKey, name: 'Brass Key', stack: 1 },
         { item: IDS.itemCoin, name: 'Coin', stack: 999 },
+        { item: IDS.itemStick, name: 'Stick', stack: 1 },
         { item: IDS.itemPolished, name: 'Polished Key', stack: 1 },
       ],
       shown: { grid: true, counters: [IDS.itemCoin] },
@@ -39,7 +40,7 @@ describe('inventory rules from the plan', () => {
     expect(inventoryRules(p).rules.items[1]).toEqual({ item: IDS.itemCoin, name: 'Coin', stack: 1 })
     delete model(p).defaultStack
     const { rules, issues } = inventoryRules(p)
-    expect(rules.items.map((i) => i.item)).toEqual([IDS.itemKey, IDS.itemPolished])
+    expect(rules.items.map((i) => i.item)).toEqual([IDS.itemKey, IDS.itemStick, IDS.itemPolished])
     expect(issues).toEqual([expect.objectContaining({ level: 'error', code: 'gameplay.noStack', where: { doc: 'design.items', section: 'items', id: IDS.itemCoin, field: 'stack' } })])
     expect(dataInvalid(p).map((i) => i.field)).toEqual(['gameplay.noStack'])
   })
@@ -76,6 +77,7 @@ describe('inventory in the IR and the Unity export', () => {
       items: [
         { item: IDS.itemKey, key: 'item.brass_key', name: 'Brass Key', stack: 1 },
         { item: IDS.itemCoin, key: 'item.coin', name: 'Coin', stack: 999 },
+        { item: IDS.itemStick, key: 'item.stick', name: 'Stick', stack: 1 },
         { item: IDS.itemPolished, key: 'item.polished_key', name: 'Polished Key', stack: 1 },
       ],
       shown: { grid: true, counters: [IDS.itemCoin] },
@@ -91,6 +93,6 @@ describe('inventory in the IR and the Unity export', () => {
     expect(config).toContain(`HudItemCounters = { "${IDS.itemCoin}" };`)
     expect(unityFile(p, 'Unity/UI/Screens/Hud.uxml')).toContain('name="bind-inventory"')
     expect(unityFile(p, 'Unity/Tests/PlayMode/PlannerPrototypeSceneTests.cs')).toContain('PickingUpFillsTheInventoryAndTheHud')
-    expect(buildBundle(p, 'unity', AT).manifest.requires?.runtime.version).toBe('0.9.0')
+    expect(buildBundle(p, 'unity', AT).manifest.requires?.runtime.version).toBe('0.10.0')
   })
 })

@@ -769,6 +769,90 @@ Minden fázis önálló, tesztelhető változásként szállítandó. A megadott
 - Konfigurálható életerő, sebzés, egy egyszerű támadástípus, halál és jutalom/loot kapcsolódjon a meglévő Combat és Items adatokhoz. Az első támogatott harci modell és képletek legyenek explicit, ne általános harcrendszerként legyenek feltüntetve.
 - **Kész, ha:** egy tervből konfigurált találkozás lejátszható, az értékek és következmények tesztelhetők, és a nem támogatott támadásmódot a rendszer jelzi.
 
+**Állapot (2026-11-22): kész — az első támogatott harci modell: csak közelharc.**
+
+- **A modell kimondva, nem általános harcrendszerként** ([`combatRules`](../src/core/gameplay.ts), a meglévő Combat-, Items- és Player-adatokból):
+  - **Játékos:**
+    - az életereje a Player Character › Survival stats › *Health* maximuma; ha nincs, 100, látható alapértékként;
+    - fegyvere az új *Player weapon* mező (Technical Architecture › Playable prototype) tárgya, annak *Damage*, *Damage type* és *Attacks per second* értékével (ha nincs gyakoriság, 1/s, alapértékként);
+    - a hatótáv az új *Attack range (m)* mező (Player Character › Controls and camera; alapérték 1,5 m, csak választott harcnál jelezve);
+    - új Runtime action: *Attack*.
+  - **Ellenfelek:**
+    - a térképen *enemy* spawn szerepű objektumok; a térképszerkesztő új *Enemy* választóval köti őket a Combat › Enemies egyikéhez, és ismeretlen hivatkozásnál „Unknown enemy” jelenik meg;
+    - értékek: a tervezett *HP*, *Damage per hit*, *Attacks per second*, *Armor*, *Resistances*, *Speed* (ha nincs, 2 m/s, alapértékként) és *Aggression*;
+    - a *Passive* nem támad, a többi 8 m-en belül üldöz, és 1,5 m-en belül üt (ezt `gameplay.combatModel` infó mondja ki);
+    - a HP, a sebzés és a gyakoriság hiánya `gameplay.enemyStat` hiba.
+  - **Sebzés:** minden találat a terv sebzésképlete (Combat › Damage and defense model; ha üres, az alapképlet, ezt jelzi) a következő változókkal: attack, armor, resist (az ellenfél ellenállása a fegyver sebzéstípusára; a negatív érték gyengeség) és crit = 1. Más változó (`gameplay.damageFormulaVars`) vagy olvashatatlan képlet hiba. A játékosnak nincs páncélja és ellenállása.
+  - **Következmény:**
+    - a legyőzött ellenfél XP-je eseményben jelenik meg; szintmodul még nincs;
+    - a *Loot tables* „Always drops” tárgyait magánál tartja, és interakcióval egyszer vehetők el;
+    - a legyőzött játékos teljes életerővel visszakerül a kezdőpontra.
+  - **Nem támogatott támadásmód:** a *Ranged*, *Caster* és *Support* szerepű, térképre tett ellenfél **blokkoló hibát** ad (`gameplay.attackUnsupported`). Infóként jelezve, nem futtatva: krit, státuszeffektek, nehézségi és éjszakai skálázás, súlyozott loot, támadásminta, gyengeséglista és éjszakai változat.
+- **Képességmátrix:**
+  - a harc Unityben *frame* helyett *template*;
+  - új adatfeltételek: elhelyezett ellenfél, sebzéssel rendelkező Player weapon és Attack-control;
+  - ha loot van, Interaction és Inventory is kell (`proto.requires`);
+  - mentésnél kell egy *Combat* Runtime state-ű rész (új mentési állapot).
+  
+  A referencia „Playable” maradt: mind a 7 választott rendszer *template*.
+- **Referencia-terv:**
+  - *Yard Rat* (Swarm, Hunter, 20 HP, 3 sebzés, 1/s, 10 páncél, 2 m/s, 5 XP), a térkép járható részén, a kezdőponttól és a kulcstól 15–25 m-re, rácsból determinisztikusan választva, hogy ne zavarja a korábbi teszteket;
+  - *Stick* fegyver (6 sebzés, 2/s);
+  - 30 Health;
+  - F billentyű az Attack-hez;
+  - *Rat drop* loot tábla (mindig egy Coin);
+  - HUD életerő-sáv;
+  - *Combat* mentési rész.
+  
+  Az export 43 fájl, 5 rekord, 0 hiba.
+- **IR (v9):** `gameplay.combat` (a játékos, a fegyver, a képlet, az elhelyezett ellenfelek a lootjukkal, az aggro- és ütéstáv), és az *enemy* szerepű placement.
+- **Unity-adapter v16:**
+  - **`PlannerDamageFormula`** (`Scripts/Generated/Combat/`): a terv képlete C#-ban, a meglévő formula-emitterrel;
+  - `PlannerGameplay`: `AttackKey`, `PlayerHp`, `AttackRange`, `WeaponRate`, és `Enemies`. Az utóbbiban a **várt találatok a tervező saját képletkiértékelőjével számolva** (pl. 6·100/110 = 5,454545 a ratra, 3 a játékosra), így a teszt a generált C# képletet is ellenőrzi;
+  - Attack input-akció;
+  - **generált tesztek:**
+    - `TheEncounterPlaysAsPlanned`: az F billentyűvel pontosan annyi találat, amennyit a terv számai kérnek; mindkét fél a képlet szerinti sebzést adja; egyszer jár XP, egyszer a loot;
+    - `ADefeatedPlayerIsBackAtTheStart`;
+    - `TheFightIsTheSameAfterSavingAndLoading`.
+- **Runtime 0.10.0:**
+  - `PlannerCombat` („combat”, a „movement” után), `PlannerHealth`, `PlannerEnemy`, `PlannerLoot`, `IPlannerDamageFormula`, `IPlannerCombatSource` (Attack-akció);
+  - események: `PlannerHit`, `PlannerEnemyDefeated`, `PlannerPlayerDefeated`;
+  - a `PlannerStateKind.Combat` mentési állapot, ellenőrzéssel (ismeretlen ellenfél, a maximumnál nagyobb életerő);
+  - a HUD *Health* sávja (`bind-survivalStat-health`);
+  - `PlannerInventory.CanAddAll`;
+  - az önellenőrzés minden ellenféllel megvív, és elveszi a lootját.
+- **Bridge (scene-építő 7. verzió):**
+  - *Combat* objektum (a játékos életereje, `PlannerCombat`, a generált képlet interfész alapján, újraéledés a kezdőponton);
+  - minden elhelyezett ellenfél a tervezett értékekkel és CharacterControllerrel; teste a `Prototype/Prefabs/<enemy>.prefab` (egyszer készül, utána a felhasználóé); a lootja;
+  - a HUD és a mentés bekötése.
+- **Gate:** új törés, `--break ranged-enemy`.
+- **TS-ellenőrzés:**
+  - új [`tests/unityCombat.test.ts`](../tests/unityCombat.test.ts), 13 teszt: szabályok; alapértékek; nem támogatott támadásmód, blokkolva a helyével; hiányzó értékek; képlethibák; a nem futtatott részek; *template*/„Playable”; adatfeltételek; loot- és mentésfüggés; IR; a generált képlet és a várt találatok; billentyű és generált tesztek; harc nélkül nincs semmi;
+  - UI-teszt az *Enemy* választóra;
+  - frissült: képesség-, IR-, gameplay-, UI-, referencia-, inventory-, mentés-, verzió- és gate-teszt, pillanatkép (az adapter v16 fejléce) és bridge-fixture;
+  - **teljes kör 1428-ból 1427 zöld** (a kivétel az ismert `v3CompanionUi` időzítéses teszt). A typecheck és a lint zöld.
+- **Unity-gate:** **PASSED** (exit 0), elsőre (`gate-report-p15.md`).
+  - **Unity 6000.0.40f1:**
+    - import (18 írt fájl), `Validate` 0 hibával;
+    - EditMode 60/61 (1 régi kihagyott), köztük a bridge `AddsCombatWithThePlannedEnemiesAndFormula` tesztje;
+    - **PlayMode 59/59**, köztük 9 új runtime harcteszt és a 3 generált scene-teszt;
+    - a Windows player önellenőrzése: **✓ fight Yard Rat — 4 találat (a terv szerint 4), 5,455 találatonként, 5 XP**, ✓ loot. A mentés/betöltés friss játékba a teljes állapotot visszaadta: kulcs felvéve, Polished Key legyártva, 4 Coin, a rat legyőzve, quest kész; betöltéskor 0 jutalom;
+    - újraimport 0 írással, értékváltozás 7/7.
+  - **Unity 2022.3.21f1:** import, fordítás és `Validate` 0 hibával, EditMode 60/61.
+  - **`--break ranged-enemy`:** FAILED (exit 1): a `--strict` export megáll („Yard Rat is a Ranged enemy: the prototype only runs melee attacks…”), a ráépülő lépések kimaradnak.
+- **Böngésző:** a *Player weapon* és az *Attack range (m)* mező megjelenik; nincs konzolhiba. A saját projektet nem módosítottam. Az *Enemy* választót UI-teszt fedi.
+- **Nem része, nyitott:**
+  - távolsági és varázsló ellenfél;
+  - főellenség és ostrom;
+  - célzás, kitérés, blokk;
+  - krit, státuszeffektek, nehézségi és éjszakai skálázás;
+  - súlyozott loot;
+  - páncél és ellenállás a játékoson;
+  - XP és szintlépés;
+  - NavMesh-alapú útkeresés (az ellenfél egyenesen közelít, a falakon a CharacterController állítja meg);
+  - ellenfél-animáció és találatvisszajelzés;
+  - gamepad Attack-gomb (bekötve, de tesztelés nélkül).
+
 ### 16. NPC és párbeszéd-alap — függőség: 9, 11, 12
 
 - Elsőként interakcióra reagáló NPC, típusos párbeszédcsomópontok, választások és megengedett következmények. A meglévő párbeszédstílus-szöveg önmagában nem végrehajtható dialógus.

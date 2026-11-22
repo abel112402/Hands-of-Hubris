@@ -30,7 +30,7 @@ describe('prototype scene in the plan and the IR', () => {
     const { ir, issues } = buildIR(p)
     expect(ir.gameplay?.scene?.metresPerUnit).toBe(0.25)
     expect(ir.gameplay?.scene?.cell).toBeUndefined()
-    expect(issues.some((i) => i.code === 'gameplay.default')).toBe(false)
+    expect(issues.some((i) => i.code === 'gameplay.default' && i.where?.field === 'mapScale')).toBe(false)
 
     proto(p).mapScale = -1
     const bad = buildBundle(p, 'unity', AT).issues.find((i) => i.code === 'proto.dataInvalid' && i.field === 'gameplay.badScale')
@@ -79,8 +79,8 @@ describe('Unity export of the prototype scene', () => {
     expect(test).toContain('PlannerRuntimeState.Running')
   })
 
-  it('asks for runtime 0.9.0 (placements, interaction, inventory, quests, saving, self-test, crafting)', () => {
+  it('asks for runtime 0.10.0 (placements, interaction, inventory, quests, saving, self-test, crafting, combat)', () => {
     const b = buildBundle(buildReferenceSlice(), 'unity', AT)
-    expect(b.manifest.requires?.runtime).toEqual({ package: 'com.handsofhubris.planner-runtime', version: '0.9.0' })
+    expect(b.manifest.requires?.runtime).toEqual({ package: 'com.handsofhubris.planner-runtime', version: '0.10.0' })
   })
 })

@@ -21,7 +21,7 @@ export const GATE_USAGE = `Usage: npm run gate:unity -- [options]
   --editor <Unity.exe>   a Unity editor to run; repeat for more (or HOH_GATE_EDITOR, ; between paths). Default: the Hub's ${'6000.0.40f1'} (full) and 2022.3.21f1 (compile)
   --compile <Unity.exe>  an editor that only imports, compiles and runs EditMode tests (the LTS floor; or HOH_GATE_COMPILE)
   --plan <file>          the plan (default: tests/fixtures/reference-slice-3d.hohplan.json)
-  --break <kind>         change the plan on purpose: ${'quest-unreachable | no-interact | missing-scene'}
+  --break <kind>         change the plan on purpose: ${'quest-unreachable | no-interact | missing-scene | ranged-enemy'}
   --fresh                make the Unity projects again`
 
 export type StepStatus = 'passed' | 'failed' | 'blocked' | 'skipped'
@@ -96,6 +96,13 @@ export const BREAKS: Record<string, { what: string; fails: string; apply: (p: Pr
     fails: 'export (--strict: interaction needs an Interact control)',
     apply: (p) => {
       for (const c of p.documents['design.ui'].data.controls as Record<string, unknown>[]) if (c.drives === 'Interact') delete c.drives
+    },
+  },
+  'ranged-enemy': {
+    what: 'The placed enemy is a Ranged enemy, which the first combat model does not run.',
+    fails: 'export (--strict: unsupported attack mode)',
+    apply: (p) => {
+      for (const e of (p.documents['design.combat']?.data.enemies ?? []) as Record<string, unknown>[]) e.role = 'Ranged'
     },
   },
   'missing-scene': {

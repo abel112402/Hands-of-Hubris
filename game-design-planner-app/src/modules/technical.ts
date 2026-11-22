@@ -18,13 +18,13 @@ export const PROTOTYPE_SYSTEMS = [
 ] as const
 export type PrototypeSystem = (typeof PROTOTYPE_SYSTEMS)[number]['key']
 /** What a planned control does in the runtime (UI / UX › Controls › Runtime action); never guessed from its name. */
-export const RUNTIME_ACTIONS = ['Move forward', 'Move back', 'Move left', 'Move right', 'Interact', 'Open crafting'] as const
+export const RUNTIME_ACTIONS = ['Move forward', 'Move back', 'Move left', 'Move right', 'Interact', 'Open crafting', 'Attack'] as const
 export type RuntimeAction = (typeof RUNTIME_ACTIONS)[number]
 /** Player settings the runtime uses when the plan leaves them empty; the export reports each one it filled in. */
 /** The runtime state a saved part holds in a playable prototype (Save System › Saved parts › Runtime state); never guessed from its name. */
-export const SAVE_STATES = ['Player position', 'Inventory', 'Quests'] as const
+export const SAVE_STATES = ['Player position', 'Inventory', 'Quests', 'Combat'] as const
 export type SaveState = (typeof SAVE_STATES)[number]
-export const PLAYER_DEFAULTS = { moveSpeed: 4, cameraDistance: 5, cameraHeight: 2, interactRange: 2 } as const
+export const PLAYER_DEFAULTS = { moveSpeed: 4, cameraDistance: 5, cameraHeight: 2, interactRange: 2, attackRange: 1.5 } as const
 
 const ADR_STATUS = ['Proposed', 'Accepted', 'Deprecated', 'Superseded']
 const STATUS = ['Planned', 'In progress', 'Done', 'Blocked']
@@ -334,6 +334,7 @@ export const technicalModules = [
           f.enm('renderPipeline', 'Render pipeline', [...PROTOTYPE_PIPELINES], { group: 'Profile', help: 'URP is supported first.' }),
           f.enm('platform', 'Target platform', [...PROTOTYPE_PLATFORMS], { group: 'Profile', tier: 'core', help: 'Windows, macOS and Linux standalone builds first.' }),
           ...PROTOTYPE_SYSTEMS.map((x) => f.bool(x.key, x.label, { group: 'Systems', help: x.help })),
+          f.ref('weapon', 'Player weapon', section('items', 'design.items'), { group: 'Combat', help: 'The item the player fights with: its Damage, Damage type and Attacks per second (Items & Crafting). Needed for Combat.' }),
           f.ref('scene', 'Prototype scene', section('scenes'), { group: 'Scene', help: 'The planned scene the prototype is played in. The engine builds it from the location map with the player start, under this scene’s name, so the Build Settings step of the scenes includes it.' }),
           f.num('mapScale', 'Map scale (metres per map unit)', { group: 'Scene', min: 0.001, step: 0.01, help: 'How big the location map is in the game. Empty: one walkability cell of the map is one metre, as in the greybox (e.g. 0.1 m per unit on a village map).' }),
         ],
@@ -593,7 +594,7 @@ export const technicalModules = [
         f.ref('module', 'Module', section('modules', 'technical.architecture'), { help: 'The module whose code saves this part.' }),
         f.num('since', 'Since save version', { min: 1, help: 'The save version that added it; older saves do not have it.' }),
         f.long('notes', 'What it holds'),
-        f.enm('state', 'Runtime state', [...SAVE_STATES], { group: 'Engine', help: 'What a playable prototype saves in this part. Inventory also holds which items were picked up from the map, so they do not come back.' }),
+        f.enm('state', 'Runtime state', [...SAVE_STATES], { group: 'Engine', help: 'What a playable prototype saves in this part. Inventory also holds which items were picked up from the map, so they do not come back; Combat holds the player’s health and which enemies are defeated or looted.' }),
       ],
       [v.table(['name', 'module', 'since', 'notes'])],
       { description: 'What one save holds, part by part. The engine export turns each into a save key and an interface the saving code implements.' },

@@ -18,10 +18,14 @@ describe('IR v9 gameplay', () => {
     expect(ir.v).toBe(9)
     expect(IR_VERSION).toBe(9)
     // Phase 8: the only gameplay note is the visible default map scale (one walkability cell per metre).
-    expect(issues.filter((i) => i.code.startsWith('gameplay.')).map((i) => [i.level, i.code, i.where?.field])).toEqual([['info', 'gameplay.default', 'mapScale']])
+    expect(issues.filter((i) => i.code.startsWith('gameplay.')).map((i) => [i.level, i.code, i.where?.field])).toEqual([
+      ['info', 'gameplay.default', 'mapScale'],
+      ['info', 'gameplay.default', undefined],
+      ['info', 'gameplay.combatModel', undefined],
+    ])
     const g = ir.gameplay!
     expect(g.profile).toEqual({ dimension: '3D', perspective: 'Third-person', renderPipeline: 'URP', platform: 'Windows' })
-    expect(g.systems).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting'])
+    expect(g.systems).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat'])
     expect(g.quests).toEqual([
       {
         quest: IDS.quest,
@@ -35,6 +39,7 @@ describe('IR v9 gameplay', () => {
     expect(g.placements.map((x) => [x.role, x.object, x.item, x.key, x.count])).toEqual([
       ['player', IDS.start, undefined, undefined, 1],
       ['item', IDS.pickup, IDS.itemKey, 'item.brass_key', 1],
+      ['enemy', IDS.enemySpawn, undefined, undefined, 1],
     ])
     expect(g.scene).toEqual({ scene: { id: IDS.scene, name: 'Keeper’s Yard' }, location: IDS.location, locationName: 'Keeper’s Yard', map: `Maps/${IDS.location}.json`, cell: 10 })
   })
@@ -68,13 +73,13 @@ describe('compatibility', () => {
     for (const a of [godot, unreal]) expect(a.emit(ir)).toEqual(a.emit(without))
     const withPaths = unity.emit(ir).map((f) => f.path)
     const withoutPaths = unity.emit(without).map((f) => f.path)
-    expect(withPaths.filter((p) => !withoutPaths.includes(p))).toEqual(['Scripts/Generated/Save/PlannerSaveSlice.cs', 'Scripts/Generated/Story/PlannerQuestGraph.cs', 'Tests/PlayMode/PlannerPrototypeSceneTests.cs', 'Scripts/Generated/Gameplay/PlannerGameplay.cs', 'Tests/PlayMode/ReferenceSlice3D.PlannerPlayModeTests.asmdef', 'Tests/PlayMode/PlannerPlayerTests.cs'])
+    expect(withPaths.filter((p) => !withoutPaths.includes(p))).toEqual(['Scripts/Generated/Combat/PlannerDamageFormula.cs', 'Scripts/Generated/Save/PlannerSaveSlice.cs', 'Scripts/Generated/Story/PlannerQuestGraph.cs', 'Tests/PlayMode/PlannerPrototypeSceneTests.cs', 'Scripts/Generated/Gameplay/PlannerGameplay.cs', 'Tests/PlayMode/ReferenceSlice3D.PlannerPlayModeTests.asmdef', 'Tests/PlayMode/PlannerPlayerTests.cs'])
   })
 
   it('says plainly that Godot and Unreal do not make the chosen systems playable', () => {
     for (const engine of ['godot', 'unreal'] as const) {
       const b = buildBundle(buildReferenceSlice(), engine, '2026-01-01T00:00:00.000Z')
-      expect(b.issues.filter((i) => i.code === 'proto.unsupported').map((i) => i.field)).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting'])
+      expect(b.issues.filter((i) => i.code === 'proto.unsupported').map((i) => i.field)).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat'])
       expect(b.files.find((f) => f.path === 'README.md')!.content).toContain('**Not playable yet.**')
     }
   })

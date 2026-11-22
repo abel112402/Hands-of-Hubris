@@ -1214,6 +1214,7 @@ export const designModules = [
         f.num('moveSpeed', 'Walk speed (m/s)', { min: 0.1, step: 0.1, group: 'Engine', help: `Used by a playable prototype; empty = ${PLAYER_DEFAULTS.moveSpeed} m/s.` }),
         f.num('cameraDistance', 'Camera distance (m)', { min: 0.5, step: 0.1, group: 'Engine', help: `Third-person camera behind the player; empty = ${PLAYER_DEFAULTS.cameraDistance} m.` }),
         f.num('cameraHeight', 'Camera height (m)', { min: 0, step: 0.1, group: 'Engine', help: `Above the player's feet; empty = ${PLAYER_DEFAULTS.cameraHeight} m.` }),
+        f.num('attackRange', 'Attack range (m)', { min: 0.1, step: 0.1, group: 'Engine', help: `How near an enemy must be to be hit (melee); empty = ${PLAYER_DEFAULTS.attackRange} m.` }),
         f.num('interactRange', 'Interaction range (m)', { min: 0.1, step: 0.1, group: 'Engine', help: `How near the player must be to pick up or use something; empty = ${PLAYER_DEFAULTS.interactRange} m.` }),
       ]),
       s.collection(

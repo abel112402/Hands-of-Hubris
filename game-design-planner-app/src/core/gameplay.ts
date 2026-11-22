@@ -3,6 +3,8 @@ import { WORLD_DOC } from './world'
 import { mapOf } from './location/schema'
 import { mapNav } from './location/analysis'
 import { PLAYER_DEFAULTS, SAVE_STATES, type SaveState } from '../modules/technical'
+import { DEFAULT_DAMAGE_FORMULA } from './combatFormula'
+import { parseFormula, formulaVars } from './engine/formulaAst'
 
 /**
  * Typed gameplay data for the first vertical slice (plans/UNITY_PLAYABLE_GAME_GENERATION_PLAN.md, phase 2), read
@@ -42,7 +44,7 @@ export type QuestRule = {
   objectives: string[]
 }
 
-export type Placement = { location: string; object: string; role: 'player' | 'item'; item?: string; count: number; x: number; y: number }
+export type Placement = { location: string; object: string; role: 'player' | 'item' | 'enemy'; item?: string; enemy?: string; count: number; x: number; y: number }
 
 export type GameplayIssue = { level: 'error' | 'warning' | 'info'; code: string; message: string; where: { doc: string; section: string; id?: string; field?: string } }
 
@@ -98,8 +100,8 @@ export function questRules(p: Project): { rules: QuestRule[]; issues: GameplayIs
 
 /** A planned control the runtime uses, with its planned key and gamepad button (as typed in UI / UX › Controls). */
 export type RuntimeControl = { control: string; name: string; key?: string; gamepad?: string }
-export type RuntimeControls = { move: { forward?: RuntimeControl; back?: RuntimeControl; left?: RuntimeControl; right?: RuntimeControl }; interact?: RuntimeControl; crafting?: RuntimeControl }
-const DRIVES: Record<string, keyof RuntimeControls['move'] | 'interact' | 'crafting'> = { 'Move forward': 'forward', 'Move back': 'back', 'Move left': 'left', 'Move right': 'right', Interact: 'interact', 'Open crafting': 'crafting' }
+export type RuntimeControls = { move: { forward?: RuntimeControl; back?: RuntimeControl; left?: RuntimeControl; right?: RuntimeControl }; interact?: RuntimeControl; crafting?: RuntimeControl; attack?: RuntimeControl }
+const DRIVES: Record<string, keyof RuntimeControls['move'] | 'interact' | 'crafting' | 'attack'> = { 'Move forward': 'forward', 'Move back': 'back', 'Move left': 'left', 'Move right': 'right', Interact: 'interact', 'Open crafting': 'crafting', Attack: 'attack' }
 
 /** The controls marked with a Runtime action (UI / UX › Controls). The first control of each action wins; a second one is reported. */
 export function runtimeControls(p: Project): { controls: RuntimeControls; issues: GameplayIssue[] } {
@@ -109,18 +111,18 @@ export function runtimeControls(p: Project): { controls: RuntimeControls; issues
     const slot = DRIVES[str(c.drives)]
     if (!slot || !str(c.name)) continue
     const rc: RuntimeControl = { control: String(c.id), name: str(c.name), ...(str(c.key) && { key: str(c.key) }), ...(str(c.gamepad) && { gamepad: str(c.gamepad) }) }
-    const taken = slot === 'interact' || slot === 'crafting' ? controls[slot] : controls.move[slot]
+    const taken = slot === 'interact' || slot === 'crafting' || slot === 'attack' ? controls[slot] : controls.move[slot]
     if (taken) {
       issues.push({ level: 'warning', code: 'gameplay.twoControls', where: { doc: 'design.ui', section: 'controls', id: rc.control, field: 'drives' }, message: `${rc.name} and ${taken.name} are both “${str(c.drives)}”; ${taken.name} is used.` })
       continue
     }
-    if (slot === 'interact' || slot === 'crafting') controls[slot] = rc
+    if (slot === 'interact' || slot === 'crafting' || slot === 'attack') controls[slot] = rc
     else controls.move[slot] = rc
   }
   return { controls, issues }
 }
 
-export type PlayerSettings = { moveSpeed: number; cameraDistance: number; cameraHeight: number; interactRange: number; /** Settings the plan left empty, filled in with PLAYER_DEFAULTS. */ defaulted: (keyof typeof PLAYER_DEFAULTS)[] }
+export type PlayerSettings = { moveSpeed: number; cameraDistance: number; cameraHeight: number; interactRange: number; attackRange: number; /** Settings the plan left empty, filled in with PLAYER_DEFAULTS. */ defaulted: (keyof typeof PLAYER_DEFAULTS)[] }
 
 /** Player Character › Controls and camera, as numbers; an empty or non-positive value takes the visible default. */
 export function playerSettings(p: Project): PlayerSettings {
@@ -133,12 +135,13 @@ export function playerSettings(p: Project): PlayerSettings {
     defaulted.push(k)
     return PLAYER_DEFAULTS[k]
   }
-  return { moveSpeed: pick('moveSpeed', 0.1), cameraDistance: pick('cameraDistance', 0.5), cameraHeight: pick('cameraHeight', 0), interactRange: pick('interactRange', 0.1), defaulted }
+  return { moveSpeed: pick('moveSpeed', 0.1), cameraDistance: pick('cameraDistance', 0.5), cameraHeight: pick('cameraHeight', 0), interactRange: pick('interactRange', 0.1), attackRange: pick('attackRange', 0.1), defaulted }
 }
 
 /** Player starts and item pickups placed on location maps. */
 export function placements(p: Project): { placements: Placement[]; issues: GameplayIssue[] } {
   const items = new Set(list(p, ITEMS, 'items').map((i) => String(i.id)))
+  const enemies = new Set(list(p, 'design.combat', 'enemies').map((e) => String(e.id)))
   const out: Placement[] = []
   const issues: GameplayIssue[] = []
   for (const loc of list(p, WORLD_DOC, 'locations')) {
@@ -148,7 +151,12 @@ export function placements(p: Project): { placements: Placement[]; issues: Gamep
     for (const layer of Object.values(map.layers)) {
       for (const o of layer.objects) {
         const s = o.spawn
-        if (!s || (s.role !== 'player' && s.role !== 'item')) continue
+        if (!s || (s.role !== 'player' && s.role !== 'item' && s.role !== 'enemy')) continue
+        if (s.role === 'enemy') {
+          if (!s.refId || !enemies.has(s.refId)) issues.push({ level: 'error', code: 'gameplay.unknownEnemy', where, message: `${str(loc.name)}: an enemy spawn ${s.refId ? `names “${s.refId}”, which is not an enemy of Combat` : 'names no enemy'}.` })
+          else out.push({ location: String(loc.id), object: o.id, role: 'enemy', enemy: s.refId, count: 1, x: o.x, y: o.y })
+          continue
+        }
         if (s.role === 'item' && (!s.refId || !items.has(s.refId))) {
           issues.push({ level: 'error', code: 'gameplay.unknownItem', where, message: `${str(loc.name)}: an item pickup ${s.refId ? `names “${s.refId}”, which is not an item` : 'names no item'}.` })
           continue
@@ -317,4 +325,124 @@ export function recipeRules(p: Project): { rules: RecipeRule[]; issues: Gameplay
     rules.push({ recipe: id, name, inputs, output: { item: result, count: isCount(qty) ? qty : 1 }, unlockQuests })
   }
   return { rules, issues }
+}
+
+/**
+ * The first supported combat model (phase 15), stated plainly and nothing more: melee only. The player hits the nearest
+ * living enemy in reach (Player Character › Attack range) with the Player weapon (Technical Architecture › Playable
+ * prototype) — its Damage, Damage type and Attacks per second (Items & Crafting). Enemies placed on a map (spawn role
+ * “enemy”) have their Combat values: HP, Damage per hit, Attacks per second, Armor, Resistances, Speed and Aggression
+ * (Passive never attacks; Territorial and Hunter chase the player within the aggro radius and hit in reach). Every hit
+ * is the plan's damage formula (Combat › Damage and defense model; empty: the default) with attack, armor, resist and
+ * crit = 1. The player has the Health survival stat's Max (else 100) and no armor or resistances; at 0 it is back at the
+ * start with full health. A defeated enemy gives its XP (in an event) and the items its loot tables always drop.
+ * Not run, and said so: ranged, caster and support enemies, crits, status effects, difficulty and night scaling,
+ * weighted loot rolls, bosses and variants.
+ */
+export type CombatEnemy = { enemy: string; name: string; hp: number; damage: number; attackRate: number; armor: number; resistances: Record<string, number>; damageType?: string; speed: number; passive: boolean; xp: number; loot: ItemAmount[] }
+export type CombatRules = {
+  player: { hp: number; weapon?: { item: string; damage: number; damageType?: string; attackRate: number } }
+  formula: string
+  enemies: CombatEnemy[]
+  /** Visible defaults the rules filled in. */
+  defaults: string[]
+}
+export const COMBAT_DEFAULTS = { playerHp: 100, enemySpeed: 2, weaponRate: 1, aggroRadius: 8, enemyReach: 1.5 } as const
+const FORMULA_VARS = ['attack', 'armor', 'resist', 'crit']
+const UNSUPPORTED_ROLES = ['Ranged', 'Caster', 'Support']
+
+export function combatRules(p: Project): { rules: CombatRules; issues: GameplayIssue[] } {
+  const issues: GameplayIssue[] = []
+  const defaults: string[] = []
+  const form = (doc: string, section: string) => {
+    const v = p.documents[doc]?.data[section]
+    return (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Record<string, unknown>
+  }
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined)
+  // The damage formula.
+  const planned = str(form('design.combat', 'damageModel').damageFormula)
+  const formula = planned || DEFAULT_DAMAGE_FORMULA
+  try {
+    const unknown = formulaVars(parseFormula(formula)).filter((v) => !FORMULA_VARS.includes(v))
+    if (unknown.length) issues.push({ level: 'error', code: 'gameplay.damageFormulaVars', where: { doc: 'design.combat', section: 'damageModel', field: 'damageFormula' }, message: `The damage formula uses ${unknown.join(', ')}; the prototype knows attack, armor, resist and crit.` })
+  } catch (e) {
+    issues.push({ level: 'error', code: 'gameplay.damageFormula', where: { doc: 'design.combat', section: 'damageModel', field: 'damageFormula' }, message: `The damage formula cannot be read: ${(e as Error).message}.` })
+  }
+  if (!planned) defaults.push(`damage formula = ${DEFAULT_DAMAGE_FORMULA}`)
+  // The player.
+  const health = list(p, 'design.player', 'survival').find((s) => s.stat === 'health')
+  const hp = n(health?.max) && n(health?.max)! > 0 ? n(health!.max)! : COMBAT_DEFAULTS.playerHp
+  if (hp === COMBAT_DEFAULTS.playerHp && !(n(health?.max) && n(health?.max)! > 0)) defaults.push(`player health = ${COMBAT_DEFAULTS.playerHp} (no Health survival stat with a Max)`)
+  const weaponId = str(form('technical.architecture', 'prototype').weapon)
+  const item = weaponId ? list(p, ITEMS, 'items').find((i) => String(i.id) === weaponId) : undefined
+  let weapon: CombatRules['player']['weapon']
+  const wWhere = { doc: ITEMS, section: 'items', id: weaponId, field: 'damage' }
+  if (weaponId && !item) issues.push({ level: 'error', code: 'gameplay.unknownWeapon', where: { doc: 'technical.architecture', section: 'prototype', field: 'weapon' }, message: `The Player weapon “${weaponId}” is not an item.` })
+  else if (item) {
+    const damage = n(item.damage)
+    if (!damage || damage <= 0) issues.push({ level: 'error', code: 'gameplay.weaponDamage', where: wWhere, message: `${str(item.name)} is the Player weapon but has no Damage.` })
+    else {
+      const rate = n(item.attackSpeed) && n(item.attackSpeed)! > 0 ? n(item.attackSpeed)! : COMBAT_DEFAULTS.weaponRate
+      if (!(n(item.attackSpeed)! > 0)) defaults.push(`${str(item.name)} attacks per second = ${COMBAT_DEFAULTS.weaponRate}`)
+      weapon = { item: weaponId, damage, ...(str(item.damageType) ? { damageType: str(item.damageType) } : {}), attackRate: rate }
+    }
+  }
+  // Enemies that are placed on a map.
+  const placedIds = new Set(placements(p).placements.filter((x) => x.role === 'enemy').map((x) => x.enemy!))
+  const lootTables = list(p, ITEMS, 'loot')
+  const enemies: CombatEnemy[] = []
+  for (const e of list(p, 'design.combat', 'enemies')) {
+    const id = String(e.id)
+    if (!placedIds.has(id)) continue
+    const name = str(e.name) || id
+    const at = (field: string) => ({ doc: 'design.combat', section: 'enemies', id, field })
+    const role = str(e.role)
+    if (UNSUPPORTED_ROLES.includes(role)) {
+      issues.push({ level: 'error', code: 'gameplay.attackUnsupported', where: at('role'), message: `${name} is a ${role} enemy: the prototype only runs melee attacks, so it cannot fight as planned. Make it Swarm, Brute or Elite, or take it off the map.` })
+      continue
+    }
+    const need = (field: string, label: string) => {
+      const v = n(e[field])
+      if (v === undefined || v <= 0) {
+        issues.push({ level: 'error', code: 'gameplay.enemyStat', where: at(field), message: `${name} is placed on a map but has no ${label}.` })
+        return undefined
+      }
+      return v
+    }
+    const ehp = need('hp', 'HP')
+    const edmg = need('damage', 'Damage per hit')
+    const erate = need('attackRate', 'Attacks per second')
+    if (ehp === undefined || edmg === undefined || erate === undefined) continue
+    const speed = n(e.speed) && n(e.speed)! > 0 ? n(e.speed)! : COMBAT_DEFAULTS.enemySpeed
+    if (!(n(e.speed)! > 0)) defaults.push(`${name} speed = ${COMBAT_DEFAULTS.enemySpeed} m/s`)
+    const resistances = Object.fromEntries(Object.entries((e.resistances && typeof e.resistances === 'object' ? e.resistances : {}) as Record<string, unknown>).filter(([, v]) => typeof v === 'number').map(([k, v]) => [k, v as number]))
+    const loot: ItemAmount[] = []
+    for (const t of lootTables) {
+      const sources = Array.isArray(t.sources) ? (t.sources as unknown[]).map(String) : []
+      if (!sources.includes(id)) continue
+      for (const g of Array.isArray(t.guaranteed) ? (t.guaranteed as unknown[]).map(String) : []) {
+        const have = loot.find((l) => l.item === g)
+        if (have) have.count++
+        else loot.push({ item: g, count: 1 })
+      }
+      if (t.weights && typeof t.weights === 'object' && Object.keys(t.weights as object).length)
+        issues.push({ level: 'info', code: 'gameplay.lootRolls', where: { doc: ITEMS, section: 'loot', id: String(t.id), field: 'weights' }, message: `${str(t.name)}: the prototype gives only the items it always drops, not the weighted rolls.` })
+    }
+    const unchecked = [
+      ...(str(e.pattern) ? ['attack pattern'] : []),
+      ...(Array.isArray(e.weaknesses) && e.weaknesses.length ? ['weaknesses (use Resistances)'] : []),
+      ...(e.nightVariant ? ['night variant'] : []),
+    ]
+    if (unchecked.length) issues.push({ level: 'info', code: 'gameplay.enemyUnchecked', where: at('pattern'), message: `${name}: the prototype does not run ${unchecked.join(', ')}.` })
+    enemies.push({ enemy: id, name, hp: ehp, damage: edmg, attackRate: erate, armor: n(e.armor) ?? 0, resistances, ...(str(e.damageType) ? { damageType: str(e.damageType) } : {}), speed, passive: str(e.aggression) === 'Passive', xp: n(e.xp) ?? 0, loot })
+  }
+  const dm = form('design.combat', 'damageModel')
+  const notRun = [
+    ...(n(dm.critChance) ? ['crit chance'] : []),
+    ...(str(dm.hpParam) || str(dm.damageParam) ? ['difficulty scaling'] : []),
+    ...(dm.useNightStrength ? ['night strength'] : []),
+    ...(list(p, 'design.combat', 'statusEffects').length ? ['status effects'] : []),
+  ]
+  if (notRun.length) issues.push({ level: 'info', code: 'gameplay.combatUnchecked', where: { doc: 'design.combat', section: 'damageModel' }, message: `The prototype's combat does not run ${notRun.join(', ')}.` })
+  return { rules: { player: { hp, ...(weapon ? { weapon } : {}) }, formula, enemies, defaults }, issues }
 }

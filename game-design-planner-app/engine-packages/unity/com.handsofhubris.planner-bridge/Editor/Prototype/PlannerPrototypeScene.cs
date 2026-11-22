@@ -64,7 +64,7 @@ namespace HoHPlanner.Bridge.Editor
         public const string Label = "PlannerPrototype";
         public const string StateFile = ".prototype.json";
         /// <summary>Raised when what the builder makes changes, so an older build counts as out of date.</summary>
-        public const int GeneratorVersion = 6;
+        public const int GeneratorVersion = 7;
 
         private const string UrpLit = "Universal Render Pipeline/Lit";
 
@@ -119,6 +119,8 @@ namespace HoHPlanner.Bridge.Editor
             public Type QuestGraph;
             public List<PlannerStateBinding> SaveParts;
             public List<PlannerRecipe> Recipes;
+            public JObject Combat;
+            public Type DamageFormula;
             public string CraftingKey;
             public Type SaveSlice;
             public string HudUxml;
@@ -232,7 +234,18 @@ namespace HoHPlanner.Bridge.Editor
             p.InteractKey = (string)g["input"]?["interact"]?["key"];
             foreach (var rec in (ir["records"] as JArray ?? new JArray()).OfType<JObject>())
                 if ((string)rec["plannerId"] is string id && (string)rec["name"] is string recName) p.ItemNames[id] = recName;
-            p.Required = systems.Where(s => s == "movement" || s == "interaction" || s == "inventory" || s == "quests" || s == "crafting").ToArray();
+            p.Required = systems.Where(s => s == "movement" || s == "interaction" || s == "inventory" || s == "quests" || s == "crafting" || s == "combat").ToArray();
+            if (systems.Contains("combat"))
+            {
+                p.Combat = g["combat"] as JObject;
+                if (p.Combat == null) r.Errors.Add("The export has no combat data for the chosen Combat system: export again.");
+                else if (p.Combat["player"]?["weapon"] == null) r.Errors.Add("Combat needs a Player weapon with Damage (Technical Architecture › Playable prototype › Player weapon).");
+                // The generated PlannerDamageFormula (the plan's damage formula), found by its runtime interface.
+                p.DamageFormula = TypeCache.GetTypesDerivedFrom<IPlannerDamageFormula>()
+                    .Where(t => typeof(MonoBehaviour).IsAssignableFrom(t) && !t.IsAbstract && !t.Assembly.GetName().Name.EndsWith(".Tests", StringComparison.Ordinal))
+                    .OrderBy(t => t.FullName, StringComparer.Ordinal).FirstOrDefault();
+                if (p.DamageFormula == null) r.Errors.Add("No generated PlannerDamageFormula: export the plan with Combat chosen, import it and let Unity compile, then build again.");
+            }
             if (systems.Contains("crafting"))
             {
                 PlannerItemAmount Amount(JToken a) => new PlannerItemAmount((string)a?["item"], (int?)a?["count"] ?? 0);
@@ -252,12 +265,12 @@ namespace HoHPlanner.Bridge.Editor
             }
             if (systems.Contains("saveLoad"))
             {
-                var kinds = new Dictionary<string, PlannerStateKind> { ["Player position"] = PlannerStateKind.PlayerPosition, ["Inventory"] = PlannerStateKind.Inventory, ["Quests"] = PlannerStateKind.Quests };
+                var kinds = new Dictionary<string, PlannerStateKind> { ["Player position"] = PlannerStateKind.PlayerPosition, ["Inventory"] = PlannerStateKind.Inventory, ["Quests"] = PlannerStateKind.Quests, ["Combat"] = PlannerStateKind.Combat };
                 p.SaveParts = (g["save"]?["parts"] as JArray ?? new JArray()).OfType<JObject>()
                     .Where(x => kinds.ContainsKey((string)x["state"] ?? ""))
                     .Select(x => new PlannerStateBinding((string)x["key"], kinds[(string)x["state"]])).ToList();
                 if (p.SaveParts.Count == 0) r.Errors.Add("Save and load is chosen, but no saved part has a Runtime state (Technical › Save System › Saved parts).");
-                foreach (var (system, kind) in new[] { ("inventory", PlannerStateKind.Inventory), ("quests", PlannerStateKind.Quests) })
+                foreach (var (system, kind) in new[] { ("inventory", PlannerStateKind.Inventory), ("quests", PlannerStateKind.Quests), ("combat", PlannerStateKind.Combat) })
                     if (p.SaveParts.Any(b => b.State == kind) && !systems.Contains(system)) r.Errors.Add($"A saved part holds {kind}, but the plan does not choose that system.");
                 // The generated PlannerSaveSlice (over PlannerSave), found by its runtime interface.
                 p.SaveSlice = TypeCache.GetTypesDerivedFrom<IPlannerSaveSystem>()
@@ -365,6 +378,8 @@ namespace HoHPlanner.Bridge.Editor
                 $"graph {p.QuestGraph?.AssemblyQualifiedName}",
                 (g["save"] ?? new JObject()).ToString(Formatting.None),
                 $"slice {p.SaveSlice?.AssemblyQualifiedName}",
+                (g["combat"] ?? new JObject()).ToString(Formatting.None),
+                $"formula {p.DamageFormula?.AssemblyQualifiedName}",
                 (g["crafting"] ?? new JObject()).ToString(Formatting.None),
                 $"hud {p.HudUxml} {(p.HudUxml != null ? AssetDatabase.AssetPathToGUID(p.HudUxml) : "")} {p.UiSize}",
                 string.Join(";", p.Items.Select(i => p.ItemNames.TryGetValue((string)i["item"] ?? "", out var nm) ? nm : "")),
@@ -521,7 +536,7 @@ namespace HoHPlanner.Bridge.Editor
             // Placements: the start, the pickups, and the map's other spawns as markers.
             var placed = PlannerGreybox.Child(top, "Placements");
             var startPos = At(p.Start);
-            Place(placed, "Player start", startPos, PlannerPlacement.PlayerRole, (string)p.Start["object"], p.LocationId, null, null, 1);
+            var startGo = Place(placed, "Player start", startPos, PlannerPlacement.PlayerRole, (string)p.Start["object"], p.LocationId, null, null, 1);
             var itemMat = Material(dir, "Item", PlannerGreybox.KeyColor);
             foreach (var item in p.Items)
             {
@@ -544,7 +559,7 @@ namespace HoHPlanner.Bridge.Editor
             foreach (var s in (p.Map["spawns"] as JArray ?? new JArray()).OfType<JObject>())
             {
                 var role = (string)s["role"] ?? "spawn";
-                if (role == PlannerPlacement.PlayerRole || role == PlannerPlacement.ItemRole) continue;
+                if (role == PlannerPlacement.PlayerRole || role == PlannerPlacement.ItemRole || (role == "enemy" && p.Combat != null)) continue;
                 var label = (string)s["label"];
                 var go = Place(placed, $"Spawn: {role}" + (string.IsNullOrEmpty(label) ? "" : $" ({label})"), At(s), role, (string)s["id"], p.LocationId, (string)s["refId"], null, (int?)s["count"] ?? 1);
                 var marker = PlannerGreybox.Primitive(PrimitiveType.Capsule, go, "Marker", startPos, Vector3.one, spawnMat, false);
@@ -616,6 +631,69 @@ namespace HoHPlanner.Bridge.Editor
                 quests.Rules = p.Quests;
             }
 
+            // Combat (the first supported model): the player's health, the combat module with the generated damage formula,
+            // and each placed enemy with its planned values, its body (Prototype/Prefabs/<enemy>.prefab, made once, then
+            // yours) and the loot it holds once defeated.
+            PlannerCombat combat = null;
+            if (p.Combat != null && p.DamageFormula != null)
+            {
+                var combatGo = PlannerGreybox.Child(top, "Combat");
+                var playerHealth = combatGo.AddComponent<PlannerHealth>();
+                playerHealth.Max = (float?)p.Combat["player"]?["hp"] ?? 100f;
+                combat = combatGo.AddComponent<PlannerCombat>();
+                combat.Player = player;
+                combat.PlayerHealth = playerHealth;
+                combat.Formula = (MonoBehaviour)combatGo.AddComponent(p.DamageFormula);
+                combat.Respawn = startGo.transform;
+                var weapon = p.Combat["player"]?["weapon"] as JObject;
+                combat.WeaponId = (string)weapon?["item"];
+                combat.WeaponDamage = (float?)weapon?["damage"] ?? 1f;
+                combat.WeaponDamageType = (string)weapon?["damageType"];
+                combat.WeaponRate = (float?)weapon?["attackRate"] ?? 1f;
+                combat.AttackRange = (float?)p.Combat["player"]?["attackRange"] ?? 1.5f;
+                combat.AggroRadius = (float?)p.Combat["aggroRadius"] ?? 8f;
+                combat.EnemyReach = (float?)p.Combat["enemyReach"] ?? 1.5f;
+                var enemyMat = Material(dir, "Enemy", new Color(0.75f, 0.2f, 0.2f));
+                var defs = (p.Combat["enemies"] as JArray ?? new JArray()).OfType<JObject>().ToList();
+                foreach (var e in (p.Gameplay["placements"] as JArray ?? new JArray()).OfType<JObject>().Where(x => (string)x["location"] == p.LocationId && (string)x["role"] == "enemy"))
+                {
+                    var def = defs.FirstOrDefault(d => (string)d["enemy"] == (string)e["enemy"]);
+                    if (def == null)
+                    {
+                        r.Notes.Add($"The enemy {(string)e["enemy"]} on the map is not one the prototype runs (see the export's diagnostics); it is left out.");
+                        continue;
+                    }
+                    var go = Place(placed, $"Enemy: {(string)def["name"]}", At(e), "enemy", (string)e["object"], p.LocationId, null, null, 1);
+                    var cc = go.AddComponent<CharacterController>();
+                    cc.height = 1.6f;
+                    cc.radius = 0.4f;
+                    cc.center = new Vector3(0f, 0.8f, 0f);
+                    go.AddComponent<PlannerHealth>().Max = (float?)def["hp"] ?? 1f;
+                    var enemy = go.AddComponent<PlannerEnemy>();
+                    enemy.Combat = combat;
+                    enemy.EnemyId = (string)def["enemy"];
+                    enemy.Name = (string)def["name"];
+                    enemy.Damage = (float?)def["damage"] ?? 1f;
+                    enemy.AttackRate = (float?)def["attackRate"] ?? 1f;
+                    enemy.Armor = (float?)def["armor"] ?? 0f;
+                    enemy.Speed = (float?)def["speed"] ?? 2f;
+                    enemy.Passive = (bool?)def["passive"] ?? false;
+                    enemy.Xp = (int?)def["xp"] ?? 0;
+                    enemy.Resistances = ((def["resistances"] as JObject)?.Properties() ?? Enumerable.Empty<JProperty>()).Select(x => new PlannerResistance { DamageType = x.Name, Percent = (float)x.Value }).ToList();
+                    var loot = go.AddComponent<PlannerLoot>();
+                    loot.Inventory = inventory;
+                    loot.Items = (def["loot"] as JArray ?? new JArray()).OfType<JObject>().Select(x => new PlannerItemAmount((string)x["item"], (int?)x["count"] ?? 1)).ToList();
+                    loot.enabled = false;
+                    if (loot.Items.Count > 0 && inventory == null) r.Notes.Add($"{enemy.Name} drops loot, but the plan has no inventory to take it into.");
+                    var bodyPath = $"{dir}/Prefabs/{PlannerGreybox.Safe((string)def["key"] ?? (string)def["enemy"])}.prefab";
+                    var bodyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(bodyPath) ?? EnemyPlaceholder(bodyPath, enemyMat);
+                    var body = (GameObject)PrefabUtility.InstantiatePrefab(bodyPrefab, scene);
+                    body.transform.SetParent(go.transform, false);
+                    body.transform.localPosition = new Vector3(0f, 0.8f, 0f);
+                    enemy.Body = body;
+                }
+            }
+
             // Crafting: the plan's recipes in the inventory, and the panel the planned control opens.
             if (p.Recipes != null && inventory != null)
             {
@@ -638,6 +716,7 @@ namespace HoHPlanner.Bridge.Editor
                 state.Player = player;
                 state.Inventory = inventory;
                 state.Quests = quests;
+                state.Combat = combat;
                 state.Parts = p.SaveParts;
                 var slice = saveGo.AddComponent(p.SaveSlice);
                 var field = p.SaveSlice.GetField("State");
@@ -659,6 +738,7 @@ namespace HoHPlanner.Bridge.Editor
                     binding.Document = document;
                     binding.Inventory = inventory;
                     binding.Quests = quests;
+                    binding.PlayerHealth = combat != null ? combat.PlayerHealth : null;
                 }
             }
             else if (inventory != null) r.Notes.Add("The plan has no HUD screen (UI / UX › Screens, kind HUD), so nothing shows the inventory.");
@@ -735,6 +815,24 @@ namespace HoHPlanner.Bridge.Editor
         }
 
         /// <summary>Prototype/Prefabs/&lt;key&gt;.prefab for an item without a prefab: made when missing, then yours.</summary>
+        /// <summary>Prototype/Prefabs/&lt;enemy&gt;.prefab for an enemy's body: a capsule, made when missing, then yours.</summary>
+        private static GameObject EnemyPlaceholder(string path, Material material)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            try
+            {
+                go.name = Path.GetFileNameWithoutExtension(path);
+                go.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+                UnityEngine.Object.DestroyImmediate(go.GetComponent<Collider>());
+                go.GetComponent<Renderer>().sharedMaterial = material;
+                return PrefabUtility.SaveAsPrefabAsset(go, path);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+            }
+        }
+
         private static GameObject ItemPlaceholder(string path, Material material)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);

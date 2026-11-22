@@ -9,7 +9,7 @@ import type { Entity } from '../../../core/model/types'
 import { useProject } from '../../hooks'
 
 const RANK_WIDTH: Record<RoadRank, number> = { main: 16, street: 11, alley: 6 }
-/** What a map object stands for in the game (core/gameplay.ts reads player starts and item pickups). */
+/** What a map object stands for in the game (core/gameplay.ts reads player starts, item pickups and enemies). */
 const SPAWN_LABEL: Record<SpawnRole, string> = { player: 'Player start', item: 'Item to pick up', enemy: 'Enemy spawn', boss: 'Boss spawn', npc: 'NPC', merchant: 'Merchant' }
 /** What a linked map inside an object can be. */
 const CHILD_TYPES = ['Dwelling', 'Dungeon', 'Cave', 'Village', 'City']
@@ -37,6 +37,7 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
   const [childType, setChildType] = useState('')
   const project = useProject()
   const items = ((project.documents['design.items']?.data.items ?? []) as Entity[]).filter((i) => typeof i.name === 'string' && i.name.trim())
+  const enemies = ((project.documents['design.combat']?.data.enemies ?? []) as Entity[]).filter((i) => typeof i.name === 'string' && i.name.trim())
   const info = kindInfo(object.kind)
   if (!info) return null
   const put = (next: MapObject, field: string) => commit(putObject(map, next), `loc-${object.id}-${field}`, `Edit ${info.label.toLowerCase()}`)
@@ -122,6 +123,7 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
               const next: MapObject = { ...object }
               if (!role) delete next.spawn
               else if (role === 'item') next.spawn = { role, ...(object.spawn?.refId && items.some((i) => i.id === object.spawn!.refId) ? { refId: object.spawn.refId } : items[0] ? { refId: String(items[0].id) } : {}), count: object.spawn?.count ?? 1 }
+              else if (role === 'enemy') next.spawn = { role, ...(object.spawn?.role === 'enemy' && object.spawn.refId ? { refId: object.spawn.refId } : enemies[0] ? { refId: String(enemies[0].id) } : {}) }
               else next.spawn = { role, ...(object.spawn?.role === role && object.spawn.refId ? { refId: object.spawn.refId } : {}), ...(object.spawn?.role === role && object.spawn.count ? { count: object.spawn.count } : {}) }
               put(next, 'spawn')
             }}
@@ -151,6 +153,21 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
           <label className="loc-num">
             <span className="muted">Amount</span>
             <input type="number" min={1} max={99} step={1} aria-label="Amount" value={object.spawn.count ?? 1} onChange={(e) => put({ ...object, spawn: { ...object.spawn!, count: Math.min(99, Math.max(1, Math.round(Number(e.target.value) || 1))) } }, 'spawn-count')} />
+          </label>
+        </div>
+      )}
+      {object.spawn?.role === 'enemy' && (
+        <div className="loc-nums">
+          <label className="loc-num">
+            <span className="muted">Enemy</span>
+            <select aria-label="Enemy" value={object.spawn.refId ?? ''} onChange={(e) => put({ ...object, spawn: { ...object.spawn!, refId: e.target.value } }, 'spawn-enemy')}>
+              {!enemies.some((i) => i.id === object.spawn!.refId) && <option value={object.spawn.refId ?? ''}>{object.spawn.refId ? `Unknown enemy (${object.spawn.refId})` : 'Choose an enemy'}</option>}
+              {enemies.map((i) => (
+                <option key={String(i.id)} value={String(i.id)}>
+                  {String(i.name)}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
       )}

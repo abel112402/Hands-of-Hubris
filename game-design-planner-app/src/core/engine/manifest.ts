@@ -33,7 +33,7 @@ export const manifestSchema = z.object({
 })
 
 /** The Unity runtime package a playable-prototype export needs (engine-packages/unity/com.handsofhubris.planner-runtime). */
-export const UNITY_RUNTIME = { package: 'com.handsofhubris.planner-runtime', version: '0.9.0' } as const
+export const UNITY_RUNTIME = { package: 'com.handsofhubris.planner-runtime', version: '0.10.0' } as const
 export type EngineManifest = z.infer<typeof manifestSchema>
 
 /** Parses a manifest from untrusted text. */

@@ -1,7 +1,7 @@
 import type { Project } from '../model/types'
-import { inventoryRules, recipeRules, saveLinks, placements, playerSettings, prototypeScene, questRules, runtimeControls, type ItemAmount, type PlayerSettings, type RuntimeControls } from '../gameplay'
+import { COMBAT_DEFAULTS, combatRules, inventoryRules, recipeRules, saveLinks, placements, playerSettings, prototypeScene, questRules, runtimeControls, type ItemAmount, type PlayerSettings, type RuntimeControls } from '../gameplay'
 import { prototypeProfile, wantsPrototype, type PrototypeProfile } from './capabilities'
-import type { PrototypeSystem } from '../../modules/technical'
+import type { PrototypeSystem, SaveState } from '../../modules/technical'
 import type { EngineIssue, IrRecord } from './ir'
 
 /** A location's map in the bundle (bundle.ts writes it there). */
@@ -22,7 +22,7 @@ export type IrQuestRule = {
   money: number
   xp: number
 }
-export type IrPlacement = { location: string; object: string; role: 'player' | 'item'; item?: string; key?: string; count: number; x: number; y: number }
+export type IrPlacement = { location: string; object: string; role: 'player' | 'item' | 'enemy'; item?: string; enemy?: string; key?: string; count: number; x: number; y: number }
 export type IrGameplay = {
   profile: Omit<PrototypeProfile, 'systems'>
   systems: PrototypeSystem[]
@@ -44,10 +44,21 @@ export type IrGameplay = {
    * stack or the Item model's default; items with neither are left out and reported). `shown`: whether a HUD Grid shows
    * the inventory, and the items HUD Counters show (planner IDs).
    */
+  /**
+   * Combat (phase 15), when the plan chose it: the first supported model (melee; see core/gameplay.ts combatRules) — the
+   * player's health and weapon, the damage formula, and every enemy placed on a map with its values and guaranteed loot.
+   */
+  combat?: {
+    player: { hp: number; attackRange: number; weapon?: { item: string; key?: string; damage: number; damageType?: string; attackRate: number } }
+    formula: string
+    enemies: { enemy: string; key?: string; name: string; hp: number; damage: number; attackRate: number; armor: number; resistances: Record<string, number>; damageType?: string; speed: number; passive: boolean; xp: number; loot: IrItemAmount[] }[]
+    aggroRadius: number
+    enemyReach: number
+  }
   /** Crafting (phase 14), when the plan chose it: the recipes the prototype can craft, as typed rules with record keys. */
   crafting?: { recipes: { recipe: string; key?: string; name: string; inputs: IrItemAmount[]; output: IrItemAmount; unlockQuests: string[] }[] }
   /** Saving (phase 12), when the plan chose it: each saved part linked to a runtime state, with its save key (ir.save), in plan order. */
-  save?: { parts: { part: string; key: string; state: 'Player position' | 'Inventory' | 'Quests' }[] }
+  save?: { parts: { part: string; key: string; state: SaveState }[] }
   inventory?: { slots: number; items: { item: string; key?: string; name: string; stack: number }[]; shown: { grid: boolean; counters: string[] } }
 }
 
@@ -75,13 +86,13 @@ export function buildGameplay(p: Project, records: IrRecord[], issues: EngineIss
         xp: r.xp,
       }),
     )
-  const placed = placements(p).placements.map((x): IrPlacement => ({ ...x, ...(x.item ? ref(x.item) : {}) }))
+  const placed = placements(p).placements.map((x): IrPlacement => ({ ...x, ...(x.item ? ref(x.item) : {}), ...(x.enemy && keys.get(x.enemy) ? { key: keys.get(x.enemy) } : {}) }))
 
   for (const item of noRecord)
     issues.push({ level: 'warning', code: 'gameplay.itemNoRecord', message: `Item ${item} is used by a quest or a pickup but has no data record; give it an Item schema in Data-driven Design so the engine can load it.`, where: { doc: 'design.items', section: 'items', id: item } })
   const all = playerSettings(p)
   // The interaction range is only a default worth reporting when the plan chose interaction.
-  const player = { ...all, defaulted: all.defaulted.filter((k) => k !== 'interactRange' || systems.includes('interaction')) }
+  const player = { ...all, defaulted: all.defaulted.filter((k) => (k !== 'interactRange' || systems.includes('interaction')) && (k !== 'attackRange' || systems.includes('combat'))) }
   if (systems.includes('movement') && player.defaulted.length)
     issues.push({ level: 'info', code: 'gameplay.default', message: `Player Character › Controls and camera: ${player.defaulted.map((k) => `${k} = ${player[k]}`).join(', ')} (defaults; set them in the plan to change them).`, where: { doc: 'design.player', section: 'controls' } })
   const where = prototypeScene(p).value
@@ -93,9 +104,21 @@ export function buildGameplay(p: Project, records: IrRecord[], issues: EngineIss
     : undefined
   const inv = systems.includes('inventory') ? inventoryRules(p).rules : undefined
   const inventory = inv ? { slots: inv.slots, items: inv.items.map((x) => ({ item: x.item, ...(keys.get(x.item) ? { key: keys.get(x.item) } : {}), name: x.name, stack: x.stack })), shown: inv.shown } : undefined
+  const fight = systems.includes('combat') ? combatRules(p).rules : undefined
+  if (fight?.defaults.length) issues.push({ level: 'info', code: 'gameplay.default', message: `Combat: ${fight.defaults.join(', ')} (defaults; set them in the plan to change them).`, where: { doc: 'design.combat', section: 'enemies' } })
+  if (fight) issues.push({ level: 'info', code: 'gameplay.combatModel', message: 'Combat: melee only; enemies chase within ' + COMBAT_DEFAULTS.aggroRadius + ' m and hit within ' + COMBAT_DEFAULTS.enemyReach + ' m; a defeated player is back at the start with full health.', where: { doc: 'design.combat', section: 'system' } })
+  const combat = fight
+    ? {
+        player: { hp: fight.player.hp, attackRange: all.attackRange, ...(fight.player.weapon ? { weapon: { ...fight.player.weapon, ...(keys.get(fight.player.weapon.item) ? { key: keys.get(fight.player.weapon.item) } : {}) } } : {}) },
+        formula: fight.formula,
+        enemies: fight.enemies.map((e) => ({ ...e, ...(keys.get(e.enemy) ? { key: keys.get(e.enemy) } : {}), loot: amounts(e.loot) })),
+        aggroRadius: COMBAT_DEFAULTS.aggroRadius,
+        enemyReach: COMBAT_DEFAULTS.enemyReach,
+      }
+    : undefined
   const crafting = systems.includes('crafting')
     ? { recipes: recipeRules(p).rules.map((r) => ({ recipe: r.recipe, ...(keys.get(r.recipe) ? { key: keys.get(r.recipe) } : {}), name: r.name, inputs: amounts(r.inputs), output: amounts([r.output])[0], unlockQuests: r.unlockQuests })) }
     : undefined
   const save = systems.includes('saveLoad') ? { parts: saveLinks(p).links.flatMap((l) => (saveKeys.has(l.part) ? [{ part: l.part, key: saveKeys.get(l.part)!, state: l.state }] : [])) } : undefined
-  return { profile, systems, quests, placements: placed, input: runtimeControls(p).controls, player, ...(scene ? { scene } : {}), ...(inventory ? { inventory } : {}), ...(save ? { save } : {}), ...(crafting ? { crafting } : {}) }
+  return { profile, systems, quests, placements: placed, input: runtimeControls(p).controls, player, ...(scene ? { scene } : {}), ...(inventory ? { inventory } : {}), ...(save ? { save } : {}), ...(crafting ? { crafting } : {}), ...(combat ? { combat } : {}) }
 }

@@ -8,22 +8,26 @@ namespace HoHPlanner.Runtime
     /// from the planned keys) and Interact. Compiles only when the Input System package is installed.
     /// </summary>
     [AddComponentMenu("Game Design Planner/Planner Input System Source")]
-    public sealed class PlannerInputSystemSource : MonoBehaviour, IPlannerMoveSource, IPlannerMenuSource
+    public sealed class PlannerInputSystemSource : MonoBehaviour, IPlannerMoveSource, IPlannerMenuSource, IPlannerCombatSource
     {
         public InputActionAsset Actions;
         public string Map = "Prototype";
         public string MoveAction = "Move";
         public string InteractAction = "Interact";
         public string CraftingAction = "Crafting";
+        public string AttackAction = "Attack";
 
         InputAction move;
         InputAction interact;
         InputAction crafting;
+        InputAction attack;
 
         public Vector2 Move => move != null ? move.ReadValue<Vector2>() : Vector2.zero;
         public bool InteractPressed => interact != null && interact.WasPressedThisFrame();
         /// <summary>The map's Crafting action (only when the plan has a control whose Runtime action is Open crafting).</summary>
         public bool CraftingPressed => crafting != null && crafting.WasPressedThisFrame();
+        /// <summary>The map's Attack action (only when the plan has a control whose Runtime action is Attack).</summary>
+        public bool AttackPressed => attack != null && attack.WasPressedThisFrame();
 
         /// <summary>Adds the source to <paramref name="player"/>, reading <paramref name="map"/> of <paramref name="actions"/>.</summary>
         public static PlannerInputSystemSource Attach(GameObject player, InputActionAsset actions, string map)
@@ -51,6 +55,7 @@ namespace HoHPlanner.Runtime
             move = m.FindAction(MoveAction);
             interact = m.FindAction(InteractAction);
             crafting = m.FindAction(CraftingAction);
+            attack = m.FindAction(AttackAction);
             m.Enable();
         }
     }

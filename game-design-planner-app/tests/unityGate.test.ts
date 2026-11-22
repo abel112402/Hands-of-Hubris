@@ -82,9 +82,10 @@ describe('breaks and changes of the reference', () => {
     expect(errors(() => {})).toEqual([])
   })
 
-  it('no-interact and missing-scene stop the strict export', () => {
+  it('no-interact, missing-scene and ranged-enemy stop the strict export', () => {
     expect(errors(BREAKS['no-interact'].apply).length).toBeGreaterThan(0)
     expect(errors(BREAKS['missing-scene'].apply).map((i) => i.field)).toContain('gameplay.unknownScene')
+    expect(errors(BREAKS['ranged-enemy'].apply).map((i) => i.field)).toContain('gameplay.attackUnsupported')
   })
 
   it('quest-unreachable exports cleanly, so only the Unity tests can catch it', () => {

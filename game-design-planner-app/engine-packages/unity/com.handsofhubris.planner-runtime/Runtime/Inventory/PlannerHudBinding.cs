@@ -25,11 +25,15 @@ namespace HoHPlanner.Runtime
         public UIDocument Document;
         public PlannerInventory Inventory;
         public PlannerQuests Quests;
+        [Tooltip("The player's health, for the stat bar bound to the Health survival stat (bind-survivalStat-health).")]
+        public PlannerHealth PlayerHealth;
+        public const string HealthElement = "bind-survivalStat-health";
 
         void OnEnable()
         {
             if (Inventory != null) Inventory.Changed += Refresh;
             if (Quests != null) Quests.Changed += Refresh;
+            if (PlayerHealth != null) PlayerHealth.Changed += OnHealth;
             Refresh();
         }
 
@@ -37,13 +41,16 @@ namespace HoHPlanner.Runtime
         {
             if (Inventory != null) Inventory.Changed -= Refresh;
             if (Quests != null) Quests.Changed -= Refresh;
+            if (PlayerHealth != null) PlayerHealth.Changed -= OnHealth;
         }
+
+        void OnHealth(PlannerHealth h) => Refresh();
 
         void Start() => Refresh();
 
         string NameOf(string itemId) => Inventory.Def(itemId)?.Name ?? itemId;
 
-        /// <summary>Writes the inventory into the bound elements now.</summary>
+        /// <summary>Writes the inventory (and the quests and health, when set) into the bound elements now.</summary>
         public void Refresh()
         {
             var root = Document != null ? Document.rootVisualElement : null;
@@ -81,6 +88,24 @@ namespace HoHPlanner.Runtime
                 label.text = $"{NameOf(itemId)}: {Inventory.CountOf(itemId)}";
             }
             if (Quests != null) BindQuests(root);
+            var bar = PlayerHealth != null ? root.Q(HealthElement) : null;
+            if (bar is ProgressBar progress)
+            {
+                progress.lowValue = 0f;
+                progress.highValue = PlayerHealth.Max;
+                progress.value = PlayerHealth.Current;
+                progress.title = $"Health {Mathf.CeilToInt(PlayerHealth.Current)}/{Mathf.CeilToInt(PlayerHealth.Max)}";
+            }
+            else if (bar != null)
+            {
+                var label = bar.Q<Label>(className: CountClass) ?? new Label();
+                if (label.parent == null)
+                {
+                    label.AddToClassList(CountClass);
+                    bar.Add(label);
+                }
+                label.text = $"Health {Mathf.CeilToInt(PlayerHealth.Current)}/{Mathf.CeilToInt(PlayerHealth.Max)}";
+            }
         }
 
         string QuestText(PlannerQuestRule r)

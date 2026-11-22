@@ -207,7 +207,7 @@ function idsFile(ir: EngineIR): string {
 }
 
 const PREC: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2 }
-function csExpr(n: FormulaNode, params: Map<string, string>): string {
+export function csExpr(n: FormulaNode, params: Map<string, string>): string {
   const prec = (x: FormulaNode) => (x.k === 'bin' && x.op !== '^' ? PREC[x.op] : x.k === 'neg' ? 3 : 4)
   switch (n.k) {
     case 'num':
@@ -407,7 +407,7 @@ export const unity: EngineAdapter = {
   id: 'unity',
   label: 'Unity',
   language: 'C#',
-  version: 15,
+  version: 16,
   root: 'Unity',
   ownDir: 'Scripts/Classes/',
   generatedDirs: ['Scripts/Generated/', 'ProjectFiles/', 'Tests/', 'Input/', 'UI/'],

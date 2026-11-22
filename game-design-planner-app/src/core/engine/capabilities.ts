@@ -9,7 +9,7 @@ import {
   type PrototypeSystem,
   type SaveState,
 } from '../../modules/technical'
-import { inventoryRules, placements, prototypeScene, questRules, recipeRules, runtimeControls, saveLinks } from '../gameplay'
+import { combatRules, inventoryRules, placements, prototypeScene, questRules, recipeRules, runtimeControls, saveLinks } from '../gameplay'
 import { WORLD_DOC } from '../world'
 import type { EngineId } from './adapter'
 import type { EngineIssue } from './ir'
@@ -132,8 +132,13 @@ export const CAPABILITIES: Capability[] = [
   cap(
     'combat',
     ['movement'],
-    [{ what: 'At least one enemy', where: { doc: 'design.combat', section: 'enemies' }, ok: (p) => list(p, 'design.combat', 'enemies').length > 0 }],
-    { unity: { level: 'frame', note: 'Enemy records and formulas are generated; there is no health, damage or encounter runtime yet.' } },
+    [
+      { what: 'At least one enemy', where: { doc: 'design.combat', section: 'enemies' }, ok: (p) => list(p, 'design.combat', 'enemies').length > 0 },
+      { what: 'An enemy placed on a location map (an object with spawn role “enemy”)', where: { doc: WORLD_DOC, section: 'locations' }, ok: (p) => placements(p).placements.some((x) => x.role === 'enemy') },
+      { what: 'A Player weapon with Damage', where: { doc: PROTOTYPE_DOC, section: PROTOTYPE_SECTION, field: 'weapon' }, ok: (p) => !!combatRules(p).rules.player.weapon },
+      { what: 'A control whose Runtime action is Attack', where: { doc: 'design.ui', section: 'controls', field: 'drives' }, ok: (p) => !!runtimeControls(p).controls.attack },
+    ],
+    { unity: { level: 'template', note: 'Runtime 0.10.0, the first supported model only: melee with the Player weapon, enemies with their planned HP, damage, rate, armor, resistances, speed and aggression, every hit by the plan’s damage formula, XP and guaranteed loot, the player back at the start when defeated. Ranged, caster and support enemies, crits, status effects and difficulty scaling are not run. PlayMode tests generated.' } },
   ),
   cap(
     'dialogue',
@@ -228,16 +233,21 @@ export function prototypeReport(p: Project, engine: EngineId): PrototypeReport {
     ...(chosen.has('inventory') ? inventoryRules(p).issues : []),
     ...(chosen.has('saveLoad') ? saveLinks(p).issues : []),
     ...(chosen.has('crafting') ? recipeRules(p).issues : []),
+    ...(chosen.has('combat') ? combatRules(p).issues : []),
     ...(chosen.has('movement') || chosen.has('interaction') ? [...placements(p).issues, ...runtimeControls(p).issues, ...prototypeScene(p).issues] : []),
   ].filter((i) => i.level !== 'info')
   // Saving: every chosen system with state needs a saved part that holds it, or loading would lose it.
   if (chosen.has('saveLoad')) {
     const held = new Set(saveLinks(p).links.map((l) => l.state))
-    const needed: [PrototypeSystem, SaveState][] = [['movement', 'Player position'], ['inventory', 'Inventory'], ['quests', 'Quests']]
+    const needed: [PrototypeSystem, SaveState][] = [['movement', 'Player position'], ['inventory', 'Inventory'], ['quests', 'Quests'], ['combat', 'Combat']]
     for (const [system, state] of needed)
       if (chosen.has(system) && !held.has(state))
         issues.push({ level: 'error', code: 'proto.dataMissing', field: 'saveLoad', where: { doc: 'technical.save', section: 'parts', field: 'state' }, message: `Playable prototype: Save and load needs a saved part whose Runtime state is ${state} (for ${LABEL[system]}); without it, loading would lose it.` })
   }
+  // Loot goes into the inventory and is taken by interacting with the defeated enemy.
+  if (chosen.has('combat') && combatRules(p).rules.enemies.some((e) => e.loot.length))
+    for (const need of ['interaction', 'inventory'] as PrototypeSystem[])
+      if (!chosen.has(need)) issues.push({ level: 'error', code: 'proto.requires', field: 'combat', where: where(need), message: `Playable prototype: an enemy drops loot, so Combat needs ${LABEL[need]}; choose it too.` })
   // Recipes unlocked by quests need the quest module to know when they are done.
   if (chosen.has('crafting') && !chosen.has('quests') && recipeRules(p).rules.some((r) => r.unlockQuests.length))
     issues.push({ level: 'error', code: 'proto.requires', field: 'crafting', where: where('quests'), message: 'Playable prototype: a recipe is unlocked by a quest, so Crafting needs Quests and rewards; choose it too.' })

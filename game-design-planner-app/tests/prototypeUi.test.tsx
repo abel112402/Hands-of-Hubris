@@ -39,7 +39,7 @@ describe('Playable prototype panel', () => {
     expect(within(panel).queryByRole('region', { name: 'Frames you finish in code' })).toBeNull()
     expect(row(panel, 'Inventory').textContent).toContain('Data complete')
     expect(within(panel).queryByRole('region', { name: 'Blocks playing' })).toBeNull()
-    expect(panel.textContent).toContain('Placeholders: 3 records have no art in the plan yet')
+    expect(panel.textContent).toContain('Placeholders: 4 records have no art in the plan yet')
   })
 
   it('points an incomplete plan to where each missing piece is filled', async () => {
@@ -51,7 +51,7 @@ describe('Playable prototype panel', () => {
     expect(movement.textContent).toContain('A player start on a location map')
     expect(within(movement).getByRole('link', { name: /Fix in World & Biomes › Locations/ }).getAttribute('href')).toBe('#/doc/design.world?s=locations')
     expect(within(row(panel, 'Quests and rewards')).getByRole('link', { name: /Fix in Story & Quests › Quests \(collectItems\)/ }).getAttribute('href')).toBe('#/doc/design.story?s=quests')
-    expect(within(panel).getByRole('status').textContent).toMatch(/Not playable yet — 3 blocking problems/)
+    expect(within(panel).getByRole('status').textContent).toMatch(/Not playable yet — 4 blocking problems/)
   })
 
   it('changes the profile and systems as undoable steps, and offers to choose a missing dependency', async () => {
@@ -100,5 +100,27 @@ describe('map object: gameplay role', () => {
     expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'player' })
     fireEvent.change(screen.getByLabelText('Gameplay'), { target: { value: '' } })
     expect(placed(commit.mock.calls.at(-1)![0]).spawn).toBeUndefined()
+  })
+
+  it('marks an object as an enemy of Combat, picked from the planned enemies', () => {
+    const p = buildReferenceSlice()
+    p.documents['design.combat'].data.enemies = [...(p.documents['design.combat'].data.enemies as Entity[]), { id: 'refEnemyCrow', name: 'Crow', hp: 5, damage: 1, attackRate: 1 }]
+    useStore.getState().loadProject(p, 'x')
+    const map = mapOf((p.documents['design.world'].data.locations as Entity[])[0])!
+    const object = Object.values(map.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.pickup)!
+    const commit = vi.fn()
+    const placed = (m: ReturnType<typeof mapOf>) => Object.values(m!.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.pickup)!
+    render(<ObjectPanel map={map} object={{ ...object, spawn: undefined }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Gameplay'), { target: { value: 'enemy' } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'enemy', refId: IDS.enemy })
+
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...object, spawn: { role: 'enemy', refId: IDS.enemy } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Enemy'), { target: { value: 'refEnemyCrow' } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'enemy', refId: 'refEnemyCrow' })
+
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...object, spawn: { role: 'enemy', refId: 'ghost' } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    expect(screen.getByRole('option', { name: 'Unknown enemy (ghost)' })).toBeTruthy()
   })
 })

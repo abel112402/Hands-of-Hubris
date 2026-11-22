@@ -331,6 +331,46 @@ namespace HoHPlanner.Bridge.Tests
         }
 
         [Test]
+        public void AddsCombatWithThePlannedEnemiesAndFormula()
+        {
+            if (!TypeCache.GetTypesDerivedFrom<IPlannerDamageFormula>().Any(t => typeof(MonoBehaviour).IsAssignableFrom(t) && !t.Assembly.GetName().Name.EndsWith(".Tests"))) Assert.Ignore("Needs a generated PlannerDamageFormula in the project (an export with Combat).");
+            var ir = Ir();
+            ir["gameplay"]["systems"] = new JArray("movement", "interaction", "inventory", "combat");
+            ir["gameplay"]["inventory"] = new JObject { ["slots"] = 4, ["items"] = new JArray(new JObject { ["item"] = "itKey", ["name"] = "Old Key", ["stack"] = 1 }) };
+            ((JArray)ir["gameplay"]["placements"]).Add(new JObject { ["location"] = "loc1", ["object"] = "o4", ["role"] = "enemy", ["enemy"] = "en1", ["count"] = 1, ["x"] = 55, ["y"] = 35 });
+            ir["gameplay"]["combat"] = new JObject
+            {
+                ["player"] = new JObject { ["hp"] = 30, ["attackRange"] = 1.25, ["weapon"] = new JObject { ["item"] = "itStick", ["damage"] = 6, ["damageType"] = "blunt", ["attackRate"] = 2 } },
+                ["formula"] = "attack * 100 / (100 + armor) * (1 - resist / 100) * crit",
+                ["enemies"] = new JArray(new JObject { ["enemy"] = "en1", ["name"] = "Rat", ["hp"] = 20, ["damage"] = 3, ["attackRate"] = 1, ["armor"] = 10, ["resistances"] = new JObject { ["blunt"] = 25 }, ["speed"] = 2, ["passive"] = false, ["xp"] = 5, ["loot"] = new JArray(new JObject { ["item"] = "itKey", ["count"] = 1 }) }),
+                ["aggroRadius"] = 8,
+                ["enemyReach"] = 1.5,
+            };
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            var r = PlannerPrototypeScene.Build(Root);
+            Assert.IsTrue(r.Built, r.ToString());
+
+            EditorSceneManager.OpenScene(Scene);
+            foreach (var go in All<GameObject>()) Assert.IsFalse(go.GetComponents<Component>().Any(c => c == null), $"{go.name} has a missing script");
+            CollectionAssert.Contains(All<PlannerRuntimeHost>().Single().Required, "combat");
+            var combat = All<PlannerCombat>().Single();
+            Assert.IsInstanceOf<IPlannerDamageFormula>(combat.Formula);
+            Assert.AreEqual((30f, 6f, "blunt", 2f, 1.25f), (combat.PlayerHealth.Max, combat.WeaponDamage, combat.WeaponDamageType, combat.WeaponRate, combat.AttackRange));
+            Assert.AreSame(All<PlannerPlayer>().Single(), combat.Player);
+            Assert.AreEqual("player", combat.Respawn.GetComponent<PlannerPlacement>().Role);
+            var enemy = All<PlannerEnemy>().Single();
+            Assert.AreEqual(("en1", 20f, 3f, 10f, 25f, false), (enemy.EnemyId, enemy.Health.Max, enemy.Damage, enemy.Armor, enemy.ResistanceTo("blunt"), enemy.Passive));
+            Assert.AreEqual(new Vector3(5.5f, 0f, -3.5f), enemy.transform.position);
+            Assert.AreEqual("o4", enemy.Placement.ObjectId);
+            Assert.IsNotNull(enemy.Body);
+            var loot = enemy.GetComponent<PlannerLoot>();
+            Assert.IsFalse(loot.enabled, "Loot waits for the enemy to be defeated");
+            Assert.AreEqual(("itKey", 1), (loot.Items.Single().ItemId, loot.Items.Single().Count));
+            Assert.IsTrue(File.Exists($"{Root}/Prototype/Prefabs/en1.prefab"), "The enemy's body prefab, made once");
+            Assert.AreEqual(1, All<PlannerPlacement>().Count(x => x.Role == "enemy"), "No extra marker for the enemy");
+        }
+
+        [Test]
         public void AddsInteractionWhenThePlanChoseIt()
         {
             Assert.IsTrue(PlannerPrototypeScene.Build(Root).Built);

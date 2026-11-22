@@ -184,6 +184,25 @@ namespace HoHPlanner.Runtime
             return true;
         }
 
+        /// <summary>Whether every amount would fit at once (nothing changes).</summary>
+        public bool CanAddAll(IEnumerable<PlannerItemAmount> amounts)
+        {
+            Fit();
+            var saved = slots.ToList();
+            var silent = muted;
+            muted = true;
+            try
+            {
+                return TryAddAll(amounts);
+            }
+            finally
+            {
+                slots.Clear();
+                slots.AddRange(saved);
+                muted = silent;
+            }
+        }
+
         /// <summary>Adds every amount or none of them (a quest reward of several items); one change notice.</summary>
         public bool TryAddAll(IEnumerable<PlannerItemAmount> amounts)
         {
@@ -233,8 +252,11 @@ namespace HoHPlanner.Runtime
             return true;
         }
 
+        bool muted;
+
         void Notify()
         {
+            if (muted) return;
             Changed?.Invoke();
             runtime?.Events.Publish(new PlannerInventoryChanged(this));
         }

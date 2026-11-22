@@ -11,6 +11,8 @@ namespace HoHPlanner.Runtime
         PlayerPosition,
         Inventory,
         Quests,
+        /// <summary>The player's health, and each enemy's health and whether it is defeated and looted.</summary>
+        Combat,
     }
 
     /// <summary>A saved part of the plan (its save key) and the runtime state it holds.</summary>
@@ -60,6 +62,7 @@ namespace HoHPlanner.Runtime
         public PlannerPlayer Player;
         public PlannerInventory Inventory;
         public PlannerQuests Quests;
+        public PlannerCombat Combat;
         [Tooltip("The plan's saved parts linked to a runtime state, in plan order.")]
         public List<PlannerStateBinding> Parts = new List<PlannerStateBinding>();
 
@@ -92,6 +95,25 @@ namespace HoHPlanner.Runtime
             public List<string> waiting = new List<string>();
         }
 
+        [Serializable]
+        sealed class EnemyJson
+        {
+            public string id;
+            public float hp;
+            public bool defeated;
+            public bool looted;
+        }
+
+        [Serializable]
+        sealed class CombatJson
+        {
+            public float playerHp;
+            public List<EnemyJson> enemies = new List<EnemyJson>();
+        }
+
+        static PlannerEnemy[] AllEnemies() => FindObjectsByType<PlannerEnemy>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        static string IdOf(PlannerEnemy e) => e.Placement != null ? e.Placement.ObjectId : e.name;
+
         static PlannerPickup[] Pickups() => FindObjectsByType<PlannerPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
         public void BeginRestore()
@@ -118,6 +140,15 @@ namespace HoHPlanner.Runtime
                     foreach (var s in Need(Inventory, kind).Contents) inv.slots.Add(s.Empty ? new SlotJson() : new SlotJson { item = s.ItemId, count = s.Count });
                     inv.taken = Pickups().Where(p => p.Taken).Select(p => p.Placement.ObjectId).OrderBy(x => x, StringComparer.Ordinal).ToList();
                     return JsonUtility.ToJson(inv);
+                case PlannerStateKind.Combat:
+                    var combat = Need(Combat, kind);
+                    var cj = new CombatJson { playerHp = combat.PlayerHealth != null ? combat.PlayerHealth.Current : 0f };
+                    foreach (var e in AllEnemies().OrderBy(IdOf, StringComparer.Ordinal))
+                    {
+                        var loot = e.GetComponent<PlannerLoot>();
+                        cj.enemies.Add(new EnemyJson { id = IdOf(e), hp = e.Health.Current, defeated = e.Defeated, looted = loot != null && loot.Looted });
+                    }
+                    return JsonUtility.ToJson(cj);
                 default:
                     var q = Need(Quests, kind);
                     var state = q.CaptureState();
@@ -156,6 +187,24 @@ namespace HoHPlanner.Runtime
                     if (!apply) break;
                     inventory.Restore(slots);
                     foreach (var p in pickups) p.SetTaken(taken.Contains(p.Placement.ObjectId));
+                    break;
+                }
+                case PlannerStateKind.Combat:
+                {
+                    var cj = Parse<CombatJson>(json, kind);
+                    var combat = Need(Combat, kind);
+                    var enemies = AllEnemies();
+                    var unknown = (cj.enemies ?? new List<EnemyJson>()).Where(x => enemies.All(e => IdOf(e) != x.id)).Select(x => x.id).ToList();
+                    if (unknown.Count > 0) throw new PlannerStateException($"The save has enemies that are not on this map: {string.Join(", ", unknown)}.");
+                    if (float.IsNaN(cj.playerHp) || cj.playerHp <= 0f || (combat.PlayerHealth != null && cj.playerHp > combat.PlayerHealth.Max)) throw new PlannerStateException($"The saved player health {cj.playerHp} does not fit this plan.");
+                    if (!apply) break;
+                    combat.PlayerHealth.Set(cj.playerHp);
+                    foreach (var e in enemies)
+                    {
+                        var saved = cj.enemies.FirstOrDefault(x => x.id == IdOf(e));
+                        if (saved != null) e.SetState(saved.hp, saved.defeated, saved.looted);
+                        else e.SetState(e.Health.Max, false, false);
+                    }
                     break;
                 }
                 default:

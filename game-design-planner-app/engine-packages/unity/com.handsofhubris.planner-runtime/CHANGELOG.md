@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+
+- Combat, the first supported model only (`PlannerCombat`, id “combat”, after “movement”): melee. On the Attack action (`IPlannerCombatSource`, the input source's Attack action) the player hits the nearest living enemy in reach, at most the weapon's attacks per second, for the plan's damage formula (`IPlannerDamageFormula`, the export's generated PlannerDamageFormula) with attack, armor, resist and crit = 1; enemies hit the player the same way. A defeated player is put back at the player start with full health.
+- `PlannerHealth`, `PlannerEnemy` (planned HP, damage, rate, armor, resistances, speed, aggression; chases within the aggro radius, hits in reach) and `PlannerLoot` (the guaranteed loot, taken once by interacting). Events `PlannerHit`, `PlannerEnemyDefeated` (with XP), `PlannerPlayerDefeated`.
+- Saving: `PlannerStateKind.Combat` (the player's health and each enemy's health, defeated and looted). HUD: the Health stat bar (`bind-survivalStat-health`). `PlannerInventory.CanAddAll`. The player self-test fights each enemy and takes its loot.
+- PlayMode tests: hits by the formula at the weapon's rate, resistances and weaknesses, nothing in reach, chase and enemy rate, passive enemies, respawn, loot once, the fight saved and loaded, no formula refused.
+
 ## 0.9.0
 
 - Crafting module (`PlannerCrafting`, id “crafting”, after “inventory” and, when a recipe is unlocked by quests, “quests”): the plan's recipes as typed rules (item inputs, one output, unlocking quests); `CanCraft` says why not (locked, which input is missing, no room); `TryCraft` takes the inputs and gives the output in one change (`PlannerInventory.TryExchange`) or changes nothing. Events `PlannerItemCrafted` and `PlannerItemAcquired`. Starting fails, with every reason, on unknown items or quests.

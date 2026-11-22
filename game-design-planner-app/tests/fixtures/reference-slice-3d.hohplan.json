@@ -3627,6 +3627,23 @@
                         "refId": "refItemKey",
                         "count": 1
                       }
+                    },
+                    {
+                      "id": "refObjRat",
+                      "kind": "marker",
+                      "x": 355,
+                      "y": 35,
+                      "w": 18,
+                      "h": 18,
+                      "label": "Yard Rat",
+                      "props": {
+                        "type": "enemy"
+                      },
+                      "pinned": true,
+                      "spawn": {
+                        "role": "enemy",
+                        "refId": "refEnemyRat"
+                      }
                     }
                   ]
                 }
@@ -3691,7 +3708,14 @@
           "start": "At the gate of the Keeper’s Yard.",
           "startItems": []
         },
-        "survival": [],
+        "survival": [
+          {
+            "id": "refSurvHp",
+            "name": "Health",
+            "stat": "health",
+            "max": 30
+          }
+        ],
         "leveling": {},
         "xpSources": [],
         "casts": [],
@@ -3706,7 +3730,8 @@
           "moveSpeed": 4.5,
           "cameraDistance": 4,
           "cameraHeight": 2,
-          "interactRange": 2
+          "interactRange": 2,
+          "attackRange": 1.5
         },
         "actions": [],
         "death": {}
@@ -3741,6 +3766,13 @@
             "type": "Currency",
             "build": "",
             "usage": "Counted, not carried in slots."
+          },
+          {
+            "id": "refTypeWpn",
+            "name": "Weapon",
+            "type": "Weapon",
+            "build": "",
+            "usage": "Held to fight."
           }
         ],
         "items": [
@@ -3760,6 +3792,18 @@
             "value": 1,
             "stack": 999,
             "weight": 0
+          },
+          {
+            "id": "refItemStick",
+            "name": "Stick",
+            "type": "refTypeWpn",
+            "value": 0,
+            "stack": 1,
+            "weight": 0.5,
+            "damage": 6,
+            "attackSpeed": 2,
+            "equipSlot": "Main hand",
+            "description": "A stout stick from the yard."
           },
           {
             "id": "refItemPol",
@@ -3798,7 +3842,18 @@
           "encumbrance": "",
           "notes": "No weight limit in the slice."
         },
-        "loot": []
+        "loot": [
+          {
+            "id": "refLootRat",
+            "name": "Rat drop",
+            "sources": [
+              "refEnemyRat"
+            ],
+            "guaranteed": [
+              "refItemCoin"
+            ]
+          }
+        ]
       }
     },
     "design.combat": {
@@ -3810,7 +3865,21 @@
         "damage": {
           "items": []
         },
-        "enemies": [],
+        "enemies": [
+          {
+            "id": "refEnemyRat",
+            "name": "Yard Rat",
+            "role": "Swarm",
+            "tier": 1,
+            "hp": 20,
+            "damage": 3,
+            "attackRate": 1,
+            "speed": 2,
+            "armor": 10,
+            "aggression": "Hunter",
+            "xp": 5
+          }
+        ],
         "bosses": [],
         "phases": [],
         "bossPhases": {
@@ -3949,6 +4018,18 @@
                   }
                 },
                 {
+                  "id": "refElHp",
+                  "kind": "statBar",
+                  "x": 40,
+                  "y": 100,
+                  "w": 260,
+                  "h": 28,
+                  "bind": {
+                    "source": "survivalStat",
+                    "id": "health"
+                  }
+                },
+                {
                   "id": "refElBag",
                   "kind": "grid",
                   "x": 40,
@@ -4036,6 +4117,14 @@
             "drives": "Open crafting"
           },
           {
+            "id": "refCtlAtk",
+            "name": "Attack",
+            "category": "Combat",
+            "rebindable": true,
+            "key": "F",
+            "drives": "Attack"
+          },
+          {
             "id": "refCtlPaus",
             "name": "Pause",
             "category": "Menus",
@@ -4101,6 +4190,8 @@
           "quests": true,
           "saveLoad": true,
           "crafting": true,
+          "combat": true,
+          "weapon": "refItemStick",
           "scene": "refSceneYd"
         }
       }
@@ -4214,6 +4305,14 @@
             "since": 1,
             "notes": "Quest state and rewards given.",
             "state": "Quests"
+          },
+          {
+            "id": "refSpCombat",
+            "name": "Combat",
+            "module": "refModGame",
+            "since": 1,
+            "notes": "Health, defeated and looted enemies.",
+            "state": "Combat"
           }
         ]
       }

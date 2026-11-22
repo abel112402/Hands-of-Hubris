@@ -74,6 +74,7 @@ namespace HoHPlanner.Runtime
             {
                 Add("no exception", false, e.ToString());
             }
+            yield return Fights();
             yield return SaveAndLoad();
             report.passed = report.checks.Count > 0 && report.checks.All(c => c.passed);
             var json = JsonUtility.ToJson(report, true);
@@ -143,6 +144,50 @@ namespace HoHPlanner.Runtime
             }
         }
 
+        IEnumerator Fights()
+        {
+            var combat = One<PlannerCombat>();
+            if (combat == null || combat.Player == null) yield break;
+            var host = One<PlannerRuntimeHost>();
+            foreach (var e in FindObjectsByType<PlannerEnemy>(FindObjectsSortMode.None).Where(x => !x.Health.IsDead).ToList())
+            {
+                var defeated = new List<PlannerEnemyDefeated>();
+                var hits = 0;
+                var expected = combat.PlayerHitOn(e);
+                var exact = true;
+                using (host.Runtime.Events.Subscribe<PlannerEnemyDefeated>(defeated.Add))
+                {
+                    combat.Player.Teleport(e.transform.position + new Vector3(0.8f, 0.05f, 0f), 0f);
+                    var until = Time.time + 20f;
+                    while (!e.Health.IsDead && Time.time < until)
+                    {
+                        if (combat.PlayerHealth.Current < combat.PlayerHealth.Max * 0.5f) combat.PlayerHealth.Restore();
+                        var before = e.Health.Current;
+                        if (combat.TryAttack())
+                        {
+                            hits++;
+                            exact &= Mathf.Abs(before - e.Health.Current - Mathf.Min(before, expected)) < 0.001f;
+                        }
+                        yield return null;
+                    }
+                }
+                var need = Mathf.CeilToInt(e.Health.Max / Mathf.Max(0.0001f, expected));
+                Add($"fight {e.Name}", e.Health.IsDead && defeated.Count == 1 && defeated[0].Xp == e.Xp && exact && hits == need, $"defeated {e.Health.IsDead}, hits {hits} (planned {need}), {expected:0.###} per hit, XP {defeated.FirstOrDefault().Xp}");
+                var loot = e.GetComponent<PlannerLoot>();
+                var interactor = One<PlannerInteractor>();
+                if (loot != null && loot.Items.Count > 0 && interactor != null)
+                {
+                    var inv = loot.Inventory;
+                    var before = loot.Items.ToDictionary(i => i.ItemId, i => inv.CountOf(i.ItemId));
+                    var took = interactor.TryInteract() && loot.Looted;
+                    Add($"loot {e.Name}", took && loot.Items.All(i => inv.CountOf(i.ItemId) == before[i.ItemId] + loot.Items.Where(x => x.ItemId == i.ItemId).Sum(x => x.Count)), $"looted {loot.Looted}");
+                }
+            }
+            if (combat.Respawn != null) combat.Player.Teleport(combat.Respawn.position + new Vector3(0f, 0.05f, 0f), 0f);
+            combat.PlayerHealth.Restore();
+            yield return null;
+        }
+
         string Snapshot()
         {
             var player = One<PlannerPlayer>();
@@ -152,6 +197,8 @@ namespace HoHPlanner.Runtime
             var parts = new List<string> { $"player {pos.x:0.0},{pos.z:0.0}" };
             if (inventory != null) parts.Add("inventory " + string.Join("|", inventory.Contents.Select(s => s.Empty ? "-" : $"{s.ItemId}x{s.Count}")));
             parts.Add("taken " + string.Join(",", FindObjectsByType<PlannerPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(p => p.Taken).Select(p => p.Placement.ObjectId).OrderBy(x => x, StringComparer.Ordinal)));
+            var combatState = One<PlannerCombat>();
+            if (combatState != null) parts.Add($"health {combatState.PlayerHealth.Current:0.##}; enemies " + string.Join(",", FindObjectsByType<PlannerEnemy>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(e => e.name, StringComparer.Ordinal).Select(e => $"{e.name}:{e.Health.Current:0.##}/{e.Defeated}")));
             if (quests != null) parts.Add("quests " + string.Join(",", quests.Rules.Select(r => $"{r.QuestId}:{quests.IsDone(r.QuestId)}/{quests.IsRewarded(r.QuestId)}")));
             return string.Join("; ", parts);
         }

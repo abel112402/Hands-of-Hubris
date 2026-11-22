@@ -54,13 +54,15 @@ describe('quest rules', () => {
 })
 
 describe('placements', () => {
-  it('finds the player start and the key pickup on the location map', () => {
+  it('finds the player start, the key pickup and the enemy on the location map', () => {
     const { placements: all, issues } = placements(buildReferenceSlice())
     expect(issues).toEqual([])
     expect(all.map((x) => [x.role, x.object, x.item, x.count])).toEqual([
       ['player', IDS.start, undefined, 1],
       ['item', IDS.pickup, IDS.itemKey, 1],
+      ['enemy', IDS.enemySpawn, undefined, 1],
     ])
+    expect(all.find((x) => x.role === 'enemy')?.enemy).toBe(IDS.enemy)
   })
 
   it('reports a pickup of an unknown item and a second player start', () => {
@@ -77,17 +79,17 @@ describe('placements', () => {
   it('survives a save and load with the new spawn roles', () => {
     const back = deserializeProject(serializeProject(buildReferenceSlice()))
     expect(back.warnings).toEqual([])
-    expect(placements(back.project).placements).toHaveLength(2)
+    expect(placements(back.project).placements).toHaveLength(3)
   })
 })
 
 describe('prototype checks use the typed data', () => {
-  it('asks for a typed goal and placements when quests, movement and interaction are chosen', () => {
+  it('asks for a typed goal and placements when quests, movement, interaction and combat are chosen', () => {
     const p = buildReferenceSlice()
     delete quest(p).collectItems
     for (const o of mapObjects(p)) delete o.spawn
     const missing = prototypeReport(p, 'unity').issues.filter((i) => i.code === 'proto.dataMissing').map((i) => i.field)
-    expect(missing).toEqual(['movement', 'interaction', 'quests'])
+    expect(missing).toEqual(['movement', 'interaction', 'quests', 'combat'])
   })
 
   it('blocks on invalid typed data', () => {
