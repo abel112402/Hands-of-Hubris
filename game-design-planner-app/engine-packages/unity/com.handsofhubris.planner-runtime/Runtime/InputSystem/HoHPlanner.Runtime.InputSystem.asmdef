@@ -1,0 +1,14 @@
+{
+  "name": "HoHPlanner.Runtime.InputSystem",
+  "rootNamespace": "HoHPlanner.Runtime",
+  "references": ["HoHPlanner.Runtime", "Unity.InputSystem"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": ["HOH_INPUT_SYSTEM"],
+  "versionDefines": [{ "name": "com.unity.inputsystem", "expression": "1.7.0", "define": "HOH_INPUT_SYSTEM" }],
+  "noEngineReferences": false
+}

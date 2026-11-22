@@ -1,5 +1,31 @@
 import { catalog, f, mod, s, section, v } from './helpers'
 
+/** Technical Architecture › Playable prototype: the explicit profile the engine export makes playable (core/engine/capabilities). */
+export const PROTOTYPE_DIMENSIONS = ['3D', '2D'] as const
+export const PROTOTYPE_PERSPECTIVES = ['Third-person', 'First-person', 'Top-down', 'Isometric', 'Side view'] as const
+export const PROTOTYPE_PIPELINES = ['URP', 'Built-in', 'HDRP'] as const
+export const PROTOTYPE_PLATFORMS = ['Windows', 'macOS', 'Linux', 'Web', 'Android', 'iOS', 'Console'] as const
+/** The gameplay systems a prototype can ask for; none is assumed from the genre or the project's name. */
+export const PROTOTYPE_SYSTEMS = [
+  { key: 'movement', label: 'Player movement and camera', help: 'Needs Movement controls in UI / UX › Controls.' },
+  { key: 'interaction', label: 'Interaction (pick up, use)', help: 'Needs player movement and an Interaction control.' },
+  { key: 'inventory', label: 'Inventory', help: 'Needs interaction, items and an item data schema.' },
+  { key: 'quests', label: 'Quests and rewards', help: 'Needs quests in Story & Quests.' },
+  { key: 'saveLoad', label: 'Save and load', help: 'Needs a save version and saved parts in Save System.' },
+  { key: 'crafting', label: 'Crafting', help: 'Needs the inventory and recipes.' },
+  { key: 'combat', label: 'Combat', help: 'Needs player movement and enemies in Combat.' },
+  { key: 'dialogue', label: 'NPC dialogue', help: 'Needs interaction and characters in Story & Quests.' },
+] as const
+export type PrototypeSystem = (typeof PROTOTYPE_SYSTEMS)[number]['key']
+/** What a planned control does in the runtime (UI / UX › Controls › Runtime action); never guessed from its name. */
+export const RUNTIME_ACTIONS = ['Move forward', 'Move back', 'Move left', 'Move right', 'Interact', 'Open crafting'] as const
+export type RuntimeAction = (typeof RUNTIME_ACTIONS)[number]
+/** Player settings the runtime uses when the plan leaves them empty; the export reports each one it filled in. */
+/** The runtime state a saved part holds in a playable prototype (Save System › Saved parts › Runtime state); never guessed from its name. */
+export const SAVE_STATES = ['Player position', 'Inventory', 'Quests'] as const
+export type SaveState = (typeof SAVE_STATES)[number]
+export const PLAYER_DEFAULTS = { moveSpeed: 4, cameraDistance: 5, cameraHeight: 2, interactRange: 2 } as const
+
 const ADR_STATUS = ['Proposed', 'Accepted', 'Deprecated', 'Superseded']
 const STATUS = ['Planned', 'In progress', 'Done', 'Blocked']
 
@@ -299,6 +325,20 @@ export const technicalModules = [
         [v.archBoot(), v.table(['name', 'kind', 'loadOrder', 'loads', 'next'])],
         { description: 'Scene structure, bootstrap and what each scene brings up.' },
       ),
+      s.form(
+        'prototype',
+        'Playable prototype',
+        [
+          f.enm('dimension', 'Dimension', [...PROTOTYPE_DIMENSIONS], { group: 'Profile', help: '3D is supported first; 2D is planned.' }),
+          f.enm('perspective', 'Camera / perspective', [...PROTOTYPE_PERSPECTIVES], { group: 'Profile', help: 'Third-person is supported first. Not guessed from the controls text: choose it here.' }),
+          f.enm('renderPipeline', 'Render pipeline', [...PROTOTYPE_PIPELINES], { group: 'Profile', help: 'URP is supported first.' }),
+          f.enm('platform', 'Target platform', [...PROTOTYPE_PLATFORMS], { group: 'Profile', tier: 'core', help: 'Windows, macOS and Linux standalone builds first.' }),
+          ...PROTOTYPE_SYSTEMS.map((x) => f.bool(x.key, x.label, { group: 'Systems', help: x.help })),
+          f.ref('scene', 'Prototype scene', section('scenes'), { group: 'Scene', help: 'The planned scene the prototype is played in. The engine builds it from the location map with the player start, under this scene’s name, so the Build Settings step of the scenes includes it.' }),
+          f.num('mapScale', 'Map scale (metres per map unit)', { group: 'Scene', min: 0.001, step: 0.01, help: 'How big the location map is in the game. Empty: one walkability cell of the map is one metre, as in the greybox (e.g. 0.1 m per unit on a village map).' }),
+        ],
+        'What the engine export should make playable. The Engine export checks show, per system, whether it works, is a frame you finish in code, or is not supported yet, and what data is missing.',
+      ),
     ]),
     version: 2,
     migrate: migrateArchitecture,
@@ -553,6 +593,7 @@ export const technicalModules = [
         f.ref('module', 'Module', section('modules', 'technical.architecture'), { help: 'The module whose code saves this part.' }),
         f.num('since', 'Since save version', { min: 1, help: 'The save version that added it; older saves do not have it.' }),
         f.long('notes', 'What it holds'),
+        f.enm('state', 'Runtime state', [...SAVE_STATES], { group: 'Engine', help: 'What a playable prototype saves in this part. Inventory also holds which items were picked up from the map, so they do not come back.' }),
       ],
       [v.table(['name', 'module', 'since', 'notes'])],
       { description: 'What one save holds, part by part. The engine export turns each into a save key and an interface the saving code implements.' },

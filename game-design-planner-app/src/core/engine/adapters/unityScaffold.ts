@@ -59,9 +59,10 @@ export function inputIssues(ir: EngineIR): EngineIssue[] {
   return out
 }
 
-export function inputFiles(ir: EngineIR, n: UnityNames): EmittedFile[] {
+/** `extra`: action maps beyond the plan's categories (the playable prototype's, unityGameplay.ts). */
+export function inputFiles(ir: EngineIR, n: UnityNames, extra: Record<string, unknown>[] = []): EmittedFile[] {
   const actions = ir.input.actions
-  if (!actions.length) return []
+  if (!actions.length && !extra.length) return []
   const categories = [...new Set(actions.map((a) => a.category))]
   const maps = categories.map((cat) => {
     const list = actions.filter((a) => a.category === cat)
@@ -88,7 +89,7 @@ export function inputFiles(ir: EngineIR, n: UnityNames): EmittedFile[] {
   })
   const asset = {
     name: n.root,
-    maps,
+    maps: [...maps, ...extra],
     controlSchemes: [
       { name: 'Keyboard&Mouse', bindingGroup: 'Keyboard&Mouse', devices: [{ devicePath: '<Keyboard>', isOptional: false, isOR: false }, { devicePath: '<Mouse>', isOptional: false, isOR: false }] },
       { name: 'Gamepad', bindingGroup: 'Gamepad', devices: [{ devicePath: '<Gamepad>', isOptional: false, isOR: false }] },

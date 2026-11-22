@@ -1,6 +1,7 @@
 import { deserializeProject } from '../src/core/persistence/serialize'
 import { buildBundle, bundleZip } from '../src/core/engine/bundle'
-import { describeWrite, writeExport } from '../src/core/engine/folder'
+import { describeWrite, previewExport, restoreLastWrite, writeExport } from '../src/core/engine/folder'
+import { describePlan } from '../src/core/engine/ownership'
 import { ENGINE_TARGETS, engineTarget } from '../src/core/engine/target'
 import type { EngineId } from '../src/core/engine/adapter'
 import { nodeFolder, type NodeFs } from './nodeFolder'
@@ -12,7 +13,9 @@ Writes the engine export of a planner project, the same as Engine export in the 
   <output> a folder         the files themselves, with the linked-folder rules: unchanged files are left alone,
                             your class files (Unity/Scripts/Classes, Godot/Scripts/Classes, Unreal/Source/PlannerGame) are only created when
                             missing, and generated files the plan dropped are deleted (only in a folder that already
-                            holds an export). For Unity, point it at Assets/HoHPlanner and let the bridge package
+                            holds an export). A file changed since the last export (or not written by the planner)
+                            stops the write before anything is written; with --overwrite it is backed up under
+                            .hoh-backup/ and replaced. For Unity, point it at Assets/HoHPlanner and let the bridge package
                             finish the import; for Godot at res://HoHPlanner, with the planner addon; for
                             Unreal at Plugins/HoHPlanner, with the bridge plugin.
 
@@ -20,8 +23,11 @@ Options:
   --engine unity|godot|unreal   target engine (default: the project's)
   --exported-at <ISO time>      fixed export time, for byte-identical output
   --strict                      exit 1 when the export has errors (not warnings)
+  --preview                     folder output: list what would change, write nothing
+  --overwrite                   folder output: overwrite conflicting files (a backup is kept)
+  --restore                     folder output: undo the last write from its backup (give only the folder)
 
-Exit codes: 0 done, 1 errors with --strict, 2 bad arguments or project file.`
+Exit codes: 0 done, 1 errors with --strict, 2 bad arguments or project file, 3 stopped on conflicts (folder output).`
 
 export type CliIo = { fs: NodeFs; log(line: string): void; error(line: string): void }
 
@@ -35,13 +41,18 @@ export async function runCli(args: string[], io: CliIo): Promise<number> {
       io.log(USAGE)
       return 0
     }
-    if (a === '--strict') opts.strict = true
+    if (a === '--strict' || a === '--preview' || a === '--overwrite' || a === '--restore') opts[a.slice(2)] = true
     else if (a === '--engine' || a === '--exported-at') {
       const v = args[++i]
       if (!v) return fail(io, `${a} needs a value.`)
       opts[a.slice(2)] = v
     } else if (a.startsWith('--')) return fail(io, `Unknown option ${a}.`)
     else positional.push(a)
+  }
+  if (opts.restore) {
+    if (positional.length !== 1 || !io.fs.existsSync(positional[0])) return fail(io, 'With --restore, give only the output folder.')
+    io.log(await restoreLastWrite(nodeFolder(io.fs, positional[0])))
+    return 0
   }
   if (positional.length !== 2) return fail(io, 'Give the project file and the output.')
   const [input, output] = positional
@@ -67,8 +78,15 @@ export async function runCli(args: string[], io: CliIo): Promise<number> {
       io.log(`${project.meta.name} → ${output}: ${bundle.files.length} files for ${engine}.`)
     } else {
       io.fs.mkdirSync(output, { recursive: true })
-      const r = await writeExport(nodeFolder(io.fs, output), bundle.files)
+      if (opts.preview) {
+        const plan = await previewExport(nodeFolder(io.fs, output), bundle.files)
+        io.log(`${project.meta.name} → ${output} (${engine}), preview: ${describePlan(plan)}.`)
+        for (const e of plan.entries.filter((x) => x.action !== 'unchanged')) io.log(`  ${e.action.padEnd(11)} ${e.path}${e.reason ? ` (${e.reason})` : ''}`)
+        return plan.conflicts.length ? 3 : 0
+      }
+      const r = await writeExport(nodeFolder(io.fs, output), bundle.files, { overwrite: !!opts.overwrite })
       io.log(`${project.meta.name} → ${output} (${engine}): ${describeWrite(r)}.`)
+      if (r.stopped) return 3
     }
   } catch (e) {
     return fail(io, `Could not write ${output}: ${(e as Error).message}`)

@@ -1,0 +1,4353 @@
+{
+  "format": "hands-of-hubris-planner",
+  "formatVersion": 1,
+  "meta": {
+    "name": "Reference Slice 3D",
+    "createdAt": "2026-11-21T00:00:00.000Z",
+    "updatedAt": "2026-11-21T00:00:00.000Z",
+    "appVersion": "0.1.0"
+  },
+  "registry": {
+    "catalogs": {
+      "difficulties": {
+        "label": "Difficulty levels",
+        "items": [
+          {
+            "id": "easy",
+            "label": "Easy"
+          },
+          {
+            "id": "medium",
+            "label": "Medium"
+          },
+          {
+            "id": "hard",
+            "label": "Hard"
+          }
+        ]
+      },
+      "npcStats": {
+        "label": "NPC stats",
+        "items": [
+          {
+            "id": "strength",
+            "label": "Strength"
+          },
+          {
+            "id": "intelligence",
+            "label": "Intelligence"
+          },
+          {
+            "id": "speed",
+            "label": "Speed"
+          },
+          {
+            "id": "kindness",
+            "label": "Kindness"
+          },
+          {
+            "id": "cunning",
+            "label": "Cunning"
+          },
+          {
+            "id": "health",
+            "label": "Health"
+          },
+          {
+            "id": "stability",
+            "label": "Stability"
+          },
+          {
+            "id": "mana",
+            "label": "Mana"
+          },
+          {
+            "id": "talent",
+            "label": "Talent"
+          }
+        ]
+      },
+      "needs": {
+        "label": "NPC needs",
+        "items": [
+          {
+            "id": "food",
+            "label": "Food"
+          },
+          {
+            "id": "drink",
+            "label": "Drink"
+          },
+          {
+            "id": "housing",
+            "label": "Housing"
+          },
+          {
+            "id": "entertainment",
+            "label": "Entertainment"
+          },
+          {
+            "id": "safety",
+            "label": "Safety"
+          }
+        ]
+      },
+      "resources": {
+        "label": "Resources",
+        "items": [
+          {
+            "id": "wood",
+            "label": "Wood"
+          },
+          {
+            "id": "stone",
+            "label": "Stone"
+          },
+          {
+            "id": "ore",
+            "label": "Ore"
+          },
+          {
+            "id": "metal",
+            "label": "Metal"
+          },
+          {
+            "id": "food",
+            "label": "Food"
+          },
+          {
+            "id": "drink",
+            "label": "Drink"
+          },
+          {
+            "id": "gold",
+            "label": "Gold"
+          }
+        ]
+      },
+      "rarities": {
+        "label": "Item rarities",
+        "items": [
+          {
+            "id": "common",
+            "label": "Common"
+          },
+          {
+            "id": "uncommon",
+            "label": "Uncommon"
+          },
+          {
+            "id": "rare",
+            "label": "Rare"
+          },
+          {
+            "id": "epic",
+            "label": "Epic"
+          },
+          {
+            "id": "legendary",
+            "label": "Legendary"
+          }
+        ]
+      },
+      "qualities": {
+        "label": "Item qualities",
+        "items": [
+          {
+            "id": "poor",
+            "label": "Poor"
+          },
+          {
+            "id": "normal",
+            "label": "Normal"
+          },
+          {
+            "id": "good",
+            "label": "Good"
+          },
+          {
+            "id": "excellent",
+            "label": "Excellent"
+          },
+          {
+            "id": "masterwork",
+            "label": "Masterwork"
+          }
+        ]
+      },
+      "itemTypes": {
+        "label": "Item types",
+        "items": [
+          {
+            "id": "building-item",
+            "label": "Building item"
+          },
+          {
+            "id": "resource-item",
+            "label": "Resource item"
+          },
+          {
+            "id": "tool",
+            "label": "Tool"
+          },
+          {
+            "id": "machine",
+            "label": "Machine"
+          },
+          {
+            "id": "weapon",
+            "label": "Weapon"
+          },
+          {
+            "id": "armor",
+            "label": "Armor"
+          },
+          {
+            "id": "consumable",
+            "label": "Consumable"
+          },
+          {
+            "id": "accessory",
+            "label": "Accessory"
+          },
+          {
+            "id": "decoration",
+            "label": "Decoration"
+          },
+          {
+            "id": "beacon",
+            "label": "Beacon"
+          },
+          {
+            "id": "valuable",
+            "label": "Valuable"
+          }
+        ]
+      },
+      "casts": {
+        "label": "Player casts",
+        "items": [
+          {
+            "id": "warrior",
+            "label": "Warrior"
+          },
+          {
+            "id": "assassin",
+            "label": "Assassin"
+          },
+          {
+            "id": "ranger",
+            "label": "Ranger"
+          },
+          {
+            "id": "light-wizard",
+            "label": "Light wizard"
+          },
+          {
+            "id": "dark-wizard",
+            "label": "Dark wizard"
+          },
+          {
+            "id": "nature-wizard",
+            "label": "Nature wizard"
+          },
+          {
+            "id": "builder",
+            "label": "Builder"
+          }
+        ]
+      },
+      "damageTypes": {
+        "label": "Damage types",
+        "items": [
+          {
+            "id": "physical",
+            "label": "Physical"
+          },
+          {
+            "id": "fire",
+            "label": "Fire"
+          },
+          {
+            "id": "light",
+            "label": "Light"
+          },
+          {
+            "id": "dark",
+            "label": "Dark"
+          },
+          {
+            "id": "nature",
+            "label": "Nature"
+          }
+        ]
+      },
+      "professions": {
+        "label": "NPC professions",
+        "items": [
+          {
+            "id": "builder",
+            "label": "Builder"
+          },
+          {
+            "id": "miner",
+            "label": "Miner"
+          },
+          {
+            "id": "lumberjack",
+            "label": "Lumberjack"
+          },
+          {
+            "id": "farmer",
+            "label": "Farmer"
+          },
+          {
+            "id": "innkeeper",
+            "label": "Innkeeper"
+          },
+          {
+            "id": "teacher",
+            "label": "Teacher"
+          },
+          {
+            "id": "merchant",
+            "label": "Merchant"
+          },
+          {
+            "id": "blacksmith",
+            "label": "Blacksmith"
+          }
+        ]
+      },
+      "timeOfDay": {
+        "label": "Times of day",
+        "items": [
+          {
+            "id": "dawn",
+            "label": "Dawn"
+          },
+          {
+            "id": "day",
+            "label": "Day"
+          },
+          {
+            "id": "dusk",
+            "label": "Dusk"
+          },
+          {
+            "id": "night",
+            "label": "Night"
+          }
+        ]
+      },
+      "survivalStats": {
+        "label": "Survival stats",
+        "items": [
+          {
+            "id": "hunger",
+            "label": "Hunger"
+          },
+          {
+            "id": "thirst",
+            "label": "Thirst"
+          },
+          {
+            "id": "health",
+            "label": "Health"
+          },
+          {
+            "id": "sanity",
+            "label": "Sanity"
+          }
+        ]
+      },
+      "worldModifiers": {
+        "label": "World modifiers",
+        "items": [
+          {
+            "id": "monster-spawn-rate",
+            "label": "Monster spawn rate"
+          },
+          {
+            "id": "hunger-thirst-decay",
+            "label": "Hunger / thirst decay"
+          },
+          {
+            "id": "movement-speed",
+            "label": "Movement speed"
+          },
+          {
+            "id": "crop-growth",
+            "label": "Crop growth"
+          },
+          {
+            "id": "npc-morale",
+            "label": "NPC morale"
+          },
+          {
+            "id": "loot-rarity",
+            "label": "Loot rarity"
+          },
+          {
+            "id": "corruption-growth",
+            "label": "Corruption growth"
+          }
+        ]
+      }
+    },
+    "customFields": {},
+    "entityTypes": []
+  },
+  "documents": {
+    "overview.vision": {
+      "moduleVersion": 2,
+      "data": {
+        "pitch": {},
+        "references": {},
+        "audience": {},
+        "usps": [],
+        "pillars": [],
+        "tone": {},
+        "scope": [],
+        "platform": {},
+        "monetization": {}
+      }
+    },
+    "overview.glossary": {
+      "moduleVersion": 1,
+      "data": {
+        "terms": []
+      }
+    },
+    "overview.roadmap": {
+      "moduleVersion": 2,
+      "data": {
+        "assumptions": {},
+        "phases": [],
+        "tasks": [],
+        "dependencies": [],
+        "gates": [],
+        "cuts": [],
+        "protected": {},
+        "tracking": {},
+        "changelog": []
+      }
+    },
+    "design.coreLoop": {
+      "moduleVersion": 2,
+      "data": {
+        "loops": [],
+        "rewardsProgression": {},
+        "loopGraph": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "design.difficulty": {
+      "moduleVersion": 2,
+      "data": {
+        "principles": {},
+        "presets": [],
+        "params": [],
+        "values": {
+          "cells": {}
+        },
+        "custom": [],
+        "switching": {},
+        "storage": {}
+      }
+    },
+    "design.factions": {
+      "moduleVersion": 2,
+      "data": {
+        "overview": {},
+        "factions": [],
+        "relations": {
+          "cells": {}
+        },
+        "relationGraph": {
+          "nodes": [],
+          "edges": []
+        },
+        "actions": [],
+        "thresholds": [],
+        "endings": []
+      }
+    },
+    "design.world": {
+      "moduleVersion": 3,
+      "data": {
+        "exploration": {},
+        "biomes": [],
+        "progression": {
+          "nodes": [],
+          "edges": []
+        },
+        "map": {
+          "items": []
+        },
+        "outposts": [],
+        "locations": [
+          {
+            "id": "refLocYard",
+            "name": "Keeper’s Yard",
+            "type": "Village",
+            "size": "Small",
+            "walls": "None",
+            "water": "Well",
+            "population": 0,
+            "landmarks": [],
+            "description": "A small fenced yard around a well; the player starts at the gate.",
+            "map": {
+              "v": 2,
+              "type": "Village",
+              "seed": 20261121,
+              "w": 800,
+              "h": 560,
+              "layers": {
+                "ground": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "patch",
+                      "x": 609,
+                      "y": 129,
+                      "points": [
+                        [
+                          422,
+                          257
+                        ],
+                        [
+                          415,
+                          240
+                        ],
+                        [
+                          416,
+                          219
+                        ],
+                        [
+                          421,
+                          195
+                        ],
+                        [
+                          429,
+                          170
+                        ],
+                        [
+                          437,
+                          147
+                        ],
+                        [
+                          443,
+                          126
+                        ],
+                        [
+                          448,
+                          99
+                        ],
+                        [
+                          453,
+                          74
+                        ],
+                        [
+                          460,
+                          50
+                        ],
+                        [
+                          473,
+                          28
+                        ],
+                        [
+                          486,
+                          12
+                        ],
+                        [
+                          500,
+                          -4
+                        ],
+                        [
+                          517,
+                          -19
+                        ],
+                        [
+                          535,
+                          -33
+                        ],
+                        [
+                          555,
+                          -45
+                        ],
+                        [
+                          576,
+                          -54
+                        ],
+                        [
+                          597,
+                          -58
+                        ],
+                        [
+                          620,
+                          -62
+                        ],
+                        [
+                          645,
+                          -63
+                        ],
+                        [
+                          670,
+                          -63
+                        ],
+                        [
+                          694,
+                          -61
+                        ],
+                        [
+                          717,
+                          -56
+                        ],
+                        [
+                          736,
+                          -49
+                        ],
+                        [
+                          756,
+                          -36
+                        ],
+                        [
+                          774,
+                          -18
+                        ],
+                        [
+                          790,
+                          2
+                        ],
+                        [
+                          803,
+                          25
+                        ],
+                        [
+                          813,
+                          47
+                        ],
+                        [
+                          819,
+                          68
+                        ],
+                        [
+                          822,
+                          93
+                        ],
+                        [
+                          819,
+                          118
+                        ],
+                        [
+                          812,
+                          144
+                        ],
+                        [
+                          802,
+                          167
+                        ],
+                        [
+                          789,
+                          188
+                        ],
+                        [
+                          774,
+                          205
+                        ],
+                        [
+                          756,
+                          219
+                        ],
+                        [
+                          735,
+                          232
+                        ],
+                        [
+                          713,
+                          243
+                        ],
+                        [
+                          691,
+                          254
+                        ],
+                        [
+                          668,
+                          266
+                        ],
+                        [
+                          645,
+                          278
+                        ],
+                        [
+                          621,
+                          289
+                        ],
+                        [
+                          596,
+                          297
+                        ],
+                        [
+                          570,
+                          300
+                        ],
+                        [
+                          545,
+                          299
+                        ],
+                        [
+                          516,
+                          296
+                        ],
+                        [
+                          487,
+                          290
+                        ],
+                        [
+                          459,
+                          281
+                        ],
+                        [
+                          437,
+                          270
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          422,
+                          257
+                        ],
+                        [
+                          443,
+                          126
+                        ],
+                        [
+                          473,
+                          28
+                        ],
+                        [
+                          576,
+                          -54
+                        ],
+                        [
+                          736,
+                          -49
+                        ],
+                        [
+                          819,
+                          68
+                        ],
+                        [
+                          789,
+                          188
+                        ],
+                        [
+                          691,
+                          254
+                        ],
+                        [
+                          570,
+                          300
+                        ]
+                      ],
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "ground.0.0"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 451,
+                      "y": 449,
+                      "points": [
+                        [
+                          322,
+                          523
+                        ],
+                        [
+                          303,
+                          509
+                        ],
+                        [
+                          287,
+                          490
+                        ],
+                        [
+                          276,
+                          470
+                        ],
+                        [
+                          273,
+                          451
+                        ],
+                        [
+                          279,
+                          434
+                        ],
+                        [
+                          293,
+                          417
+                        ],
+                        [
+                          311,
+                          400
+                        ],
+                        [
+                          330,
+                          384
+                        ],
+                        [
+                          344,
+                          370
+                        ],
+                        [
+                          359,
+                          355
+                        ],
+                        [
+                          376,
+                          341
+                        ],
+                        [
+                          394,
+                          330
+                        ],
+                        [
+                          414,
+                          323
+                        ],
+                        [
+                          437,
+                          321
+                        ],
+                        [
+                          464,
+                          323
+                        ],
+                        [
+                          491,
+                          328
+                        ],
+                        [
+                          517,
+                          335
+                        ],
+                        [
+                          540,
+                          344
+                        ],
+                        [
+                          564,
+                          356
+                        ],
+                        [
+                          585,
+                          372
+                        ],
+                        [
+                          602,
+                          389
+                        ],
+                        [
+                          616,
+                          407
+                        ],
+                        [
+                          625,
+                          427
+                        ],
+                        [
+                          632,
+                          449
+                        ],
+                        [
+                          633,
+                          471
+                        ],
+                        [
+                          626,
+                          489
+                        ],
+                        [
+                          613,
+                          500
+                        ],
+                        [
+                          593,
+                          509
+                        ],
+                        [
+                          570,
+                          517
+                        ],
+                        [
+                          546,
+                          524
+                        ],
+                        [
+                          524,
+                          529
+                        ],
+                        [
+                          500,
+                          536
+                        ],
+                        [
+                          477,
+                          540
+                        ],
+                        [
+                          453,
+                          543
+                        ],
+                        [
+                          429,
+                          543
+                        ],
+                        [
+                          407,
+                          542
+                        ],
+                        [
+                          384,
+                          540
+                        ],
+                        [
+                          361,
+                          537
+                        ],
+                        [
+                          340,
+                          531
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          322,
+                          523
+                        ],
+                        [
+                          273,
+                          451
+                        ],
+                        [
+                          330,
+                          384
+                        ],
+                        [
+                          414,
+                          323
+                        ],
+                        [
+                          540,
+                          344
+                        ],
+                        [
+                          616,
+                          407
+                        ],
+                        [
+                          626,
+                          489
+                        ],
+                        [
+                          524,
+                          529
+                        ],
+                        [
+                          429,
+                          543
+                        ]
+                      ],
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "ground.0.1"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 545,
+                      "y": 307,
+                      "points": [
+                        [
+                          669,
+                          216
+                        ],
+                        [
+                          679,
+                          236
+                        ],
+                        [
+                          683,
+                          257
+                        ],
+                        [
+                          684,
+                          280
+                        ],
+                        [
+                          686,
+                          304
+                        ],
+                        [
+                          691,
+                          329
+                        ],
+                        [
+                          697,
+                          356
+                        ],
+                        [
+                          698,
+                          382
+                        ],
+                        [
+                          691,
+                          404
+                        ],
+                        [
+                          677,
+                          417
+                        ],
+                        [
+                          656,
+                          429
+                        ],
+                        [
+                          632,
+                          438
+                        ],
+                        [
+                          606,
+                          446
+                        ],
+                        [
+                          580,
+                          452
+                        ],
+                        [
+                          557,
+                          458
+                        ],
+                        [
+                          532,
+                          463
+                        ],
+                        [
+                          506,
+                          468
+                        ],
+                        [
+                          481,
+                          470
+                        ],
+                        [
+                          459,
+                          469
+                        ],
+                        [
+                          441,
+                          464
+                        ],
+                        [
+                          425,
+                          449
+                        ],
+                        [
+                          413,
+                          428
+                        ],
+                        [
+                          405,
+                          403
+                        ],
+                        [
+                          399,
+                          377
+                        ],
+                        [
+                          395,
+                          355
+                        ],
+                        [
+                          392,
+                          331
+                        ],
+                        [
+                          392,
+                          309
+                        ],
+                        [
+                          395,
+                          287
+                        ],
+                        [
+                          401,
+                          267
+                        ],
+                        [
+                          411,
+                          246
+                        ],
+                        [
+                          424,
+                          226
+                        ],
+                        [
+                          440,
+                          207
+                        ],
+                        [
+                          460,
+                          191
+                        ],
+                        [
+                          479,
+                          180
+                        ],
+                        [
+                          501,
+                          170
+                        ],
+                        [
+                          526,
+                          162
+                        ],
+                        [
+                          550,
+                          157
+                        ],
+                        [
+                          572,
+                          157
+                        ],
+                        [
+                          594,
+                          162
+                        ],
+                        [
+                          616,
+                          173
+                        ],
+                        [
+                          637,
+                          186
+                        ],
+                        [
+                          655,
+                          201
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          669,
+                          216
+                        ],
+                        [
+                          686,
+                          304
+                        ],
+                        [
+                          691,
+                          404
+                        ],
+                        [
+                          580,
+                          452
+                        ],
+                        [
+                          441,
+                          464
+                        ],
+                        [
+                          395,
+                          355
+                        ],
+                        [
+                          401,
+                          267
+                        ],
+                        [
+                          460,
+                          191
+                        ],
+                        [
+                          572,
+                          157
+                        ]
+                      ],
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "ground.0.2"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 220,
+                      "y": 89,
+                      "points": [
+                        [
+                          222,
+                          198
+                        ],
+                        [
+                          199,
+                          198
+                        ],
+                        [
+                          176,
+                          199
+                        ],
+                        [
+                          154,
+                          201
+                        ],
+                        [
+                          132,
+                          201
+                        ],
+                        [
+                          111,
+                          199
+                        ],
+                        [
+                          90,
+                          195
+                        ],
+                        [
+                          67,
+                          187
+                        ],
+                        [
+                          42,
+                          176
+                        ],
+                        [
+                          17,
+                          163
+                        ],
+                        [
+                          -5,
+                          149
+                        ],
+                        [
+                          -22,
+                          135
+                        ],
+                        [
+                          -30,
+                          120
+                        ],
+                        [
+                          -28,
+                          102
+                        ],
+                        [
+                          -16,
+                          82
+                        ],
+                        [
+                          3,
+                          62
+                        ],
+                        [
+                          25,
+                          42
+                        ],
+                        [
+                          44,
+                          23
+                        ],
+                        [
+                          61,
+                          5
+                        ],
+                        [
+                          79,
+                          -13
+                        ],
+                        [
+                          97,
+                          -30
+                        ],
+                        [
+                          117,
+                          -43
+                        ],
+                        [
+                          140,
+                          -52
+                        ],
+                        [
+                          162,
+                          -55
+                        ],
+                        [
+                          187,
+                          -55
+                        ],
+                        [
+                          213,
+                          -52
+                        ],
+                        [
+                          239,
+                          -47
+                        ],
+                        [
+                          264,
+                          -41
+                        ],
+                        [
+                          286,
+                          -35
+                        ],
+                        [
+                          308,
+                          -26
+                        ],
+                        [
+                          329,
+                          -15
+                        ],
+                        [
+                          347,
+                          -2
+                        ],
+                        [
+                          363,
+                          12
+                        ],
+                        [
+                          378,
+                          27
+                        ],
+                        [
+                          395,
+                          46
+                        ],
+                        [
+                          410,
+                          67
+                        ],
+                        [
+                          421,
+                          89
+                        ],
+                        [
+                          425,
+                          111
+                        ],
+                        [
+                          423,
+                          132
+                        ],
+                        [
+                          417,
+                          154
+                        ],
+                        [
+                          407,
+                          177
+                        ],
+                        [
+                          393,
+                          196
+                        ],
+                        [
+                          375,
+                          208
+                        ],
+                        [
+                          355,
+                          213
+                        ],
+                        [
+                          331,
+                          213
+                        ],
+                        [
+                          304,
+                          210
+                        ],
+                        [
+                          275,
+                          205
+                        ],
+                        [
+                          248,
+                          201
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          222,
+                          198
+                        ],
+                        [
+                          90,
+                          195
+                        ],
+                        [
+                          -30,
+                          120
+                        ],
+                        [
+                          44,
+                          23
+                        ],
+                        [
+                          140,
+                          -52
+                        ],
+                        [
+                          286,
+                          -35
+                        ],
+                        [
+                          378,
+                          27
+                        ],
+                        [
+                          425,
+                          111
+                        ],
+                        [
+                          375,
+                          208
+                        ]
+                      ],
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "ground.0.3"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 392,
+                      "y": 530,
+                      "points": [
+                        [
+                          452,
+                          477
+                        ],
+                        [
+                          473,
+                          487
+                        ],
+                        [
+                          491,
+                          498
+                        ],
+                        [
+                          502,
+                          511
+                        ],
+                        [
+                          496,
+                          531
+                        ],
+                        [
+                          478,
+                          552
+                        ],
+                        [
+                          462,
+                          572
+                        ],
+                        [
+                          439,
+                          586
+                        ],
+                        [
+                          416,
+                          591
+                        ],
+                        [
+                          390,
+                          593
+                        ],
+                        [
+                          366,
+                          590
+                        ],
+                        [
+                          348,
+                          583
+                        ],
+                        [
+                          333,
+                          572
+                        ],
+                        [
+                          320,
+                          560
+                        ],
+                        [
+                          300,
+                          543
+                        ],
+                        [
+                          290,
+                          525
+                        ],
+                        [
+                          299,
+                          506
+                        ],
+                        [
+                          319,
+                          488
+                        ],
+                        [
+                          337,
+                          479
+                        ],
+                        [
+                          358,
+                          470
+                        ],
+                        [
+                          380,
+                          466
+                        ],
+                        [
+                          404,
+                          466
+                        ],
+                        [
+                          429,
+                          471
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          452,
+                          477
+                        ],
+                        [
+                          502,
+                          511
+                        ],
+                        [
+                          478,
+                          552
+                        ],
+                        [
+                          439,
+                          586
+                        ],
+                        [
+                          366,
+                          590
+                        ],
+                        [
+                          320,
+                          560
+                        ],
+                        [
+                          290,
+                          525
+                        ],
+                        [
+                          319,
+                          488
+                        ],
+                        [
+                          380,
+                          466
+                        ]
+                      ],
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "ground.0.4"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 787,
+                      "y": 291,
+                      "points": [
+                        [
+                          606,
+                          284
+                        ],
+                        [
+                          608,
+                          265
+                        ],
+                        [
+                          616,
+                          245
+                        ],
+                        [
+                          630,
+                          226
+                        ],
+                        [
+                          649,
+                          211
+                        ],
+                        [
+                          668,
+                          204
+                        ],
+                        [
+                          692,
+                          201
+                        ],
+                        [
+                          718,
+                          199
+                        ],
+                        [
+                          744,
+                          198
+                        ],
+                        [
+                          770,
+                          197
+                        ],
+                        [
+                          794,
+                          196
+                        ],
+                        [
+                          818,
+                          195
+                        ],
+                        [
+                          842,
+                          195
+                        ],
+                        [
+                          865,
+                          196
+                        ],
+                        [
+                          886,
+                          201
+                        ],
+                        [
+                          907,
+                          208
+                        ],
+                        [
+                          927,
+                          219
+                        ],
+                        [
+                          946,
+                          231
+                        ],
+                        [
+                          962,
+                          244
+                        ],
+                        [
+                          974,
+                          258
+                        ],
+                        [
+                          985,
+                          279
+                        ],
+                        [
+                          991,
+                          302
+                        ],
+                        [
+                          992,
+                          324
+                        ],
+                        [
+                          983,
+                          343
+                        ],
+                        [
+                          967,
+                          355
+                        ],
+                        [
+                          944,
+                          366
+                        ],
+                        [
+                          917,
+                          375
+                        ],
+                        [
+                          889,
+                          381
+                        ],
+                        [
+                          864,
+                          385
+                        ],
+                        [
+                          841,
+                          387
+                        ],
+                        [
+                          818,
+                          385
+                        ],
+                        [
+                          796,
+                          382
+                        ],
+                        [
+                          774,
+                          378
+                        ],
+                        [
+                          753,
+                          373
+                        ],
+                        [
+                          728,
+                          369
+                        ],
+                        [
+                          704,
+                          363
+                        ],
+                        [
+                          681,
+                          356
+                        ],
+                        [
+                          661,
+                          347
+                        ],
+                        [
+                          642,
+                          334
+                        ],
+                        [
+                          625,
+                          318
+                        ],
+                        [
+                          612,
+                          301
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          606,
+                          284
+                        ],
+                        [
+                          649,
+                          211
+                        ],
+                        [
+                          770,
+                          197
+                        ],
+                        [
+                          886,
+                          201
+                        ],
+                        [
+                          974,
+                          258
+                        ],
+                        [
+                          983,
+                          343
+                        ],
+                        [
+                          864,
+                          385
+                        ],
+                        [
+                          753,
+                          373
+                        ],
+                        [
+                          661,
+                          347
+                        ]
+                      ],
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "ground.0.5"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 633,
+                      "y": 62,
+                      "points": [
+                        [
+                          554,
+                          90
+                        ],
+                        [
+                          537,
+                          71
+                        ],
+                        [
+                          529,
+                          50
+                        ],
+                        [
+                          532,
+                          33
+                        ],
+                        [
+                          541,
+                          15
+                        ],
+                        [
+                          556,
+                          2
+                        ],
+                        [
+                          572,
+                          -3
+                        ],
+                        [
+                          593,
+                          -6
+                        ],
+                        [
+                          615,
+                          -6
+                        ],
+                        [
+                          634,
+                          -5
+                        ],
+                        [
+                          655,
+                          0
+                        ],
+                        [
+                          673,
+                          9
+                        ],
+                        [
+                          692,
+                          18
+                        ],
+                        [
+                          718,
+                          28
+                        ],
+                        [
+                          746,
+                          38
+                        ],
+                        [
+                          760,
+                          49
+                        ],
+                        [
+                          752,
+                          63
+                        ],
+                        [
+                          731,
+                          78
+                        ],
+                        [
+                          710,
+                          91
+                        ],
+                        [
+                          695,
+                          102
+                        ],
+                        [
+                          680,
+                          110
+                        ],
+                        [
+                          663,
+                          117
+                        ],
+                        [
+                          642,
+                          120
+                        ],
+                        [
+                          620,
+                          121
+                        ],
+                        [
+                          599,
+                          119
+                        ],
+                        [
+                          582,
+                          112
+                        ],
+                        [
+                          567,
+                          102
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          554,
+                          90
+                        ],
+                        [
+                          529,
+                          50
+                        ],
+                        [
+                          556,
+                          2
+                        ],
+                        [
+                          634,
+                          -5
+                        ],
+                        [
+                          692,
+                          18
+                        ],
+                        [
+                          760,
+                          49
+                        ],
+                        [
+                          710,
+                          91
+                        ],
+                        [
+                          663,
+                          117
+                        ],
+                        [
+                          599,
+                          119
+                        ]
+                      ],
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "ground.0.6"
+                    },
+                    {
+                      "kind": "patch",
+                      "x": 365,
+                      "y": 7,
+                      "points": [
+                        [
+                          448,
+                          -18
+                        ],
+                        [
+                          455,
+                          0
+                        ],
+                        [
+                          460,
+                          18
+                        ],
+                        [
+                          458,
+                          34
+                        ],
+                        [
+                          446,
+                          47
+                        ],
+                        [
+                          428,
+                          58
+                        ],
+                        [
+                          408,
+                          67
+                        ],
+                        [
+                          390,
+                          74
+                        ],
+                        [
+                          371,
+                          79
+                        ],
+                        [
+                          350,
+                          82
+                        ],
+                        [
+                          330,
+                          83
+                        ],
+                        [
+                          307,
+                          83
+                        ],
+                        [
+                          286,
+                          81
+                        ],
+                        [
+                          269,
+                          74
+                        ],
+                        [
+                          254,
+                          56
+                        ],
+                        [
+                          246,
+                          31
+                        ],
+                        [
+                          245,
+                          9
+                        ],
+                        [
+                          257,
+                          -8
+                        ],
+                        [
+                          278,
+                          -23
+                        ],
+                        [
+                          297,
+                          -37
+                        ],
+                        [
+                          312,
+                          -55
+                        ],
+                        [
+                          326,
+                          -72
+                        ],
+                        [
+                          343,
+                          -84
+                        ],
+                        [
+                          362,
+                          -86
+                        ],
+                        [
+                          383,
+                          -86
+                        ],
+                        [
+                          404,
+                          -81
+                        ],
+                        [
+                          421,
+                          -75
+                        ],
+                        [
+                          434,
+                          -59
+                        ],
+                        [
+                          442,
+                          -39
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          448,
+                          -18
+                        ],
+                        [
+                          458,
+                          34
+                        ],
+                        [
+                          408,
+                          67
+                        ],
+                        [
+                          350,
+                          82
+                        ],
+                        [
+                          269,
+                          74
+                        ],
+                        [
+                          245,
+                          9
+                        ],
+                        [
+                          297,
+                          -37
+                        ],
+                        [
+                          343,
+                          -84
+                        ],
+                        [
+                          421,
+                          -75
+                        ]
+                      ],
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "ground.0.7"
+                    }
+                  ]
+                },
+                "water": {
+                  "nonce": 0,
+                  "objects": []
+                },
+                "roads": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "road",
+                      "rank": "main",
+                      "x": 372,
+                      "y": 298,
+                      "points": [
+                        [
+                          -20,
+                          301
+                        ],
+                        [
+                          -4,
+                          300
+                        ],
+                        [
+                          17,
+                          300
+                        ],
+                        [
+                          42,
+                          300
+                        ],
+                        [
+                          71,
+                          300
+                        ],
+                        [
+                          100,
+                          299
+                        ],
+                        [
+                          131,
+                          298
+                        ],
+                        [
+                          161,
+                          296
+                        ],
+                        [
+                          184,
+                          294
+                        ],
+                        [
+                          208,
+                          291
+                        ],
+                        [
+                          233,
+                          288
+                        ],
+                        [
+                          259,
+                          284
+                        ],
+                        [
+                          285,
+                          281
+                        ],
+                        [
+                          311,
+                          278
+                        ],
+                        [
+                          337,
+                          275
+                        ],
+                        [
+                          362,
+                          273
+                        ],
+                        [
+                          387,
+                          272
+                        ],
+                        [
+                          412,
+                          273
+                        ],
+                        [
+                          436,
+                          275
+                        ],
+                        [
+                          460,
+                          277
+                        ],
+                        [
+                          484,
+                          281
+                        ],
+                        [
+                          508,
+                          284
+                        ],
+                        [
+                          532,
+                          288
+                        ],
+                        [
+                          556,
+                          290
+                        ],
+                        [
+                          580,
+                          291
+                        ],
+                        [
+                          604,
+                          291
+                        ],
+                        [
+                          629,
+                          289
+                        ],
+                        [
+                          656,
+                          285
+                        ],
+                        [
+                          684,
+                          280
+                        ],
+                        [
+                          712,
+                          275
+                        ],
+                        [
+                          739,
+                          269
+                        ],
+                        [
+                          764,
+                          263
+                        ],
+                        [
+                          787,
+                          258
+                        ],
+                        [
+                          805,
+                          253
+                        ],
+                        [
+                          820,
+                          250
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          -20,
+                          301
+                        ],
+                        [
+                          161,
+                          296
+                        ],
+                        [
+                          387,
+                          272
+                        ],
+                        [
+                          604,
+                          291
+                        ],
+                        [
+                          820,
+                          250
+                        ]
+                      ],
+                      "props": {
+                        "width": 16
+                      },
+                      "id": "roads.0.0"
+                    },
+                    {
+                      "kind": "road",
+                      "rank": "street",
+                      "x": 372,
+                      "y": 298,
+                      "points": [
+                        [
+                          372,
+                          298
+                        ],
+                        [
+                          376,
+                          285
+                        ],
+                        [
+                          382,
+                          267
+                        ],
+                        [
+                          388,
+                          244
+                        ],
+                        [
+                          390,
+                          216
+                        ],
+                        [
+                          389,
+                          197
+                        ],
+                        [
+                          387,
+                          174
+                        ],
+                        [
+                          384,
+                          149
+                        ],
+                        [
+                          380,
+                          123
+                        ],
+                        [
+                          376,
+                          98
+                        ],
+                        [
+                          373,
+                          76
+                        ],
+                        [
+                          369,
+                          56
+                        ],
+                        [
+                          362,
+                          30
+                        ],
+                        [
+                          354,
+                          8
+                        ],
+                        [
+                          347,
+                          -8
+                        ],
+                        [
+                          342,
+                          -20
+                        ]
+                      ],
+                      "ctrl": [
+                        [
+                          372,
+                          298
+                        ],
+                        [
+                          390,
+                          216
+                        ],
+                        [
+                          369,
+                          56
+                        ],
+                        [
+                          342,
+                          -20
+                        ]
+                      ],
+                      "props": {
+                        "width": 11
+                      },
+                      "id": "roads.0.1"
+                    },
+                    {
+                      "kind": "plaza",
+                      "x": 372,
+                      "y": 298,
+                      "w": 72,
+                      "h": 72,
+                      "id": "roads.0.2"
+                    }
+                  ]
+                },
+                "walls": {
+                  "nonce": 0,
+                  "objects": []
+                },
+                "districts": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "district",
+                      "x": 516,
+                      "y": 337,
+                      "points": [
+                        [
+                          568,
+                          174
+                        ],
+                        [
+                          586,
+                          186
+                        ],
+                        [
+                          623,
+                          239
+                        ],
+                        [
+                          636,
+                          298
+                        ],
+                        [
+                          623,
+                          357
+                        ],
+                        [
+                          586,
+                          410
+                        ],
+                        [
+                          527,
+                          452
+                        ],
+                        [
+                          454,
+                          479
+                        ],
+                        [
+                          407,
+                          484
+                        ],
+                        [
+                          405,
+                          311
+                        ]
+                      ],
+                      "props": {
+                        "zone": "residential"
+                      },
+                      "id": "districts.0.0"
+                    },
+                    {
+                      "kind": "district",
+                      "x": 398,
+                      "y": 188,
+                      "points": [
+                        [
+                          218,
+                          143
+                        ],
+                        [
+                          290,
+                          117
+                        ],
+                        [
+                          372,
+                          108
+                        ],
+                        [
+                          454,
+                          117
+                        ],
+                        [
+                          527,
+                          144
+                        ],
+                        [
+                          568,
+                          174
+                        ],
+                        [
+                          405,
+                          311
+                        ]
+                      ],
+                      "props": {
+                        "zone": "market"
+                      },
+                      "id": "districts.0.1"
+                    },
+                    {
+                      "kind": "district",
+                      "x": 261,
+                      "y": 331,
+                      "points": [
+                        [
+                          108,
+                          298
+                        ],
+                        [
+                          121,
+                          239
+                        ],
+                        [
+                          158,
+                          186
+                        ],
+                        [
+                          217,
+                          144
+                        ],
+                        [
+                          218,
+                          143
+                        ],
+                        [
+                          405,
+                          311
+                        ],
+                        [
+                          407,
+                          484
+                        ],
+                        [
+                          372,
+                          488
+                        ],
+                        [
+                          290,
+                          479
+                        ],
+                        [
+                          217,
+                          452
+                        ],
+                        [
+                          158,
+                          410
+                        ],
+                        [
+                          121,
+                          357
+                        ]
+                      ],
+                      "props": {
+                        "zone": "sacred"
+                      },
+                      "id": "districts.0.2"
+                    }
+                  ]
+                },
+                "alleys": {
+                  "nonce": 0,
+                  "objects": []
+                },
+                "landmarks": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "well",
+                      "x": 371,
+                      "y": 296,
+                      "w": 18,
+                      "h": 18,
+                      "id": "landmarks.0.0"
+                    }
+                  ]
+                },
+                "fields": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "field",
+                      "x": 154,
+                      "y": 80,
+                      "w": 159,
+                      "h": 107,
+                      "rot": -26,
+                      "props": {
+                        "crop": 1
+                      },
+                      "id": "fields.0.0"
+                    },
+                    {
+                      "kind": "field",
+                      "x": 180,
+                      "y": 392,
+                      "w": 119,
+                      "h": 110,
+                      "rot": -24,
+                      "props": {
+                        "crop": 1
+                      },
+                      "id": "fields.0.1"
+                    },
+                    {
+                      "kind": "field",
+                      "x": 658,
+                      "y": 478,
+                      "w": 175,
+                      "h": 109,
+                      "rot": -26,
+                      "props": {
+                        "crop": 0
+                      },
+                      "id": "fields.0.2"
+                    },
+                    {
+                      "kind": "field",
+                      "x": 616,
+                      "y": 218,
+                      "w": 160,
+                      "h": 80,
+                      "rot": 27,
+                      "props": {
+                        "crop": 2
+                      },
+                      "id": "fields.0.3"
+                    }
+                  ]
+                },
+                "buildings": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "house",
+                      "x": 353,
+                      "y": 245,
+                      "w": 34,
+                      "h": 25,
+                      "rot": -1,
+                      "props": {
+                        "roof": 3,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.1",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.4448,
+                        "side": -1,
+                        "off": 28,
+                        "rot": -4.57
+                      },
+                      "id": "buildings.0.0"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 414,
+                      "y": 230,
+                      "w": 38,
+                      "h": 28,
+                      "rot": -89,
+                      "props": {
+                        "roof": 1,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.1",
+                      "attach": {
+                        "to": "roads.0.1",
+                        "t": 0.2208,
+                        "side": 1,
+                        "off": 25,
+                        "rot": -85.91
+                      },
+                      "id": "buildings.0.1"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 441,
+                      "y": 300,
+                      "w": 32,
+                      "h": 23,
+                      "rot": 9,
+                      "props": {
+                        "roof": 2,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.0",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.5492,
+                        "side": 1,
+                        "off": 25,
+                        "rot": 4.76
+                      },
+                      "id": "buildings.0.2"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 303,
+                      "y": 248,
+                      "w": 37,
+                      "h": 28,
+                      "rot": -7,
+                      "props": {
+                        "roof": 0,
+                        "chimney": false,
+                        "use": "shrine"
+                      },
+                      "zone": "districts.0.2",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.3876,
+                        "side": -1,
+                        "off": 31,
+                        "rot": -6.58
+                      },
+                      "id": "buildings.0.3"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 359,
+                      "y": 179,
+                      "w": 28,
+                      "h": 28,
+                      "rot": -97,
+                      "props": {
+                        "roof": 2,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.1",
+                      "attach": {
+                        "to": "roads.0.1",
+                        "t": 0.3795,
+                        "side": -1,
+                        "off": 28,
+                        "rot": -94.97
+                      },
+                      "id": "buildings.0.4"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 412,
+                      "y": 181,
+                      "w": 27,
+                      "h": 24,
+                      "rot": -100,
+                      "props": {
+                        "roof": 0,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.1",
+                      "attach": {
+                        "to": "roads.0.1",
+                        "t": 0.3583,
+                        "side": 1,
+                        "off": 24,
+                        "rot": -94.97
+                      },
+                      "id": "buildings.0.5"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 491,
+                      "y": 309,
+                      "w": 35,
+                      "h": 21,
+                      "rot": 8,
+                      "props": {
+                        "roof": 1,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.0",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.6099,
+                        "side": 1,
+                        "off": 27,
+                        "rot": 7.13
+                      },
+                      "id": "buildings.0.6"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 497,
+                      "y": 255,
+                      "w": 30,
+                      "h": 28,
+                      "rot": 3,
+                      "props": {
+                        "roof": 0,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.0",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.6089,
+                        "side": -1,
+                        "off": 28,
+                        "rot": 7.13
+                      },
+                      "id": "buildings.0.7"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 439,
+                      "y": 345,
+                      "w": 37,
+                      "h": 27,
+                      "rot": 8,
+                      "props": {
+                        "roof": 2,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.0",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.5509,
+                        "side": 1,
+                        "off": 70,
+                        "rot": 4.76
+                      },
+                      "id": "buildings.0.8"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 406,
+                      "y": 126,
+                      "w": 30,
+                      "h": 26,
+                      "rot": -97,
+                      "props": {
+                        "roof": 2,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.1",
+                      "attach": {
+                        "to": "roads.0.1",
+                        "t": 0.5245,
+                        "side": 1,
+                        "off": 25,
+                        "rot": -98.75
+                      },
+                      "id": "buildings.0.9"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 538,
+                      "y": 317,
+                      "w": 34,
+                      "h": 22,
+                      "rot": 0,
+                      "props": {
+                        "roof": 1,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.0",
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.6649,
+                        "side": 1,
+                        "off": 28,
+                        "rot": 4.76
+                      },
+                      "id": "buildings.0.10"
+                    },
+                    {
+                      "kind": "house",
+                      "x": 451,
+                      "y": 232,
+                      "w": 32,
+                      "h": 23,
+                      "rot": -88,
+                      "props": {
+                        "roof": 3,
+                        "chimney": false
+                      },
+                      "zone": "districts.0.1",
+                      "attach": {
+                        "to": "roads.0.1",
+                        "t": 0.224,
+                        "side": 1,
+                        "off": 62,
+                        "rot": -85.91
+                      },
+                      "id": "buildings.0.11"
+                    }
+                  ]
+                },
+                "vegetation": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "tree",
+                      "x": 260,
+                      "y": 23,
+                      "w": 15,
+                      "h": 15,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.0"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 721,
+                      "y": 51,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.1"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 642,
+                      "y": 53,
+                      "w": 15,
+                      "h": 15,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.2"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 615,
+                      "y": 55,
+                      "w": 15,
+                      "h": 15,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.3"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 659,
+                      "y": 57,
+                      "w": 16,
+                      "h": 16,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.4"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 722,
+                      "y": 78,
+                      "w": 26,
+                      "h": 26,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.5"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 659,
+                      "y": 81,
+                      "w": 14,
+                      "h": 14,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.6"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 719,
+                      "y": 113,
+                      "w": 24,
+                      "h": 24,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.7"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 648,
+                      "y": 114,
+                      "w": 17,
+                      "h": 17,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.8"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 312,
+                      "y": 119,
+                      "w": 20,
+                      "h": 20,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.9"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 466,
+                      "y": 124,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.10"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 357,
+                      "y": 135,
+                      "w": 23,
+                      "h": 23,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.11"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 266,
+                      "y": 137,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.12"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 714,
+                      "y": 141,
+                      "w": 24,
+                      "h": 24,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.13"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 326,
+                      "y": 142,
+                      "w": 15,
+                      "h": 15,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.14"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 558,
+                      "y": 142,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.15"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 410,
+                      "y": 155,
+                      "w": 23,
+                      "h": 23,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.16"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 443,
+                      "y": 168,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.17"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 462,
+                      "y": 189,
+                      "w": 21,
+                      "h": 21,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.18"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 485,
+                      "y": 190,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.19"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 326,
+                      "y": 193,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.20"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 363,
+                      "y": 207,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.21"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 521,
+                      "y": 221,
+                      "w": 24,
+                      "h": 24,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.22"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 743,
+                      "y": 328,
+                      "w": 24,
+                      "h": 24,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.23"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 592,
+                      "y": 333,
+                      "w": 18,
+                      "h": 18,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.24"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 256,
+                      "y": 337,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.25"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 530,
+                      "y": 347,
+                      "w": 23,
+                      "h": 23,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.26"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 558,
+                      "y": 352,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.27"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 78,
+                      "y": 379,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.28"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 567,
+                      "y": 408,
+                      "w": 16,
+                      "h": 16,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.29"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 37,
+                      "y": 419,
+                      "w": 18,
+                      "h": 18,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.30"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 520,
+                      "y": 424,
+                      "w": 17,
+                      "h": 17,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.31"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 421,
+                      "y": 435,
+                      "w": 16,
+                      "h": 16,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.32"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 20,
+                      "y": 451,
+                      "w": 16,
+                      "h": 16,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.33"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 256,
+                      "y": 454,
+                      "w": 20,
+                      "h": 20,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.34"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 276,
+                      "y": 458,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.35"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 41,
+                      "y": 463,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.36"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 112,
+                      "y": 464,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.37"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 182,
+                      "y": 471,
+                      "w": 21,
+                      "h": 21,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.38"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 256,
+                      "y": 479,
+                      "w": 23,
+                      "h": 23,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.39"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 25,
+                      "y": 485,
+                      "w": 15,
+                      "h": 15,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.40"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 67,
+                      "y": 491,
+                      "w": 14,
+                      "h": 14,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.41"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 349,
+                      "y": 500,
+                      "w": 23,
+                      "h": 23,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.42"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 113,
+                      "y": 504,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.43"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 258,
+                      "y": 505,
+                      "w": 16,
+                      "h": 16,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.44"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 20,
+                      "y": 505,
+                      "w": 16,
+                      "h": 16,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.45"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 144,
+                      "y": 509,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.46"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 230,
+                      "y": 514,
+                      "w": 14,
+                      "h": 14,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.47"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 186,
+                      "y": 517,
+                      "w": 25,
+                      "h": 25,
+                      "props": {
+                        "tone": 2
+                      },
+                      "id": "vegetation.0.48"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 96,
+                      "y": 517,
+                      "w": 15,
+                      "h": 15,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.49"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 79,
+                      "y": 518,
+                      "w": 19,
+                      "h": 19,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.50"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 739,
+                      "y": 533,
+                      "w": 22,
+                      "h": 22,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.51"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 173,
+                      "y": 537,
+                      "w": 24,
+                      "h": 24,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.52"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 139,
+                      "y": 544,
+                      "w": 20,
+                      "h": 20,
+                      "props": {
+                        "tone": 1
+                      },
+                      "id": "vegetation.0.53"
+                    },
+                    {
+                      "kind": "tree",
+                      "x": 198,
+                      "y": 544,
+                      "w": 24,
+                      "h": 24,
+                      "props": {
+                        "tone": 0
+                      },
+                      "id": "vegetation.0.54"
+                    }
+                  ]
+                },
+                "people": {
+                  "nonce": 0,
+                  "objects": []
+                },
+                "lights": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "kind": "light",
+                      "x": 75,
+                      "y": 314,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.1122,
+                        "side": 1,
+                        "off": 14,
+                        "rot": -1.97
+                      },
+                      "id": "lights.0.0"
+                    },
+                    {
+                      "kind": "light",
+                      "x": 262,
+                      "y": 270,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.3366,
+                        "side": -1,
+                        "off": 14,
+                        "rot": -6.58
+                      },
+                      "id": "lights.0.1"
+                    },
+                    {
+                      "kind": "light",
+                      "x": 640,
+                      "y": 273,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "attach": {
+                        "to": "roads.0.0",
+                        "t": 0.7853,
+                        "side": -1,
+                        "off": 14,
+                        "rot": -8.43
+                      },
+                      "id": "lights.0.2"
+                    },
+                    {
+                      "kind": "light",
+                      "x": 393,
+                      "y": 319,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "id": "lights.0.3"
+                    },
+                    {
+                      "kind": "light",
+                      "x": 351,
+                      "y": 319,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "id": "lights.0.4"
+                    },
+                    {
+                      "kind": "light",
+                      "x": 351,
+                      "y": 277,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "id": "lights.0.5"
+                    },
+                    {
+                      "kind": "light",
+                      "x": 393,
+                      "y": 277,
+                      "w": 12,
+                      "h": 12,
+                      "props": {
+                        "type": "lamp"
+                      },
+                      "id": "lights.0.6"
+                    }
+                  ]
+                },
+                "labels": {
+                  "nonce": 0,
+                  "objects": [
+                    {
+                      "id": "refObjStart",
+                      "kind": "marker",
+                      "x": 400,
+                      "y": 280,
+                      "w": 18,
+                      "h": 18,
+                      "label": "Player start",
+                      "props": {
+                        "type": "npc"
+                      },
+                      "pinned": true,
+                      "spawn": {
+                        "role": "player"
+                      }
+                    },
+                    {
+                      "id": "refObjKey",
+                      "kind": "marker",
+                      "x": 395,
+                      "y": 296,
+                      "w": 18,
+                      "h": 18,
+                      "label": "Brass Key",
+                      "props": {
+                        "type": "merchant"
+                      },
+                      "pinned": true,
+                      "spawn": {
+                        "role": "item",
+                        "refId": "refItemKey",
+                        "count": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "design.town": {
+      "moduleVersion": 2,
+      "data": {
+        "buildings": [],
+        "bases": [],
+        "flow": {
+          "nodes": [],
+          "edges": []
+        },
+        "economy": {},
+        "commands": [],
+        "routes": [],
+        "morale": [],
+        "factors": [],
+        "extensibility": {}
+      }
+    },
+    "design.npc": {
+      "moduleVersion": 2,
+      "data": {
+        "overview": {},
+        "statRules": [],
+        "needRules": [],
+        "archetypes": [],
+        "lifeStages": [],
+        "lifecycle": {
+          "nodes": [],
+          "edges": []
+        },
+        "jobs": [],
+        "routine": {
+          "cells": {}
+        },
+        "relationships": {},
+        "relationLevels": [],
+        "bonds": [],
+        "events": [],
+        "equipmentRules": {},
+        "slots": [],
+        "mercenaries": {},
+        "behaviour": {},
+        "generation": {},
+        "scenarios": []
+      }
+    },
+    "design.player": {
+      "moduleVersion": 2,
+      "data": {
+        "hero": {
+          "fantasy": "A caretaker",
+          "background": "",
+          "personality": "",
+          "start": "At the gate of the Keeper’s Yard.",
+          "startItems": []
+        },
+        "survival": [],
+        "leveling": {},
+        "xpSources": [],
+        "casts": [],
+        "skills": [],
+        "abilities": [],
+        "xp": {
+          "items": []
+        },
+        "controls": {
+          "input": "3D, third-person; keyboard & mouse; context-sensitive interact key.",
+          "camera": "Third-person follow camera behind and above the player.",
+          "moveSpeed": 4.5,
+          "cameraDistance": 4,
+          "cameraHeight": 2,
+          "interactRange": 2
+        },
+        "actions": [],
+        "death": {}
+      }
+    },
+    "design.items": {
+      "moduleVersion": 2,
+      "data": {
+        "model": {
+          "currency": "Coins",
+          "weightUnit": "kg",
+          "defaultStack": 1,
+          "durability": "",
+          "valueNotes": ""
+        },
+        "rarityTiers": [],
+        "qualityTiers": [],
+        "multipliers": {
+          "cells": {}
+        },
+        "types": [
+          {
+            "id": "refTypeKey",
+            "name": "Key item",
+            "type": "Quest",
+            "build": "",
+            "usage": "Opens or completes something; never sold."
+          },
+          {
+            "id": "refTypeCur",
+            "name": "Currency",
+            "type": "Currency",
+            "build": "",
+            "usage": "Counted, not carried in slots."
+          }
+        ],
+        "items": [
+          {
+            "id": "refItemKey",
+            "name": "Brass Key",
+            "type": "refTypeKey",
+            "value": 0,
+            "stack": 1,
+            "weight": 0.1,
+            "description": "Lies by the well in the Keeper’s Yard."
+          },
+          {
+            "id": "refItemCoin",
+            "name": "Coin",
+            "type": "refTypeCur",
+            "value": 1,
+            "stack": 999,
+            "weight": 0
+          },
+          {
+            "id": "refItemPol",
+            "name": "Polished Key",
+            "type": "refTypeKey",
+            "value": 5,
+            "stack": 1,
+            "weight": 0.1,
+            "description": "The brass key, polished with two coins’ worth of care."
+          }
+        ],
+        "stations": [],
+        "recipes": [
+          {
+            "id": "refRcpPol",
+            "name": "Polished Key",
+            "result": "refItemPol",
+            "outputQty": 1,
+            "ingredients": {
+              "refItemKey": 1,
+              "refItemCoin": 2
+            },
+            "unlockedBy": [
+              "refQuestKey"
+            ]
+          }
+        ],
+        "recipeGraph": {
+          "nodes": [],
+          "edges": []
+        },
+        "inventory": {
+          "slots": 8,
+          "weightLimit": 0,
+          "hotbar": 0,
+          "encumbrance": "",
+          "notes": "No weight limit in the slice."
+        },
+        "loot": []
+      }
+    },
+    "design.combat": {
+      "moduleVersion": 2,
+      "data": {
+        "system": {},
+        "statusEffects": [],
+        "damageModel": {},
+        "damage": {
+          "items": []
+        },
+        "enemies": [],
+        "bosses": [],
+        "phases": [],
+        "bossPhases": {
+          "nodes": [],
+          "edges": []
+        },
+        "variants": [],
+        "loadouts": [],
+        "siege": {}
+      }
+    },
+    "design.timeWeather": {
+      "moduleVersion": 2,
+      "data": {
+        "time": {},
+        "seasons": [],
+        "dayPhases": [],
+        "weather": [],
+        "events": [],
+        "eventSystem": {}
+      }
+    },
+    "design.trade": {
+      "moduleVersion": 2,
+      "data": {
+        "currency": {},
+        "currencyTypes": [],
+        "wandering": {},
+        "market": {},
+        "capital": {},
+        "merchants": [],
+        "pricing": {
+          "items": []
+        },
+        "margins": {},
+        "priceRules": [],
+        "balance": {},
+        "flows": []
+      }
+    },
+    "design.story": {
+      "moduleVersion": 2,
+      "data": {
+        "overview": {},
+        "structure": {},
+        "acts": [],
+        "characters": [],
+        "questTypes": [],
+        "quests": [
+          {
+            "id": "refQuestKey",
+            "name": "Find the brass key",
+            "type": "Main",
+            "estMinutes": 2,
+            "objectives": [
+              {
+                "id": "refObjKey",
+                "text": "Pick up the Brass Key",
+                "done": false
+              }
+            ],
+            "collectItems": {
+              "refItemKey": 1
+            },
+            "rewardItems": {
+              "refItemCoin": 5
+            },
+            "rewardXp": 0,
+            "rewardMoney": 0,
+            "minLevel": 1,
+            "locations": [
+              "refLocYard"
+            ],
+            "conditions": "Active from the start.",
+            "rewards": "5 Coins, once.",
+            "consequences": ""
+          }
+        ],
+        "choices": [],
+        "endings": [],
+        "questGraph": {
+          "nodes": [
+            {
+              "id": "refQgKey",
+              "label": "Find the brass key",
+              "kind": "Quest",
+              "refId": "refQuestKey",
+              "x": 40,
+              "y": 40
+            }
+          ],
+          "edges": []
+        },
+        "dialogue": {}
+      }
+    },
+    "design.ui": {
+      "moduleVersion": 2,
+      "data": {
+        "principles": {},
+        "layoutRules": {},
+        "flow": {
+          "nodes": [],
+          "edges": []
+        },
+        "hud": {},
+        "screens": [
+          {
+            "id": "refScrHud",
+            "name": "HUD",
+            "kind": "HUD",
+            "entry": true,
+            "layout": {
+              "elements": [
+                {
+                  "id": "refElQuest",
+                  "kind": "questTracker",
+                  "x": 1504,
+                  "y": 40,
+                  "w": 380,
+                  "h": 110,
+                  "bind": {
+                    "source": "quest"
+                  }
+                },
+                {
+                  "id": "refElCoins",
+                  "kind": "counter",
+                  "x": 40,
+                  "y": 40,
+                  "w": 200,
+                  "h": 40,
+                  "bind": {
+                    "source": "item",
+                    "id": "refItemCoin"
+                  }
+                },
+                {
+                  "id": "refElBag",
+                  "kind": "grid",
+                  "x": 40,
+                  "y": 840,
+                  "w": 512,
+                  "h": 200,
+                  "bind": {
+                    "source": "inventory"
+                  },
+                  "props": {
+                    "rows": 2,
+                    "cols": 4
+                  }
+                }
+              ]
+            },
+            "states": [
+              "default"
+            ],
+            "purpose": "Shows the current quest objective, the coins and the 8 inventory slots."
+          }
+        ],
+        "input": {
+          "notes": "",
+          "devices": [
+            "Keyboard & mouse"
+          ],
+          "rebinding": false,
+          "holdToggle": false
+        },
+        "controls": [
+          {
+            "id": "refCtlFwd",
+            "name": "Move forward",
+            "category": "Movement",
+            "rebindable": true,
+            "key": "W",
+            "drives": "Move forward"
+          },
+          {
+            "id": "refCtlBack",
+            "name": "Move back",
+            "category": "Movement",
+            "rebindable": true,
+            "key": "S",
+            "drives": "Move back"
+          },
+          {
+            "id": "refCtlLeft",
+            "name": "Move left",
+            "category": "Movement",
+            "rebindable": true,
+            "key": "A",
+            "drives": "Move left"
+          },
+          {
+            "id": "refCtlRght",
+            "name": "Move right",
+            "category": "Movement",
+            "rebindable": true,
+            "key": "D",
+            "drives": "Move right"
+          },
+          {
+            "id": "refCtlUse",
+            "name": "Interact",
+            "category": "System",
+            "rebindable": true,
+            "key": "E",
+            "drives": "Interact"
+          },
+          {
+            "id": "refCtlInv",
+            "name": "Inventory",
+            "category": "Menus",
+            "rebindable": true,
+            "key": "I"
+          },
+          {
+            "id": "refCtlCraft",
+            "name": "Crafting",
+            "category": "Menus",
+            "rebindable": true,
+            "key": "C",
+            "drives": "Open crafting"
+          },
+          {
+            "id": "refCtlPaus",
+            "name": "Pause",
+            "category": "Menus",
+            "rebindable": true,
+            "key": "Escape"
+          }
+        ],
+        "accessibility": {},
+        "wireframe": {
+          "items": []
+        }
+      }
+    },
+    "design.openQuestions": {
+      "moduleVersion": 2,
+      "data": {
+        "questions": []
+      }
+    },
+    "technical.architecture": {
+      "moduleVersion": 2,
+      "data": {
+        "principles": {},
+        "stack": [],
+        "layers": [],
+        "modules": [
+          {
+            "id": "refModGame",
+            "name": "Gameplay",
+            "layer": "",
+            "assembly": "ReferenceSlice.Gameplay",
+            "responsibility": "Player, interaction, inventory, quests.",
+            "dependsOn": []
+          }
+        ],
+        "classes": [],
+        "dependencies": {
+          "nodes": [],
+          "edges": []
+        },
+        "channels": [],
+        "extensionPoints": [],
+        "simulation": {},
+        "systems": [],
+        "scenes": [
+          {
+            "id": "refSceneYd",
+            "name": "Keeper’s Yard",
+            "kind": "Gameplay",
+            "loadOrder": 0,
+            "loads": [],
+            "next": []
+          }
+        ],
+        "prototype": {
+          "dimension": "3D",
+          "perspective": "Third-person",
+          "renderPipeline": "URP",
+          "platform": "Windows",
+          "movement": true,
+          "interaction": true,
+          "inventory": true,
+          "quests": true,
+          "saveLoad": true,
+          "crafting": true,
+          "scene": "refSceneYd"
+        }
+      }
+    },
+    "technical.coding": {
+      "moduleVersion": 2,
+      "data": {
+        "standards": {},
+        "naming": [],
+        "style": {},
+        "folders": [],
+        "assetRules": [],
+        "branches": [],
+        "git": {},
+        "review": []
+      }
+    },
+    "technical.dataDriven": {
+      "moduleVersion": 3,
+      "data": {
+        "principle": {},
+        "formats": [
+          {
+            "id": "format-so",
+            "name": "Native data asset",
+            "editedIn": "Engine editor",
+            "merge": "Merges poorly",
+            "loadsAt": "Runtime",
+            "moddable": false,
+            "whenToUse": "ScriptableObject per record."
+          }
+        ],
+        "schemas": [
+          {
+            "id": "refSchItem",
+            "name": "Item",
+            "required": [
+              "name: string",
+              "icon: Sprite",
+              "value: int",
+              "stackSize: int"
+            ],
+            "optional": [
+              "description: text"
+            ],
+            "idPrefix": "item.",
+            "format": "format-so",
+            "source": "Items — Items & Crafting",
+            "moddable": false
+          },
+          {
+            "id": "refSchRcp",
+            "name": "Recipe",
+            "required": [
+              "name: string",
+              "result: Item",
+              "outputQty: int"
+            ],
+            "idPrefix": "rcp.",
+            "format": "format-so",
+            "source": "Recipes — Items & Crafting",
+            "moddable": false
+          }
+        ],
+        "ids": {
+          "casing": "snake_case",
+          "example": "item.brass_key",
+          "resolution": "ID string",
+          "stability": "IDs never change; renames only change display names.",
+          "notes": ""
+        },
+        "loadGroups": [],
+        "validators": [],
+        "modding": {}
+      }
+    },
+    "technical.save": {
+      "moduleVersion": 1,
+      "data": {
+        "save": {
+          "requirements": "One manual slot.",
+          "format": "Compressed JSON",
+          "versioning": "Save version with migrations.",
+          "autosave": "",
+          "performance": "",
+          "version": 1,
+          "manualSlots": 1,
+          "autoSlots": 0
+        },
+        "parts": [
+          {
+            "id": "refSpPlayr",
+            "name": "Player",
+            "module": "refModGame",
+            "since": 1,
+            "notes": "Position and facing.",
+            "state": "Player position"
+          },
+          {
+            "id": "refSpInv",
+            "name": "Inventory",
+            "module": "refModGame",
+            "since": 1,
+            "notes": "Item IDs and amounts.",
+            "state": "Inventory"
+          },
+          {
+            "id": "refSpQuest",
+            "name": "Quest log",
+            "module": "refModGame",
+            "since": 1,
+            "notes": "Quest state and rewards given.",
+            "state": "Quests"
+          }
+        ]
+      }
+    },
+    "technical.ai": {
+      "moduleVersion": 1,
+      "data": {
+        "approach": {},
+        "behavior": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "technical.performance": {
+      "moduleVersion": 1,
+      "data": {
+        "budgets": [],
+        "techniques": {},
+        "bottlenecks": []
+      }
+    },
+    "technical.tools": {
+      "moduleVersion": 1,
+      "data": {
+        "env": {},
+        "setup": {
+          "groups": []
+        }
+      }
+    },
+    "technical.adr": {
+      "moduleVersion": 1,
+      "data": {
+        "adrs": []
+      }
+    },
+    "artAudio.art": {
+      "moduleVersion": 1,
+      "data": {
+        "style": {},
+        "palettes": []
+      }
+    },
+    "artAudio.audio": {
+      "moduleVersion": 1,
+      "data": {
+        "mood": {},
+        "music": [],
+        "sfx": []
+      }
+    },
+    "artAudio.assets": {
+      "moduleVersion": 1,
+      "data": {
+        "workflow": {},
+        "specs": [],
+        "assets": []
+      }
+    },
+    "production.milestones": {
+      "moduleVersion": 1,
+      "data": {
+        "milestones": []
+      }
+    },
+    "production.backlog": {
+      "moduleVersion": 1,
+      "data": {
+        "rules": {},
+        "features": []
+      }
+    },
+    "production.risks": {
+      "moduleVersion": 1,
+      "data": {
+        "risks": []
+      }
+    },
+    "production.team": {
+      "moduleVersion": 1,
+      "data": {
+        "members": [],
+        "method": {},
+        "dod": {
+          "groups": []
+        },
+        "process": {
+          "nodes": [],
+          "edges": []
+        }
+      }
+    },
+    "production.release": {
+      "moduleVersion": 1,
+      "data": {
+        "checklist": {
+          "groups": []
+        }
+      }
+    },
+    "qa.testPlan": {
+      "moduleVersion": 1,
+      "data": {
+        "strategy": {},
+        "cases": []
+      }
+    },
+    "qa.balance": {
+      "moduleVersion": 1,
+      "data": {
+        "goals": {},
+        "metrics": [],
+        "checks": [],
+        "telemetry": [],
+        "changes": []
+      }
+    },
+    "qa.bugs": {
+      "moduleVersion": 1,
+      "data": {
+        "bugs": []
+      }
+    },
+    "templates.featureSpec": {
+      "moduleVersion": 1,
+      "data": {
+        "specs": []
+      }
+    },
+    "custom.entities": {
+      "moduleVersion": 1,
+      "data": {}
+    }
+  },
+  "links": []
+}

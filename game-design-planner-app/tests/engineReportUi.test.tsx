@@ -21,6 +21,8 @@ afterEach(() => {
 
 function load() {
   const p = deserializeProject(fs.readFileSync('examples/cinderholm.hohplan.json', 'utf8')).project
+  // The example was saved with an engine report; start from “no report yet”.
+  delete p.meta.engine?.report
   const { ir } = buildIR(p)
   picked.text = JSON.stringify({
     format: 'hoh-engine-report',

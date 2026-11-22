@@ -7,6 +7,7 @@ import { channelFiles, checkFiles, consoleFile, telemetryFile, testsAsmdef, type
 import { architectureTest, audioFiles, budgetFiles } from './unityPolish'
 import { saveFiles, sceneFiles, storyFiles } from './unityContent'
 import { inputFiles, inputIssues, stateMachineFiles, uiFiles } from './unityScaffold'
+import { gameplayFiles, gameplayIssues, prototypeInputMap, wantsPlayer } from './unityGameplay'
 import type { EngineIR, EngineIssue, IrClass, IrEnum, IrFormat, IrMethod, IrSchema, NeutralType } from '../ir'
 
 /** Unity 6 adapter: C# ScriptableObjects (native format) or [Serializable] record classes (JSON, CSV), enums, ID constants and formulas. */
@@ -378,7 +379,8 @@ function classFiles(ir: EngineIR): EmittedFile[] {
 /** One assembly for the generated code and your class files, so a partial class can span both. */
 function asmdef(ir: EngineIR): string {
   const root = projectNamespace(ir)
-  return JSON.stringify({ name: root, rootNamespace: root, references: [], autoReferenced: true }, null, 2) + '\n'
+  // A playable prototype's generated code uses the planner runtime package (the export's manifest requires it).
+  return JSON.stringify({ name: root, rootNamespace: root, references: wantsPlayer(ir) ? ['HoHPlanner.Runtime'] : [], autoReferenced: true }, null, 2) + '\n'
 }
 
 /** The generated EditMode tests (data checks, architecture guard) and, when there is one, their assembly. */
@@ -405,7 +407,7 @@ export const unity: EngineAdapter = {
   id: 'unity',
   label: 'Unity',
   language: 'C#',
-  version: 7,
+  version: 15,
   root: 'Unity',
   ownDir: 'Scripts/Classes/',
   generatedDirs: ['Scripts/Generated/', 'ProjectFiles/', 'Tests/', 'Input/', 'UI/'],
@@ -427,7 +429,8 @@ export const unity: EngineAdapter = {
       ...tests(ir),
       ...channelFiles(ir, names(ir)),
       ...telemetryFile(ir, names(ir)),
-      ...inputFiles(ir, names(ir)),
+      ...inputFiles(ir, names(ir), [prototypeInputMap(ir)].filter((m): m is Record<string, unknown> => m !== null)),
+      ...gameplayFiles(ir, names(ir)),
       ...uiFiles(ir, names(ir)),
       ...stateMachineFiles(ir, names(ir)),
       ...budgetFiles(ir, names(ir)),
@@ -436,7 +439,7 @@ export const unity: EngineAdapter = {
     ]
   },
   checks(ir): EngineIssue[] {
-    const out: EngineIssue[] = [...inputIssues(ir)]
+    const out: EngineIssue[] = [...inputIssues(ir), ...gameplayIssues(ir)]
     for (const s of ir.schemas) {
       const base = identifier(s.words, 'type')
       if (UNITY_TYPES.has(base)) out.push({ level: 'info', code: 'unity.typeName', schema: s.id, message: `${s.name}: the type is called ${schemaTypeName(s)} so it does not hide Unity's ${base}.` })

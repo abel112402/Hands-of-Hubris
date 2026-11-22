@@ -41,6 +41,9 @@ describe('examples/cinderholm.hohplan.json', () => {
   })
 
   it('fills every planner and every section', () => {
+    // Opt-in sections the example leaves empty on purpose. Playable prototype: filling it would add prototype checks to
+    // every Cinderholm export; tests/fixtures/referenceSlice3d.ts covers it (plans/UNITY_PLAYABLE_GAME_GENERATION_PLAN.md).
+    const OPT_IN = new Set(['technical.architecture/prototype'])
     const empty: string[] = []
     for (const m of MODULES) {
       const doc = project.documents[m.id]
@@ -48,7 +51,7 @@ describe('examples/cinderholm.hohplan.json', () => {
         empty.push(m.id)
         continue
       }
-      for (const sec of getSections(m, project.registry)) if (!filled(sec, doc.data[sec.id])) empty.push(`${m.id}/${sec.id}`)
+      for (const sec of getSections(m, project.registry)) if (!OPT_IN.has(`${m.id}/${sec.id}`) && !filled(sec, doc.data[sec.id])) empty.push(`${m.id}/${sec.id}`)
     }
     expect(empty).toEqual([])
   })

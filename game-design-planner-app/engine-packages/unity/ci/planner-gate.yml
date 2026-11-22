@@ -1,0 +1,74 @@
+# The planner's Unity gate (plans/UNITY_PLAYABLE_GAME_GENERATION_PLAN.md, phase 13), for the PLANNER's repository
+# (copy to .github/workflows/planner-gate.yml there).
+#
+# It exports the reference slice (tests/fixtures/reference-slice-3d.hohplan.json) with the planner's CLI, imports it
+# into a Unity project per editor with the bridge and runtime from this repository, compiles and validates it, builds
+# the prototype scene, runs the EditMode and PlayMode tests, builds a player for the plan's platform and runs its
+# self-test, and checks an unchanged re-import, a changed value, that your own files and GUIDs are kept, and saving and
+# loading into a fresh game. The matrix: Unity 6 (all of it) and 2022.3 LTS (import, compile, EditMode).
+#
+# Needs a self-hosted Windows runner (label: unity) with Unity Hub, Unity 6000.0.40f1 and 2022.3.21f1 (Windows Build
+# Support) installed and ACTIVATED — the gate needs a licence, and without one it reports “blocked” and fails, it never
+# passes. Change the editor paths below to the runner's.
+#
+# The job fails when the gate fails (exit 1) or is blocked (exit 2). The report is the job summary and an artifact.
+
+name: Unity gate
+
+on:
+  push:
+    branches: [main]
+    paths: ['game-design-planner-app/src/core/**', 'game-design-planner-app/engine-packages/unity/**', 'game-design-planner-app/tests/fixtures/reference-slice-3d.*']
+  workflow_dispatch:
+    inputs:
+      break:
+        description: 'Break the reference on purpose (quest-unreachable, no-interact, missing-scene); the gate must fail'
+        required: false
+        default: ''
+
+jobs:
+  gate:
+    runs-on: [self-hosted, windows, unity]
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: game-design-planner-app
+        shell: pwsh
+    env:
+      UNITY_6: C:\Program Files\Unity\Hub\Editor\6000.0.40f1\Editor\Unity.exe
+      UNITY_2022: C:\Program Files\Unity\Hub\Editor\2022.3.21f1\Editor\Unity.exe
+      GATE_WORK: C:\UnityGate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: game-design-planner-app/package-lock.json
+
+      - run: npm ci
+
+      # Planner-side tests first: no point in starting Unity when they fail.
+      - run: npm run typecheck
+      - run: npx vitest run tests/unityGate.test.ts tests/referenceSlice3d.test.ts tests/unitySave.test.ts
+
+      - name: Unity gate
+        run: |
+          $break = '${{ github.event.inputs.break }}'
+          $extra = @()
+          if ($break) { $extra = @('--break', $break) }
+          npm run gate:unity -- --work "$env:GATE_WORK" --editor "$env:UNITY_6" --compile "$env:UNITY_2022" @extra
+          $code = $LASTEXITCODE
+          Get-Content "$env:GATE_WORK\gate-report.md" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          exit $code
+
+      - name: Report and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-gate
+          path: |
+            ${{ env.GATE_WORK }}\gate-report.*
+            ${{ env.GATE_WORK }}\logs-*
+          if-no-files-found: warn

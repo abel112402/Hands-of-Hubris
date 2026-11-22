@@ -9,11 +9,14 @@ const cinderholm = () => deserializeProject(fs.readFileSync('examples/cinderholm
 const files = (p = cinderholm()) => buildBundle(p, 'unity', 'T').files
 
 describe('writing the export into a linked folder', () => {
+  // Writes of the export itself, without the backup and journal under .hoh-backup/.
+  const exportLog = (dir: MemoryFolder) => dir.log.filter((l) => !l.includes('.hoh-backup'))
+
   it('writes everything once, the manifest last, then only what changed', async () => {
     const dir = new MemoryFolder('HoHPlanner')
     const first = await writeExport(dir, files())
-    expect(first).toMatchObject({ written: files().length, unchanged: 0, deleted: 0, keptYours: 0, codeChanged: true })
-    expect(dir.log[dir.log.length - 1]).toBe('write hoh-engine.json')
+    expect(first).toMatchObject({ written: files().length, unchanged: 0, deleted: 0, keptYours: 0, codeChanged: true, stopped: false })
+    expect(exportLog(dir).at(-1)).toBe('write hoh-engine.json')
     expect(dir.read('Data/Item/item.plank.json')).toContain('"name": "Plank"')
 
     dir.log.length = 0
@@ -24,26 +27,28 @@ describe('writing the export into a linked folder', () => {
     p.documents['design.items'].data.items[0].value = 3
     const r = await writeExport(dir, files(p))
     expect(r.written).toBe(3) // the record, ir/engine-ir.json and the manifest with the new hashes
-    expect(dir.log).toContain('write Data/Item/item.plank.json')
-    expect(dir.log[dir.log.length - 1]).toBe('write hoh-engine.json')
+    expect(exportLog(dir)).toContain('write Data/Item/item.plank.json')
+    expect(exportLog(dir).at(-1)).toBe('write hoh-engine.json')
     expect(r.codeChanged).toBe(false)
   })
 
-  it('never overwrites your class files and removes generated files the plan dropped', async () => {
+  it('never overwrites your class files, removes generated files the plan dropped, and keeps files it did not write', async () => {
     const dir = new MemoryFolder('HoHPlanner')
-    await writeExport(dir, files())
+    const p = cinderholm()
+    await writeExport(dir, files(p))
+    dir.put('Data/Item/item.plank.json.meta', 'guid')
     dir.put('Unity/Scripts/Classes/GameplayPlayer/Health.cs', '// mine')
-    dir.put('Data/Item/item.gone.json', '{}')
-    dir.put('Data/Item/item.gone.json.meta', 'guid')
-    dir.put('Unity/Scripts/Generated/Old.cs', '// old')
-    const r = await writeExport(dir, files())
+    dir.put('Unity/Scripts/Generated/MyHelper.cs', '// mine too')
+    p.documents['design.items'].data.items.splice(0, 1) // Plank leaves the plan
+    const r = await writeExport(dir, files(p))
     expect(dir.read('Unity/Scripts/Classes/GameplayPlayer/Health.cs')).toBe('// mine')
     expect(r.keptYours).toBe(7)
-    expect(r.deleted).toBe(2)
-    expect(r.codeChanged).toBe(true)
-    expect(dir.read('Data/Item/item.gone.json')).toBeUndefined()
-    expect(dir.read('Data/Item/item.gone.json.meta')).toBeUndefined()
-    expect(await readText(dir, 'Unity/Scripts/Generated/Old.cs')).toBeNull()
+    expect(r.deleted).toBe(1)
+    expect(dir.read('Data/Item/item.plank.json')).toBeUndefined()
+    expect(dir.read('Data/Item/item.plank.json.meta')).toBeUndefined()
+    // Never deleted: the planner did not write it.
+    expect(r.keptNotOurs).toEqual(['Unity/Scripts/Generated/MyHelper.cs'])
+    expect(await readText(dir, 'Unity/Scripts/Generated/MyHelper.cs')).toBe('// mine too')
   })
 
   it('deletes nothing in a folder that held no export before', async () => {

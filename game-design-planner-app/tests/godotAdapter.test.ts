@@ -46,7 +46,7 @@ describe('Godot adapter output', () => {
     expect(enums).toContain('enum ResourceKind { WOOD,')
     expect(enums).toContain('const RESOURCE_KIND_IDS := {')
     expect(enums).not.toMatch(/enum Resource \{/)
-    expect(get('cinderholm_example_ids.gd')).toMatch(/class Item:\n(\tconst \w+ := "[^"]+"\n)*\tconst IRON_SWORD := "item\.iron_sword"/)
+    expect(get('cinderholm_example_ids.gd')).toMatch(/class Item:\n(\tconst \w+ := "[^"]+"\n)*\tconst IRON_LONGSWORD := "item\.iron_longsword"/)
   })
 
   it('writes formulas that compute what the planner computes', () => {
@@ -151,13 +151,15 @@ describe('Godot bundle and linked folder', () => {
     dir.put('Godot/Scripts/Generated/old_definition.gd.uid', 'uid://old')
     dir.put('Godot/Scripts/Classes/gameplay_player/health.gd', '# mine')
     const r = await writeExport(dir, files)
-    expect(r.deleted).toBe(1)
+    // old_definition.gd was not written by the planner: kept, never deleted (core/engine/ownership).
+    expect(r.deleted).toBe(0)
+    expect(r.keptNotOurs).toEqual(['Godot/Scripts/Generated/old_definition.gd'])
     expect(r.keptYours).toBeGreaterThan(0)
     expect(dir.read('Godot/Scripts/Classes/gameplay_player/health.gd')).toBe('# mine')
     expect(dir.read('Godot/Scripts/Generated/item_definition.gd.uid')).toBe('uid://abc')
     expect(dir.read('Localization/strings.csv.import')).toBe('[remap]')
     expect(dir.read('Localization/strings.en.translation')).toBe('binary')
-    expect(dir.read('Godot/Scripts/Generated/old_definition.gd')).toBeUndefined()
-    expect(dir.read('Godot/Scripts/Generated/old_definition.gd.uid')).toBeUndefined()
+    expect(dir.read('Godot/Scripts/Generated/old_definition.gd')).toBe('# old')
+    expect(dir.read('Godot/Scripts/Generated/old_definition.gd.uid')).toBe('uid://old')
   })
 })

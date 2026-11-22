@@ -5,6 +5,7 @@ import { RESOLUTIONS, SCREEN_KINDS, UI_SYSTEMS } from '../core/ui'
 import { QUESTION_AREAS, QUESTION_STATUSES } from '../core/openQuestions'
 import { LOCATION_TYPES_ALL } from '../core/location/types'
 import { catalog, f, mod, s, section, v } from './helpers'
+import { PLAYER_DEFAULTS, RUNTIME_ACTIONS } from './technical'
 
 const FACTIONS = section('factions', 'design.factions')
 const BIOMES = section('biomes', 'design.world')
@@ -1207,7 +1208,14 @@ export const designModules = [
         [v.table(['name', 'cast', 'kind', 'mana', 'cooldown', 'castTime', 'damageType']), v.cards()],
       ),
       s.formulas('xp', 'Other formulas', 'Damage scaling, regeneration and other formulas. The XP curve itself is set in Levelling.'),
-      s.form('controls', 'Controls and camera', [f.long('input', 'Input schemes'), f.long('camera', 'Camera')]),
+      s.form('controls', 'Controls and camera', [
+        f.long('input', 'Input schemes'),
+        f.long('camera', 'Camera'),
+        f.num('moveSpeed', 'Walk speed (m/s)', { min: 0.1, step: 0.1, group: 'Engine', help: `Used by a playable prototype; empty = ${PLAYER_DEFAULTS.moveSpeed} m/s.` }),
+        f.num('cameraDistance', 'Camera distance (m)', { min: 0.5, step: 0.1, group: 'Engine', help: `Third-person camera behind the player; empty = ${PLAYER_DEFAULTS.cameraDistance} m.` }),
+        f.num('cameraHeight', 'Camera height (m)', { min: 0, step: 0.1, group: 'Engine', help: `Above the player's feet; empty = ${PLAYER_DEFAULTS.cameraHeight} m.` }),
+        f.num('interactRange', 'Interaction range (m)', { min: 0.1, step: 0.1, group: 'Engine', help: `How near the player must be to pick up or use something; empty = ${PLAYER_DEFAULTS.interactRange} m.` }),
+      ]),
       s.collection(
         'actions',
         'Input actions',
@@ -1857,6 +1865,11 @@ export const designModules = [
           f.check('objectives', 'Objectives', { group: 'Objectives' }),
           f.multi('locations', 'Where', BIOMES, { group: 'Objectives' }),
           f.multi('targets', 'Targets', { any: [section('enemies', 'design.combat'), section('bosses', 'design.combat'), section('items', 'design.items')] }, { group: 'Objectives' }),
+          f.map('collectItems', 'Goal: hold these items', section('items', 'design.items'), undefined, {
+            min: 1,
+            group: 'Objectives',
+            help: 'Typed goal the engine can check: the quest is done when the player holds at least this many of each item (they are not taken away). The objective texts stay descriptions.',
+          }),
           f.num('rewardXp', 'XP', { min: 0, group: 'Rewards' }),
           f.num('rewardMoney', 'Money', { min: 0, group: 'Rewards' }),
           f.map('rewardItems', 'Items', section('items', 'design.items'), undefined, { group: 'Rewards' }),
@@ -1986,6 +1999,7 @@ export const designModules = [
           f.text('mouse', 'Mouse'),
           f.text('gamepad', 'Gamepad'),
           f.enm('mode', 'Mode', ['Press', 'Hold', 'Double']),
+          f.enm('drives', 'Runtime action', [...RUNTIME_ACTIONS], { group: 'Engine', help: 'What this control does in a playable prototype: the four Move controls become one movement stick, Interact picks things up. Never guessed from the name.' }),
           f.bool('rebindable', 'Rebindable'),
           f.long('notes', 'Notes'),
         ],

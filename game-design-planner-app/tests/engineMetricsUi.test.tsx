@@ -14,6 +14,8 @@ const metrics = () => useStore.getState().project.documents['qa.balance'].data.m
 
 function load(withReport = true) {
   const p = deserializeProject(fs.readFileSync('examples/cinderholm.hohplan.json', 'utf8')).project
+  // The example was saved with an engine report; each test sets its own (or none).
+  delete p.meta.engine?.report
   if (withReport) {
     const report = {
       format: 'hoh-engine-report',

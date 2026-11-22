@@ -21,7 +21,8 @@ describe('data checks (I6)', () => {
     expect(ir.v).toBe(IR_VERSION)
     const results = new Map(runChecks(ir.checks, ir.records).map((r) => [r.check.name, r]))
     expect(results.get('Enemy toughness')).toMatchObject({ checked: 24, outside: [] })
-    expect(results.get('Item value')).toMatchObject({ checked: 16, outside: [] })
+    // The example's Iron longsword (value 1100) is above the planned Item value range, so the check reports it.
+    expect(results.get('Item value')).toMatchObject({ checked: 16, outside: [{ key: 'item.iron_longsword', name: 'Iron longsword', value: 1100 }] })
     const hits = results.get('Hits to kill with a 40-damage weapon')!
     expect(hits.check.level).toBe('warning')
     expect(hits.outside).toEqual([
@@ -63,7 +64,7 @@ describe('debug console (I5)', () => {
   it('takes its commands and accepted IDs from the plan', () => {
     expect(ir.cheats.map((c) => c.command)).toEqual(['give', 'quest.start', 'quest.complete', 'time.set', 'season.set', 'weather.set', 'faction.rep', 'difficulty.set'])
     const give = ir.cheats[0]
-    expect(give.args[0].values!.map((v) => v.id)).toContain('item.iron_sword')
+    expect(give.args[0].values!.map((v) => v.id)).toContain('item.iron_longsword')
     expect(give.args[1]).toEqual({ name: 'count', kind: 'int', optional: true })
     expect(ir.cheats.find((c) => c.command === 'difficulty.set')!.args[0].values!.map((v) => v.id)).toEqual(['easy', 'medium', 'hard'])
   })

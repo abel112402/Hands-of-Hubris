@@ -1,0 +1,190 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace HoHPlanner.Runtime
+{
+    /// <summary>The runtime state a saved part holds (Save System › Saved parts › Runtime state).</summary>
+    public enum PlannerStateKind
+    {
+        PlayerPosition,
+        Inventory,
+        Quests,
+    }
+
+    /// <summary>A saved part of the plan (its save key) and the runtime state it holds.</summary>
+    [Serializable]
+    public struct PlannerStateBinding
+    {
+        public string SaveKey;
+        public PlannerStateKind State;
+
+        public PlannerStateBinding(string saveKey, PlannerStateKind state)
+        {
+            SaveKey = saveKey;
+            State = state;
+        }
+    }
+
+    /// <summary>A part's saved state cannot be used: damaged, or it names what this build of the plan does not have.</summary>
+    public sealed class PlannerStateException : Exception
+    {
+        public PlannerStateException(string message, Exception inner = null) : base(message, inner) { }
+    }
+
+    /// <summary>The game's save system as the runtime sees it: the export's generated PlannerSaveSlice over PlannerSave.</summary>
+    public interface IPlannerSaveSystem
+    {
+        /// <summary>Saves every linked part into the slot.</summary>
+        void Save(string slot);
+
+        /// <summary>Loads the slot; false when it is empty. A save that cannot be used throws, and nothing changes.</summary>
+        bool Load(string slot);
+
+        /// <summary>Removes the slot's file, if there is one.</summary>
+        void Delete(string slot);
+    }
+
+    /// <summary>
+    /// The state of the running prototype, part by part, as JSON: the player's position and facing; the inventory with
+    /// the map pickups already taken (they belong together: a taken pickup's item is in the inventory, so they are saved
+    /// and restored as one); the quests with the quest graph's log and the rewards given. Restoring checks the whole part
+    /// before changing anything: a damaged part, an unknown item, a count or slot the plan does not allow, or an unknown
+    /// pickup throws <see cref="PlannerStateException"/>. While parts are restored (<see cref="BeginRestore"/> …
+    /// <see cref="EndRestore"/>) the quests wait, so a restored inventory never completes a quest a second time.
+    /// </summary>
+    [AddComponentMenu("Game Design Planner/Planner Game State")]
+    public sealed class PlannerGameState : MonoBehaviour
+    {
+        public PlannerPlayer Player;
+        public PlannerInventory Inventory;
+        public PlannerQuests Quests;
+        [Tooltip("The plan's saved parts linked to a runtime state, in plan order.")]
+        public List<PlannerStateBinding> Parts = new List<PlannerStateBinding>();
+
+        [Serializable]
+        sealed class PlayerJson
+        {
+            public float x, y, z, yaw;
+        }
+
+        [Serializable]
+        sealed class SlotJson
+        {
+            public string item;
+            public int count;
+        }
+
+        [Serializable]
+        sealed class InventoryJson
+        {
+            public List<SlotJson> slots = new List<SlotJson>();
+            public List<string> taken = new List<string>();
+        }
+
+        [Serializable]
+        sealed class QuestsJson
+        {
+            public string graph;
+            public List<string> active = new List<string>();
+            public List<string> rewarded = new List<string>();
+            public List<string> waiting = new List<string>();
+        }
+
+        static PlannerPickup[] Pickups() => FindObjectsByType<PlannerPickup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        public void BeginRestore()
+        {
+            if (Quests != null) Quests.Paused = true;
+        }
+
+        public void EndRestore()
+        {
+            if (Quests == null) return;
+            Quests.Paused = false;
+            Quests.Refresh();
+        }
+
+        public string Capture(PlannerStateKind kind)
+        {
+            switch (kind)
+            {
+                case PlannerStateKind.PlayerPosition:
+                    var t = Need(Player, kind).transform;
+                    return JsonUtility.ToJson(new PlayerJson { x = t.position.x, y = t.position.y, z = t.position.z, yaw = t.eulerAngles.y });
+                case PlannerStateKind.Inventory:
+                    var inv = new InventoryJson();
+                    foreach (var s in Need(Inventory, kind).Contents) inv.slots.Add(s.Empty ? new SlotJson() : new SlotJson { item = s.ItemId, count = s.Count });
+                    inv.taken = Pickups().Where(p => p.Taken).Select(p => p.Placement.ObjectId).OrderBy(x => x, StringComparer.Ordinal).ToList();
+                    return JsonUtility.ToJson(inv);
+                default:
+                    var q = Need(Quests, kind);
+                    var state = q.CaptureState();
+                    return JsonUtility.ToJson(new QuestsJson { graph = state.Graph, active = state.Active, rewarded = state.Rewarded, waiting = state.Waiting });
+            }
+        }
+
+        /// <summary>Checks a part's saved state without changing anything (the loader checks every part first).</summary>
+        public void Check(PlannerStateKind kind, string json) => Restore(kind, json, false);
+
+        public void Restore(PlannerStateKind kind, string json) => Restore(kind, json, true);
+
+        void Restore(PlannerStateKind kind, string json, bool apply)
+        {
+            switch (kind)
+            {
+                case PlannerStateKind.PlayerPosition:
+                {
+                    var p = Parse<PlayerJson>(json, kind);
+                    var v = new Vector3(p.x, p.y, p.z);
+                    if (float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z) || float.IsInfinity(v.sqrMagnitude)) throw new PlannerStateException("The saved player position is not a position.");
+                    var player = Need(Player, kind);
+                    if (apply) player.Teleport(v, p.yaw);
+                    break;
+                }
+                case PlannerStateKind.Inventory:
+                {
+                    var inv = Parse<InventoryJson>(json, kind);
+                    var inventory = Need(Inventory, kind);
+                    var slots = (inv.slots ?? new List<SlotJson>()).Select(s => string.IsNullOrEmpty(s.item) ? default : new PlannerInventory.Slot { ItemId = s.item, Count = s.count }).ToList();
+                    var pickups = Pickups();
+                    var taken = new HashSet<string>(inv.taken ?? new List<string>());
+                    var unknown = taken.Where(id => pickups.All(p => p.Placement.ObjectId != id)).ToList();
+                    if (unknown.Count > 0) throw new PlannerStateException($"The save says pickups were taken that are not on this map: {string.Join(", ", unknown)}.");
+                    inventory.Check(slots);
+                    if (!apply) break;
+                    inventory.Restore(slots);
+                    foreach (var p in pickups) p.SetTaken(taken.Contains(p.Placement.ObjectId));
+                    break;
+                }
+                default:
+                {
+                    var q = Parse<QuestsJson>(json, kind);
+                    var state = new PlannerQuests.State { Graph = q.graph, Active = q.active ?? new List<string>(), Rewarded = q.rewarded ?? new List<string>(), Waiting = q.waiting ?? new List<string>() };
+                    var quests = Need(Quests, kind);
+                    quests.CheckState(state);
+                    if (apply) quests.RestoreState(state);
+                    break;
+                }
+            }
+        }
+
+        static T Need<T>(T module, PlannerStateKind kind) where T : UnityEngine.Object =>
+            module != null ? module : throw new PlannerStateException($"The scene has no module for the saved state {kind}.");
+
+        static T Parse<T>(string json, PlannerStateKind kind) where T : class
+        {
+            try
+            {
+                var v = JsonUtility.FromJson<T>(json);
+                if (v == null) throw new ArgumentException("empty");
+                return v;
+            }
+            catch (Exception e) when (!(e is PlannerStateException))
+            {
+                throw new PlannerStateException($"The saved {kind} is damaged: {e.Message}", e);
+            }
+        }
+    }
+}

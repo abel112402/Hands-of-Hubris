@@ -1,0 +1,14 @@
+{
+  "name": "HoHPlanner.Runtime.InputSystem.Tests",
+  "rootNamespace": "HoHPlanner.Runtime.Tests",
+  "references": ["HoHPlanner.Runtime", "HoHPlanner.Runtime.InputSystem", "Unity.InputSystem", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS", "HOH_INPUT_SYSTEM"],
+  "versionDefines": [{ "name": "com.unity.inputsystem", "expression": "1.7.0", "define": "HOH_INPUT_SYSTEM" }],
+  "noEngineReferences": false
+}

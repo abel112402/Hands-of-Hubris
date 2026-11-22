@@ -97,4 +97,30 @@ describe('linked engine folder', () => {
     const panel = await openView()
     expect(panel.textContent).toMatch(/cannot write into folders, so use Download \.zip/)
   })
+
+  it('stops on a file changed by hand, previews it, overwrites only when asked, and restores', async () => {
+    const game = setup()
+    const panel = await openView()
+    fireEvent.click(screen.getByRole('button', { name: 'Link engine folder…' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Write now' }))
+    await waitFor(() => expect(panel.textContent).toMatch(/\d+ written/))
+    const plank = 'Assets/HoHPlanner/Data/Item/item.plank.json'
+    game.put(plank, '{ "mine": true }')
+    useStore.getState().mutate((p) => void (p.documents['design.items'].data.items[0].value = 3))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview changes' }))
+    expect(await screen.findByText(/The next write: .*1 conflict: Data\/Item\/item\.plank\.json \(changed since the last export\)/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Write now' }))
+    await waitFor(() => expect(panel.textContent).toMatch(/Stopped before writing: 1 file changed/))
+    expect(game.read(plank)).toBe('{ "mine": true }')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overwrite them (keep a backup)' }))
+    await waitFor(() => expect(panel.textContent).toMatch(/1 conflict overwritten \(backup in \.hoh-backup\//))
+    expect(game.read(plank)).toContain('"value": 3')
+    expect(screen.queryByRole('button', { name: 'Overwrite them (keep a backup)' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore last write' }))
+    await waitFor(() => expect(panel.textContent).toMatch(/Restored the folder as it was before the write of/))
+    expect(game.read(plank)).toBe('{ "mine": true }')
+  })
 })

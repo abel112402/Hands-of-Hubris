@@ -1,7 +1,8 @@
 import { del, get, set } from 'idb-keyval'
 import { useEffect, useState } from 'react'
 import { buildBundle } from '../core/engine/bundle'
-import { describeWrite, exportFolderIn, folderState, readText, REPORT_FILE, writeExport, type Folder } from '../core/engine/folder'
+import { describeWrite, exportFolderIn, folderState, interruptedWrite, previewExport, readText, REPORT_FILE, restoreLastWrite, writeExport, type Folder } from '../core/engine/folder'
+import { describePlan } from '../core/engine/ownership'
 import { applyReport, parseReport, reportSummary, storedReport } from '../core/engine/report'
 import { engineTarget } from '../core/engine/target'
 import type { Project } from '../core/model/types'
@@ -16,7 +17,8 @@ export type EngineLink = {
   /** Shown to the user: the picked folder's name, and Assets/HoHPlanner when it was a Unity project. */
   label: string
   exportOnSave: boolean
-  last?: { at: string; text: string; ok: boolean }
+  /** `stopped`: the last write stopped on conflicts; the panel offers to overwrite them. */
+  last?: { at: string; text: string; ok: boolean; stopped?: boolean }
 }
 
 type Picker = (o: { mode: 'readwrite'; id?: string }) => Promise<EngineLink['folder']>
@@ -91,20 +93,56 @@ export async function setExportOnSave(on: boolean) {
   if (link) await saveLink(p, { ...link, exportOnSave: on })
 }
 
-/** Writes the export for the target engine into the linked folder. Returns the result line (also kept on the link). */
-export async function writeToLinkedFolder(ask = true): Promise<string> {
+/**
+ * Writes the export for the target engine into the linked folder. Returns the result line (also kept on the link).
+ * A write stops before changing anything when a generated file was changed by hand; `overwrite` replaces such files
+ * after backing them up (core/engine/ownership).
+ */
+export async function writeToLinkedFolder(ask = true, overwrite = false): Promise<string> {
   const p = useStore.getState().project
   const link = await loadLink(p)
   if (!link) return 'No engine folder linked.'
   let last: EngineLink['last']
   try {
     if (!(await permitted(link, ask))) last = { at: new Date().toISOString(), ok: false, text: 'No permission to write to the folder; use “Write now” to allow it.' }
-    else last = { at: new Date().toISOString(), ok: true, text: describeWrite(await writeExport(link.folder, buildBundle(p, engineTarget(p).id).files)) }
+    else {
+      const r = await writeExport(link.folder, buildBundle(p, engineTarget(p).id).files, { overwrite })
+      last = { at: new Date().toISOString(), ok: !r.stopped, text: describeWrite(r), ...(r.stopped ? { stopped: true } : {}) }
+    }
   } catch (e) {
     last = { at: new Date().toISOString(), ok: false, text: `Could not write: ${(e as Error).message}` }
   }
   await saveLink(p, { ...link, last })
   return last.text
+}
+
+/** What the next write would do to the linked folder, without writing. */
+export async function previewLinkedFolder(): Promise<string> {
+  const p = useStore.getState().project
+  const link = await loadLink(p)
+  if (!link) return 'No engine folder linked.'
+  if (!(await permitted(link, true))) return 'No permission to read the folder.'
+  const plan = await previewExport(link.folder, buildBundle(p, engineTarget(p).id).files)
+  return `The next write: ${describePlan(plan)}.`
+}
+
+/** Puts the linked folder back as it was before the last write (by the planner or the Unity bridge). */
+export async function restoreLinkedFolder(): Promise<string> {
+  const p = useStore.getState().project
+  const link = await loadLink(p)
+  if (!link) return 'No engine folder linked.'
+  if (!(await permitted(link, true))) return 'No permission to write to the folder.'
+  const text = await restoreLastWrite(link.folder)
+  await saveLink(p, { ...link, last: { at: new Date().toISOString(), ok: true, text } })
+  return text
+}
+
+/** A write into the linked folder that started and never finished (e.g. the browser closed), as a message, or null. */
+export async function interruptedLinkedWrite(): Promise<string | null> {
+  const link = await loadLink(useStore.getState().project).catch(() => undefined)
+  if (!link || !(await permitted(link, false))) return null
+  const j = await interruptedWrite(link.folder)
+  return j ? `A write into the folder (${j.by === 'unity' ? 'by the Unity bridge' : 'by the planner'}, ${j.stamp}) did not finish. “Restore last write” puts the folder back as it was before it.` : null
 }
 
 /** After a save: writes the export when the project has a linked folder with “write on every save”. Never throws. */

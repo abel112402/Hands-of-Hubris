@@ -8,7 +8,9 @@ import { pascal, uniqueNames, type EmittedFile, type EngineAdapter, type EngineI
 import { getAdapter } from './adapters'
 import { ENGINE_TARGETS } from './target'
 import { buildIR, type EngineIR, type EngineIssue, type IrSchema } from './ir'
-import { ENGINE_FORMAT, ENGINE_FORMAT_VERSION, fnv1a, manifestJsonSchema, type EngineManifest } from './manifest'
+import { ENGINE_FORMAT, ENGINE_FORMAT_VERSION, fnv1a, manifestJsonSchema, UNITY_RUNTIME, type EngineManifest } from './manifest'
+import { prototypeReport, type PrototypeReport, type SupportLevel } from './capabilities'
+import { mapFile } from './irGameplay'
 
 /** Folder every file of the zip sits in, so unpacking into a Unity Assets folder or a Godot project gives one tidy folder. */
 export const BUNDLE_ROOT = 'HoHPlanner'
@@ -53,7 +55,24 @@ function dataFiles(ir: EngineIR, folders: Map<string, string>): { files: Emitted
 
 function mapFiles(p: Project): EmittedFile[] {
   const locations = (p.documents[WORLD_DOC]?.data.locations ?? []) as Entity[]
-  return locations.filter((l) => mapOf(l)).map((l) => ({ path: `Maps/${fileSafe(String(l.id))}.json`, content: json(locationJson(l, mapOf(l)!)) }))
+  return locations.filter((l) => mapOf(l)).map((l) => ({ path: mapFile(String(l.id)), content: json(locationJson(l, mapOf(l)!)) }))
+}
+
+const LEVEL_TEXT: Record<SupportLevel, string> = { executable: 'works from the plan', template: 'working module, configured by the plan', frame: 'frame only: you write the behaviour', unsupported: 'not supported yet' }
+
+/** What the export makes playable, so a folder that only compiles is never read as a playable prototype. Empty when the plan asks for none. */
+function prototypeReadme(r: PrototypeReport): string {
+  if (!r.wanted) return ''
+  const pr = r.profile
+  const profile = [pr.dimension, pr.perspective, pr.renderPipeline, pr.platform].map((x) => x ?? 'not chosen').join(', ')
+  const blocking = r.issues.filter((i) => i.level === 'error').map((i) => `- ${i.message}`)
+  return `
+## Playable prototype
+
+**${r.playable ? 'Playable' : 'Not playable yet'}.** Profile: ${profile}.
+
+${r.systems.length ? r.systems.map((s) => `- **${s.label}** — ${LEVEL_TEXT[s.level]}.${s.missing.length ? ` Missing: ${s.missing.map((m) => m.what.toLowerCase()).join('; ')}.` : ''}`).join('\n') : '- No system chosen.'}
+${blocking.length ? `\nBlocking:\n\n${blocking.join('\n')}\n` : ''}`
 }
 
 function readme(ir: EngineIR, engine: EngineId, adapter: EngineAdapter | undefined, schemas: IrSchema[]): string {
@@ -107,12 +126,13 @@ ${adapter?.id === 'unity' ? `
 export function buildBundle(p: Project, engine: EngineId, exportedAt = new Date().toISOString()): EngineBundle {
   const adapter = getAdapter(engine)
   const { ir, issues: irIssues } = buildIR(p)
-  const issues = [...irIssues, ...(adapter?.checks(ir) ?? [])].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
+  const proto = prototypeReport(p, engine)
+  const issues = [...irIssues, ...(adapter?.checks(ir) ?? []), ...proto.issues].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
   const folders = schemaFolders(ir)
   const data = dataFiles(ir, folders)
   const maps = mapFiles(p)
   const files: EmittedFile[] = [
-    { path: 'README.md', content: readme(ir, engine, adapter, ir.schemas) },
+    { path: 'README.md', content: readme(ir, engine, adapter, ir.schemas) + prototypeReadme(proto) },
     { path: 'hoh-engine.schema.json', content: json(manifestJsonSchema()) },
     { path: 'ir/engine-ir.json', content: json(ir) },
     ...data.files,
@@ -140,6 +160,7 @@ export function buildBundle(p: Project, engine: EngineId, exportedAt = new Date(
     })),
     counts: { records: ir.records.length, enums: ir.enums.length, formulas: ir.formulas.length, strings: ir.strings.length, maps: maps.length },
     files: files.map((f) => ({ path: f.path, hash: fnv1a(f.content) })),
+    ...(engine === 'unity' && proto.wanted ? { requires: { runtime: { ...UNITY_RUNTIME } } } : {}),
   }
   return { ir, issues, manifest, files: [{ path: 'hoh-engine.json', content: json(manifest) }, ...files] }
 }

@@ -30,6 +30,53 @@ namespace HoHPlanner.Bridge.Editor
     /// </summary>
     public static class PlannerValidator
     {
+        /// <summary>
+        /// What a playable-prototype export (manifest requires.runtime) needs from the project: the Input System installed
+        /// and active (the player cannot move otherwise), and URP installed and set as the render pipeline. Empty for any
+        /// other export.
+        /// </summary>
+        public static List<ValidationIssue> PrototypeEnvironment(string root)
+        {
+            var found = new List<ValidationIssue>();
+            var path = $"{root}/{PlannerImporter.ManifestFile}";
+            if (!File.Exists(path)) return found;
+            PlannerManifest manifest;
+            try
+            {
+                manifest = PlannerManifest.Parse(File.ReadAllText(path));
+            }
+            catch (PlannerImportException)
+            {
+                return found;
+            }
+            if (manifest.RuntimePackage == null) return found;
+            if (PackageVersion("com.unity.inputsystem") == null)
+                found.Add(new ValidationIssue { Level = IssueLevel.Error, Message = "This plan asks for a playable prototype, but the Input System package is not installed: Window › Package Manager › Unity Registry › Input System. The player cannot move without it." });
+            else if (!InputSystemActive())
+                found.Add(new ValidationIssue { Level = IssueLevel.Error, Message = "The Input System is installed but not active: Project Settings › Player › Active Input Handling → Input System Package (or Both). The player cannot move until it is." });
+            if (PackageVersion("com.unity.render-pipelines.universal") == null)
+                found.Add(new ValidationIssue { Level = IssueLevel.Error, Message = "This plan's prototype uses URP, which is not installed: Window › Package Manager › Unity Registry › Universal RP." });
+            else if (!UrpActive())
+                found.Add(new ValidationIssue { Level = IssueLevel.Warning, Message = "URP is installed but not the render pipeline: Project Settings › Graphics › Default Render Pipeline → a URP asset. Materials show pink until it is." });
+            return found;
+        }
+
+        static string PackageVersion(string name) => UnityEditor.PackageManager.PackageInfo.FindForAssetPath($"Packages/{name}/package.json")?.version;
+
+        /// <summary>Player Settings › Active Input Handling: 0 = old Input Manager only, 1 = Input System, 2 = both.</summary>
+        static bool InputSystemActive()
+        {
+            var settings = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset").FirstOrDefault();
+            var handler = settings != null ? new SerializedObject(settings).FindProperty("activeInputHandler") : null;
+            return handler == null || handler.intValue != 0;
+        }
+
+        static bool UrpActive()
+        {
+            var rp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+            return rp != null && rp.GetType().Name == "UniversalRenderPipelineAsset";
+        }
+
         public static List<ValidationIssue> Run(string root = null)
         {
             root = root ?? PlannerBridgeSettings.instance.Root;
@@ -40,6 +87,7 @@ namespace HoHPlanner.Bridge.Editor
                 issues.Add(new ValidationIssue { Level = IssueLevel.Info, Message = $"Nothing imported yet ({root}/{PlannerImporter.IndexFile} is missing)." });
                 return issues;
             }
+            issues.AddRange(PrototypeEnvironment(root));
             var required = RequiredFields(root);
             var deprecated = new HashSet<UnityEngine.Object>(index.Entries.Where(e => e.deprecated && e.asset != null).Select(e => e.asset));
             foreach (var e in index.Entries)

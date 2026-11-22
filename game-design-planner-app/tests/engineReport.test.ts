@@ -8,7 +8,12 @@ import { DATA_DOC } from '../src/core/dataDriven'
 import type { Project } from '../src/core/model/types'
 
 const fs: { readFileSync: (path: string, enc: string) => string } = await import('node:fs' as string)
-const cinderholm = () => deserializeProject(fs.readFileSync('examples/cinderholm.hohplan.json', 'utf8')).project
+/** The example without the engine report it was saved with, so each test starts from “no report yet”. */
+const cinderholm = () => {
+  const p = deserializeProject(fs.readFileSync('examples/cinderholm.hohplan.json', 'utf8')).project
+  delete p.meta.engine?.report
+  return p
+}
 
 /** A report as the Unity bridge writes it: every record, every third one incomplete; classes half written. */
 function report(p: Project, extra: Record<string, unknown> = {}) {

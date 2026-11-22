@@ -1,6 +1,8 @@
 import type { EmittedFile } from './adapter'
 import { ENGINE_ADAPTERS } from './adapters'
 import { ownMoves, renameIn, type OwnMove } from './renames'
+import { countOf } from '../text'
+import { BACKUP_DIR, backupStamp, JOURNAL, KEEP_BACKUPS, planExport, type ExportPlan, type Journal } from './ownership'
 
 /**
  * Writing the engine export straight into a folder of the engine project (File System Access API), with the same rules
@@ -112,6 +114,20 @@ export type WriteResult = {
   codeChanged: boolean
   /** Your class files moved with their renamed class, “old → new”. */
   moved: string[]
+  /** Files in generated folders left alone because the planner did not write them (or they changed since). */
+  keptNotOurs: string[]
+  /** Files the export would overwrite that changed since the last export, or that it did not write. */
+  conflicts: string[]
+  /** True when the write stopped on conflicts before writing anything. */
+  stopped: boolean
+  /** The backup folder of this write (under .hoh-backup/), when it overwrote or removed anything. */
+  backup?: string
+}
+export type WriteOptions = {
+  /** Overwrite conflicting files (their old text goes into the backup first). Default: stop on conflicts. */
+  overwrite?: boolean
+  /** Time of the write, for the backup folder's name. */
+  now?: Date
 }
 
 async function removeFile(root: Folder, path: string): Promise<void> {
@@ -163,60 +179,164 @@ async function moveOne(root: Folder, m: OwnMove, text: string, result: WriteResu
   result.codeChanged = true
 }
 
-/**
- * Writes the export's files into the folder. Unchanged files are not touched (so the engine does not reimport them),
- * your own class files are only created, and stale generated files are deleted — but only when the folder already held
- * an export, so a wrongly chosen folder never loses files.
- */
-export async function writeExport(root: Folder, files: EmittedFile[]): Promise<WriteResult> {
-  const result: WriteResult = { written: 0, unchanged: 0, deleted: 0, keptYours: 0, codeChanged: false, moved: [] }
-  const ours = (await readText(root, MANIFEST)) !== null
-  if (ours) await moveRenamedOwnFiles(root, files, result)
-  for (const f of files) {
-    const existing = await readText(root, f.path)
-    // A folder the export owns wins over a “yours” folder around it (Unreal: Source/PlannerGame/Generated/ in your module).
-    if (YOURS_PREFIXES.some((p) => f.path.startsWith(p)) && !OWNED_PREFIXES.some((p) => f.path.startsWith(p)) && existing !== null) {
-      result.keptYours++
-      continue
-    }
-    if (existing === f.content) {
-      result.unchanged++
-      continue
-    }
-    // The manifest goes last, so an engine watching it sees a complete export.
-    if (f.path === MANIFEST) continue
-    await writeText(root, f.path, f.content)
-    result.written++
-    if (/\.(cs|asmdef|gd|h|cpp)$/.test(f.path)) result.codeChanged = true
-  }
-  const manifest = files.find((f) => f.path === MANIFEST)
-  const oldManifest = await readText(root, MANIFEST)
-  // A manifest that differs only in its export time is not a change: rewriting it would make the engine reimport for nothing.
-  if (manifest && oldManifest !== manifest.content) {
-    if (result.written === 0 && sameButTime(oldManifest, manifest.content)) result.unchanged++
-    else {
-      await writeText(root, MANIFEST, manifest.content)
-      result.written++
-    }
-  }
-  if (!ours) return result
-  const keep = new Set(files.map((f) => f.path))
+/** Files now in the generated folders, without engine sidecars and engine-made files. */
+async function generatedFiles(root: Folder): Promise<string[]> {
+  const out: string[] = []
   for (const prefix of OWNED_PREFIXES) {
     const dir = await dirAt(root, parts(prefix), false)
     if (!dir) continue
-    for (const rel of await listFiles(dir, prefix)) {
-      // An engine's sidecar goes only together with its file (below); what the engine made from a file stays.
-      if (keep.has(rel) || ENGINE_MADE.test(rel) || SIDECARS.some((x) => rel.endsWith(x))) continue
-      const p = parts(rel)
-      const parent = (await dirAt(root, p.slice(0, -1), false))!
-      await parent.removeEntry(p[p.length - 1])
+    for (const rel of await listFiles(dir, prefix)) if (!ENGINE_MADE.test(rel) && !SIDECARS.some((x) => rel.endsWith(x))) out.push(rel)
+  }
+  return out
+}
+
+/**
+ * What writing these files would do, file by file, without writing anything (ownership.ts has the rules). Generated
+ * files are only considered for removal when the folder already holds an export, so a wrongly chosen folder never loses files.
+ */
+export async function previewExport(root: Folder, files: EmittedFile[]): Promise<ExportPlan> {
+  const oldManifest = await readText(root, MANIFEST)
+  const generatedOnDisk = oldManifest !== null ? await generatedFiles(root) : []
+  const disk = new Map<string, string | null>()
+  for (const p of [...files.map((f) => f.path), ...generatedOnDisk]) disk.set(p, await readText(root, p))
+  return planExport({
+    next: new Map(files.map((f) => [f.path, f.content])),
+    disk: (p) => disk.get(p) ?? null,
+    oldManifest,
+    generatedOnDisk,
+    yoursPrefixes: YOURS_PREFIXES,
+    ownedPrefixes: OWNED_PREFIXES,
+    manifestPath: MANIFEST,
+  })
+}
+
+/**
+ * Writes the export's files into the folder by the rules of ownership.ts: unchanged files are not touched (so the engine
+ * does not reimport them), your class files are only created, generated files the plan dropped are removed, and the
+ * manifest goes last so an engine watching it sees a complete export. A file that changed since the last export (or
+ * that no export wrote) stops the write before anything is written, unless `overwrite`. Whatever is overwritten or
+ * removed is backed up first under .hoh-backup/<time>/ with a journal; a write that fails half-way is rolled back from
+ * it, and restoreLastWrite undoes the last one.
+ */
+export async function writeExport(root: Folder, files: EmittedFile[], options: WriteOptions = {}): Promise<WriteResult> {
+  const result: WriteResult = { written: 0, unchanged: 0, deleted: 0, keptYours: 0, codeChanged: false, moved: [], keptNotOurs: [], conflicts: [], stopped: false }
+  let plan = await previewExport(root, files)
+  if (plan.conflicts.length && !options.overwrite) {
+    result.conflicts = plan.conflicts.map((c) => c.path)
+    result.stopped = true
+    return result
+  }
+  if ((await readText(root, MANIFEST)) !== null) {
+    await moveRenamedOwnFiles(root, files, result)
+    if (result.moved.length) plan = await previewExport(root, files)
+  }
+  result.conflicts = plan.conflicts.map((c) => c.path)
+  result.keptNotOurs = plan.entries.filter((e) => e.action === 'keepNotOurs').map((e) => e.path)
+  result.keptYours = plan.counts.keepYours
+  const byPath = new Map(files.map((f) => [f.path, f.content]))
+  const manifest = files.find((f) => f.path === MANIFEST)
+  const oldManifest = await readText(root, MANIFEST)
+  const writes = plan.entries.filter((e) => e.path !== MANIFEST && (e.action === 'create' || e.action === 'update' || e.action === 'conflict'))
+  const deletes = plan.entries.filter((e) => e.action === 'delete').map((e) => e.path)
+  // A manifest that differs only in its export time is not a change: rewriting it would make the engine reimport for nothing.
+  const writeManifest = !!manifest && oldManifest !== manifest.content && !(writes.length === 0 && deletes.length === 0 && sameButTime(oldManifest, manifest.content))
+  result.unchanged = plan.counts.unchanged + (manifest && !writeManifest && oldManifest !== manifest.content ? 1 : 0)
+  if (!writes.length && !deletes.length && !writeManifest) return result
+
+  // Journal and backup before the first change.
+  const sidecarsOf = async (path: string) => (await Promise.all(SIDECARS.map(async (x) => ((await readText(root, path + x)) !== null ? path + x : null)))).filter((x): x is string => x !== null)
+  const replaced = [...writes.filter((e) => e.action !== 'create').map((e) => e.path), ...(writeManifest && oldManifest !== null ? [MANIFEST] : [])]
+  const removed = [...deletes, ...(await Promise.all(deletes.map(sidecarsOf))).flat()]
+  const journal: Journal = {
+    format: 'hoh-write-journal',
+    v: 1,
+    stamp: backupStamp(options.now ?? new Date()),
+    by: 'planner',
+    state: 'writing',
+    created: [...writes.filter((e) => e.action === 'create').map((e) => e.path), ...(writeManifest && oldManifest === null ? [MANIFEST] : [])],
+    backedUp: [...replaced, ...removed],
+  }
+  const dir = `${BACKUP_DIR}/${journal.stamp}`
+  for (const p of journal.backedUp) await writeText(root, `${dir}/${p}`, (await readText(root, p)) ?? '')
+  await writeText(root, `${dir}/${JOURNAL}`, JSON.stringify(journal, null, 2))
+  result.backup = dir
+
+  try {
+    for (const e of writes) {
+      await writeText(root, e.path, byPath.get(e.path)!)
+      result.written++
+      if (/\.(cs|asmdef|gd|h|cpp)$/.test(e.path)) result.codeChanged = true
+    }
+    if (writeManifest) {
+      await writeText(root, MANIFEST, manifest!.content)
+      result.written++
+    }
+    for (const path of deletes) {
+      await removeFile(root, path)
       // The engine's .meta / .import / .uid of the removed file would otherwise be left behind.
-      for (const x of SIDECARS) await parent.removeEntry(`${p[p.length - 1]}${x}`).catch(() => undefined)
+      for (const x of SIDECARS) await removeFile(root, path + x)
       result.deleted++
-      if (/\.(cs|gd|h|cpp)$/.test(rel)) result.codeChanged = true
+      if (/\.(cs|gd|h|cpp)$/.test(path)) result.codeChanged = true
+    }
+  } catch (e) {
+    try {
+      await restoreJournal(root, journal)
+    } catch (again) {
+      throw new Error(`${(e as Error).message} Putting the folder back failed too (${(again as Error).message}); the old files are in ${dir}, and “Restore last write” tries again.`, { cause: again })
+    }
+    throw new Error(`${(e as Error).message} The folder was put back as it was before this write.`, { cause: e })
+  }
+  await writeText(root, `${dir}/${JOURNAL}`, JSON.stringify({ ...journal, state: 'done' }, null, 2))
+  await pruneBackups(root)
+  return result
+}
+
+async function journals(root: Folder): Promise<Journal[]> {
+  const dir = await dirAt(root, [BACKUP_DIR], false)
+  if (!dir) return []
+  const out: Journal[] = []
+  for await (const e of dir.values()) {
+    if (e.kind !== 'directory') continue
+    const text = await readText(root, `${BACKUP_DIR}/${e.name}/${JOURNAL}`)
+    try {
+      const j = text ? (JSON.parse(text) as Journal) : null
+      if (j?.format === 'hoh-write-journal') out.push(j)
+    } catch {
+      // An unreadable journal is skipped.
     }
   }
-  return result
+  return out.sort((a, b) => (a.stamp < b.stamp ? 1 : -1))
+}
+
+async function restoreJournal(root: Folder, j: Journal): Promise<{ restored: number; removed: number }> {
+  let removed = 0
+  for (const p of j.created) {
+    if ((await readText(root, p)) === null) continue
+    await removeFile(root, p)
+    removed++
+  }
+  for (const p of j.backedUp) await writeText(root, p, (await readText(root, `${BACKUP_DIR}/${j.stamp}/${p}`)) ?? '')
+  await writeText(root, `${BACKUP_DIR}/${j.stamp}/${JOURNAL}`, JSON.stringify({ ...j, state: 'restored' }, null, 2))
+  return { restored: j.backedUp.length, removed }
+}
+
+async function pruneBackups(root: Folder): Promise<void> {
+  const dir = await dirAt(root, [BACKUP_DIR], false)
+  for (const j of (await journals(root)).slice(KEEP_BACKUPS)) await dir?.removeEntry(j.stamp).catch(() => undefined)
+}
+
+/** A write that started but never finished (the browser closed half-way), or null. */
+export async function interruptedWrite(root: Folder): Promise<Journal | null> {
+  const last = (await journals(root))[0]
+  return last?.state === 'writing' ? last : null
+}
+
+/** Puts the folder back as it was before the last write (by the planner or the Unity bridge), from its backup. */
+export async function restoreLastWrite(root: Folder): Promise<string> {
+  const last = (await journals(root)).find((j) => j.state !== 'restored')
+  if (!last) return 'There is no write to undo.'
+  const r = await restoreJournal(root, last)
+  return `Restored the folder as it was before the write of ${last.stamp}: ${countOf(r.restored, 'file')} put back, ${countOf(r.removed, 'new file')} removed.`
 }
 
 function sameButTime(a: string | null, b: string): boolean {
@@ -233,4 +353,6 @@ function sameButTime(a: string | null, b: string): boolean {
 }
 
 export const describeWrite = (r: WriteResult) =>
-  `${r.written} written, ${r.unchanged} unchanged, ${r.deleted} removed, ${r.keptYours} of your class files kept${r.moved.length ? `, ${r.moved.length} moved with their renamed class` : ''}${r.codeChanged ? '; the engine recompiles' : ''}`
+  r.stopped
+    ? `Stopped before writing: ${countOf(r.conflicts.length, 'file')} changed since the last export or not written by the planner (${r.conflicts.slice(0, 3).join(', ')}${r.conflicts.length > 3 ? ', …' : ''}). Overwrite them (a backup is kept) or move your changes out of the generated folders`
+    : `${r.written} written, ${r.unchanged} unchanged, ${r.deleted} removed, ${r.keptYours} of your class files kept${r.moved.length ? `, ${r.moved.length} moved with their renamed class` : ''}${r.keptNotOurs.length ? `, ${countOf(r.keptNotOurs.length, 'file')} the planner did not write kept` : ''}${r.conflicts.length ? `, ${countOf(r.conflicts.length, 'conflict')} overwritten (backup in ${r.backup})` : ''}${r.codeChanged ? '; the engine recompiles' : ''}`

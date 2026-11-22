@@ -112,6 +112,7 @@ InitTestScene*.unity*
 /game-design-planner-app/node_modules/
 /game-design-planner-app/dist/
 /game-design-planner-app/dist-cli/
+/game-design-planner-app/dist-gate/
 __pycache__/
 /game-design-planner-app/coverage/
 /game-design-planner-app/test-results/

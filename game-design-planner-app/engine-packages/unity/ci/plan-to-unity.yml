@@ -83,6 +83,21 @@ jobs:
           buildMethod: HoHPlanner.Bridge.Editor.PlannerCI.Validate
           allowDirtyBuild: true
 
+      # The generated tests: EditMode (data checks, quest graph, saves) and PlayMode (the player and, for a playable
+      # prototype, its scene: pick up, quest, save and load into a fresh game). Build the prototype scene in the project
+      # first (Tools ▸ Game Design Planner ▸ Build prototype scene) and commit it, or the scene tests fail with that message.
+      - name: EditMode and PlayMode tests
+        id: tests
+        continue-on-error: true
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          testMode: all
+          artifactsPath: test-results
+
       - name: Summary of the engine report
         id: summary
         run: |
@@ -106,6 +121,7 @@ jobs:
           body: |
             Export of `${{ env.PLAN_FILE }}`, imported and validated by the planner bridge.
             Unity validation: ${{ steps.unity.outcome == 'success' && 'no errors' || 'errors, see below and the job log' }}.
+            Unity tests (EditMode and PlayMode): ${{ steps.tests.outcome == 'success' && 'passed' || 'FAILED or did not run, see the job log and the test-results artifact' }}.
 
             ${{ steps.summary.outputs.text }}
 

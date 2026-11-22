@@ -28,7 +28,12 @@ export const manifestSchema = z.object({
   counts: z.object({ records: z.number().int(), enums: z.number().int(), formulas: z.number().int(), strings: z.number().int(), maps: z.number().int() }),
   /** Every other file of the bundle with a content hash (FNV-1a, hex), so importers can skip unchanged files. */
   files: z.array(z.object({ path: z.string(), hash: z.string() })),
+  /** Engine packages the export needs (a plan with a playable prototype needs the planner runtime); the importer refuses without them. Absent otherwise. */
+  requires: z.object({ runtime: z.object({ package: z.string(), version: z.string() }) }).optional(),
 })
+
+/** The Unity runtime package a playable-prototype export needs (engine-packages/unity/com.handsofhubris.planner-runtime). */
+export const UNITY_RUNTIME = { package: 'com.handsofhubris.planner-runtime', version: '0.9.0' } as const
 export type EngineManifest = z.infer<typeof manifestSchema>
 
 /** Parses a manifest from untrusted text. */

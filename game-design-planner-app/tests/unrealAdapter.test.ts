@@ -62,7 +62,7 @@ describe('Unreal adapter output', () => {
     // The “Resources” catalog would clash with nothing in Unreal, so it keeps its name.
     expect(enums).toContain('enum class EResource : uint8')
     expect(gen('CinderholmExampleEnumIds.h')).toContain('{ TEXT("common"), ERarity::Common },')
-    expect(gen('CinderholmExampleIds.h')).toContain('constexpr const TCHAR* IronSword = TEXT("item.iron_sword");')
+    expect(gen('CinderholmExampleIds.h')).toContain('constexpr const TCHAR* IronLongsword = TEXT("item.iron_longsword");')
     const text = gen('CinderholmExampleFormulas.h')
     expect(text).toContain('static float HealthRegenPerSecond(float Base, float Level, float PerLevel) { return Base + Level * PerLevel; }')
     expect(text).toContain('FMath::Min(Qty, 20.f)')
@@ -140,12 +140,16 @@ describe('Unreal linked folder', () => {
     dir.put(`Unreal/Source/${UE_MODULE}/Classes/GameplayPlayer/Health.cpp`, '// mine')
     dir.put(`Unreal/Source/${UE_MODULE}/Generated/ItemDefinition.h`, '// stale')
     dir.put(`Unreal/Source/${UE_MODULE}/Generated/Old.h`, '// old')
-    const r = await writeExport(dir, files)
+    // A generated header changed by hand stops the write (core/engine/ownership); nothing is written.
+    expect(await writeExport(dir, files)).toMatchObject({ stopped: true, conflicts: [`Unreal/Source/${UE_MODULE}/Generated/ItemDefinition.h`] })
+    expect(dir.read(`Unreal/Source/${UE_MODULE}/Generated/ItemDefinition.h`)).toBe('// stale')
+    const r = await writeExport(dir, files, { overwrite: true })
     expect(dir.read(`Unreal/Source/${UE_MODULE}/${UE_MODULE}.Build.cs`)).toBe('// mine')
     expect(dir.read(`Unreal/Source/${UE_MODULE}/Classes/GameplayPlayer/Health.cpp`)).toBe('// mine')
     expect(dir.read(`Unreal/Source/${UE_MODULE}/Generated/ItemDefinition.h`)).toContain('UItemDefinition')
-    expect(dir.read(`Unreal/Source/${UE_MODULE}/Generated/Old.h`)).toBeUndefined()
-    expect(r).toMatchObject({ written: 1, deleted: 1, codeChanged: true })
+    // Old.h was not written by the planner: kept, never deleted.
+    expect(dir.read(`Unreal/Source/${UE_MODULE}/Generated/Old.h`)).toBe('// old')
+    expect(r).toMatchObject({ written: 1, deleted: 0, codeChanged: true, keptNotOurs: [`Unreal/Source/${UE_MODULE}/Generated/Old.h`] })
   })
 })
 

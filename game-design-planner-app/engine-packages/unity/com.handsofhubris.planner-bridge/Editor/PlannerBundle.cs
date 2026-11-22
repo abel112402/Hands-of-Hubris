@@ -8,7 +8,7 @@ using System.Text;
 namespace HoHPlanner.Bridge.Editor
 {
     /// <summary>Thrown when a bundle or its manifest cannot be used. The message is meant for the user.</summary>
-    public sealed class PlannerImportException : Exception
+    public class PlannerImportException : Exception
     {
         public PlannerImportException(string message) : base(message) { }
     }

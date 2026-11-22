@@ -50,6 +50,26 @@ namespace HoHPlanner.Bridge.Tests
     public class ManifestTests
     {
         [Test]
+        public void NeedsTheRuntimePackageOnlyWhenTheExportAsksForIt()
+        {
+            var plain = PlannerManifest.Parse(Fixture.Manifest());
+            Assert.IsNull(plain.RuntimePackage);
+            Assert.IsNull(plain.RuntimeProblem(null));
+
+            var o = JObject.Parse(Fixture.Manifest());
+            o["requires"] = new JObject { ["runtime"] = new JObject { ["package"] = PlannerManifest.RuntimePackageName, ["version"] = "0.2.0" } };
+            var m = PlannerManifest.Parse(o.ToString());
+            StringAssert.Contains("install com.handsofhubris.planner-runtime 0.2.0", m.RuntimeProblem(null));
+            StringAssert.Contains("the project has 0.1.9", m.RuntimeProblem("0.1.9"));
+            Assert.IsNull(m.RuntimeProblem("0.2.0"));
+            Assert.IsNull(m.RuntimeProblem("0.10.0"));
+            Assert.IsNull(m.RuntimeProblem("1.0.0-pre.1"));
+
+            o["requires"]["runtime"]["package"] = "com.example.other";
+            StringAssert.Contains("does not know", PlannerManifest.Parse(o.ToString()).RuntimeProblem("9.9.9"));
+        }
+
+        [Test]
         public void ReadsAValidManifest()
         {
             var m = PlannerManifest.Parse(Fixture.Manifest());
@@ -341,9 +361,10 @@ namespace HoHPlanner.Bridge.Tests
             Assert.AreEqual("// mine", File.ReadAllText($"{Root}/Unity/Scripts/Classes/Combat/Health.cs"));
             Assert.AreEqual("// new stub", File.ReadAllText($"{Root}/Unity/Scripts/Classes/Combat/NewOne.cs.txt"));
             Assert.AreEqual(1, r.KeptYours);
-            Assert.IsFalse(File.Exists($"{Root}/Unity/Scripts/Generated/Old.Generated.cs.txt"));
-            Assert.IsFalse(File.Exists($"{Root}/Data/Item/item.gone.json"));
-            Assert.AreEqual(2, r.Deleted);
+            // No export was there before: files the planner did not write are never deleted (PlannerOwnershipTests covers removal).
+            Assert.IsTrue(File.Exists($"{Root}/Unity/Scripts/Generated/Old.Generated.cs.txt"));
+            Assert.IsTrue(File.Exists($"{Root}/Data/Item/item.gone.json"));
+            Assert.AreEqual(0, r.Deleted);
             Assert.Throws<PlannerImportException>(() => PlannerImporter.WriteFiles(bundle, "Packages/elsewhere"));
         }
     }
@@ -385,6 +406,10 @@ namespace HoHPlanner.Bridge.Tests
             Directory.CreateDirectory($"{Root}/Unity/Scripts/Generated");
             Directory.CreateDirectory($"{Root}/Unity/Scripts/Classes/Player");
             File.WriteAllText($"{Root}/{PlannerRenames.ClassIndex}", Index(oldPath, "PlayerController"));
+            // The earlier export's manifest lists the index it wrote, so the new export may replace it.
+            var earlier = JObject.Parse(Fixture.Manifest());
+            earlier["files"] = new JArray(new JObject { ["path"] = PlannerRenames.ClassIndex, ["hash"] = PlannerOwnership.Fnv1a(Index(oldPath, "PlayerController")) });
+            File.WriteAllText($"{Root}/hoh-engine.json", earlier.ToString());
             File.WriteAllText($"{Root}/{oldPath}", "public partial class PlayerController { void Jump() { /* mine */ } }");
             File.WriteAllText($"{Root}/{oldPath}.meta", "guid: 0123456789abcdef");
             var bundle = new PlannerBundle(new Dictionary<string, byte[]>

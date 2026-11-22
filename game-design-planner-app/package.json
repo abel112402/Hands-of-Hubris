@@ -11,7 +11,8 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:cloud": "vitest run --config vitest.cloud.config.ts",
-    "export:engine": "vite build -c vite.cli.config.ts && node dist-cli/engine-cli.mjs"
+    "export:engine": "vite build -c vite.cli.config.ts && node dist-cli/engine-cli.mjs",
+    "gate:unity": "vite build -c vite.gate.config.ts && node dist-gate/unity-gate.mjs"
   },
   "dependencies": {
     "@fontsource-variable/space-grotesk": "^5.3.0",

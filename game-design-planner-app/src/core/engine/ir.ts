@@ -10,14 +10,15 @@ import { codingList, folderTree, lfsCoverage } from '../coding'
 import { buildAudio, buildBudgets, type IrAudio, type IrBudget } from './irPolish'
 import { buildSave, buildScenes, buildStory, type IrSave, type IrScenes, type IrStory } from './irContent'
 import { buildInput, buildStateMachines, buildUi, type IrInput, type IrStateMachine, type IrUi } from './irScaffold'
+import { buildGameplay, type IrGameplay } from './irGameplay'
 import { buildArt, buildChannels, buildChecks, buildCheats, buildTelemetry, type IrArt, type IrChannel, type IrCheat, type IrCheck, type IrTelemetry } from './irExtras'
 
 /**
  * Engine IR: the project's data-driven content in engine-neutral form. Every engine adapter
  * (Unity now, Godot and Unreal later) works from this and never reads the project itself.
  */
-/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. 7: performance budgets, audio events. 8: quest graph, save system, scenes by roadmap phase. */
-export const IR_VERSION = 8
+/** 2: classes from the class diagram. 3: project set-up (code style, naming rules, folders, modules, Git LFS). 4: data checks, cheat commands, art palette. 5: communication channels, telemetry events. 6: input map, screens and their flow, state machines. 7: performance budgets, audio events. 8: quest graph, save system, scenes by roadmap phase. 9: playable-prototype profile and typed gameplay (only when the plan asks for a prototype). */
+export const IR_VERSION = 9
 
 export type AssetKind = AssetType
 const ASSET_KINDS: AssetKind[] = ['image', 'scene', 'audio', 'material', 'mesh', 'animation', 'animator', 'data']
@@ -118,10 +119,13 @@ export type EngineIR = {
   save: IrSave
   /** Technical Architecture scenes with the roadmap phase from which builds include them. */
   scenes: IrScenes
+  /** Playable prototype: profile, chosen systems, typed quest rules and placements. Absent when the plan asks for no prototype. */
+  gameplay?: IrGameplay
 }
 
 export type IssueLevel = 'error' | 'warning' | 'info'
-export type EngineIssue = { level: IssueLevel; code: string; message: string; schema?: string; field?: string }
+/** `where`: the planner place that fixes it (document, section, field), for problems that are not about a schema field. */
+export type EngineIssue = { level: IssueLevel; code: string; message: string; schema?: string; field?: string; where?: { doc: string; section: string; id?: string; field?: string } }
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -459,6 +463,8 @@ export function buildIR(p: Project): { ir: EngineIR; issues: EngineIssue[] } {
     save: buildSave(p),
     scenes: buildScenes(p),
   }
+  const gameplay = buildGameplay(p, records, issues, new Map(ir.save.parts.map((x) => [x.id, x.key])))
+  if (gameplay) ir.gameplay = gameplay
   return { ir, issues }
 }
 

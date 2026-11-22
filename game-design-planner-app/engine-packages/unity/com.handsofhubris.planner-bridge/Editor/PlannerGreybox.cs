@@ -29,7 +29,7 @@ namespace HoHPlanner.Bridge.Editor
     {
         public const string Folder = "Greybox";
         public const string Format = "hoh-location";
-        private const float WallHeight = 2f;
+        internal const float WallHeight = 2f;
         private const string Letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
         [MenuItem("Tools/Game Design Planner/Build greybox scenes", priority = 40)]
@@ -119,18 +119,13 @@ namespace HoHPlanner.Bridge.Editor
             return output;
         }
 
-        private static string Safe(string s) => string.Join("_", (string.IsNullOrWhiteSpace(s) ? "Map" : s.Trim()).Split(Path.GetInvalidFileNameChars().Concat(new[] { ' ' }).ToArray(), StringSplitOptions.RemoveEmptyEntries));
+        internal static string Safe(string s) => string.Join("_", (string.IsNullOrWhiteSpace(s) ? "Map" : s.Trim()).Split(Path.GetInvalidFileNameChars().Concat(new[] { ' ' }).ToArray(), StringSplitOptions.RemoveEmptyEntries));
 
         private static string BuildOne(string root, JObject map)
         {
             var name = Safe((string)map["name"]);
-            var nav = (JObject)map["nav"] ?? throw new InvalidDataException("no nav grid");
-            var cell = (float)nav["cell"];
-            int cols = (int)nav["cols"], rows = (int)nav["rows"];
-            if (cell <= 0 || cols <= 0 || rows <= 0) throw new InvalidDataException("empty nav grid");
-            var cost = DecodeRle((string)nav["cost"], cols * rows);
-            var tags = DecodeRle((string)nav["tags"], cols * rows);
-            bool Walkable(int c, int r) => c >= 0 && r >= 0 && c < cols && r < rows && cost[r * cols + c] > 0;
+            var grid = Grid.Read(map);
+            var cell = grid.Cell;
             Vector3 At(float x, float y, float height = 0) => new Vector3(x / cell, height, -y / cell);
 
             var dir = $"{root}/{Folder}";
@@ -141,39 +136,25 @@ namespace HoHPlanner.Bridge.Editor
                 SceneManager.MoveGameObjectToScene(top, scene);
                 var palette = PlannerPlaceholders.Palette(root);
                 Color Pick(int i, Color fallback) => palette.Count > i ? palette[i] : fallback;
-
-                // Floor: one quad per walkable cell, merged into one mesh.
-                var floor = new MeshBuilder();
-                var walls = new MeshBuilder();
-                for (var r = 0; r < rows; r++)
-                    for (var c = 0; c < cols; c++)
+                var level = new LevelStyle
+                {
+                    Floor = Material(dir, "Floor", Pick(3, new Color(0.7f, 0.7f, 0.7f))),
+                    Wall = Material(dir, "Wall", Pick(0, new Color(0.35f, 0.35f, 0.4f))),
+                    Door = Material(dir, "Door", DoorColor),
+                    LockedDoor = Material(dir, "LockedDoor", LockedColor),
+                    Key = Material(dir, "Key", KeyColor),
+                    SaveMesh = (mesh, part) =>
                     {
-                        if (Walkable(c, r)) floor.Quad(new Vector3(c, 0, -r - 1), new Vector3(c + 1, 0, -r));
-                        else if (Walkable(c - 1, r) || Walkable(c + 1, r) || Walkable(c, r - 1) || Walkable(c, r + 1)) walls.Box(new Vector3(c, 0, -r - 1), new Vector3(c + 1, WallHeight, -r));
-                    }
-                AddMesh(top, "Floor", floor.Build(), $"{dir}/{name}_Floor.asset", Material(dir, "Floor", Pick(3, new Color(0.7f, 0.7f, 0.7f))));
-                AddMesh(top, "Walls", walls.Build(), $"{dir}/{name}_Walls.asset", Material(dir, "Wall", Pick(0, new Color(0.35f, 0.35f, 0.4f))));
-
-                // Doors: every door cell is a thin frame you can walk through; locked ones are red (their lock is named below).
-                var doors = Child(top, "Doors");
-                var doorMat = Material(dir, "Door", new Color(0.55f, 0.36f, 0.2f));
-                var lockedMat = Material(dir, "LockedDoor", new Color(0.8f, 0.15f, 0.15f));
-                for (var r = 0; r < rows; r++)
-                    for (var c = 0; c < cols; c++)
-                    {
-                        var t = tags[r * cols + c];
-                        if ((t & 2) == 0) continue;
-                        var locked = (t & 4) != 0;
-                        var door = Primitive(PrimitiveType.Cube, doors, locked ? "Locked door" : "Door", new Vector3(c + 0.5f, WallHeight / 2, -r - 0.5f), new Vector3(1f, WallHeight, 1f), locked ? lockedMat : doorMat);
-                        door.GetComponent<Collider>().isTrigger = true;
-                    }
-
-                var markers = Child(top, "Markers");
-                foreach (var l in (map["locks"] as JArray ?? new JArray()).OfType<JObject>())
-                    Primitive(PrimitiveType.Cube, markers, $"Lock: {(string)l["lock"]}", At((float)l["x"], (float)l["y"], 0.5f), Vector3.one * 0.4f, lockedMat, false);
-                var keyMat = Material(dir, "Key", new Color(0.95f, 0.8f, 0.2f));
-                foreach (var k in (map["keys"] as JArray ?? new JArray()).OfType<JObject>())
-                    Primitive(PrimitiveType.Cube, markers, $"Key: {(string)k["key"]}", At((float)k["x"], (float)k["y"], 0.5f), Vector3.one * 0.4f, keyMat, false);
+                        var assetPath = $"{dir}/{name}_{part}.asset";
+                        AssetDatabase.DeleteAsset(assetPath);
+                        AssetDatabase.CreateAsset(mesh, assetPath);
+                        return mesh;
+                    },
+                };
+                Geometry(top, grid, level, 1f);
+                var markers = Markers(top, map, level, 1f / cell);
+                var cols = grid.Cols;
+                var rows = grid.Rows;
                 var spawnMat = Material(dir, "Spawn", Pick(1, new Color(0.95f, 0.6f, 0.3f)));
                 Vector3? entrance = null;
                 foreach (var s in (map["spawns"] as JArray ?? new JArray()).OfType<JObject>())
@@ -185,18 +166,7 @@ namespace HoHPlanner.Bridge.Editor
                     if (entrance == null || role == "entrance" || role == "player") entrance = pos;
                 }
 
-                var lights = Child(top, "Lights");
-                foreach (var l in (map["lights"] as JArray ?? new JArray()).OfType<JObject>())
-                {
-                    var go = new GameObject("Light");
-                    go.transform.SetParent(lights.transform, false);
-                    go.transform.position = At((float)l["x"], (float)l["y"], WallHeight * 1.25f);
-                    var light = go.AddComponent<Light>();
-                    light.type = LightType.Point;
-                    light.range = Mathf.Max(1f, (float?)l["radius"] / cell ?? 4f);
-                    light.intensity = Mathf.Max(0.5f, (float?)l["intensity"] ?? 1f);
-                    if (ColorUtility.TryParseHtmlString((string)l["color"] ?? "", out var color)) light.color = color;
-                }
+                Lights(top, map, 1f / cell, WallHeight * 1.25f);
                 var sun = new GameObject("Sun");
                 sun.transform.SetParent(top.transform, false);
                 sun.transform.rotation = Quaternion.Euler(50, -30, 0);
@@ -215,14 +185,105 @@ namespace HoHPlanner.Bridge.Editor
             }
         }
 
-        private static GameObject Child(GameObject parent, string name)
+        internal static readonly Color DoorColor = new Color(0.55f, 0.36f, 0.2f);
+        internal static readonly Color LockedColor = new Color(0.8f, 0.15f, 0.15f);
+        internal static readonly Color KeyColor = new Color(0.95f, 0.8f, 0.2f);
+
+        /// <summary>The walkability grid of a hoh-location map.</summary>
+        internal sealed class Grid
+        {
+            public float Cell;
+            public int Cols, Rows;
+            public byte[] Cost, Tags;
+
+            public bool Walkable(int c, int r) => c >= 0 && r >= 0 && c < Cols && r < Rows && Cost[r * Cols + c] > 0;
+
+            public static Grid Read(JObject map)
+            {
+                var nav = (JObject)map["nav"] ?? throw new InvalidDataException("no nav grid");
+                var g = new Grid { Cell = (float)nav["cell"], Cols = (int)nav["cols"], Rows = (int)nav["rows"] };
+                if (g.Cell <= 0 || g.Cols <= 0 || g.Rows <= 0) throw new InvalidDataException("empty nav grid");
+                g.Cost = DecodeRle((string)nav["cost"], g.Cols * g.Rows);
+                g.Tags = DecodeRle((string)nav["tags"], g.Cols * g.Rows);
+                return g;
+            }
+        }
+
+        /// <summary>Materials of a level, and how its meshes are saved (the mesh and the part's name in, the saved mesh out).</summary>
+        internal sealed class LevelStyle
+        {
+            public Material Floor, Wall, Door, LockedDoor, Key;
+            public Func<Mesh, string, Mesh> SaveMesh;
+        }
+
+        /// <summary>
+        /// Floor (walkable cells), 2 m walls around it and doors (trigger frames you can walk through; red when locked), at
+        /// <paramref name="metresPerCell"/> metres per nav cell: x east, map y south (−z). Heights stay in metres.
+        /// </summary>
+        internal static void Geometry(GameObject top, Grid g, LevelStyle style, float metresPerCell)
+        {
+            var s = metresPerCell;
+            var floor = new MeshBuilder();
+            var walls = new MeshBuilder();
+            for (var r = 0; r < g.Rows; r++)
+                for (var c = 0; c < g.Cols; c++)
+                {
+                    if (g.Walkable(c, r)) floor.Quad(new Vector3(c * s, 0, (-r - 1) * s), new Vector3((c + 1) * s, 0, -r * s));
+                    else if (g.Walkable(c - 1, r) || g.Walkable(c + 1, r) || g.Walkable(c, r - 1) || g.Walkable(c, r + 1)) walls.Box(new Vector3(c * s, 0, (-r - 1) * s), new Vector3((c + 1) * s, WallHeight, -r * s));
+                }
+            AddMesh(top, "Floor", style.SaveMesh(floor.Build(), "Floor"), style.Floor);
+            AddMesh(top, "Walls", style.SaveMesh(walls.Build(), "Walls"), style.Wall);
+
+            var doors = Child(top, "Doors");
+            for (var r = 0; r < g.Rows; r++)
+                for (var c = 0; c < g.Cols; c++)
+                {
+                    var t = g.Tags[r * g.Cols + c];
+                    if ((t & 2) == 0) continue;
+                    var locked = (t & 4) != 0;
+                    var door = Primitive(PrimitiveType.Cube, doors, locked ? "Locked door" : "Door", new Vector3((c + 0.5f) * s, WallHeight / 2, (-r - 0.5f) * s), new Vector3(s, WallHeight, s), locked ? style.LockedDoor : style.Door);
+                    door.GetComponent<Collider>().isTrigger = true;
+                }
+        }
+
+        /// <summary>A "Markers" object with the map's locks and keys (no colliders), at <paramref name="metresPerUnit"/>.</summary>
+        internal static GameObject Markers(GameObject top, JObject map, LevelStyle style, float metresPerUnit)
+        {
+            Vector3 At(float x, float y, float height) => new Vector3(x * metresPerUnit, height, -y * metresPerUnit);
+            var markers = Child(top, "Markers");
+            foreach (var l in (map["locks"] as JArray ?? new JArray()).OfType<JObject>())
+                Primitive(PrimitiveType.Cube, markers, $"Lock: {(string)l["lock"]}", At((float)l["x"], (float)l["y"], 0.5f), Vector3.one * 0.4f, style.LockedDoor, false);
+            foreach (var k in (map["keys"] as JArray ?? new JArray()).OfType<JObject>())
+                Primitive(PrimitiveType.Cube, markers, $"Key: {(string)k["key"]}", At((float)k["x"], (float)k["y"], 0.5f), Vector3.one * 0.4f, style.Key, false);
+            return markers;
+        }
+
+        /// <summary>A point light for each light of the map, its radius in map units scaled to metres.</summary>
+        internal static GameObject Lights(GameObject top, JObject map, float metresPerUnit, float height)
+        {
+            var lights = Child(top, "Lights");
+            foreach (var l in (map["lights"] as JArray ?? new JArray()).OfType<JObject>())
+            {
+                var go = new GameObject("Light");
+                go.transform.SetParent(lights.transform, false);
+                go.transform.position = new Vector3((float)l["x"] * metresPerUnit, height, -(float)l["y"] * metresPerUnit);
+                var light = go.AddComponent<Light>();
+                light.type = LightType.Point;
+                light.range = Mathf.Max(1f, (float?)l["radius"] * metresPerUnit ?? 4f);
+                light.intensity = Mathf.Max(0.5f, (float?)l["intensity"] ?? 1f);
+                if (ColorUtility.TryParseHtmlString((string)l["color"] ?? "", out var color)) light.color = color;
+            }
+            return lights;
+        }
+
+        internal static GameObject Child(GameObject parent, string name)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
             return go;
         }
 
-        private static GameObject Primitive(PrimitiveType type, GameObject parent, string name, Vector3 position, Vector3 scale, Material material, bool collider = true)
+        internal static GameObject Primitive(PrimitiveType type, GameObject parent, string name, Vector3 position, Vector3 scale, Material material, bool collider = true)
         {
             var go = GameObject.CreatePrimitive(type);
             go.name = name;
@@ -234,10 +295,8 @@ namespace HoHPlanner.Bridge.Editor
             return go;
         }
 
-        private static void AddMesh(GameObject parent, string name, Mesh mesh, string assetPath, Material material)
+        private static void AddMesh(GameObject parent, string name, Mesh mesh, Material material)
         {
-            AssetDatabase.DeleteAsset(assetPath);
-            AssetDatabase.CreateAsset(mesh, assetPath);
             var go = Child(parent, name);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             go.AddComponent<MeshRenderer>().sharedMaterial = material;
@@ -264,7 +323,7 @@ namespace HoHPlanner.Bridge.Editor
         }
 
         /// <summary>Quads and boxes merged into one mesh (32-bit indices: big maps have many cells).</summary>
-        private sealed class MeshBuilder
+        internal sealed class MeshBuilder
         {
             private readonly List<Vector3> vertices = new List<Vector3>();
             private readonly List<Vector3> normals = new List<Vector3>();

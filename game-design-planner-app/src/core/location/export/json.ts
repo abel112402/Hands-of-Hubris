@@ -10,7 +10,9 @@ import { playerView } from '../visibility'
 /**
  * The map as data for a game engine (format `hoh-location`, version 1): every object with its gameplay metadata,
  * grouped by layer in drawing order, the room graph, and the walkability and light grids. Coordinates are map
- * units with the origin top left, x right, y down; box objects are given by their centre.
+ * units with the origin top left, x right, y down; box objects are given by their centre. Map units have no fixed
+ * size: a playable prototype turns them into metres by Technical Architecture › Playable prototype › Map scale, or
+ * else one `nav.cell` per metre (the Unity greybox and prototype scene; x east, y south).
  *
  * Grids are run-length encoded (raster.ts): a value 0–51 is one letter A–z, a run is its length then the letter.
  * `nav.cost`: 0 blocked, else the cost of stepping in (1 easy). `nav.tags`: bit flags (1 water, 2 door, 4 locked,

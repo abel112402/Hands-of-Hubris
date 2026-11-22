@@ -1,0 +1,13 @@
+{
+  "name": "com.handsofhubris.planner-runtime",
+  "version": "0.9.0",
+  "displayName": "Game Design Planner Runtime",
+  "description": "Runtime modules for playable prototypes generated from a Game Design Planner plan: a service lifecycle (dependencies, start, stop, errors), an event bus and environment checks. Contains no Editor code, so it goes into player builds.",
+  "unity": "2022.3",
+  "documentationUrl": "",
+  "keywords": ["game design", "planner", "prototype", "runtime"],
+  "dependencies": {},
+  "author": {
+    "name": "Hands of Hubris"
+  }
+}

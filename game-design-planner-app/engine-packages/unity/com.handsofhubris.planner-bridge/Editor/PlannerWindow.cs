@@ -100,19 +100,50 @@ namespace HoHPlanner.Bridge.Editor
             Debug.Log($"[Planner bridge] Validation: {found.Count(i => i.Level == IssueLevel.Error)} error(s), {found.Count(i => i.Level == IssueLevel.Warning)} warning(s).");
         }
 
-        private static void RunImport(string path)
+        private static void RunImport(string path, bool overwrite = false)
         {
             try
             {
-                var r = PlannerImporter.Import(path);
-                var msg = $"Files: {r.Written} written, {r.Unchanged} unchanged, {r.Deleted} removed, {r.KeptYours} of your class files kept" + (r.Moved.Count > 0 ? $", {r.Moved.Count} moved with their renamed class" : "") + "." + (r.Notes.Count > 0 ? " " + string.Join(" ", r.Notes) : "") + (r.CodeChanged ? " Records follow once the scripts compiled." : "");
+                var r = PlannerImporter.Import(path, overwrite);
+                var msg = $"Files: {r}." + (r.Notes.Count > 0 ? " " + string.Join(" ", r.Notes) : "") + (r.CodeChanged ? " Records follow once the scripts compiled." : "");
                 Debug.Log($"[Planner bridge] {msg}");
                 if (HasOpenInstances<PlannerWindow>()) GetWindow<PlannerWindow>().status = msg;
+            }
+            catch (PlannerConflictException e)
+            {
+                Debug.LogWarning($"[Planner bridge] {e.Message}\n{string.Join("\n", e.Conflicts)}");
+                if (EditorUtility.DisplayDialog("Planner import", e.Message + "\n\n" + string.Join("\n", e.Conflicts.Take(10)) + (e.Conflicts.Count > 10 ? "\n…" : ""), "Overwrite (keep a backup)", "Cancel")) RunImport(path, true);
             }
             catch (PlannerImportException e)
             {
                 EditorUtility.DisplayDialog("Planner import", e.Message, "OK");
             }
+        }
+
+        [MenuItem("Tools/Game Design Planner/Preview import…", priority = 4)]
+        public static void PreviewImport()
+        {
+            var path = EditorUtility.OpenFilePanel("Planner engine export to preview", "", "zip");
+            if (string.IsNullOrEmpty(path)) return;
+            try
+            {
+                var plan = PlannerImporter.Preview(PlannerBundle.FromPath(path), PlannerBridgeSettings.instance.Root);
+                Debug.Log($"[Planner bridge] Preview: {plan.Describe()}.\n{string.Join("\n", plan.Entries.Where(e => e.Action != PlanAction.Unchanged).Select(e => $"{e.Action,-11} {e.Path}{(e.Reason != null ? $" ({e.Reason})" : "")}"))}");
+                EditorUtility.DisplayDialog("Planner import preview", plan.Describe() + ".\n\nThe Console lists every file.", "OK");
+            }
+            catch (PlannerImportException e)
+            {
+                EditorUtility.DisplayDialog("Planner import preview", e.Message, "OK");
+            }
+        }
+
+        [MenuItem("Tools/Game Design Planner/Restore last import", priority = 5)]
+        public static void RestoreLast()
+        {
+            if (!EditorUtility.DisplayDialog("Restore last import", "Put the planner folder back as it was before the last import (or the planner's last write into it), from its backup?", "Restore", "Cancel")) return;
+            var msg = PlannerImporter.RestoreLastImport();
+            Debug.Log($"[Planner bridge] {msg}");
+            EditorUtility.DisplayDialog("Restore last import", msg, "OK");
         }
 
         private void OnEnable()

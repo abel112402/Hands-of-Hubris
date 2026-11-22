@@ -55,7 +55,8 @@ export type NewMapObject = Omit<MapObject, 'id'>
 
 export const ROAD_RANKS = ['main', 'street', 'alley'] as const
 export type RoadRank = (typeof ROAD_RANKS)[number]
-export const SPAWN_ROLES = ['enemy', 'npc', 'merchant', 'boss'] as const
+/** `player`: where the player starts. `item`: an item lying here to pick up (`refId` = Items & Crafting item, `count` = amount). */
+export const SPAWN_ROLES = ['enemy', 'npc', 'merchant', 'boss', 'player', 'item'] as const
 export type SpawnRole = (typeof SPAWN_ROLES)[number]
 export const ZONE_KINDS = ['residential', 'market', 'industrial', 'military', 'sacred'] as const
 export type ZoneKind = (typeof ZONE_KINDS)[number]

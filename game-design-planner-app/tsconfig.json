@@ -25,6 +25,7 @@
     "tests",
     "scripts",
     "vite.config.ts",
-    "vite.cli.config.ts"
+    "vite.cli.config.ts",
+    "vite.gate.config.ts"
   ]
 }

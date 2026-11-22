@@ -3,12 +3,13 @@ import { fieldMapLine, fieldMapOf, nameOf, NO_FIELD, sourceOf } from '../../core
 import type { EngineId } from '../../core/engine/adapter'
 import { getAdapter } from '../../core/engine/adapters'
 import { buildBundle } from '../../core/engine/bundle'
-import { matchField, sourceFields, type EngineIssue, type IssueLevel } from '../../core/engine/ir'
+import { matchField, sourceFields, type EngineIR, type EngineIssue, type IssueLevel } from '../../core/engine/ir'
+import { PrototypePanel } from './prototypePanel'
 import { ENGINE_TARGETS, engineFromStack, engineTarget } from '../../core/engine/target'
 import type { Entity } from '../../core/model/types'
 import { countOf } from '../../core/text'
 import { exportEngineZip, importEngineReport, setEngineTarget } from '../actions'
-import { canLinkFolders, linkEngineFolder, readReportFromLinkedFolder, setExportOnSave, unlinkEngineFolder, useEngineLink, writeToLinkedFolder } from '../engineLink'
+import { canLinkFolders, interruptedLinkedWrite, linkEngineFolder, previewLinkedFolder, readReportFromLinkedFolder, restoreLinkedFolder, setExportOnSave, unlinkEngineFolder, useEngineLink, writeToLinkedFolder } from '../engineLink'
 import { classProblems, reportBySchema, reportLabel, reportProblems, reportStale, reportSummary, storedReport } from '../../core/engine/report'
 import { applySuggestions, dismissSuggestions, statusSuggestions, type StatusSuggestion } from '../../core/engine/suggestions'
 import { getModule } from '../../core/modules/registry'
@@ -25,6 +26,12 @@ const MARK: Record<IssueLevel, { icon: string; label: string }> = {
 }
 const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 const FIELD_PROBLEMS = new Set(['record.missing', 'record.unresolved', 'map.unknownSource'])
+
+/** Records with at least one asset field (icon, prefab…) left empty in the plan: the engine gets a placeholder for them. */
+function placeholderRecords(ir: EngineIR): number {
+  const assetFields = new Map(ir.schemas.map((s) => [s.id, s.fields.filter((f) => f.type.k === 'asset').map((f) => f.name)]))
+  return ir.records.filter((r) => (assetFields.get(r.schema) ?? []).some((f) => r.values[f] === null || r.values[f] === undefined || r.values[f] === '')).length
+}
 
 /** Preview of the engine export: target engine, checks, field mapping, the files it writes and each file's content, with the zip download. */
 export function EngineExportView({ items, onSelect, patch }: ViewProps) {
@@ -87,6 +94,7 @@ export function EngineExportView({ items, onSelect, patch }: ViewProps) {
           </ul>
         )}
       </section>
+      <PrototypePanel project={project} engine={target.id} placeholders={placeholderRecords(bundle.ir)} />
       <EngineStatusPanel />
       <StatusSuggestionsPanel />
       <FieldMapping schemas={items} issues={bundle.issues} patch={patch} />
@@ -279,6 +287,10 @@ function LinkedFolderPanel() {
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [linked])
+  // A write that never finished (browser closed, engine crashed half-way): say so once, with the way back.
+  useEffect(() => {
+    if (linked) void interruptedLinkedWrite().then((m) => m && setMessage(m))
+  }, [linked])
   const run = (fn: () => Promise<string | null>) => {
     setBusy(true)
     void fn()
@@ -298,7 +310,7 @@ function LinkedFolderPanel() {
       <strong>Engine folder</strong>
       {!link ? (
         <>
-          <p className="muted">Link the engine project once (for Unity: its project folder, the export goes to Assets/HoHPlanner; for Godot: the folder with project.godot, the export goes to res://HoHPlanner; for Unreal: the folder with the .uproject, the export goes to Plugins/HoHPlanner). Then every save writes the export there, unchanged files are left alone, your own class files are never overwritten, and the engine's report is read back when you return here.</p>
+          <p className="muted">Link the engine project once (for Unity: its project folder, the export goes to Assets/HoHPlanner; for Godot: the folder with project.godot, the export goes to res://HoHPlanner; for Unreal: the folder with the .uproject, the export goes to Plugins/HoHPlanner). Then every save writes the export there, unchanged files are left alone, your own class files are never overwritten, a generated file you changed by hand stops the write until you choose, every overwrite is backed up under .hoh-backup/, and the engine's report is read back when you return here.</p>
           <div className="row" style={{ margin: 0 }}>
             <button disabled={busy} onClick={() => run(linkEngineFolder)}>Link engine folder…</button>
           </div>
@@ -314,13 +326,22 @@ function LinkedFolderPanel() {
           </label>
           <div className="row" style={{ margin: 0 }}>
             <button disabled={busy} onClick={() => run(() => writeToLinkedFolder(true))}>Write now</button>
+            <button disabled={busy} onClick={() => run(previewLinkedFolder)}>Preview changes</button>
             <button disabled={busy} onClick={() => run(() => readReportFromLinkedFolder(true))}>Read report</button>
+            <button className="ghost" disabled={busy} onClick={() => run(restoreLinkedFolder)}>Restore last write</button>
             <button className="ghost" disabled={busy} onClick={() => run(async () => (await unlinkEngineFolder(), null))}>Unlink</button>
           </div>
           {link.last && (
             <p className={link.last.ok ? 'muted' : 'engine-note'} role="status">
               Last write {new Date(link.last.at).toLocaleString()}: {link.last.text}
             </p>
+          )}
+          {link.last?.stopped && (
+            <div className="row" style={{ margin: 0 }}>
+              <button disabled={busy} onClick={() => run(() => writeToLinkedFolder(true, true))}>
+                Overwrite them (keep a backup)
+              </button>
+            </div>
           )}
         </>
       )}

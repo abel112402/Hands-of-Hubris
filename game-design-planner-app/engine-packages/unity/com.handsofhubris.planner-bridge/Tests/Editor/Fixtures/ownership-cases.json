@@ -1,0 +1,154 @@
+{
+  "hashes": [
+    {
+      "text": "",
+      "hash": "811c9dc5"
+    },
+    {
+      "text": "a",
+      "hash": "e40c292c"
+    },
+    {
+      "text": "Keeper’s Yard ✓",
+      "hash": "901d5f84"
+    },
+    {
+      "text": "line\r\nbreak",
+      "hash": "78f262fb"
+    }
+  ],
+  "cases": [
+    {
+      "name": "create, unchanged and update",
+      "next": {
+        "Data/a.json": "A2",
+        "Data/b.json": "B"
+      },
+      "disk": {
+        "Data/a.json": "A1",
+        "Data/b.json": "B"
+      },
+      "old": {
+        "Data/a.json": "9bd5d047",
+        "Data/b.json": "c70bfb85"
+      },
+      "generatedOnDisk": [
+        "Data/a.json",
+        "Data/b.json"
+      ],
+      "expected": {
+        "Data/a.json": "update",
+        "Data/b.json": "unchanged"
+      }
+    },
+    {
+      "name": "edited by you",
+      "next": {
+        "Data/a.json": "A2"
+      },
+      "disk": {
+        "Data/a.json": "mine"
+      },
+      "old": {
+        "Data/a.json": "9bd5d047"
+      },
+      "generatedOnDisk": [
+        "Data/a.json"
+      ],
+      "expected": {
+        "Data/a.json": "conflict"
+      }
+    },
+    {
+      "name": "CRLF is not an edit",
+      "next": {
+        "Data/a.json": "x\ny2"
+      },
+      "disk": {
+        "Data/a.json": "x\r\ny"
+      },
+      "old": {
+        "Data/a.json": "ce89968a"
+      },
+      "generatedOnDisk": [
+        "Data/a.json"
+      ],
+      "expected": {
+        "Data/a.json": "update"
+      }
+    },
+    {
+      "name": "yours is kept",
+      "next": {
+        "Unity/Scripts/Classes/P.cs": "new"
+      },
+      "disk": {
+        "Unity/Scripts/Classes/P.cs": "mine"
+      },
+      "old": {
+        "Unity/Scripts/Classes/P.cs": "bd2b9bd6"
+      },
+      "generatedOnDisk": [],
+      "expected": {
+        "Unity/Scripts/Classes/P.cs": "keepYours"
+      }
+    },
+    {
+      "name": "dropped: delete what it wrote, keep what it did not",
+      "next": {},
+      "disk": {
+        "Data/gone.json": "G",
+        "Data/mine.json": "M",
+        "Unity/Scripts/Generated/E.cs": "edited"
+      },
+      "old": {
+        "Data/gone.json": "c20bf3a6",
+        "Unity/Scripts/Generated/E.cs": "c00bf080"
+      },
+      "generatedOnDisk": [
+        "Data/gone.json",
+        "Data/mine.json",
+        "Unity/Scripts/Generated/E.cs"
+      ],
+      "expected": {
+        "Data/gone.json": "delete",
+        "Data/mine.json": "keepNotOurs",
+        "Unity/Scripts/Generated/E.cs": "keepNotOurs"
+      }
+    },
+    {
+      "name": "no previous export",
+      "next": {
+        "Data/a.json": "A",
+        "Data/b.json": "B"
+      },
+      "disk": {
+        "Data/a.json": "other"
+      },
+      "old": null,
+      "generatedOnDisk": [],
+      "expected": {
+        "Data/a.json": "conflict",
+        "Data/b.json": "create"
+      }
+    },
+    {
+      "name": "non-ASCII text",
+      "next": {
+        "Data/é.json": "Keeper’s Yard ✓ 2"
+      },
+      "disk": {
+        "Data/é.json": "Keeper’s Yard ✓"
+      },
+      "old": {
+        "Data/é.json": "901d5f84"
+      },
+      "generatedOnDisk": [
+        "Data/é.json"
+      ],
+      "expected": {
+        "Data/é.json": "update"
+      }
+    }
+  ]
+}

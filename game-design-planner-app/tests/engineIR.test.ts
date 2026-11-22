@@ -119,7 +119,7 @@ describe('field mapping', () => {
     const { ir, issues } = buildIR(p)
     const plank = ir.records.find((r) => r.key === 'rcp.plank')!
     expect(plank.values.output).toBe('item.plank')
-    const sword = ir.records.find((r) => r.key === 'rcp.iron_sword')!
+    const sword = ir.records.find((r) => r.key === 'rcp.iron_longsword')!
     expect((sword.values.inputs as string[]).every((x) => x.startsWith('item.'))).toBe(true)
     expect(ir.records.find((r) => r.key === 'enemy.greenhollow_swarmling')!.values.health).toBe(30)
     expect(issues).toContainEqual(expect.objectContaining({ code: 'map.unknownSource', field: 'seconds' }))

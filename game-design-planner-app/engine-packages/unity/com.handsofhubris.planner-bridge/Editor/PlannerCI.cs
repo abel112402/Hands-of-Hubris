@@ -11,7 +11,9 @@ namespace HoHPlanner.Bridge.Editor
     ///   Unity -batchmode -projectPath P -executeMethod HoHPlanner.Bridge.Editor.PlannerCI.Validate
     /// Import copies the files; when that changed code, the records are made when Unity next opens the project
     /// (run Validate as the second step: it opens the project, finishes the import and checks it).
-    /// Exit code: 0 ok, 1 errors, 2 bad arguments or bundle.
+    /// Import stops before writing when a file it would overwrite was changed by hand; -hohOverwrite overwrites it after a
+    /// backup. Preview (-hohBundle) lists what an import would do; RestoreLastImport undoes the last one.
+    /// Exit code: 0 ok, 1 errors, 2 bad arguments or bundle, 3 stopped on conflicts.
     /// </summary>
     public static class PlannerCI
     {
@@ -26,15 +28,50 @@ namespace HoHPlanner.Bridge.Editor
             }
             try
             {
-                var r = PlannerImporter.Import(path);
-                Debug.Log($"[Planner bridge] Files: {r.Written} written, {r.Unchanged} unchanged, {r.Deleted} removed, {r.KeptYours} of your class files kept{(r.Moved.Count > 0 ? $", {r.Moved.Count} moved with their renamed class ({string.Join("; ", r.Moved)})" : "")}. Code changed: {r.CodeChanged}.");
+                var r = PlannerImporter.Import(path, Environment.GetCommandLineArgs().Contains("-hohOverwrite"));
+                Debug.Log($"[Planner bridge] Files: {r}. Code changed: {r.CodeChanged}.");
                 EditorApplication.Exit(0);
+            }
+            catch (PlannerConflictException e)
+            {
+                Debug.LogError($"[Planner bridge] {e.Message}\n{string.Join("\n", e.Conflicts)}");
+                EditorApplication.Exit(3);
             }
             catch (PlannerImportException e)
             {
                 Debug.LogError($"[Planner bridge] {e.Message}");
                 EditorApplication.Exit(2);
             }
+        }
+
+        /// <summary>Lists what importing -hohBundle would do, writing nothing. Exit code 3 when it would stop on conflicts.</summary>
+        public static void Preview()
+        {
+            var path = Arg("-hohBundle");
+            if (path == null)
+            {
+                Debug.LogError("[Planner bridge] Pass -hohBundle <zip or folder>.");
+                EditorApplication.Exit(2);
+                return;
+            }
+            try
+            {
+                var plan = PlannerImporter.Preview(PlannerBundle.FromPath(path), PlannerBridgeSettings.instance.Root);
+                Debug.Log($"[Planner bridge] Preview: {plan.Describe()}.\n{string.Join("\n", plan.Entries.Where(e => e.Action != PlanAction.Unchanged).Select(e => $"{e.Action,-11} {e.Path}{(e.Reason != null ? $" ({e.Reason})" : "")}"))}");
+                EditorApplication.Exit(plan.Conflicts.Count > 0 ? 3 : 0);
+            }
+            catch (PlannerImportException e)
+            {
+                Debug.LogError($"[Planner bridge] {e.Message}");
+                EditorApplication.Exit(2);
+            }
+        }
+
+        /// <summary>Undoes the last write into the planner folder from its backup.</summary>
+        public static void RestoreLastImport()
+        {
+            Debug.Log($"[Planner bridge] {PlannerImporter.RestoreLastImport()}");
+            EditorApplication.Exit(0);
         }
 
         public static void Validate()
@@ -68,7 +105,8 @@ namespace HoHPlanner.Bridge.Editor
         /// <summary>
         /// -executeMethod HoHPlanner.Bridge.Editor.PlannerCI.BuildScenes -plannerPhase "Vertical Slice": the planned scenes
         /// of that roadmap phase (its name or index) into the Build Settings. Exit code 0, 1 when a planned scene has no
-        /// scene asset, 2 when the phase is unknown or there is no generated PlannerScenes.
+        /// scene asset, 2 when the phase is unknown or there is no generated PlannerScenes. A plan without roadmap
+        /// phases takes no -plannerPhase: all its planned scenes go in.
         /// </summary>
         public static void BuildScenes()
         {
@@ -77,6 +115,15 @@ namespace HoHPlanner.Bridge.Editor
                 var phases = PlannerBuildScenes.Phases();
                 var arg = Arg("-plannerPhase") ?? "";
                 var phase = int.TryParse(arg, out var i) ? i : Array.FindIndex(phases, p => string.Equals(p, arg, StringComparison.OrdinalIgnoreCase));
+                // A plan without roadmap phases: every planned scene is in builds from the start.
+                if (phases.Length == 0 && arg == "")
+                {
+                    var none = PlannerBuildScenes.Apply(0);
+                    Debug.Log($"[Planner bridge] Build Settings (the plan has no roadmap phases): {string.Join(", ", EditorBuildSettings.scenes.Select(s => s.path))}.");
+                    if (none.Length > 0) Debug.LogWarning($"[Planner bridge] No scene asset yet for: {string.Join(", ", none)}.");
+                    EditorApplication.Exit(none.Length > 0 ? 1 : 0);
+                    return;
+                }
                 if (phase < 0 || phase >= phases.Length)
                 {
                     Debug.LogError($"[Planner bridge] -plannerPhase: “{arg}” is not one of {string.Join(", ", phases)}.");

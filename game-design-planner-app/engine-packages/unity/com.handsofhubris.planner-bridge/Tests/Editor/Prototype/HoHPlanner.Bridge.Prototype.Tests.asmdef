@@ -1,0 +1,14 @@
+{
+  "name": "HoHPlanner.Bridge.Prototype.Tests",
+  "rootNamespace": "HoHPlanner.Bridge.Tests",
+  "references": ["HoHPlanner.Bridge", "HoHPlanner.Bridge.Editor", "HoHPlanner.Bridge.Prototype", "HoHPlanner.Runtime", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS", "HOH_PLANNER_RUNTIME"],
+  "versionDefines": [{ "name": "com.handsofhubris.planner-runtime", "expression": "0.9.0", "define": "HOH_PLANNER_RUNTIME" }],
+  "noEngineReferences": false
+}

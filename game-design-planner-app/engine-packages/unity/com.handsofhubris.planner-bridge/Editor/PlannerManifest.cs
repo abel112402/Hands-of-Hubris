@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -43,6 +44,42 @@ namespace HoHPlanner.Bridge.Editor
         public Dictionary<string, string> FileHashes = new Dictionary<string, string>();
 
         public bool HasUnityCode => Engine == "unity" && AdapterVersion > 0;
+
+        public const string RuntimePackageName = "com.handsofhubris.planner-runtime";
+        /// <summary>The planner runtime package the export needs (a plan with a playable prototype), or null.</summary>
+        public string RuntimePackage;
+        public string RuntimeVersion;
+
+        /// <summary>Why this export cannot go into a project whose runtime package is <paramref name="installed"/> (null = not installed); null when it can.</summary>
+        public string RuntimeProblem(string installed)
+        {
+            if (RuntimePackage == null) return null;
+            if (RuntimePackage != RuntimePackageName) return $"The export needs the package {RuntimePackage}, which this bridge does not know. Update the planner bridge package.";
+            if (installed == null) return $"This plan asks for a playable prototype: install {RuntimePackageName} {RuntimeVersion} or later (Package Manager › Add package from git URL / disk), then import again.";
+            if (CompareVersions(installed, RuntimeVersion) < 0) return $"This export needs {RuntimePackageName} {RuntimeVersion} or later; the project has {installed}. Update the package, then import again.";
+            return null;
+        }
+
+        /// <summary>The installed runtime package's version, or null.</summary>
+        public static string InstalledRuntimeVersion() => UnityEditor.PackageManager.PackageInfo.FindForAssetPath($"Packages/{RuntimePackageName}/package.json")?.version;
+
+        /// <summary>Compares “major.minor.patch” numerically; a pre-release suffix is ignored, missing parts count as 0.</summary>
+        public static int CompareVersions(string a, string b)
+        {
+            int[] Parts(string v) => (v ?? "").Split('-')[0].Split('.').Select(x => int.TryParse(x, out var n) ? n : 0).Concat(new[] { 0, 0, 0 }).Take(3).ToArray();
+            var x1 = Parts(a);
+            var y1 = Parts(b);
+            for (var i = 0; i < 3; i++)
+                if (x1[i] != y1[i]) return x1[i].CompareTo(y1[i]);
+            return 0;
+        }
+
+        /// <summary>Throws when the export needs a runtime package this project does not have.</summary>
+        public void RequireRuntime()
+        {
+            var problem = RuntimeProblem(InstalledRuntimeVersion());
+            if (problem != null) throw new PlannerImportException(problem);
+        }
 
         /// <summary>Reads and checks a manifest. Untrusted text: throws <see cref="PlannerImportException"/> with a readable reason.</summary>
         public static PlannerManifest Parse(string text)
@@ -93,6 +130,11 @@ namespace HoHPlanner.Bridge.Editor
                     var path = (string)f["path"];
                     if (path != null) m.FileHashes[path] = (string)f["hash"] ?? "";
                 }
+            if (o["requires"]?["runtime"] is JObject rt)
+            {
+                m.RuntimePackage = (string)rt["package"] ?? throw new PlannerImportException("hoh-engine.json names a runtime without a package.");
+                m.RuntimeVersion = (string)rt["version"] ?? "0.0.0";
+            }
             return m;
         }
     }

@@ -23,6 +23,18 @@ namespace HoHPlanner.Bridge.Editor
         public bool CodeChanged;
         public PlannerManifest Manifest;
         public readonly List<string> Notes = new List<string>();
+        /// <summary>Files in generated folders left alone because the planner did not write them (or they changed since).</summary>
+        public readonly List<string> KeptNotOurs = new List<string>();
+        /// <summary>Changed files overwritten because the import was asked to (their old text is in <see cref="Backup"/>).</summary>
+        public readonly List<string> Conflicts = new List<string>();
+        /// <summary>The backup folder of this import, when it replaced or removed anything.</summary>
+        public string Backup;
+
+        public override string ToString() =>
+            $"{Written} written, {Unchanged} unchanged, {Deleted} removed, {KeptYours} of your class files kept"
+            + (Moved.Count > 0 ? $", {Moved.Count} moved with their renamed class ({string.Join("; ", Moved)})" : "")
+            + (KeptNotOurs.Count > 0 ? $", {KeptNotOurs.Count} file(s) the planner did not write kept ({string.Join(", ", KeptNotOurs.Take(3))}{(KeptNotOurs.Count > 3 ? ", …" : "")})" : "")
+            + (Conflicts.Count > 0 ? $", {Conflicts.Count} conflict(s) overwritten (backup in {Backup})" : "");
     }
 
     /// <summary>What the record step did.</summary>
@@ -74,14 +86,14 @@ namespace HoHPlanner.Bridge.Editor
         }
 
         /// <summary>The whole import: files now, records now or right after the code compiled.</summary>
-        public static FileStepResult Import(string bundlePath)
+        public static FileStepResult Import(string bundlePath, bool overwrite = false)
         {
             var bundle = PlannerBundle.FromPath(bundlePath);
             var settings = PlannerBridgeSettings.instance;
             ImportInProgress = true;
             try
             {
-                var result = WriteFiles(bundle, settings.Root);
+                var result = WriteFiles(bundle, settings.Root, overwrite);
                 settings.lastBundlePath = bundlePath;
                 settings.Save();
                 File.WriteAllText(PendingMarker, settings.Root);
@@ -99,6 +111,19 @@ namespace HoHPlanner.Bridge.Editor
         private static void ResumeAfterReload()
         {
             if (File.Exists(PendingMarker)) EditorApplication.delayCall += () => ResumePendingNow();
+            // A write into the planner folder (this bridge's or the planner's) that never finished: say so, with the way back.
+            var root = PlannerBridgeSettings.instance.Root;
+            var broken = PlannerOwnership.Interrupted(root);
+            if (broken != null) Debug.LogWarning($"[Planner bridge] A write into {root} ({(broken.By == "unity" ? "an import" : "by the planner")}, {broken.Stamp}) did not finish. Tools ▸ Game Design Planner ▸ Restore last import puts the folder back as it was before it; importing again also completes it.");
+        }
+
+        /// <summary>Undoes the last write into the planner folder from its backup, then refreshes the AssetDatabase.</summary>
+        public static string RestoreLastImport()
+        {
+            var root = PlannerBridgeSettings.instance.Root;
+            var message = PlannerOwnership.RestoreLast(root);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            return message;
         }
 
         /// <summary>Runs the record step if an import is waiting for it. Returns null when nothing was waiting or the code is still compiling.</summary>
@@ -124,51 +149,111 @@ namespace HoHPlanner.Bridge.Editor
 
         // ---- Step 1: files ----
 
-        /// <summary>Copies the bundle under <paramref name="root"/> (inside Assets/). Does not refresh the AssetDatabase.</summary>
-        public static FileStepResult WriteFiles(PlannerBundle bundle, string root)
+        /// <summary>
+        /// What importing <paramref name="bundle"/> into <paramref name="root"/> would do, file by file, without writing
+        /// (PlannerOwnership has the rules). Generated files are only considered for removal when the folder already
+        /// holds an export.
+        /// </summary>
+        public static ImportPlan Preview(PlannerBundle bundle, string root)
+        {
+            var next = bundle.Files.ToDictionary(kv => kv.Key, kv => Encoding.UTF8.GetString(kv.Value));
+            var old = PlannerOwnership.OldHashes(root);
+            var generated = new List<string>();
+            if (old != null)
+                foreach (var prefix in OwnedPrefixes)
+                {
+                    var dir = $"{root}/{prefix}".TrimEnd('/');
+                    if (!Directory.Exists(dir)) continue;
+                    foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                        if (!file.EndsWith(".meta")) generated.Add(file.Replace('\\', '/').Substring(root.Length + 1));
+                }
+            string Disk(string rel) => File.Exists($"{root}/{rel}") ? File.ReadAllText($"{root}/{rel}") : null;
+            return PlannerOwnership.Plan(next, Disk, old, generated, new[] { YoursPrefix }, OwnedPrefixes, ManifestFile);
+        }
+
+        /// <summary>
+        /// Copies the bundle under <paramref name="root"/> (inside Assets/). Does not refresh the AssetDatabase.
+        /// Stops with <see cref="PlannerConflictException"/> before writing anything when a file it would overwrite was
+        /// changed by hand (or not written by the planner), unless <paramref name="overwrite"/>. Whatever it replaces or
+        /// removes is backed up first under .hoh-backup/ with a journal; a failure half-way puts the folder back.
+        /// </summary>
+        public static FileStepResult WriteFiles(PlannerBundle bundle, string root, bool overwrite = false)
         {
             if (!root.StartsWith("Assets/") && root != "Assets") throw new PlannerImportException($"The planner folder must be inside Assets/ (now “{root}”).");
             var manifest = bundle.Manifest();
+            // A playable-prototype export needs the runtime package: refuse before anything is written.
+            manifest.RequireRuntime();
+            var plan = Preview(bundle, root);
+            if (plan.Conflicts.Count > 0 && !overwrite) throw new PlannerConflictException(plan.Conflicts.Select(c => c.Path).ToList());
             var result = new FileStepResult { Manifest = manifest };
             if (!manifest.HasUnityCode) result.Notes.Add(manifest.Engine == "unity" ? "The bundle has no Unity code." : $"The bundle was exported for {manifest.Engine}; only its engine-neutral data is imported. Set the planner's target engine to Unity for C#.");
-            // Before anything is written: your files of renamed classes move to their new names, so they are not left behind.
+            // Your files of renamed classes move to their new names first, so they are not left behind.
             result.Moved.AddRange(PlannerRenames.Apply(root, bundle.Files.TryGetValue(PlannerRenames.ClassIndex, out var index) ? index : null));
-            if (result.Moved.Count > 0) result.CodeChanged = true;
-            foreach (var kv in bundle.Files)
+            if (result.Moved.Count > 0)
             {
-                var target = $"{root}/{kv.Key}";
-                var yours = kv.Key.StartsWith(YoursPrefix);
-                if (yours && File.Exists(target))
-                {
-                    result.KeptYours++;
-                    continue;
-                }
-                if (File.Exists(target) && File.ReadAllBytes(target).SequenceEqual(kv.Value))
-                {
-                    result.Unchanged++;
-                    continue;
-                }
-                Directory.CreateDirectory(Path.GetDirectoryName(target));
-                File.WriteAllBytes(target, kv.Value);
-                result.Written++;
-                if (kv.Key.EndsWith(".cs") || kv.Key.EndsWith(".asmdef")) result.CodeChanged = true;
+                result.CodeChanged = true;
+                plan = Preview(bundle, root);
             }
-            // Generated files the plan no longer has.
-            foreach (var prefix in OwnedPrefixes)
+            result.Conflicts.AddRange(plan.Conflicts.Select(c => c.Path));
+            result.KeptNotOurs.AddRange(plan.Entries.Where(e => e.Action == PlanAction.KeepNotOurs).Select(e => e.Path));
+            result.KeptYours = plan.Count(PlanAction.KeepYours);
+            result.Unchanged = plan.Count(PlanAction.Unchanged);
+
+            var writes = plan.Entries.Where(e => e.Path != ManifestFile && (e.Action == PlanAction.Create || e.Action == PlanAction.Update || e.Action == PlanAction.Conflict)).ToList();
+            var manifestEntry = plan.Entries.FirstOrDefault(e => e.Path == ManifestFile);
+            var writeManifest = manifestEntry != null && manifestEntry.Action != PlanAction.Unchanged;
+            var deletes = plan.Entries.Where(e => e.Action == PlanAction.Delete).Select(e => e.Path).ToList();
+            if (writes.Count == 0 && deletes.Count == 0 && !writeManifest) return result;
+
+            var journal = new WriteJournal { Stamp = PlannerOwnership.Stamp(DateTime.UtcNow) };
+            journal.Created.AddRange(writes.Where(e => e.Action == PlanAction.Create).Select(e => e.Path));
+            if (writeManifest && manifestEntry.Action == PlanAction.Create) journal.Created.Add(ManifestFile);
+            journal.BackedUp.AddRange(writes.Where(e => e.Action != PlanAction.Create).Select(e => e.Path));
+            if (writeManifest && manifestEntry.Action == PlanAction.Update) journal.BackedUp.Add(ManifestFile);
+            // Removed files go with their .meta, so a restore brings back the same GUID and every reference to it.
+            foreach (var d in deletes) journal.BackedUp.AddRange(new[] { d, d + ".meta" }.Where(p => File.Exists($"{root}/{p}")));
+            PlannerOwnership.Begin(root, journal);
+            result.Backup = $"{root}/{PlannerOwnership.BackupDir}/{journal.Stamp}";
+
+            try
             {
-                var dir = $"{root}/{prefix}".TrimEnd('/');
-                if (!Directory.Exists(dir)) continue;
-                foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories).ToList())
+                foreach (var e in writes)
                 {
-                    if (file.EndsWith(".meta")) continue;
-                    var rel = file.Replace('\\', '/').Substring(root.Length + 1);
-                    if (bundle.Has(rel)) continue;
-                    File.Delete(file);
-                    if (File.Exists(file + ".meta")) File.Delete(file + ".meta");
+                    var target = $"{root}/{e.Path}";
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    File.WriteAllBytes(target, bundle.Files[e.Path]);
+                    result.Written++;
+                    if (e.Path.EndsWith(".cs") || e.Path.EndsWith(".asmdef")) result.CodeChanged = true;
+                }
+                // The manifest last: a watcher sees a complete export.
+                if (writeManifest)
+                {
+                    File.WriteAllBytes($"{root}/{ManifestFile}", bundle.Files[ManifestFile]);
+                    result.Written++;
+                }
+                foreach (var d in deletes)
+                {
+                    File.Delete($"{root}/{d}");
+                    if (File.Exists($"{root}/{d}.meta")) File.Delete($"{root}/{d}.meta");
                     result.Deleted++;
-                    if (rel.EndsWith(".cs")) result.CodeChanged = true;
+                    if (d.EndsWith(".cs")) result.CodeChanged = true;
                 }
             }
+            catch (Exception e) when (!(e is PlannerImportException))
+            {
+                try
+                {
+                    PlannerOwnership.Restore(root, journal);
+                }
+                catch (Exception again)
+                {
+                    throw new PlannerImportException($"The import failed ({e.Message}) and putting the folder back failed too ({again.Message}); the old files are in {result.Backup}. Tools ▸ Game Design Planner ▸ Restore last import tries again.");
+                }
+                throw new PlannerImportException($"The import failed ({e.Message}); the planner folder was put back as it was before.");
+            }
+            journal.State = "done";
+            PlannerOwnership.Save(root, journal);
+            PlannerOwnership.Prune(root);
             return result;
         }
 
@@ -214,6 +299,8 @@ namespace HoHPlanner.Bridge.Editor
             var manifestPath = $"{root}/hoh-engine.json";
             if (!File.Exists(manifestPath)) throw new PlannerImportException($"No planner export in {root} (hoh-engine.json is missing).");
             var manifest = PlannerManifest.Parse(File.ReadAllText(manifestPath));
+            // A linked folder gets the files from the planner directly; the records wait until the runtime package is there.
+            manifest.RequireRuntime();
             types = types ?? SchemaTypes();
             var result = new RecordStepResult();
             var index = LoadOrCreateIndex(root);

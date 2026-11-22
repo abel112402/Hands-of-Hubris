@@ -70,7 +70,7 @@ describe('Unity adapter output', () => {
   it('writes enums with planner IDs, ID constants and formulas', () => {
     expect(get('Enums.cs')).toContain('[InspectorName("Building item")] BuildingItem,')
     expect(get('Enums.cs')).toContain('["common"] = global::CinderholmExample.Data.Rarity.Common')
-    expect(get('Ids.cs')).toContain('public const string IronSword = "item.iron_sword";')
+    expect(get('Ids.cs')).toContain('public const string IronLongsword = "item.iron_longsword";')
     const formulas = get('Formulas.cs')
     expect(formulas).toContain('public static float HealthRegenPerSecond(float @base, float level, float perLevel) => @base + level * perLevel;')
     expect(formulas).toContain('baseHp * Mathf.Pow(1.6f, stage)')
@@ -124,6 +124,9 @@ describe('target engine', () => {
   it('comes from the setting, else the Architecture stack, else Unity', async () => {
     const { engineTarget } = await import('../src/core/engine/target')
     const p = cinderholm()
+    // The example stores Unity as its target setting; without it the Architecture stack decides.
+    expect(engineTarget(p)).toMatchObject({ id: 'unity', from: 'setting', hasAdapter: true })
+    delete p.meta.engine?.target
     expect(engineTarget(p)).toMatchObject({ id: 'unity', from: 'stack', hasAdapter: true })
     p.documents['technical.architecture'].data.stack = [{ id: 'e', name: 'Godot 4.4', category: 'Engine' }]
     expect(engineTarget(p)).toMatchObject({ id: 'godot', from: 'stack', hasAdapter: true })

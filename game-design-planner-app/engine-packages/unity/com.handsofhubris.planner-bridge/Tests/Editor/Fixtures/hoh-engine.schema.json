@@ -187,6 +187,31 @@
         ],
         "additionalProperties": false
       }
+    },
+    "requires": {
+      "type": "object",
+      "properties": {
+        "runtime": {
+          "type": "object",
+          "properties": {
+            "package": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "package",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "runtime"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
