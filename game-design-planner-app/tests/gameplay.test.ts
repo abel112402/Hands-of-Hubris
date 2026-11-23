@@ -22,8 +22,8 @@ describe('quest rules', () => {
         name: 'Find the brass key',
         completeWhen: { kind: 'holdItems', items: [{ item: IDS.itemKey, count: 1 }] },
         onComplete: [{ kind: 'giveItems', items: [{ item: IDS.itemCoin, count: 5 }] }],
-        money: 0,
-        xp: 0,
+        money: 5,
+        xp: 10,
         objectives: ['Pick up the Brass Key'],
       },
     ])
@@ -61,7 +61,11 @@ describe('placements', () => {
       ['player', IDS.start, undefined, 1],
       ['item', IDS.pickup, IDS.itemKey, 1],
       ['enemy', IDS.enemySpawn, undefined, 1],
+      ['npc', IDS.npcSpawn, undefined, 1],
+      ['merchant', IDS.merchantSpot, undefined, 1],
+      ['item', IDS.caveCoin, IDS.itemCoin, 3],
     ])
+    expect(all.find((x) => x.role === 'npc')?.character).toBe(IDS.keeper)
     expect(all.find((x) => x.role === 'enemy')?.enemy).toBe(IDS.enemy)
   })
 
@@ -72,24 +76,27 @@ describe('placements', () => {
     const layer = Object.values(mapOf(yard(p))!.layers)[0]
     layer.objects.push({ id: 'start2', kind: 'marker', x: 1, y: 1, spawn: { role: 'player' } })
     const { placements: all, issues } = placements(p)
-    expect(all.filter((x) => x.role === 'item')).toEqual([])
+    expect(all.filter((x) => x.role === 'item' && x.location === IDS.location)).toEqual([])
     expect(issues.map((i) => [i.level, i.code])).toEqual([['error', 'gameplay.unknownItem'], ['warning', 'gameplay.manyStarts']])
   })
 
   it('survives a save and load with the new spawn roles', () => {
     const back = deserializeProject(serializeProject(buildReferenceSlice()))
     expect(back.warnings).toEqual([])
-    expect(placements(back.project).placements).toHaveLength(3)
+    expect(placements(back.project).placements).toHaveLength(6)
   })
 })
 
 describe('prototype checks use the typed data', () => {
-  it('asks for a typed goal and placements when quests, movement, interaction and combat are chosen', () => {
+  it('asks for a typed goal and placements when quests, movement, combat and dialogue are chosen', () => {
     const p = buildReferenceSlice()
     delete quest(p).collectItems
     for (const o of mapObjects(p)) delete o.spawn
     const missing = prototypeReport(p, 'unity').issues.filter((i) => i.code === 'proto.dataMissing').map((i) => i.field)
-    expect(missing).toEqual(['movement', 'interaction', 'quests', 'combat'])
+    // Without the yard's spawns there is no NPC either: dialogue misses the placed NPC and its starting line. The cave's
+    // Coin pile is still an item to pick up, so interaction misses nothing.
+    // No merchant placed either: trading misses the placed merchant and its offers.
+    expect(missing).toEqual(['movement', 'quests', 'combat', 'dialogue', 'dialogue', 'trade', 'trade'])
   })
 
   it('blocks on invalid typed data', () => {

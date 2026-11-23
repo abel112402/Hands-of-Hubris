@@ -90,7 +90,18 @@ namespace HoHPlanner.Runtime
         float nextAttack;
 
         public string Id => "combat";
-        public IReadOnlyList<string> DependsOn => new[] { "movement" };
+        [Tooltip("The level's navigation for the enemies (optional).")]
+        public PlannerNavigation Navigation;
+        [Tooltip("The day-and-night clock: its monster strength multiplies enemy damage (optional).")]
+        public PlannerClock Clock;
+
+        public IReadOnlyList<string> DependsOn => Navigation != null ? new[] { "movement", "navigation" } : new[] { "movement" };
+
+        /// <summary>Publishes on the runtime's event bus while it runs (for the enemies).</summary>
+        public void Publish<T>(T e)
+        {
+            if (Running) runtime.Events.Publish(e);
+        }
         public bool Running => runtime != null && runtime.State == PlannerRuntimeState.Running;
         IPlannerDamageFormula F => Formula as IPlannerDamageFormula;
 
@@ -159,7 +170,7 @@ namespace HoHPlanner.Runtime
         public void HitPlayer(PlannerEnemy by)
         {
             if (!Running || PlayerHealth == null || PlayerHealth.IsDead) return;
-            var dmg = EnemyHitOnPlayer(by);
+            var dmg = EnemyHitOnPlayer(by) * (Clock != null ? Clock.MonsterStrength : 1f);
             PlayerHealth.Hit(dmg);
             runtime.Events.Publish(new PlannerHit(null, dmg, PlayerHealth.Current));
             if (!PlayerHealth.IsDead) return;

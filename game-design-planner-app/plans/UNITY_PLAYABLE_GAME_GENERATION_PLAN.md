@@ -859,25 +859,395 @@ Minden fázis önálló, tesztelhető változásként szállítandó. A megadott
 - Egyedi animációhoz, beszédhez és komplex viselkedéshez legyen bővítési pont; a tartalom strukturálásához planner UI és migráció is szükséges.
 - **Kész, ha:** egy NPC-vel a terv szerinti választás meghozható, a következmény egyszer végrehajtódik és állapota menthető.
 
+**Állapot (2026-11-22): kész — NPC, akivel interakcióval beszélni lehet; a beszélgetés a terv típusos Dialogue-soraiból fut.**
+
+- **Explicit adat, nem a stílusszövegből** ([`dialogueRules`](../src/core/gameplay.ts)):
+  - új Story & Quests gyűjtemény: *Dialogue lines*. Mezői:
+    - *Speaker*: karakter, kötelező;
+    - *Text*: kötelező;
+    - *Answers*: egy másik sor; ha nincs, a sor a karakter beszélgetését indítja;
+    - *Player says*: a játékos opciója;
+    - *Makes choice*: Story › Choices;
+    - *Gives items*;
+  - hibák, a hellyel:
+    - ismeretlen beszélő, hiányzó szöveg, nem létező megválaszolt sor (`gameplay.lineSpeaker`, `lineText`, `lineAfter`);
+    - válasz *Player says* nélkül (`lineOption`);
+    - ismeretlen vagy indító sorra tett választás (`lineChoice`);
+    - ismeretlen tárgy;
+    - körbe futó sorok (`lineLoop`);
+  - figyelmeztetés: egy karakternek több indító sora van (`manyStarts`); ilyenkor az első indul.
+  
+  A *Dialogue and narrative style* leírás marad, és nem fut. Ezt `proto.dialogueStyle` infó mondja ki.
+- **Térkép:** a *npc* spawn szerepű objektum az új *Character* választóval kötődik egy karakterhez. Ismeretlen hivatkozásnál „Unknown character” jelenik meg; karakter nélkül az objektum jelölő marad.
+- **Képességmátrix:**
+  - a párbeszéd Unityben *unsupported* helyett *template*;
+  - adatfeltételek: egy karakter, egy elhelyezett NPC, és egy elhelyezett NPC beszélgetését indító sor;
+  - ha egy opció választ hoz, a Quests is kell; ha tárgyat ad, az Inventory is (`proto.requires`);
+  - mentésnél kell egy *Dialogue* Runtime state-ű rész (új mentési állapot).
+  
+  A referencia „Playable”: mind a **8** választott rendszer *template*.
+- **Referencia-terv:**
+  - *Keeper* NPC, a kezdőponttól 4–6 m-re, a kulcstól legalább 4 m-re és a rattól legalább 12 m-re, rácsból determinisztikusan választva;
+  - döntés: „Keeper’s request”, két opcióval (*Help* / *Refuse*);
+  - beszélgetés: a köszönés után a „I will find it.” opció meghozza a *Help* választást, és 2 Coint ad; a „Not my problem.” a *Refuse* választást hozza;
+  - *Dialogue* mentési rész.
+  
+  Az export 43 fájl, 5 rekord, 0 hiba. A Cinderholm példa is kapott három sort (Old Maren, a világítótorony sorsa).
+- **IR (v9):** `gameplay.dialogue` (a beszélők neve és a sorok, a tárgyak rekordkulccsal), és *npc* szerepű placement `character`-rel.
+- **Unity-adapter v17:**
+  - a generált `PlannerQuestGraph` planner-ID alapján is választ: `KnowsChoice`, `CanChoose`, `HasChosen`, `IsDecided` és `Choose`, a `PlannerQuestLog` szabályaival (a választás csak a questje után, döntésenként egy);
+  - `PlannerGameplay`: `Npcs` és `DialogueLines`;
+  - **generált tesztek:**
+    - `TalkingToTheNpcMakesThePlannedChoiceOnce`: E-vel indul a beszélgetés, a terv szerinti első sorral és opciókkal; a tervezett opció meghozza a választást és egyszer adja a tárgyakat; a döntés másik opciója utána zárva van; újra kiválasztva nincs második jutalom;
+    - `TheConversationIsTheSameAfterSavingAndLoading`.
+- **Runtime 0.11.0:**
+  - `PlannerDialogue` („dialogue”, az „interaction” után, és ha használja, a „quests” és az „inventory” után);
+  - `PlannerNpc`: interaktálható, a felirata „Talk to …”;
+  - `PlannerDialoguePanel` (IMGUI): a nem választható opció letiltva, az okkal (például „already decided”, „no room for the items”);
+  - az `IPlannerQuestGraph` új választómetódusai;
+  - események: `PlannerDialogueLineShown` (bővítési pont animációhoz, hanghoz, saját NPC-viselkedéshez), `PlannerDialoguePicked` és `PlannerItemAcquired`;
+  - a `PlannerStateKind.Dialogue` mentési állapot, ellenőrzéssel;
+  - az önellenőrzés minden NPC-vel beszél, és ellenőrzi, hogy a következmény egyszer fut le, és a döntés többi opciója bezárul;
+  - 6 új PlayMode-teszt.
+- **Bridge (scene-építő 8. verzió):**
+  - *Dialogue* objektum: a sorok, a quest-gráf, az inventory és a panel;
+  - minden elhelyezett NPC `PlannerNpc`-vel, ütközővel és testtel: `Prototype/Prefabs/Npc<név>.prefab`, egyszer készül, utána a felhasználóé;
+  - külön jelölő nem készül;
+  - a mentés bekötése;
+  - hibák: Interaction, Quests vagy Inventory nélkül;
+  - új EditMode-teszt: `AddsNpcsWithTheirDialogue`.
+- **Gate:** új törés, `--break choice-locked`. A választások csak a quest után hozhatók meg, ezért az export tiszta, és csak a Unity-tesztek foghatják meg.
+- **TS-ellenőrzés:**
+  - új [`tests/unityDialogue.test.ts`](../tests/unityDialogue.test.ts), 9 teszt: szabályok; hibák a hellyel; körbe futó sorok és több indító sor; *template*/„Playable”; adatfeltételek; Quests-, Inventory- és mentésfüggés; stílus-infó; IR; a generált gráf; a konstansok és a generált tesztek; párbeszéd nélkül nincs semmi;
+  - UI-teszt a *Character* választóra; gate-teszt az új törésre;
+  - frissült: képesség-, IR-, gameplay-, UI-, referencia-, inventory-, mentés-, harc-, verzió- és példaprojekt-teszt, pillanatkép (az adapter v17 fejléce) és bridge-fixture;
+  - **teljes kör 1439-ből 1436 zöld**. A kivétel a három ismert időzítéses UI-teszt (`v3CompanionUi`, `locationUi`); a Unity-gate-tel párhuzamos terhelés alatt buktak el, külön futtatva zöldek. A typecheck és a lint zöld.
+- **Unity-gate:** **PASSED** (exit 0; `gate-report-p16.md`).
+  - Az első futás egyetlen hibája a saját runtime-tesztemé volt. Az `ItDoesNotStartWithLinesThePlanDoesNotHave` nem számolt azzal, hogy a `PlannerRuntime.Start` kivételt dob; a modul helyesen állt meg, mindhárom okkal. Javítás után újrafuttatva zöld.
+  - **Unity 6000.0.40f1:**
+    - import (43 írt fájl), `Validate` 0 hibával;
+    - EditMode 61/62 (1 régi kihagyott), köztük az `AddsNpcsWithTheirDialogue`;
+    - **PlayMode 67/67**, köztük 6 új runtime párbeszédteszt és a 2 generált scene-teszt;
+    - a Windows player önellenőrzése: ✓ pickup, ✓ quest, ✓ craft, **✓ talk to Keeper**, ✓ fight, ✓ loot, ✓ mentés és betöltés friss játékba (a párbeszéd- és quest-gráf-állapottal együtt);
+    - újraimport 0 írással, értékváltozás 7/7.
+  - **Unity 2022.3.21f1:** import, fordítás és `Validate` 0 hibával, EditMode 61/62.
+  - **`--break choice-locked`:** FAILED (exit 1). Az export tiszta, de a PlayMode-ban a két generált beszélgetésteszt elbukik („The planned option can be picked”). A player önellenőrzése átmegy, mert ott nincs választható opció.
+- **Böngésző:** nem futtattam külön. A *Dialogue lines* gyűjtemény a meglévő táblás nézettel jelenik meg, a *Character* választót UI-teszt fedi. A saját projektet nem módosítottam.
+- **Nem része, nyitott:**
+  - feltételes sorok (quest-állapot, tárgy, hírnév);
+  - párbeszéd közbeni quest-indítás és tárgyelvétel;
+  - több NPC közös beszélgetése;
+  - hang, animáció és kameraváltás (csak az eseményhorog van meg);
+  - a mozgás megállítása beszélgetés közben;
+  - lokalizált szöveg;
+  - kereskedő NPC;
+  - gamepad-navigáció a panelen.
+
 ### 17. Bővített prototípus-kapu — függőség: 13, 14, 15, 16
 
 - Állítsunk össze a referencia-tervből teljes, craftingot, harcot és NPC-t is tartalmazó 3D mintafolyamatot. A modulok továbbra is külön választhatók legyenek.
 - **Kész, ha:** a 4. fejezet bővített kapuja automatikusan és kézi játékpróbával igazolt, célzott buildben is; dokumentálva van, mely elemek placeholderesek vagy kézi munkát igényelnek.
+
+**Állapot (2026-11-22): az automatikus rész kész, a Unity-gate zöld; a kézi játékpróba még hátravan.** A kézi játékpróbát embernek kell elvégeznie; a lépései le vannak írva.
+
+- **A teljes 3D mintafolyamat:** a referencia-terv mind a 8 rendszert választja: mozgás, interakció, inventory, quest, mentés, crafting, harc, NPC.
+  - Az egy játékmenetben bejárható sorrend:
+    - a kulcs felvétele, amitől a quest kész lesz;
+    - beszélgetés a Keeperrel, ahol a választás 2 Coint ad;
+    - a Polished Key legyártása;
+    - a rat legyőzése és a lootja;
+    - mentés és betöltés.
+  - Ezt a buildelt player önellenőrzése egyben végigjátssza.
+- **Talált és javított hiba: a modulok valójában nem voltak külön választhatók.**
+  - Ha a harc vagy a párbeszéd ki volt kapcsolva, az export továbbra is bekötötte a *Combat*, illetve *Dialogue* mentési részt, és 0 hibát jelzett. A bridge emiatt nem építette meg a scene-t, vagyis a tervező játszhatót mondott, a Unity pedig elbukott.
+  - Javítás: a mentési részt csak akkor köti be, ha a rendszere választott (`SAVE_STATE_SYSTEM`). A többiről `gameplay.saveStateUnchosen` infó szól.
+- **Modularitás, mátrixban ellenőrizve** ([`tests/extendedGate.test.ts`](../tests/extendedGate.test.ts)):
+  - a mentés, a crafting, a harc és a párbeszéd egyenként és csoportosan is kikapcsolható: hibátlan, „Playable” export, és a kikapcsolt rendszer generált tesztje kimarad;
+  - a mozgás, az interakció, az inventory és a quest kikapcsolásakor a tervező hibás játék helyett megmondja, melyik rendszer igényli (`proto.requires`).
+- **Mentés játék közben (új, a kapuhoz kellett):** eddig a prototípus csak kódból tudott menteni, így kézzel nem lehetett kipróbálni.
+  - Új Runtime action: *Quick save* és *Quick load* (a referenciában F5 és F9).
+  - A mentéshez mostantól két ilyen control kell (adatfeltétel).
+  - **Runtime 0.12.0:**
+    - `PlannerQuickSave` és `IPlannerSaveSource`;
+    - az első kézi slotba ment, és onnan tölt;
+    - rövid üzenetben jelzi az eredményt: mentve, betöltve, nincs mentés, hiba; a hibás mentés nem változtat semmit;
+    - 3 PlayMode-teszt.
+  - **Unity-adapter v18:** QuickSave és QuickLoad input-akció, `QuickSaveKey` és `QuickLoadKey` konstans, és a generált `TheQuickSaveAndLoadKeysWorkWhilePlaying` teszt (valódi billentyűkkel).
+  - **Bridge, a scene-építő 9. verziója:** a *Save* objektumon `PlannerQuickSave`; a meglévő EditMode-teszt is ellenőrzi.
+- **Placeholderek és kézi munka dokumentálva** ([`handWork.ts`](../src/core/engine/handWork.ts); az export README-jében és a gate-jelentés végén). Csak az exportból olvasva:
+  - a stand-in prefabok: játékos, pickup, ellenfél, NPC;
+  - a művészet nélküli rekordok (4 ikon);
+  - a működő, de egyszerű beépített UI: prompt, crafting- és párbeszédpanel, mentésüzenet;
+  - rendszerenként a kézi munka: az új `manual` lista a képességmátrixban;
+  - a kitöltött alapértékek;
+  - ami a tervben szerepel, de nem fut.
+- **A gate kibővítve:**
+  - új lépés, *Extended gate: evidence per chosen system*: minden választott rendszernek saját bizonyíték kell, azaz egy generált scene-teszt és a player önellenőrzésének egy ellenőrzése (`EVIDENCE`); egy másik rendszer tesztje nem számít;
+  - `--without <rendszerek>`: kikapcsolja a megadott rendszereket az export előtt;
+  - a mentési lépés a választott rendszerektől függ;
+  - egy korábbi futás önellenőrzési jelentése nem számíthat bizonyítéknak;
+  - a jelentésben bizonyítéktábla és a *Placeholders and manual work* szakasz is szerepel.
+- **TS-ellenőrzés:**
+  - új teszt: 21 eset (modularitási mátrix, mentéskötés, gyorsmentés, kézi munka, lefedettség);
+  - frissült: referencia-, verzió- és inventory-teszt, pillanatkép (adapter v18) és bridge-fixture;
+  - **teljes kör 1460-ból 1457 zöld**. A kivétel a három ismert időzítéses UI-teszt, amelyek külön futtatva zöldek. A typecheck és a lint zöld.
+- **Unity-gate:**
+  - **teljes referencia: PASSED** (`gate-report-p17.md`):
+    - PlayMode 71/71, EditMode 61/62 (1 régi kihagyott);
+    - a player önellenőrzése 9/9: pickup, quest, craft, talk, fight, loot, mentés/betöltés friss játékba;
+    - **mind a 8 rendszer lefedve**;
+    - újraimport 0 írással, értékváltozás 7/7;
+    - 2022.3 alatt fordul, EditMode 61/62;
+  - **`--without crafting,combat,dialogue`: PASSED:** 5 rendszer lefedve, PlayMode 65/65, a scene a bekötetlen *Combat* és *Dialogue* résszel is felépül;
+  - **`--without saveLoad,quests,crafting,dialogue`: PASSED:** mozgás, interakció, inventory és harc, quest és mentés nélkül; PlayMode 64/64, a mentési lépés jogosan kihagyva.
+- **Böngésző:** a futó planner a felhasználó saját, üres controls-listájú projektjét mutatta; azt nem módosítottam. Az új Runtime actionök ugyanabból az enumból jönnek, amelyet a referenciával futó UI-tesztek renderelnek.
+- **Hátravan, kézzel:** a buildelt player (`hoh-unity-gate/build-6000.0.40f1/Game.exe`) végigjátszása a bridge README *Manual playtest* listája szerint (7 lépés: mozgás, felvétel, beszélgetés, crafting, harc, F5/F9 és újraindítás utáni betöltés), és a hibák feljegyzése. Amíg ez nincs meg, a fázis „Kész, ha” feltétele csak az automatikus részben teljesül.
+- **Nem része, nyitott:**
+  - mentési menü slotválasztóval, autosave;
+  - a beépített IMGUI-panelek kiváltása;
+  - a fenti kézi munkalista (animáció, útkeresés, hang, ikonok);
+  - a gate a GitHub Actionsben még nem futott.
 
 ### 18. Világ, térképek és tartalomtöltés — függőség: 8, 17
 
 - Több helyszín, átjárók, spawn- és objektumelhelyezés, asset-referencia és betöltési profil a ténylegesen modellezett tervadatok alapján. Kezeljük a hiányos térképet, blokkolt spawnokat és elérhetetlen átjárókat.
 - **Kész, ha:** legalább két referenciahelyszín között működik az átjárás, visszatérés és mentés/betöltés; sem a generált, sem a saját scene nem sérül újraimportkor.
 
+**Állapot (2026-11-22): kész.** Két referenciahelyszín között működik az átjárás oda és vissza, valamint a mentés és betöltés a másik helyszínen. Az újraimport sem a generált, sem a saját scene-t nem rongálja. A Unity-gate zöld.
+
+- **Explicit adat, a meglévő modellre építve:**
+  - a térkép „Opens location” linkje (`link.locationId`) jelöli az átjárót (ajtó, lépcső, kapu);
+  - a belső helyszín kijárata (way out) a visszautat;
+  - új mező a Playable prototype alatt: *Locations in the prototype*. Ha üres, csak a kezdőhelyszín kerül bele; ezt `gameplay.default` infó jelzi. A kezdőhelyszínnek a választottak között kell lennie.
+- **Betöltési profil, kimondva:** `one-scene`. Minden helyszín egy scene-be kerül, egymás mellé, 20 m-es közzel; a helyük az IR-ben van (`gameplay.world`: eltolás, lépték, méret). Így egy runtime és egy mentés marad, és a mentett pozíció azt is megmondja, melyik helyszínen áll a játékos. A helyszínenkénti scene-betöltés (streaming) későbbi profil.
+- **Diagnosztika** ([`worldRules`](../src/core/gameplay.ts), a navigációs rácson, a kezdőponttól az átjárókon át számolva), hellyel:
+  - hiányzó térkép (`gameplay.noMap`) és járható talaj nélküli térkép;
+  - ismeretlen helyszín; a kezdőpont a választottakon kívül;
+  - nincs visszaút (`passageNoWayBack`), vagy nincs járható hely az érkezéshez (`passageBlocked`);
+  - **elérhetetlen átjáró** (`passageUnreachable`): az interakciós távolságon belül nincs elérhető talaj;
+  - **blokkolt spawn** (`spawnBlocked`): pickupnál hiba, NPC-nél és ellenfélnél figyelmeztetés;
+  - helyszín, ahová semmi nem vezet (`locationUnreached`);
+  - a prototípuson kívüli helyszínre nyíló átjáró zárva marad (infó);
+  - több helyszínhez kötelező az Interaction.
+- **Referencia:**
+  - új helyszín: *Old Well Cave*, generált barlang, a szülője a yard;
+  - a kút mellett *Stairs down* lépcső visz le, a barlang kijárata vissza;
+  - a barlang mélyén 3 Coin;
+  - a cave a yardtól 100 m-re keletre kerül.
+  
+  Az export 44 fájl, 0 hiba.
+- **Runtime 0.13.0:**
+  - `PlannerLocation` a szint gyökerén, az `At(pont)` megmondja, hol van egy pont;
+  - `PlannerPassage` („Go to …”): áthelyez az érkezési pontra, megtartja az irányt, és `PlannerTravelled` eseményt küld;
+  - az önellenőrzés minden átjárón átmegy, ellenőrzi az érkezést, és a barlangban ment, így a betöltésnek oda kell visszavinnie;
+  - 3 PlayMode-teszt.
+- **Unity-adapter v19:**
+  - minden helyszín pickupja, ellenfele és NPC-je a scene-be kerül;
+  - `Locations` és `Passages` konstans;
+  - **generált tesztek:** `TravelsThroughEveryPassageAndBack` (valódi E billentyűvel, minden átjárón át és vissza, padló az érkezésnél) és `SavingInAnotherLocationLoadsThere`.
+  
+  A gate bizonyítéklistájába is bekerültek.
+- **Bridge (a scene-építő 10. verziója):**
+  - helyszínenként saját szint a saját térképéből, a saját mesh-assetjeivel; a kezdőhelyszín neve és assetjei változatlanok, így a GUID-ok megmaradnak;
+  - minden helyszínen a saját spawnjai;
+  - átjárók érkezési ponttal.
+  
+  **Talált és javított hiba:** a scene ujjlenyomata a 16. fázis óta nem tartalmazta a párbeszédadatot, így ha csak a Dialogue sorai változtak, a scene „up to date” maradt. Most a világ és minden térkép is benne van. Új EditMode-teszt: `BuildsEveryLocationOfTheWorldWithItsPassages`.
+- **Gate:** az értékváltozás-lépés egy **saját scene**-t (`Assets/GateOwn/OwnScene.unity`) is figyel; importon és scene-építésen át bájtra azonos kell maradjon.
+- **Közben javított hibák:**
+  - a `PlannerLocation` statikus `Reset()` metódusa ütközött a Unity azonos nevű editor-üzenetével; átnevezve;
+  - a saját bridge-tesztem EditMode-ban a futásidejű regisztert használta, ezért a határok közvetlen ellenőrzésére váltottam;
+  - a `mapOf` objektumonkénti gyorsítótára miatt a fixture a cave generálása után friss yard-térképobjektumot kap.
+- **TS-ellenőrzés:**
+  - új [`tests/unityWorld.test.ts`](../tests/unityWorld.test.ts), 10 teszt;
+  - frissült: képesség-, IR-, gameplay-, interakció-, scene-, verzió- és UI-teszt, pillanatkép (adapter v19), referencia- és bridge-fixture;
+  - **teljes kör 1470/1470 zöld**, a typecheck és a lint is.
+- **Unity-gate:** **PASSED** (`gate-report-p18.md`).
+  - **Unity 6000.0.40f1:**
+    - EditMode 62/63 (1 régi kihagyott);
+    - **PlayMode 76/76**;
+    - az önellenőrzés minden pontja ✓, köztük *passage to Old Well Cave* / *Keeper's Yard*, és a mentés és betöltés friss játékba a barlangban;
+    - mind a 8 rendszer lefedve;
+    - újraimport 0 írással;
+    - **a saját scene megmaradt**, GUID-ok megmaradtak.
+  - **Unity 2022.3.21f1:** fordítás, `Validate` és EditMode 62/63.
+- **Böngésző:** nem futtattam külön, mert a futó plannerben a felhasználó saját projektje van. Az új mező a meglévő hivatkozásmező-típus, a renderelt panelt a UI-tesztek fedik.
+- **Nem része, nyitott:**
+  - helyszínenkénti scene és streaming;
+  - kulccsal zárt átjáró;
+  - átjáró-animáció és töltőképernyő;
+  - térkép-UI és gyorsutazás;
+  - helyszínenként eltérő térképlépték;
+  - a 17. fázis kézi játékpróbája.
+
 ### 19. NPC-viselkedés és szimuláció — függőség: 15, 16, 18
 
 - A tervből konfigurálható, korlátozott viselkedéssablonok: például járőrözés, érzékelés, üldözés, visszatérés; később munkarend és igények. A meglévő állapotgráf önmagában ne legyen végrehajtott AI-ként feltüntetve.
 - **Kész, ha:** a támogatott sablon feladatát NavMesh- és függőségkezeléssel teszt igazolja; a nem támogatott viselkedés keretként látható.
 
+**Állapot (2026-11-22): kész.** Az ellenfél-viselkedés sablonja (őrzés vagy járőrözés, érzékelés, üldözés, feladás, visszatérés) NavMesh-en fut. Teszt igazolja az editorban és a buildelt playerben is. A csak leírt AI keretként látszik. Egy szűkítés: az AI-modul *hiányára* írt tartalék ág nincs Unityben kipróbálva (lásd lent).
+
+- **Explicit adat, a meglévő mezőkre építve:**
+  - Combat › Enemies új mezői:
+    - *Sight range (m)*: üresen 8 m;
+    - *Gives up beyond (m)*: üresen Territorialnál 12 m; Huntert csak a látótávolság elvesztése küldi vissza.
+  - Az *Aggression* most végrehajtott jelentést kapott, súgóval:
+    - Passive: nem támad;
+    - Territorial: hatótávon belül üldöz;
+    - Hunter: addig üldöz, amíg látja a játékost;
+    - üresen Territorial.
+  - **Járőrút:** a térképre tett ellenfélnél új *Patrol route* választó, amely ugyanazon térkép egy legalább kétpontos vonalát (út, ösvény) nevezi meg (`spawn.route`). Ha üres, az ellenfél őrzi a helyét.
+  - Minden kitöltött alapérték látható.
+- **Diagnosztika:**
+  - ismeretlen vagy nem vonal útvonal: hiba (`gameplay.routeUnknown`);
+  - a játékos számára elérhetetlen útpont: figyelmeztetés (`routeBlocked`);
+  - a *Behavior notes* és a többi nem futtatott rész továbbra is infó.
+- **Keret, nem AI:** ha a tervben NPC-életciklus-gráf, AI viselkedésgráf, napirend, igények, NPC-döntési modell vagy AI-megközelítés szerepel, `proto.aiFrame` infó mondja ki: ezeket a prototípus nem futtatja. Az állapotgráfok típusos állapotgépként generálódnak (kódból vezérelt keret); ami fut, az az ellenfélsablon, illetve az álló, beszélgető NPC.
+- **Referencia:**
+  - a Yard Rat *Territorial*, 6 m látótávval és 10 m feladási hatótávval;
+  - a spawnja mellé húzott *Rat run* ösvényen járőrözik (3 pont, kb. 3 m-re egymástól).
+- **Runtime 0.14.0:**
+  - **`PlannerNavigation`** („navigation” szolgáltatás): induláskor a szintek szilárd ütközőiből NavMesh-et süt (a triggereket kihagyja), és utat számol (`Path`, `OnMesh`);
+  - **függőségkezelés:** a Unity AI-modul (`com.unity.modules.ai`) a `HOH_UNITY_AI` version define mögött van. Ha hiányzik, a szolgáltatás akkor is elindul, egyszer figyelmeztet, és az ellenfelek egyenesen járnak;
+  - **`PlannerEnemy`** sablonja (`PlannerEnemyState`: Guard / Patrol / Chase / Return):
+    - látás falon át nem;
+    - üldözés NavMesh-úton;
+    - visszatérés `ForgetAfter` (3 s) látáskiesés után vagy a feladási távon túl;
+    - a hatótávon túli játékosért nem jön vissza;
+    - `PlannerEnemyStateChanged` esemény;
+    - betöltés után minden ellenfél visszamegy a helyére;
+  - az önellenőrzés minden ellenfélnél ellenőrzi a NavMesh-et, a járőrútat, az üldözést és a visszatérést;
+  - 7 PlayMode-teszt (út a fal körül, odaérés a fal mögé, járőrözés, látás fal mögé és távon túl, üldözés és visszatérés, feladás, passzív ellenfél).
+- **Unity-adapter v20:**
+  - az `Enemies` konstansban a látótáv, a feladási táv és a járőrpontok száma;
+  - **generált tesztek:** `TheLevelHasANavigationMesh` (a kezdőpont és minden ellenfél rajta áll) és `TheEnemyPatrolsSeesChasesAndGoesBack`;
+  - mindkét teszt bekerült a gate bizonyítéklistájába.
+- **Bridge (scene-építő 11. verzió):** *Navigation* objektum; az ellenfél kapja a látótávot, a feladási távot és a járőrutat scene-pozíciókban; a runtime igényli a „navigation” szolgáltatást.
+- **Talált és javított hibák:**
+  - **A CharacterController alapértelmezett `minMoveDistance`-a (0,001 m) minden lépést eldobott magas képkockasebességnél.** A `-batchmode -nographics` player több ezer FPS-sel fut, ezért a 2 m/s-os patkány gyakorlatilag állt. Ez a korábbi fázisokban nem jött elő, mert a harctesztek mellé teleportáltak. Javítás: az ellenfél **és a játékos** mozgása 0-ra állítja, így magas FPS-en a játékos sem fagyna be;
+  - a NavMesh-sütés a frissen létrehozott ütközők elavult határait látta, ezért előtte `Physics.SyncTransforms()` fut;
+  - a saját tesztem rossz irányt várt a fal megkerülésére (az északi vég a rövidebb).
+- **TS-ellenőrzés:**
+  - új [`tests/unityBehaviour.test.ts`](../tests/unityBehaviour.test.ts) (7 teszt), és UI-teszt a *Patrol route* választóra;
+  - frissült: harc-, kézimunka-, verzió-, UI- (Behavior 0/6), inventory- és scene-teszt, pillanatkép (adapter v20), referencia- és bridge-fixture;
+  - a mentés/betöltés megtartja a `route`-ot;
+  - **teljes kör 1478/1478 zöld**, a typecheck és a lint is.
+- **Unity-gate:** **PASSED** (`gate-report-p19.md`).
+  - **Unity 6000.0.40f1:**
+    - EditMode 62/63;
+    - **PlayMode 85/85**;
+    - az önellenőrzés minden pontja ✓, köztük *navigation mesh* és *behaviour Yard Rat* (3/3 járőrpont, üldöz, visszament);
+    - mind a 8 rendszer lefedve;
+    - újraimport 0 írással;
+    - a saját fájl és scene megmaradt.
+  - **Unity 2022.3.21f1:** fordítás, `Validate`, EditMode 62/63.
+- **Nem igazolt:** az AI-modul nélküli tartalék ág (`#else`) fordítását és működését Unity nem próbálta ki, mert a gate-projektek tartalmazzák a modult.
+- **Nem része, nyitott:**
+  - NPC-napirend, igények, munka;
+  - csoportos és kereső-menekülő viselkedés;
+  - érzékelés hallással és látószöggel;
+  - off-mesh linkek (létra, ugrás);
+  - a NavMesh előre sütése szerkesztőben (most induláskor sül);
+  - járőrút a helyszínek között.
+
 ### 20. Település, gazdaság, idő és fejlődés — függőség: 14, 17, 18
 
 - Külön választható modulokként fokozatosan: egyszerű épületelhelyezés és termelés, kereskedés, időciklus, játékosfejlődés. Először mindegyikhez rögzítsük a minimálisan támogatott szabályokat és a meglévő planneradatok lefedettségét.
 - **Kész, ha:** minden bekapcsolt modulhoz van önálló elfogadási forgatókönyv és mentés; egymás nélkül is kikapcsolhatók vagy a hiányzó függőség világosan látszik.
+
+**Állapot (2026-11-22): három modul kész, a településmodul rögzített szabályokkal, de még nem támogatott.** A Unity-gate zöld, a három új modullal és nélkülük is.
+
+- **A választás.** A terv „fokozatosan, külön választható modulokként” szól, ezért először mind a négy területhez rögzítettem a minimális szabályokat és a meglévő adatok lefedettségét (a képességmátrixban és a [`gameplay.ts`](../src/core/gameplay.ts)-ben). Hármat meg is valósítottam; a település szabályai rögzítve vannak, de ehhez a tervből még hiányzik adat.
+- **Játékosfejlődés** (`progression`, *template*):
+  - **Lefedettség:** Player Character › Levelling (level cap, *XP needed for the next level* képlet a `level` változóval, skill- és statpont szintenként).
+  - **Szabály:**
+    - XP a teljesített quest *Reward XP*-jéből és a legyőzött ellenfél XP-jéből;
+    - szintek a planner által kiszámolt XP-táblából (a referenciában 10/20/30/40);
+    - szintlépéskor a pontok gyűlnek, de nem költhetők el;
+    - a level cap alapértéke 10, látható alapértékként;
+    - hiba, ha a képletben más változó is van, vagy az értéke 1 alá esik;
+    - kell XP-forrás: a Quests vagy a Combat (`proto.requires`).
+  - **Nem fut:** az XP sources becslései, a pontok elköltése, szintlépő képernyő.
+- **Kereskedés** (`trade`, *template*, az Interaction és az Inventory után):
+  - **Lefedettség:**
+    - Trade & Economy › Money: kezdőpénz és pénztárca-limit;
+    - Merchants: eladott áruk, felvásárolt tárgytípusok, markup, buyback, felvásárlásra szánt pénz;
+    - a tárgyak *Value*-ja;
+    - új térkép-szerep: a *merchant* spawn *Merchant* választóval.
+  - **Szabály:**
+    - eladási ár = Value × markup, felfelé kerekítve;
+    - vételi ár = Value × buyback, lefelé kerekítve;
+    - a kereskedő csak addig vásárol, amíg van pénze;
+    - a quest *Reward money*-ja a pénztárcába kerül;
+    - érték nélküli tárgyat nem kereskednek (infó).
+  - **Nem fut:** készletméret, újratöltés, ritkaság, vándorló és frakciós kereskedők, egyéb pénznemek.
+- **Napszak** (`time`, *template*):
+  - **Lefedettség:** Time, Weather & Events (*Day length*, a *Day and night* fázisok kezdete és hossza, Visibility, Monster strength).
+  - **Szabály:**
+    - óra a tervezett naphosszal, 8:00-tól (látható alapérték);
+    - a fázis a nap fényét a Visibility értékre tompítja;
+    - harcban az ellenfél sebzését megszorozza a Monster strengthszel;
+    - figyelmeztetés az átfedésre és a lefedetlen órákra.
+  - **Nem fut:** évszakok, időjárás, események.
+- **Település** (`settlement`, *unsupported*):
+  - **A rögzített minimális szabály:** Town-épület építése egy térképi építési helyre; a *Build cost* a település nyersanyagkészletéből fogy; *Construction time* után minden *Production cycle* az *Inputs*-ot *Outputs*-ra cseréli.
+  - **Hiányzó adat, amit a planner nem talál ki:**
+    - a „time unit” valós hossza másodpercben;
+    - építési hely a térképen;
+    - a nyersanyagok és a tárgyak viszonya.
+  - Kiválasztva blokkoló hiba mondja ki mindezt.
+- **Önállóság:**
+  - mindhárom új modul külön kikapcsolható; ilyenkor a mentési része nem kötődik be, és a generált tesztje kimarad;
+  - hiányzó függőségnél `proto.requires` jelez (kereskedés Interaction és Inventory nélkül; fejlődés XP-forrás nélkül);
+  - a bridge is hibát ad, ha a kereskedés függősége hiányzik.
+- **Referencia:**
+  - szintek: cap 5, képlet `10 * level`, szintenként 1 skill- és 2 statpont;
+  - a quest 10 XP-t és 5 pénzt ad;
+  - kezdőpénz 10;
+  - a yardon *Peddler* kereskedő: a Stick-et 6-ért adja, a Stick-et és a Polished Key-t 2-ért veszi, 20 pénze van;
+  - 4 perces nap: *Day* (6–18 óra, 100 %, ×1) és *Night* (18–6 óra, 35 %, ×1,5);
+  - mentési részek: Progression, Trade, Time.
+- **Runtime 0.15.0:**
+  - `PlannerProgression` („progression”);
+  - `PlannerTrade` és `PlannerMerchant` („trade”, kereskedési panel, a hiány okával);
+  - `PlannerClock` („time”, a `PlannerCombat.Clock` révén éjjel erősebb ellenfelek);
+  - a három mentési állapot ellenőrzéssel;
+  - képernyőcímkék;
+  - az önellenőrzés minden modult ellenőriz;
+  - 7 PlayMode-teszt.
+- **Unity-adapter v21:** konstansok, és generált elfogadási tesztek modulonként:
+  - `XpFromPlayingRaisesTheLevel`: végigjátszás, utána a tervezett szint és pontok;
+  - `TheMerchantBuysAndSellsAtThePlannedPrices`: az E billentyű nyitja a panelt;
+  - `TheClockRunsAtThePlannedDayLength`: ütem, fázisok, fény, erő;
+  - `TheEconomyIsTheSameAfterSavingAndLoading`.
+  
+  Mind bekerültek a gate bizonyítéklistájába.
+- **Bridge (a scene-építő 12. verziója):**
+  - *Progression*, *Trade* és *Clock* objektum (a clock a napot tompítja);
+  - kereskedők a `Prototype/Prefabs/Merchant<név>.prefab` testtel;
+  - a mentés bekötése;
+  - új EditMode-teszt: `AddsProgressionTradeAndTheClock`.
+- **Kézi munka:** a *Placeholders and manual work* rész kiegészült a kereskedő testével, a panelekkel és a címkékkel, és rendszerenként a nem generált résszel.
+- **TS-ellenőrzés:**
+  - új [`tests/unityEconomy.test.ts`](../tests/unityEconomy.test.ts) (14 teszt), UI-teszt a *Merchant* választóra;
+  - frissült: képesség-, IR-, gameplay-, mentés-, kiterjesztett kapu-, referencia-, verzió- és UI-teszt, pillanatkép (adapter v21) és fixture-ök;
+  - **teljes kör 1493/1493 zöld**, a typecheck és a lint is.
+- **Unity-gate:**
+  - **teljes referencia: PASSED, elsőre** (`gate-report-p20.md`):
+    - EditMode 63/64, **PlayMode 96/96**;
+    - az önellenőrzés minden pontja ✓, köztük *progression*, *trade Peddler*, *day and night*, és a mentés és betöltés friss játékba;
+    - **mind a 11 választott rendszer lefedve**;
+    - újraimport 0 írással, a saját fájl és scene megmaradt;
+    - 2022.3 alatt fordul, EditMode 63/64;
+  - **`--without progression,trade,time`: PASSED** (PlayMode 92/92, 8 rendszer lefedve).
+- **Böngésző:** nem futtattam, mert a futó plannerben a felhasználó saját projektje van. Az új mezők és választók meglévő mezőtípusok; a *Merchant* választót UI-teszt fedi.
+- **Nem része, nyitott:**
+  - a település modul (adatbővítés után);
+  - a pontok elköltése;
+  - kereskedői készlet és látogatások;
+  - évszakok és időjárás;
+  - saját UI a beépített IMGUI-panelek helyett;
+  - a 17. fázis kézi játékpróbája.
 
 ### 21. Asset- és prezentációs pipeline — függőség: 5, 8
 

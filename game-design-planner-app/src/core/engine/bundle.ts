@@ -11,6 +11,7 @@ import { buildIR, type EngineIR, type EngineIssue, type IrSchema } from './ir'
 import { ENGINE_FORMAT, ENGINE_FORMAT_VERSION, fnv1a, manifestJsonSchema, UNITY_RUNTIME, type EngineManifest } from './manifest'
 import { prototypeReport, type PrototypeReport, type SupportLevel } from './capabilities'
 import { mapFile } from './irGameplay'
+import { handWork, handWorkMarkdown } from './handWork'
 
 /** Folder every file of the zip sits in, so unpacking into a Unity Assets folder or a Godot project gives one tidy folder. */
 export const BUNDLE_ROOT = 'HoHPlanner'
@@ -132,7 +133,7 @@ export function buildBundle(p: Project, engine: EngineId, exportedAt = new Date(
   const data = dataFiles(ir, folders)
   const maps = mapFiles(p)
   const files: EmittedFile[] = [
-    { path: 'README.md', content: readme(ir, engine, adapter, ir.schemas) + prototypeReadme(proto) },
+    { path: 'README.md', content: readme(ir, engine, adapter, ir.schemas) + prototypeReadme(proto) + (proto.wanted ? handWorkMarkdown(handWork(ir, proto, issues, engine)) : '') },
     { path: 'hoh-engine.schema.json', content: json(manifestJsonSchema()) },
     { path: 'ir/engine-ir.json', content: json(ir) },
     ...data.files,

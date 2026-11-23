@@ -3,7 +3,7 @@
   "v": 1,
   "engine": {
     "id": "unity",
-    "adapterVersion": 16
+    "adapterVersion": 21
   },
   "generator": {
     "app": "Game Design Planner",
@@ -109,7 +109,7 @@
   "files": [
     {
       "path": "README.md",
-      "hash": "3f48d144"
+      "hash": "9dfd892e"
     },
     {
       "path": "hoh-engine.schema.json",
@@ -385,47 +385,47 @@
     },
     {
       "path": "Unity/Scripts/Generated/ItemDefinition.cs",
-      "hash": "19694630"
+      "hash": "276b1e5a"
     },
     {
       "path": "Unity/Scripts/Generated/BuildingDefinition.cs",
-      "hash": "c0bd001f"
+      "hash": "bc507cf9"
     },
     {
       "path": "Unity/Scripts/Generated/NpcNeedDefinition.cs",
-      "hash": "90d7111e"
+      "hash": "6532fd08"
     },
     {
       "path": "Unity/Scripts/Generated/RecipeRecord.cs",
-      "hash": "e4d19dd5"
+      "hash": "ce5c45eb"
     },
     {
       "path": "Unity/Scripts/Generated/EnemyDefinition.cs",
-      "hash": "676843bb"
+      "hash": "844995fd"
     },
     {
       "path": "Unity/Scripts/Generated/QuestRecord.cs",
-      "hash": "525ef850"
+      "hash": "cd5bc466"
     },
     {
       "path": "Unity/Scripts/Generated/Enums.cs",
-      "hash": "2acf8826"
+      "hash": "f090caa8"
     },
     {
       "path": "Unity/Scripts/Generated/Ids.cs",
-      "hash": "fe8ff9bb"
+      "hash": "a57f4ee5"
     },
     {
       "path": "Unity/Scripts/Generated/Formulas.cs",
-      "hash": "9d5d74f6"
+      "hash": "822f355c"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/IDamageable.Generated.cs",
-      "hash": "d32dc8de"
+      "hash": "3f989c98"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NeedChangedEvent.Generated.cs",
-      "hash": "0a5923e7"
+      "hash": "7443e90d"
     },
     {
       "path": "Unity/Scripts/Classes/CoreEvents/NeedChangedEvent.cs",
@@ -433,7 +433,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/Health.Generated.cs",
-      "hash": "0424e144"
+      "hash": "200d00ce"
     },
     {
       "path": "Unity/Scripts/Classes/GameplayPlayer/Health.cs",
@@ -441,7 +441,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/CinderPlayerController.Generated.cs",
-      "hash": "f897e375"
+      "hash": "ea015ad3"
     },
     {
       "path": "Unity/Scripts/Classes/GameplayPlayer/CinderPlayerController.cs",
@@ -449,7 +449,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NpcBrain.Generated.cs",
-      "hash": "6f39ed2e"
+      "hash": "eee69adc"
     },
     {
       "path": "Unity/Scripts/Classes/SimulationNpc/NpcBrain.cs",
@@ -457,15 +457,15 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NeedState.Generated.cs",
-      "hash": "766ffdba"
+      "hash": "5f32e7e8"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/NpcMood.Generated.cs",
-      "hash": "68d04d48"
+      "hash": "1518a642"
     },
     {
       "path": "Unity/Scripts/Generated/Classes/TownLedger.Generated.cs",
-      "hash": "183454bc"
+      "hash": "843bb7be"
     },
     {
       "path": "Unity/Scripts/Classes/SimulationTown/TownLedger.cs",
@@ -473,7 +473,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/SaveService.Generated.cs",
-      "hash": "80c8a786"
+      "hash": "2e6cf854"
     },
     {
       "path": "Unity/Scripts/Classes/PersistenceSave/SaveService.cs",
@@ -481,7 +481,7 @@
     },
     {
       "path": "Unity/Scripts/Generated/Classes/HealthBar.Generated.cs",
-      "hash": "64dacd86"
+      "hash": "3b11f388"
     },
     {
       "path": "Unity/Scripts/Classes/UiHud/HealthBar.cs",

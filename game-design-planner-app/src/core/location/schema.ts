@@ -43,7 +43,7 @@ const object = z.object({
   key: opt(id),
   secret: opt(z.literal(true)),
   light: opt(z.object({ radius: z.number().min(1).max(2000), color: z.string().regex(/^#[0-9a-f]{6}$/i).optional(), intensity: z.number().min(0).max(1).optional() })),
-  spawn: opt(z.object({ role: z.enum(SPAWN_ROLES), refId: z.string().max(80).optional(), count: z.number().int().min(1).max(99).optional() })),
+  spawn: opt(z.object({ role: z.enum(SPAWN_ROLES), refId: z.string().max(80).optional(), count: z.number().int().min(1).max(99).optional(), route: z.string().max(80).optional() })),
 })
 const flag = z.literal(true).optional().catch(undefined)
 const layer = z.object({

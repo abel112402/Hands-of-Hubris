@@ -9,6 +9,6 @@
   "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
   "autoReferenced": false,
   "defineConstraints": ["UNITY_INCLUDE_TESTS", "HOH_PLANNER_RUNTIME"],
-  "versionDefines": [{ "name": "com.handsofhubris.planner-runtime", "expression": "0.10.0", "define": "HOH_PLANNER_RUNTIME" }],
+  "versionDefines": [{ "name": "com.handsofhubris.planner-runtime", "expression": "0.15.0", "define": "HOH_PLANNER_RUNTIME" }],
   "noEngineReferences": false
 }

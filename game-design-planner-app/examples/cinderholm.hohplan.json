@@ -17988,6 +17988,32 @@
             }
           ]
         },
+        "dialogueLines": [
+          {
+            "id": "dlMaren1",
+            "name": "Maren asks",
+            "speaker": "J-ACrG5t",
+            "text": "The lamp has been dark three winters. Will you help me light it, or let the sea have it?"
+          },
+          {
+            "id": "dlMaren2",
+            "name": "Relight",
+            "speaker": "J-ACrG5t",
+            "after": "dlMaren1",
+            "option": "We relight it.",
+            "text": "Then bring oil from the Guild stores. Hurry.",
+            "choice": "TLXzmcGI"
+          },
+          {
+            "id": "dlMaren3",
+            "name": "Let it fall",
+            "speaker": "J-ACrG5t",
+            "after": "dlMaren1",
+            "option": "Let it fall.",
+            "text": "So be it. The old tower will not miss us.",
+            "choice": "dQmgqTTa"
+          }
+        ],
         "dialogue": {
           "tone": "Plain-spoken, sea-salted, sparing with exposition.",
           "format": "Hub",

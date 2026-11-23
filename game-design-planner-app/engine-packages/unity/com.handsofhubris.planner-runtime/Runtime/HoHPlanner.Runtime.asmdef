@@ -11,7 +11,8 @@
   "defineConstraints": [],
   "versionDefines": [
     { "name": "com.unity.inputsystem", "expression": "1.7.0", "define": "HOH_INPUT_SYSTEM" },
-    { "name": "com.unity.render-pipelines.universal", "expression": "14.0.0", "define": "HOH_URP" }
+    { "name": "com.unity.render-pipelines.universal", "expression": "14.0.0", "define": "HOH_URP" },
+    { "name": "com.unity.modules.ai", "expression": "1.0.0", "define": "HOH_UNITY_AI" }
   ],
   "noEngineReferences": false
 }

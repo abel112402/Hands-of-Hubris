@@ -51,7 +51,7 @@ describe('Playable prototype panel', () => {
     expect(movement.textContent).toContain('A player start on a location map')
     expect(within(movement).getByRole('link', { name: /Fix in World & Biomes › Locations/ }).getAttribute('href')).toBe('#/doc/design.world?s=locations')
     expect(within(row(panel, 'Quests and rewards')).getByRole('link', { name: /Fix in Story & Quests › Quests \(collectItems\)/ }).getAttribute('href')).toBe('#/doc/design.story?s=quests')
-    expect(within(panel).getByRole('status').textContent).toMatch(/Not playable yet — 4 blocking problems/)
+    expect(within(panel).getByRole('status').textContent).toMatch(/Not playable yet — 7 blocking problems/)
   })
 
   it('changes the profile and systems as undoable steps, and offers to choose a missing dependency', async () => {
@@ -122,5 +122,67 @@ describe('map object: gameplay role', () => {
     cleanup()
     render(<ObjectPanel map={map} object={{ ...object, spawn: { role: 'enemy', refId: 'ghost' } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
     expect(screen.getByRole('option', { name: 'Unknown enemy (ghost)' })).toBeTruthy()
+  })
+
+  it('marks an object as an NPC of NPC dialogue, picked from the planned characters', () => {
+    const p = buildReferenceSlice()
+    p.documents['design.story'].data.characters = [...(p.documents['design.story'].data.characters as Entity[]), { id: 'refCharTess', name: 'Tess' }]
+    useStore.getState().loadProject(p, 'x')
+    const map = mapOf((p.documents['design.world'].data.locations as Entity[])[0])!
+    const object = Object.values(map.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.pickup)!
+    const commit = vi.fn()
+    const placed = (m: ReturnType<typeof mapOf>) => Object.values(m!.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.pickup)!
+    render(<ObjectPanel map={map} object={{ ...object, spawn: undefined }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Gameplay'), { target: { value: 'npc' } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'npc', refId: IDS.keeper })
+
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...object, spawn: { role: 'npc', refId: IDS.keeper } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Character'), { target: { value: 'refCharTess' } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'npc', refId: 'refCharTess' })
+
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...object, spawn: { role: 'npc', refId: 'ghost' } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    expect(screen.getByRole('option', { name: 'Unknown character (ghost)' })).toBeTruthy()
+  })
+
+  it('gives a placed enemy a patrol route, picked from the lines of the map', () => {
+    const p = buildReferenceSlice()
+    useStore.getState().loadProject(p, 'x')
+    const map = mapOf((p.documents['design.world'].data.locations as Entity[])[0])!
+    const rat = Object.values(map.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.enemySpawn)!
+    const commit = vi.fn()
+    const placed = (m: ReturnType<typeof mapOf>) => Object.values(m!.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.enemySpawn)!
+    render(<ObjectPanel map={map} object={{ ...rat, spawn: { role: 'enemy', refId: IDS.enemy } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    const select = screen.getByLabelText('Patrol route') as HTMLSelectElement
+    expect(select.value).toBe('')
+    expect(screen.getByRole('option', { name: 'Rat run' })).toBeTruthy()
+    fireEvent.change(select, { target: { value: IDS.ratRun } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'enemy', refId: IDS.enemy, route: IDS.ratRun })
+
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...rat, spawn: { role: 'enemy', refId: IDS.enemy, route: IDS.ratRun } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Patrol route'), { target: { value: '' } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'enemy', refId: IDS.enemy })
+
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...rat, spawn: { role: 'enemy', refId: IDS.enemy, route: 'ghost' } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    expect(screen.getByRole('option', { name: 'Unknown line (ghost)' })).toBeTruthy()
+  })
+
+  it('marks an object as a merchant of Trade, picked from the planned merchants', () => {
+    const p = buildReferenceSlice()
+    useStore.getState().loadProject(p, 'x')
+    const map = mapOf((p.documents['design.world'].data.locations as Entity[])[0])!
+    const object = Object.values(map.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.pickup)!
+    const commit = vi.fn()
+    const placed = (m: ReturnType<typeof mapOf>) => Object.values(m!.layers).flatMap((l) => l.objects).find((o) => o.id === IDS.pickup)!
+    render(<ObjectPanel map={map} object={{ ...object, spawn: undefined }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    fireEvent.change(screen.getByLabelText('Gameplay'), { target: { value: 'merchant' } })
+    expect(placed(commit.mock.calls.at(-1)![0]).spawn).toEqual({ role: 'merchant', refId: IDS.merchant })
+    cleanup()
+    render(<ObjectPanel map={map} object={{ ...object, spawn: { role: 'merchant', refId: 'ghost' } }} layerLabel="Labels" commit={commit} onDuplicate={() => {}} onDeleted={() => {}} onMask={() => {}} />)
+    expect(screen.getByRole('option', { name: 'Unknown merchant (ghost)' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Peddler' })).toBeTruthy()
   })
 })

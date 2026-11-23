@@ -8,7 +8,7 @@ namespace HoHPlanner.Runtime
     /// from the planned keys) and Interact. Compiles only when the Input System package is installed.
     /// </summary>
     [AddComponentMenu("Game Design Planner/Planner Input System Source")]
-    public sealed class PlannerInputSystemSource : MonoBehaviour, IPlannerMoveSource, IPlannerMenuSource, IPlannerCombatSource
+    public sealed class PlannerInputSystemSource : MonoBehaviour, IPlannerMoveSource, IPlannerMenuSource, IPlannerCombatSource, IPlannerSaveSource
     {
         public InputActionAsset Actions;
         public string Map = "Prototype";
@@ -16,11 +16,15 @@ namespace HoHPlanner.Runtime
         public string InteractAction = "Interact";
         public string CraftingAction = "Crafting";
         public string AttackAction = "Attack";
+        public string QuickSaveAction = "QuickSave";
+        public string QuickLoadAction = "QuickLoad";
 
         InputAction move;
         InputAction interact;
         InputAction crafting;
         InputAction attack;
+        InputAction quickSave;
+        InputAction quickLoad;
 
         public Vector2 Move => move != null ? move.ReadValue<Vector2>() : Vector2.zero;
         public bool InteractPressed => interact != null && interact.WasPressedThisFrame();
@@ -28,6 +32,9 @@ namespace HoHPlanner.Runtime
         public bool CraftingPressed => crafting != null && crafting.WasPressedThisFrame();
         /// <summary>The map's Attack action (only when the plan has a control whose Runtime action is Attack).</summary>
         public bool AttackPressed => attack != null && attack.WasPressedThisFrame();
+        /// <summary>The map's QuickSave and QuickLoad actions (the plan's Quick save and Quick load controls).</summary>
+        public bool QuickSavePressed => quickSave != null && quickSave.WasPressedThisFrame();
+        public bool QuickLoadPressed => quickLoad != null && quickLoad.WasPressedThisFrame();
 
         /// <summary>Adds the source to <paramref name="player"/>, reading <paramref name="map"/> of <paramref name="actions"/>.</summary>
         public static PlannerInputSystemSource Attach(GameObject player, InputActionAsset actions, string map)
@@ -56,6 +63,8 @@ namespace HoHPlanner.Runtime
             interact = m.FindAction(InteractAction);
             crafting = m.FindAction(CraftingAction);
             attack = m.FindAction(AttackAction);
+            quickSave = m.FindAction(QuickSaveAction);
+            quickLoad = m.FindAction(QuickLoadAction);
             m.Enable();
         }
     }

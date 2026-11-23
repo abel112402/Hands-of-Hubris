@@ -23,7 +23,7 @@ describe('saved parts linked to runtime state', () => {
     const sec = getSections(getModule('technical.save')!, p.registry).find((s) => s.id === 'parts')!
     if (sec.kind !== 'collection') throw new Error('Saved parts must be a collection')
     const field = sec.fields.find((f) => f.key === 'state')!
-    expect(field).toMatchObject({ label: 'Runtime state', type: 'enum', options: ['Player position', 'Inventory', 'Quests', 'Combat'] })
+    expect(field).toMatchObject({ label: 'Runtime state', type: 'enum', options: ['Player position', 'Inventory', 'Quests', 'Combat', 'Dialogue', 'Progression', 'Trade', 'Time'] })
   })
 
   it('reads the links in plan order, and reports a second part for the same state', () => {
@@ -33,6 +33,10 @@ describe('saved parts linked to runtime state', () => {
       ['Inventory', 'Inventory'],
       ['Quest log', 'Quests'],
       ['Combat', 'Combat'],
+      ['Dialogue', 'Dialogue'],
+      ['Progression', 'Progression'],
+      ['Trade', 'Trade'],
+      ['Time', 'Time'],
     ])
     parts(p).push({ id: 'refSpInv2', name: 'Bag', since: 1, state: 'Inventory' })
     expect(saveLinks(p).issues).toEqual([expect.objectContaining({ level: 'warning', code: 'gameplay.twoSaveParts', where: { doc: 'technical.save', section: 'parts', id: 'refSpInv2', field: 'state' } })])
@@ -48,6 +52,10 @@ describe('saved parts linked to runtime state', () => {
       expect.stringContaining('Runtime state is Inventory'),
       expect.stringContaining('Runtime state is Quests'),
       expect.stringContaining('Runtime state is Combat'),
+      expect.stringContaining('Runtime state is Dialogue'),
+      expect.stringContaining('Runtime state is Progression'),
+      expect.stringContaining('Runtime state is Trade'),
+      expect.stringContaining('Runtime state is Time'),
     ])
     expect(missing[0].where).toEqual({ doc: 'technical.save', section: 'parts', field: 'state' })
   })
@@ -65,6 +73,10 @@ describe('saved parts linked to runtime state', () => {
         { part: 'refSpInv', key: 'inventory', state: 'Inventory' },
         { part: 'refSpQuest', key: 'quest_log', state: 'Quests' },
         { part: 'refSpCombat', key: 'combat', state: 'Combat' },
+        { part: 'refSpDialog', key: 'dialogue', state: 'Dialogue' },
+        { part: 'refSpLevel', key: 'progression', state: 'Progression' },
+        { part: 'refSpTrade', key: 'trade', state: 'Trade' },
+        { part: 'refSpTime', key: 'time', state: 'Time' },
       ],
     })
   })
@@ -74,7 +86,7 @@ describe('Unity save code', () => {
   it('refuses damaged and newer saves and restores in the planned order', () => {
     const save = unityFile(buildReferenceSlice(), 'Unity/Scripts/Generated/Save/PlannerSave.cs')!
     expect(save).toContain('public sealed class PlannerSaveException : InvalidOperationException')
-    expect(save).toContain('public static readonly string[] Order = { Player, Inventory, QuestLog, Combat };')
+    expect(save).toContain('public static readonly string[] Order = { Player, Inventory, QuestLog, Combat, Dialogue, Progression, Trade, Time };')
     expect(save).toContain('is damaged and was not loaded')
     expect(save).toContain('newer than this build')
     expect(save).toContain('no migration from save version')

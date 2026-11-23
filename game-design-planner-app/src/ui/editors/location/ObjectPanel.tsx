@@ -9,7 +9,7 @@ import type { Entity } from '../../../core/model/types'
 import { useProject } from '../../hooks'
 
 const RANK_WIDTH: Record<RoadRank, number> = { main: 16, street: 11, alley: 6 }
-/** What a map object stands for in the game (core/gameplay.ts reads player starts, item pickups and enemies). */
+/** What a map object stands for in the game (core/gameplay.ts reads player starts, item pickups, enemies and NPCs). */
 const SPAWN_LABEL: Record<SpawnRole, string> = { player: 'Player start', item: 'Item to pick up', enemy: 'Enemy spawn', boss: 'Boss spawn', npc: 'NPC', merchant: 'Merchant' }
 /** What a linked map inside an object can be. */
 const CHILD_TYPES = ['Dwelling', 'Dungeon', 'Cave', 'Village', 'City']
@@ -38,6 +38,10 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
   const project = useProject()
   const items = ((project.documents['design.items']?.data.items ?? []) as Entity[]).filter((i) => typeof i.name === 'string' && i.name.trim())
   const enemies = ((project.documents['design.combat']?.data.enemies ?? []) as Entity[]).filter((i) => typeof i.name === 'string' && i.name.trim())
+  const characters = ((project.documents['design.story']?.data.characters ?? []) as Entity[]).filter((i) => typeof i.name === 'string' && i.name.trim())
+  const merchants = ((project.documents['design.trade']?.data.merchants ?? []) as Entity[]).filter((i) => typeof i.name === 'string' && i.name.trim())
+  // Lines of this map an enemy can patrol: any object drawn as a line of at least two points.
+  const routes = Object.values(map.layers).flatMap((l) => l.objects).filter((o) => o.id !== object.id && (o.points?.length ?? 0) >= 2)
   const info = kindInfo(object.kind)
   if (!info) return null
   const put = (next: MapObject, field: string) => commit(putObject(map, next), `loc-${object.id}-${field}`, `Edit ${info.label.toLowerCase()}`)
@@ -123,7 +127,9 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
               const next: MapObject = { ...object }
               if (!role) delete next.spawn
               else if (role === 'item') next.spawn = { role, ...(object.spawn?.refId && items.some((i) => i.id === object.spawn!.refId) ? { refId: object.spawn.refId } : items[0] ? { refId: String(items[0].id) } : {}), count: object.spawn?.count ?? 1 }
+              else if (role === 'npc') next.spawn = { role, ...(object.spawn?.role === 'npc' && object.spawn.refId ? { refId: object.spawn.refId } : characters[0] ? { refId: String(characters[0].id) } : {}) }
               else if (role === 'enemy') next.spawn = { role, ...(object.spawn?.role === 'enemy' && object.spawn.refId ? { refId: object.spawn.refId } : enemies[0] ? { refId: String(enemies[0].id) } : {}) }
+              else if (role === 'merchant') next.spawn = { role, ...(object.spawn?.role === 'merchant' && object.spawn.refId ? { refId: object.spawn.refId } : merchants[0] ? { refId: String(merchants[0].id) } : {}) }
               else next.spawn = { role, ...(object.spawn?.role === role && object.spawn.refId ? { refId: object.spawn.refId } : {}), ...(object.spawn?.role === role && object.spawn.count ? { count: object.spawn.count } : {}) }
               put(next, 'spawn')
             }}
@@ -156,6 +162,36 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
           </label>
         </div>
       )}
+      {object.spawn?.role === 'merchant' && (
+        <div className="loc-nums">
+          <label className="loc-num">
+            <span className="muted">Merchant</span>
+            <select aria-label="Merchant" value={object.spawn.refId ?? ''} onChange={(e) => put({ ...object, spawn: { ...object.spawn!, refId: e.target.value } }, 'spawn-merchant')}>
+              {!merchants.some((i) => i.id === object.spawn!.refId) && <option value={object.spawn.refId ?? ''}>{object.spawn.refId ? `Unknown merchant (${object.spawn.refId})` : 'Choose a merchant'}</option>}
+              {merchants.map((i) => (
+                <option key={String(i.id)} value={String(i.id)}>
+                  {String(i.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+      {object.spawn?.role === 'npc' && (
+        <div className="loc-nums">
+          <label className="loc-num">
+            <span className="muted">Character</span>
+            <select aria-label="Character" value={object.spawn.refId ?? ''} onChange={(e) => put({ ...object, spawn: { ...object.spawn!, refId: e.target.value } }, 'spawn-npc')}>
+              {!characters.some((i) => i.id === object.spawn!.refId) && <option value={object.spawn.refId ?? ''}>{object.spawn.refId ? `Unknown character (${object.spawn.refId})` : 'Choose a character'}</option>}
+              {characters.map((i) => (
+                <option key={String(i.id)} value={String(i.id)}>
+                  {String(i.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       {object.spawn?.role === 'enemy' && (
         <div className="loc-nums">
           <label className="loc-num">
@@ -165,6 +201,23 @@ export function ObjectPanel({ map, object, layerLabel, commit, onDuplicate, onDe
               {enemies.map((i) => (
                 <option key={String(i.id)} value={String(i.id)}>
                   {String(i.name)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="loc-num" title="A line on this map (a path, a road) the enemy walks along; empty: it guards its spot.">
+            <span className="muted">Patrol route</span>
+            <select aria-label="Patrol route" value={object.spawn.route ?? ''} onChange={(e) => {
+              const spawn = { ...object.spawn! }
+              if (e.target.value) spawn.route = e.target.value
+              else delete spawn.route
+              put({ ...object, spawn }, 'spawn-route')
+            }}>
+              <option value="">None (guards its spot)</option>
+              {object.spawn.route && !routes.some((r) => r.id === object.spawn!.route) && <option value={object.spawn.route}>{`Unknown line (${object.spawn.route})`}</option>}
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label || `${r.kind} ${r.id}`}
                 </option>
               ))}
             </select>

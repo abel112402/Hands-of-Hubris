@@ -1,6 +1,9 @@
 import type { Project } from '../src/core/model/types'
 import { deserializeProject, serializeProject } from '../src/core/persistence/serialize'
 import { runCli } from './engineCli'
+import { buildBundle } from '../src/core/engine/bundle'
+import { prototypeProfile } from '../src/core/engine/capabilities'
+import { PROTOTYPE_SYSTEMS, type PrototypeSystem } from '../src/modules/technical'
 import type { NodeFs } from './nodeFolder'
 
 /**
@@ -9,6 +12,11 @@ import type { NodeFs } from './nodeFolder'
  * run, a player built and self-tested, and the re-import, value-change, asset-keeping and save/load checks done — with a
  * report of every step, the Unity version and the packages. A step that cannot run because Unity or its licence is
  * missing is “blocked”, never “passed”. Breaks (--break) change the plan on purpose, to show the gate fails.
+ *
+ * Phase 17, the extended prototype gate: every chosen system must have passing evidence of its own — a generated scene
+ * test in PlayMode and a check of the built player's self-test (see EVIDENCE) — and --without <system,…> turns systems
+ * off before the export, to show the modules still work when chosen separately. The report ends with the export's
+ * “Placeholders and manual work”.
  *
  *   npm run gate:unity -- [--work <dir>] [--editor <Unity.exe>]… [--only full|compile] [--break <kind>] [--plan <file>]
  *
@@ -21,13 +29,15 @@ export const GATE_USAGE = `Usage: npm run gate:unity -- [options]
   --editor <Unity.exe>   a Unity editor to run; repeat for more (or HOH_GATE_EDITOR, ; between paths). Default: the Hub's ${'6000.0.40f1'} (full) and 2022.3.21f1 (compile)
   --compile <Unity.exe>  an editor that only imports, compiles and runs EditMode tests (the LTS floor; or HOH_GATE_COMPILE)
   --plan <file>          the plan (default: tests/fixtures/reference-slice-3d.hohplan.json)
-  --break <kind>         change the plan on purpose: ${'quest-unreachable | no-interact | missing-scene | ranged-enemy'}
+  --break <kind>         change the plan on purpose: ${'quest-unreachable | no-interact | missing-scene | ranged-enemy | choice-locked'}
+  --without <systems>    turn chosen systems off before the export (comma-separated, e.g. combat,dialogue): the rest must still pass
   --fresh                make the Unity projects again`
 
 export type StepStatus = 'passed' | 'failed' | 'blocked' | 'skipped'
 export type Step = { id: string; title: string; status: StepStatus; detail: string; seconds: number; log?: string }
 export type EditorRun = { editor: string; version: string; mode: 'full' | 'compile'; project: string; packages: Record<string, string>; steps: Step[] }
-export type GateReport = { startedAt: string; plan: string; breaks: string[]; editors: EditorRun[]; overall: 'passed' | 'failed' | 'blocked' }
+export type Coverage = { system: string; ok: boolean; tests: string[]; self: string[]; why?: string }
+export type GateReport = { startedAt: string; plan: string; breaks: string[]; without?: string[]; systems?: string[]; editors: EditorRun[]; coverage?: Coverage[]; handWork?: string; overall: 'passed' | 'failed' | 'blocked' }
 
 // ---- pure parts (tested in tests/unityGate.test.ts) ----
 
@@ -105,6 +115,14 @@ export const BREAKS: Record<string, { what: string; fails: string; apply: (p: Pr
       for (const e of (p.documents['design.combat']?.data.enemies ?? []) as Record<string, unknown>[]) e.role = 'Ranged'
     },
   },
+  'choice-locked': {
+    what: 'The keeper’s choices are made only after the quest, so no option can be picked when the player first talks.',
+    fails: 'PlayMode (the planned dialogue option cannot be picked)',
+    apply: (p) => {
+      const quest = String(((p.documents['design.story'].data.quests ?? []) as Record<string, unknown>[])[0]?.id)
+      for (const c of (p.documents['design.story'].data.choices ?? []) as Record<string, unknown>[]) c.quest = quest
+    },
+  },
   'missing-scene': {
     what: 'The Prototype scene points at a scene that is not planned.',
     fails: 'export (--strict: the prototype scene is unknown)',
@@ -113,6 +131,58 @@ export const BREAKS: Record<string, { what: string; fails: string; apply: (p: Pr
     },
   },
 }
+
+/**
+ * The evidence each chosen system needs in the extended gate: generated scene tests (PlannerPrototypeSceneTests) and
+ * checks of the built player's self-test (by name prefix). A system is covered when at least one of its tests and (when
+ * the player ran) one of its self-test checks passed, and none of them failed.
+ */
+export const EVIDENCE: Record<PrototypeSystem, { tests: string[]; self: string[] }> = {
+  movement: { tests: ['ThePlayerWalksWithThePlannedKeys', 'StartsWithNothingMissing', 'TravelsThroughEveryPassageAndBack'], self: ['runtime runs', 'passage to '] },
+  interaction: { tests: ['PicksUpThePlannedItemOnceWithTheInteractKey'], self: ['pickup '] },
+  inventory: { tests: ['PickingUpFillsTheInventoryAndTheHud'], self: ['pickup '] },
+  quests: { tests: ['TheQuestCompletesOnlyByPlayingAndRewardsOnce'], self: ['quest '] },
+  saveLoad: { tests: ['TheSliceIsTheSameAfterSavingAndLoadingIntoAFreshGame', 'TheQuickSaveAndLoadKeysWorkWhilePlaying', 'TheFightIsTheSameAfterSavingAndLoading', 'TheConversationIsTheSameAfterSavingAndLoading', 'SavingInAnotherLocationLoadsThere', 'TheEconomyIsTheSameAfterSavingAndLoading'], self: ['save and load'] },
+  crafting: { tests: ['CraftsExactlyAndNeverConsumesInPart'], self: ['craft '] },
+  combat: { tests: ['TheEncounterPlaysAsPlanned', 'ADefeatedPlayerIsBackAtTheStart', 'TheEnemyPatrolsSeesChasesAndGoesBack', 'TheLevelHasANavigationMesh'], self: ['fight ', 'behaviour ', 'navigation mesh'] },
+  dialogue: { tests: ['TalkingToTheNpcMakesThePlannedChoiceOnce'], self: ['talk to '] },
+  progression: { tests: ['XpFromPlayingRaisesTheLevel'], self: ['progression'] },
+  trade: { tests: ['TheMerchantBuysAndSellsAtThePlannedPrices'], self: ['trade '] },
+  time: { tests: ['TheClockRunsAtThePlannedDayLength'], self: ['day and night'] },
+  // Not supported yet: a plan that chooses it does not export with --strict.
+  settlement: { tests: [], self: [] },
+}
+
+const SCENE_TESTS = 'PlannerPrototypeSceneTests.'
+
+export function coverageOf(systems: string[], playmode: NUnitResult | null, self: { name: string; passed: boolean }[] | null): Coverage[] {
+  return systems.map((system) => {
+    const ev = EVIDENCE[system as PrototypeSystem]
+    if (!ev) return { system, ok: false, tests: [], self: [], why: 'no evidence is defined for this system' }
+    const mine = (names: string[]) => names.filter((n) => n.includes(SCENE_TESTS) && ev.tests.some((t) => n.endsWith('.' + t)))
+    const passed = mine(playmode?.passedNames ?? []).map((n) => n.slice(n.lastIndexOf('.') + 1))
+    const failed = mine(playmode?.failedNames ?? []).map((n) => n.slice(n.lastIndexOf('.') + 1))
+    const checks = (self ?? []).filter((c) => ev.self.some((p) => c.name.startsWith(p)))
+    const why = [
+      !passed.length && 'no generated scene test of it passed',
+      failed.length && `failed: ${failed.join(', ')}`,
+      self && !checks.some((c) => c.passed) && 'no player self-test check of it passed',
+      checks.some((c) => !c.passed) && `self-test failed: ${checks.filter((c) => !c.passed).map((c) => c.name).join(', ')}`,
+    ].filter(Boolean) as string[]
+    return { system, ok: why.length === 0, tests: passed, self: checks.filter((c) => c.passed).map((c) => c.name), ...(why.length ? { why: why.join('; ') } : {}) }
+  })
+}
+
+/** The plan with the given systems turned off (Technical Architecture › Playable prototype). */
+export function withoutSystems(systems: string[]): (p: Project) => void {
+  return (p) => {
+    const proto = p.documents['technical.architecture'].data.prototype as Record<string, unknown>
+    for (const s of systems) proto[s] = false
+  }
+}
+
+/** Valid --without values: the prototype systems' ids. */
+export const SYSTEM_IDS: string[] = PROTOTYPE_SYSTEMS.map((x) => x.key)
 
 /** The plan with a planner-side value changed, for the value-change check (player walk speed + 1 m/s). */
 export function withChangedValue(p: Project): { project: Project; expect: string } {
@@ -125,7 +195,8 @@ export function withChangedValue(p: Project): { project: Project; expect: string
 /** The report as Markdown, for a CI summary or a pull request. */
 export function renderMarkdown(r: GateReport): string {
   const icon = (s: StepStatus) => ({ passed: '✅', failed: '❌', blocked: '⛔', skipped: '➖' })[s]
-  const lines = [`# Unity gate: ${r.overall.toUpperCase()}`, '', `Plan: \`${r.plan}\` · started ${r.startedAt}${r.breaks.length ? ` · **broken on purpose:** ${r.breaks.join(', ')}` : ''}`, '']
+  const lines = [`# Unity gate: ${r.overall.toUpperCase()}`, '', `Plan: \`${r.plan}\` · started ${r.startedAt}${r.breaks.length ? ` · **broken on purpose:** ${r.breaks.join(', ')}` : ''}${r.without?.length ? ` · **without:** ${r.without.join(', ')}` : ''}`, '']
+  if (r.systems) lines.push(`Chosen systems: ${r.systems.join(', ') || 'none'}`, '')
   for (const e of r.editors) {
     lines.push(`## Unity ${e.version} (${e.mode})`, '', `Project: \`${e.project}\``, '')
     const pk = Object.entries(e.packages)
@@ -134,6 +205,12 @@ export function renderMarkdown(r: GateReport): string {
     for (const s of e.steps) lines.push(`| ${s.title} | ${icon(s.status)} ${s.status} | ${s.detail.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')} | ${s.seconds.toFixed(0)} |`)
     lines.push('')
   }
+  if (r.coverage?.length) {
+    lines.push('## Extended gate: evidence per chosen system', '', '| System | Covered | Scene tests passed | Player self-test |', '|---|---|---|---|')
+    for (const c of r.coverage) lines.push(`| ${c.system} | ${c.ok ? '✅' : '❌ ' + (c.why ?? '')} | ${c.tests.join(', ') || '—'} | ${c.self.join(', ') || '—'} |`)
+    lines.push('')
+  }
+  if (r.handWork) lines.push(r.handWork.replace(/^\n?## /, '## ').trim(), '')
   return lines.join('\n')
 }
 
@@ -155,11 +232,13 @@ export function gateManifest(existing: string | null, bridge: string, runtime: s
 export const withBothInputs = (projectSettings: string) => projectSettings.replace(/activeInputHandler: \d/, 'activeInputHandler: 2')
 
 /** Exports the plan (optionally changed) with the planner's CLI into a zip; returns the CLI's exit code and output. */
-export async function exportPlan(planText: string, change: ((p: Project) => void) | null, zip: string, fs: NodeFs, file: string): Promise<{ code: number; out: string[] }> {
+export async function exportPlan(planText: string, change: ((p: Project) => void) | null, zip: string, fs: NodeFs, file: string): Promise<{ code: number; out: string[]; systems: string[]; handWork: string }> {
   const { project } = deserializeProject(planText)
   if (change) change(project)
   fs.writeFileSync(file, serializeProject(project))
   const out: string[] = []
   const code = await runCli([file, zip, '--engine', 'unity', '--strict', '--exported-at', '2026-01-01T00:00:00.000Z'], { fs, log: (l) => out.push(l), error: (l) => out.push(l) })
-  return { code, out }
+  const readme = buildBundle(project, 'unity', '2026-01-01T00:00:00.000Z').files.find((f) => f.path === 'README.md')?.content ?? ''
+  const at = readme.indexOf('## Placeholders and manual work')
+  return { code, out, systems: prototypeProfile(project).systems, handWork: at >= 0 ? readme.slice(at) : '' }
 }

@@ -13,6 +13,14 @@ namespace HoHPlanner.Runtime
         Quests,
         /// <summary>The player's health, and each enemy's health and whether it is defeated and looted.</summary>
         Combat,
+        /// <summary>The dialogue options already picked (their consequences ran once); the choices they made are saved with the quests.</summary>
+        Dialogue,
+        /// <summary>XP, level, skill and stat points.</summary>
+        Progression,
+        /// <summary>The money, and what each merchant can still pay.</summary>
+        Trade,
+        /// <summary>The hour and the day.</summary>
+        Time,
     }
 
     /// <summary>A saved part of the plan (its save key) and the runtime state it holds.</summary>
@@ -51,7 +59,7 @@ namespace HoHPlanner.Runtime
     /// <summary>
     /// The state of the running prototype, part by part, as JSON: the player's position and facing; the inventory with
     /// the map pickups already taken (they belong together: a taken pickup's item is in the inventory, so they are saved
-    /// and restored as one); the quests with the quest graph's log and the rewards given. Restoring checks the whole part
+    /// and restored as one); the dialogue options already picked; the quests with the quest graph's log and the rewards given. Restoring checks the whole part
     /// before changing anything: a damaged part, an unknown item, a count or slot the plan does not allow, or an unknown
     /// pickup throws <see cref="PlannerStateException"/>. While parts are restored (<see cref="BeginRestore"/> …
     /// <see cref="EndRestore"/>) the quests wait, so a restored inventory never completes a quest a second time.
@@ -63,6 +71,10 @@ namespace HoHPlanner.Runtime
         public PlannerInventory Inventory;
         public PlannerQuests Quests;
         public PlannerCombat Combat;
+        public PlannerDialogue Dialogue;
+        public PlannerProgression Progression;
+        public PlannerTrade Trade;
+        public PlannerClock Clock;
         [Tooltip("The plan's saved parts linked to a runtime state, in plan order.")]
         public List<PlannerStateBinding> Parts = new List<PlannerStateBinding>();
 
@@ -93,6 +105,12 @@ namespace HoHPlanner.Runtime
             public List<string> active = new List<string>();
             public List<string> rewarded = new List<string>();
             public List<string> waiting = new List<string>();
+        }
+
+        [Serializable]
+        sealed class DialogueJson
+        {
+            public List<string> picked = new List<string>();
         }
 
         [Serializable]
@@ -149,6 +167,14 @@ namespace HoHPlanner.Runtime
                         cj.enemies.Add(new EnemyJson { id = IdOf(e), hp = e.Health.Current, defeated = e.Defeated, looted = loot != null && loot.Looted });
                     }
                     return JsonUtility.ToJson(cj);
+                case PlannerStateKind.Dialogue:
+                    return JsonUtility.ToJson(new DialogueJson { picked = Need(Dialogue, kind).CaptureState() });
+                case PlannerStateKind.Progression:
+                    return JsonUtility.ToJson(Need(Progression, kind).CaptureState());
+                case PlannerStateKind.Trade:
+                    return JsonUtility.ToJson(Need(Trade, kind).CaptureState());
+                case PlannerStateKind.Time:
+                    return JsonUtility.ToJson(Need(Clock, kind).CaptureState());
                 default:
                     var q = Need(Quests, kind);
                     var state = q.CaptureState();
@@ -205,6 +231,39 @@ namespace HoHPlanner.Runtime
                         if (saved != null) e.SetState(saved.hp, saved.defeated, saved.looted);
                         else e.SetState(e.Health.Max, false, false);
                     }
+                    break;
+                }
+                case PlannerStateKind.Progression:
+                {
+                    var s = Parse<PlannerProgression.State>(json, kind);
+                    var progression = Need(Progression, kind);
+                    progression.CheckState(s);
+                    if (apply) progression.RestoreState(s);
+                    break;
+                }
+                case PlannerStateKind.Trade:
+                {
+                    var s = Parse<PlannerTrade.State>(json, kind);
+                    var trade = Need(Trade, kind);
+                    trade.CheckState(s);
+                    if (apply) trade.RestoreState(s);
+                    break;
+                }
+                case PlannerStateKind.Time:
+                {
+                    var s = Parse<PlannerClock.State>(json, kind);
+                    var clock = Need(Clock, kind);
+                    clock.CheckState(s);
+                    if (apply) clock.RestoreState(s);
+                    break;
+                }
+                case PlannerStateKind.Dialogue:
+                {
+                    var d = Parse<DialogueJson>(json, kind);
+                    var dialogue = Need(Dialogue, kind);
+                    var picked = d.picked ?? new List<string>();
+                    dialogue.CheckState(picked);
+                    if (apply) dialogue.RestoreState(picked);
                     break;
                 }
                 default:

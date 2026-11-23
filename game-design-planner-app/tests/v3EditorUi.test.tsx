@@ -62,7 +62,7 @@ describe('v3 planner page', () => {
     const sheet = await screen.findByRole('dialog', { name: 'enemy: Ghoul' })
     expect(container.querySelector('.with-inspector')).toBeNull()
     const tabs = within(sheet).getByRole('tablist')
-    expect(within(tabs).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Identity0/3', 'Stats1/8', 'Behavior0/4', 'Reward0/2', 'Links'])
+    expect(within(tabs).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Identity0/3', 'Stats1/8', 'Behavior0/6', 'Reward0/2', 'Links'])
     // Identity: biome and role are core; tier waits behind a chip.
     expect(within(sheet).getByLabelText('Biome')).toBeTruthy()
     expect(within(sheet).queryByLabelText('Tier')).toBeNull()

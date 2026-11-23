@@ -16,12 +16,22 @@ namespace HoHPlanner.Runtime.Tests
             public bool CanStart(string id) => Knows(id) && !Done.Contains(id) && (id != "second" || Done.Contains("first"));
             public bool IsDone(string id) => Done.Contains(id);
             public bool Complete(string id) => CanStart(id) && Done.Add(id);
-            public string SaveState() => "done:" + string.Join(",", Done.OrderBy(x => x));
+            public readonly HashSet<string> Chosen = new HashSet<string>();
+            // Two choices of one decision (“offer”): help and refuse.
+            public bool KnowsChoice(string id) => id == "help" || id == "refuse";
+            public bool HasChosen(string id) => Chosen.Contains(id);
+            public bool IsDecided(string id) => KnowsChoice(id) && Chosen.Count > 0;
+            public bool CanChoose(string id) => KnowsChoice(id) && !IsDecided(id);
+            public bool Choose(string id) => CanChoose(id) && Chosen.Add(id);
+            public string SaveState() => "done:" + string.Join(",", Done.OrderBy(x => x)) + "|" + string.Join(",", Chosen.OrderBy(x => x));
             public void LoadState(string json)
             {
                 if (json == null || !json.StartsWith("done:")) throw new System.ArgumentException("not a graph log");
+                var parts = json.Substring(5).Split('|');
                 Done.Clear();
-                foreach (var id in json.Substring(5).Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries)) Done.Add(id);
+                Chosen.Clear();
+                foreach (var id in parts[0].Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries)) Done.Add(id);
+                if (parts.Length > 1) foreach (var id in parts[1].Split(new[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries)) Chosen.Add(id);
             }
         }
 

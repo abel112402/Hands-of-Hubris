@@ -93,6 +93,6 @@ describe('inventory in the IR and the Unity export', () => {
     expect(config).toContain(`HudItemCounters = { "${IDS.itemCoin}" };`)
     expect(unityFile(p, 'Unity/UI/Screens/Hud.uxml')).toContain('name="bind-inventory"')
     expect(unityFile(p, 'Unity/Tests/PlayMode/PlannerPrototypeSceneTests.cs')).toContain('PickingUpFillsTheInventoryAndTheHud')
-    expect(buildBundle(p, 'unity', AT).manifest.requires?.runtime.version).toBe('0.10.0')
+    expect(buildBundle(p, 'unity', AT).manifest.requires?.runtime.version).toBe('0.15.0')
   })
 })

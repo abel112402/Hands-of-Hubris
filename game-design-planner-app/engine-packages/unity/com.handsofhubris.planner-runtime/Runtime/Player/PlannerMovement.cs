@@ -30,7 +30,12 @@ namespace HoHPlanner.Runtime
         public void Initialize(PlannerRuntime runtime) { }
         public void Shutdown() { }
 
-        void Awake() => controller = GetComponent<CharacterController>();
+        void Awake()
+        {
+            controller = GetComponent<CharacterController>();
+            // At a high frame rate a step is tiny; the default minimum move distance would drop every one of them.
+            if (controller != null) controller.minMoveDistance = 0f;
+        }
 
         void Update()
         {

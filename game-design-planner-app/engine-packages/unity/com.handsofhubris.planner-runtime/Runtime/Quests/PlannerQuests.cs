@@ -17,6 +17,16 @@ namespace HoHPlanner.Runtime
         /// <summary>Records the quest as done; false when the plan does not allow it now.</summary>
         bool Complete(string questId);
 
+        /// <summary>Whether the plan has this story choice (planner choice ID).</summary>
+        bool KnowsChoice(string choiceId);
+        /// <summary>Whether the choice can be made now (its quest done, its decision not yet made).</summary>
+        bool CanChoose(string choiceId);
+        bool HasChosen(string choiceId);
+        /// <summary>Whether a choice of the same decision was already made.</summary>
+        bool IsDecided(string choiceId);
+        /// <summary>Records the choice; false when the plan does not allow it now.</summary>
+        bool Choose(string choiceId);
+
         /// <summary>The graph's progress (done quests, choices made) as JSON, for a save.</summary>
         string SaveState();
 

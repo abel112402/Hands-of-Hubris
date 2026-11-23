@@ -2,9 +2,10 @@ import type { Entity, Project } from './model/types'
 import { WORLD_DOC } from './world'
 import { mapOf } from './location/schema'
 import { mapNav } from './location/analysis'
+import { nearestOpen, reachable, type NavGrid } from './location/nav'
 import { PLAYER_DEFAULTS, SAVE_STATES, type SaveState } from '../modules/technical'
 import { DEFAULT_DAMAGE_FORMULA } from './combatFormula'
-import { parseFormula, formulaVars } from './engine/formulaAst'
+import { parseFormula, formulaVars, evalFormula } from './engine/formulaAst'
 
 /**
  * Typed gameplay data for the first vertical slice (plans/UNITY_PLAYABLE_GAME_GENERATION_PLAN.md, phase 2), read
@@ -44,7 +45,8 @@ export type QuestRule = {
   objectives: string[]
 }
 
-export type Placement = { location: string; object: string; role: 'player' | 'item' | 'enemy'; item?: string; enemy?: string; count: number; x: number; y: number }
+/** `route`: an enemy's patrol route, the points of the line it walks (map units of its map). */
+export type Placement = { location: string; object: string; role: 'player' | 'item' | 'enemy' | 'npc' | 'merchant'; item?: string; enemy?: string; character?: string; merchant?: string; route?: { x: number; y: number }[]; count: number; x: number; y: number }
 
 export type GameplayIssue = { level: 'error' | 'warning' | 'info'; code: string; message: string; where: { doc: string; section: string; id?: string; field?: string } }
 
@@ -100,8 +102,10 @@ export function questRules(p: Project): { rules: QuestRule[]; issues: GameplayIs
 
 /** A planned control the runtime uses, with its planned key and gamepad button (as typed in UI / UX › Controls). */
 export type RuntimeControl = { control: string; name: string; key?: string; gamepad?: string }
-export type RuntimeControls = { move: { forward?: RuntimeControl; back?: RuntimeControl; left?: RuntimeControl; right?: RuntimeControl }; interact?: RuntimeControl; crafting?: RuntimeControl; attack?: RuntimeControl }
-const DRIVES: Record<string, keyof RuntimeControls['move'] | 'interact' | 'crafting' | 'attack'> = { 'Move forward': 'forward', 'Move back': 'back', 'Move left': 'left', 'Move right': 'right', Interact: 'interact', 'Open crafting': 'crafting', Attack: 'attack' }
+export type RuntimeControls = { move: { forward?: RuntimeControl; back?: RuntimeControl; left?: RuntimeControl; right?: RuntimeControl }; interact?: RuntimeControl; crafting?: RuntimeControl; attack?: RuntimeControl; quickSave?: RuntimeControl; quickLoad?: RuntimeControl }
+type ActionSlot = 'interact' | 'crafting' | 'attack' | 'quickSave' | 'quickLoad'
+const ACTION_SLOTS = new Set<string>(['interact', 'crafting', 'attack', 'quickSave', 'quickLoad'])
+const DRIVES: Record<string, keyof RuntimeControls['move'] | ActionSlot> = { 'Move forward': 'forward', 'Move back': 'back', 'Move left': 'left', 'Move right': 'right', Interact: 'interact', 'Open crafting': 'crafting', Attack: 'attack', 'Quick save': 'quickSave', 'Quick load': 'quickLoad' }
 
 /** The controls marked with a Runtime action (UI / UX › Controls). The first control of each action wins; a second one is reported. */
 export function runtimeControls(p: Project): { controls: RuntimeControls; issues: GameplayIssue[] } {
@@ -111,13 +115,13 @@ export function runtimeControls(p: Project): { controls: RuntimeControls; issues
     const slot = DRIVES[str(c.drives)]
     if (!slot || !str(c.name)) continue
     const rc: RuntimeControl = { control: String(c.id), name: str(c.name), ...(str(c.key) && { key: str(c.key) }), ...(str(c.gamepad) && { gamepad: str(c.gamepad) }) }
-    const taken = slot === 'interact' || slot === 'crafting' || slot === 'attack' ? controls[slot] : controls.move[slot]
+    const taken = ACTION_SLOTS.has(slot) ? controls[slot as ActionSlot] : controls.move[slot as keyof RuntimeControls['move']]
     if (taken) {
       issues.push({ level: 'warning', code: 'gameplay.twoControls', where: { doc: 'design.ui', section: 'controls', id: rc.control, field: 'drives' }, message: `${rc.name} and ${taken.name} are both “${str(c.drives)}”; ${taken.name} is used.` })
       continue
     }
-    if (slot === 'interact' || slot === 'crafting' || slot === 'attack') controls[slot] = rc
-    else controls.move[slot] = rc
+    if (ACTION_SLOTS.has(slot)) controls[slot as ActionSlot] = rc
+    else controls.move[slot as keyof RuntimeControls['move']] = rc
   }
   return { controls, issues }
 }
@@ -142,6 +146,8 @@ export function playerSettings(p: Project): PlayerSettings {
 export function placements(p: Project): { placements: Placement[]; issues: GameplayIssue[] } {
   const items = new Set(list(p, ITEMS, 'items').map((i) => String(i.id)))
   const enemies = new Set(list(p, 'design.combat', 'enemies').map((e) => String(e.id)))
+  const characters = new Set(list(p, STORY, 'characters').map((e) => String(e.id)))
+  const merchants = new Set(list(p, 'design.trade', 'merchants').map((e) => String(e.id)))
   const out: Placement[] = []
   const issues: GameplayIssue[] = []
   for (const loc of list(p, WORLD_DOC, 'locations')) {
@@ -151,10 +157,30 @@ export function placements(p: Project): { placements: Placement[]; issues: Gamep
     for (const layer of Object.values(map.layers)) {
       for (const o of layer.objects) {
         const s = o.spawn
-        if (!s || (s.role !== 'player' && s.role !== 'item' && s.role !== 'enemy')) continue
+        if (!s || (s.role !== 'player' && s.role !== 'item' && s.role !== 'enemy' && s.role !== 'npc' && s.role !== 'merchant')) continue
+        if (s.role === 'merchant') {
+          // A merchant stall without a merchant stays a plain marker; one that names an unknown merchant is an error.
+          if (!s.refId) continue
+          if (!merchants.has(s.refId)) issues.push({ level: 'error', code: 'gameplay.unknownMerchant', where, message: `${str(loc.name)}: a merchant names “${s.refId}”, which is not a merchant of Trade & Economy.` })
+          else out.push({ location: String(loc.id), object: o.id, role: 'merchant', merchant: s.refId, count: 1, x: o.x, y: o.y })
+          continue
+        }
+        if (s.role === 'npc') {
+          // An NPC without a character stays a plain marker, as before; one that names an unknown character is an error.
+          if (!s.refId) continue
+          if (!characters.has(s.refId)) issues.push({ level: 'error', code: 'gameplay.unknownCharacter', where, message: `${str(loc.name)}: an NPC names “${s.refId}”, which is not a character of Story & Quests.` })
+          else out.push({ location: String(loc.id), object: o.id, role: 'npc', character: s.refId, count: 1, x: o.x, y: o.y })
+          continue
+        }
         if (s.role === 'enemy') {
           if (!s.refId || !enemies.has(s.refId)) issues.push({ level: 'error', code: 'gameplay.unknownEnemy', where, message: `${str(loc.name)}: an enemy spawn ${s.refId ? `names “${s.refId}”, which is not an enemy of Combat` : 'names no enemy'}.` })
-          else out.push({ location: String(loc.id), object: o.id, role: 'enemy', enemy: s.refId, count: 1, x: o.x, y: o.y })
+          else {
+            const line = s.route ? Object.values(map.layers).flatMap((l) => l.objects).find((x) => x.id === s.route) : undefined
+            if (s.route && (!line || (line.points?.length ?? 0) < 2))
+              issues.push({ level: 'error', code: 'gameplay.routeUnknown', where, message: `${str(loc.name)}: an enemy patrols “${s.route}”, which is not a line of at least two points on this map.` })
+            const route = line?.points && line.points.length >= 2 ? line.points.map(([x, y]) => ({ x, y })) : undefined
+            out.push({ location: String(loc.id), object: o.id, role: 'enemy', enemy: s.refId, ...(route ? { route } : {}), count: 1, x: o.x, y: o.y })
+          }
           continue
         }
         if (s.role === 'item' && (!s.refId || !items.has(s.refId))) {
@@ -202,6 +228,271 @@ export function prototypeScene(p: Project): { value: PrototypeScene; issues: Gam
     }
   }
   return { value, issues }
+}
+
+/**
+ * The prototype's world (phase 18): the locations it is played in (Playable prototype › Locations in the prototype;
+ * empty: only the location with the player start, a visible default) and the passages between them. A passage is a
+ * map object that opens another location of the prototype (`link.locationId`, as the map editor's “Opens location”);
+ * the player arrives at that location's object that opens the way back (its way out), on the nearest walkable cell.
+ * The loading profile is stated, not guessed: every location is built into the one prototype scene, side by side, and
+ * a passage moves the player between them. What is not playable is reported with its place: a location without a map,
+ * a passage without a way back, a pickup, NPC or passage the player cannot reach from the start (through passages),
+ * an enemy on blocked ground, a location no passage leads to.
+ */
+export type WorldLocation = { id: string; name: string; cell: number; w: number; h: number }
+export type Passage = { object: string; location: string; to: string; x: number; y: number; arrival: { object: string; x: number; y: number } }
+export type WorldRules = { loading: 'one-scene'; locations: WorldLocation[]; passages: Passage[]; defaulted: boolean }
+
+const center = (g: NavGrid, i: number) => ({ x: ((i % g.cols) + 0.5) * g.cell, y: (Math.floor(i / g.cols) + 0.5) * g.cell })
+
+export function worldRules(p: Project): { rules: WorldRules; issues: GameplayIssue[] } {
+  const issues: GameplayIssue[] = []
+  const form = p.documents['technical.architecture']?.data.prototype
+  const d = (form && typeof form === 'object' ? form : {}) as Record<string, unknown>
+  const at = { doc: 'technical.architecture', section: 'prototype', field: 'locations' }
+  const all = list(p, WORLD_DOC, 'locations')
+  const { placements: placed } = placements(p)
+  const start = placed.find((x) => x.role === 'player')
+  const chosen = Array.isArray(d.locations) ? d.locations.map(String) : []
+  const defaulted = chosen.length === 0
+  const ids = defaulted ? (start ? [start.location] : []) : chosen
+  const locations: WorldLocation[] = []
+  const navs = new Map<string, NavGrid>()
+  const objectsOf = new Map<string, ReturnType<typeof mapObjects>>()
+  for (const id of ids) {
+    const loc = all.find((l) => String(l.id) === id)
+    if (!loc) {
+      issues.push({ level: 'error', code: 'gameplay.unknownLocation', where: at, message: `Locations in the prototype: “${id}” is not a location of World & Biomes.` })
+      continue
+    }
+    const map = mapOf(loc)
+    const where = { doc: WORLD_DOC, section: 'locations', id }
+    if (!map) {
+      issues.push({ level: 'error', code: 'gameplay.noMap', where, message: `${str(loc.name) || id} is in the prototype but has no map; open it in World & Biomes › Locations and generate or draw one.` })
+      continue
+    }
+    const nav = mapNav(map)
+    if (!nav.cost.some((c) => c > 0)) {
+      issues.push({ level: 'error', code: 'gameplay.noGround', where, message: `${str(loc.name) || id}: its map has no walkable ground.` })
+      continue
+    }
+    navs.set(id, nav)
+    objectsOf.set(id, mapObjects(map))
+    locations.push({ id, name: str(loc.name) || id, cell: nav.cell, w: map.w, h: map.h })
+  }
+  if (start && ids.length && !ids.includes(start.location))
+    issues.push({ level: 'error', code: 'gameplay.startOutside', where: at, message: `The player starts in ${str(all.find((l) => String(l.id) === start.location)?.name) || start.location}, which is not among the locations in the prototype.` })
+  const name = (id: string) => locations.find((l) => l.id === id)?.name ?? (str(all.find((l) => String(l.id) === id)?.name) || id)
+
+  // Passages: objects that open another location of the prototype, with the way back on the other map.
+  const passages: Passage[] = []
+  for (const loc of locations) {
+    for (const o of objectsOf.get(loc.id)!) {
+      const to = o.link?.locationId
+      if (!to || to === loc.id) continue
+      const where = { doc: WORLD_DOC, section: 'locations', id: loc.id }
+      if (!navs.has(to)) {
+        if (all.some((l) => String(l.id) === to)) issues.push({ level: 'info', code: 'gameplay.passageOutside', where, message: `${loc.name}: ${o.label || o.kind} opens ${name(to)}, which is not in the prototype; it stays closed.` })
+        continue
+      }
+      const back = objectsOf.get(to)!.find((x) => x.link?.locationId === loc.id)
+      if (!back) {
+        issues.push({ level: 'error', code: 'gameplay.passageNoWayBack', where: { doc: WORLD_DOC, section: 'locations', id: to }, message: `${loc.name}: ${o.label || o.kind} leads to ${name(to)}, but no object there opens the way back to ${loc.name}, so there is nowhere to arrive; mark its way out (Opens location).` })
+        continue
+      }
+      const nav = navs.get(to)!
+      const cell = nearestOpen(nav, [back.x, back.y], {}, 80)
+      if (cell < 0) {
+        issues.push({ level: 'error', code: 'gameplay.passageBlocked', where: { doc: WORLD_DOC, section: 'locations', id: to }, message: `${name(to)}: the way back to ${loc.name} has no walkable ground near it, so the player cannot arrive there.` })
+        continue
+      }
+      passages.push({ object: o.id, location: loc.id, to, x: o.x, y: o.y, arrival: { object: back.id, ...center(nav, cell) } })
+    }
+  }
+
+  // Reach: from the start, through the passages the player can get to; then what lies out of reach.
+  const reach = playerSettings(p).interactRange
+  const reached = new Map<string, Uint8Array>()
+  const add = (loc: string, from: { x: number; y: number }) => {
+    const nav = navs.get(loc)
+    if (!nav) return false
+    const r = reachable(nav, [from.x, from.y])
+    const was = reached.get(loc)
+    if (!was) {
+      reached.set(loc, r)
+      return true
+    }
+    let grew = false
+    for (let i = 0; i < r.length; i++) if (r[i] && !was[i]) [was[i], grew] = [1, true]
+    return grew
+  }
+  // Within reach: a walkable reached cell within the interaction range (in metres, one cell per metre unless scaled).
+  const scale = typeof d.mapScale === 'number' && d.mapScale > 0 ? d.mapScale : undefined
+  const near = (loc: string, x: number, y: number) => {
+    const nav = navs.get(loc)
+    const r = reached.get(loc)
+    if (!nav || !r) return false
+    const range = scale ? reach / scale : reach * nav.cell
+    const [c0, r0] = [Math.floor(x / nav.cell), Math.floor(y / nav.cell)]
+    const span = Math.ceil(range / nav.cell)
+    for (let dr = -span; dr <= span; dr++)
+      for (let dc = -span; dc <= span; dc++) {
+        const [c, rr] = [c0 + dc, r0 + dr]
+        if (c < 0 || rr < 0 || c >= nav.cols || rr >= nav.rows || !r[rr * nav.cols + c]) continue
+        const cc = center(nav, rr * nav.cols + c)
+        if (Math.hypot(cc.x - x, cc.y - y) <= range) return true
+      }
+    return false
+  }
+  if (start && navs.has(start.location)) {
+    add(start.location, start)
+    for (let changed = true; changed; ) {
+      changed = false
+      for (const ps of passages) if (near(ps.location, ps.x, ps.y) && add(ps.to, ps.arrival)) changed = true
+    }
+  }
+  if (start && navs.has(start.location)) {
+    for (const loc of locations.filter((l) => !reached.has(l.id) && l.id !== start.location))
+      issues.push({ level: 'warning', code: 'gameplay.locationUnreached', where: { doc: WORLD_DOC, section: 'locations', id: loc.id }, message: `${loc.name} is in the prototype, but no passage the player can reach leads there.` })
+    for (const ps of passages.filter((x) => reached.has(x.location) && !near(x.location, x.x, x.y)))
+      issues.push({ level: 'error', code: 'gameplay.passageUnreachable', where: { doc: WORLD_DOC, section: 'locations', id: ps.location }, message: `${name(ps.location)}: the way to ${name(ps.to)} is out of the player's reach (more than ${reach} m from walkable ground the player gets to).` })
+    for (const x of placed.filter((y) => y.role !== 'player' && reached.has(y.location))) {
+      if (x.role === 'enemy') {
+        const nav = navs.get(x.location)!
+        const i = Math.floor(x.y / nav.cell) * nav.cols + Math.floor(x.x / nav.cell)
+        const off = (x.route ?? []).filter((pt) => !reached.get(x.location)![Math.floor(pt.y / nav.cell) * nav.cols + Math.floor(pt.x / nav.cell)])
+        if (off.length) issues.push({ level: 'warning', code: 'gameplay.routeBlocked', where: { doc: WORLD_DOC, section: 'locations', id: x.location }, message: `${name(x.location)}: ${off.length} point${off.length === 1 ? '' : 's'} of an enemy's patrol route lie off the ground the player walks on; it may not get there.` })
+        if (!reached.get(x.location)![i]) issues.push({ level: 'warning', code: 'gameplay.spawnBlocked', where: { doc: WORLD_DOC, section: 'locations', id: x.location }, message: `${name(x.location)}: an enemy stands on ground the player cannot walk to; it may never fight.` })
+      } else if (!near(x.location, x.x, x.y))
+        issues.push({ level: x.role === 'item' ? 'error' : 'warning', code: 'gameplay.spawnBlocked', where: { doc: WORLD_DOC, section: 'locations', id: x.location }, message: `${name(x.location)}: ${x.role === 'item' ? `the pickup of ${x.item}` : 'an NPC'} is out of the player's reach (more than ${reach} m from walkable ground the player gets to).` })
+    }
+  }
+  return { rules: { loading: 'one-scene', locations, passages, defaulted }, issues }
+}
+
+const mapObjects = (map: NonNullable<ReturnType<typeof mapOf>>) => Object.values(map.layers).flatMap((l) => l.objects)
+
+/**
+ * Player progression (phase 20): the levels of Player Character › Levelling. `xpToNext[i]` is the XP needed from level
+ * i + 1 to the next, by the plan's formula (variable `level`), whole numbers ≥ 1; the cap stops levelling. XP comes from
+ * the events the other modules send: a completed quest's Reward XP and a defeated enemy's XP. Each level up gives the
+ * planned skill and stat points (counted; spending them is not run).
+ */
+/** A number, or undefined when the plan leaves it empty (not 0). */
+const given = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined)
+
+export type ProgressionRules = { levelCap: number; xpToNext: number[]; skillPointsPerLevel: number; statPointsPerLevel: number; startSkillPoints: number; defaults: string[] }
+export const PROGRESSION_DEFAULTS = { levelCap: 10 } as const
+
+export function progressionRules(p: Project): { rules: ProgressionRules; issues: GameplayIssue[] } {
+  const issues: GameplayIssue[] = []
+  const d = (p.documents['design.player']?.data.leveling ?? {}) as Record<string, unknown>
+  const at = (field: string) => ({ doc: 'design.player', section: 'leveling', field })
+  const defaults: string[] = []
+  const capRaw = given(d.levelCap)
+  const levelCap = capRaw !== undefined && capRaw >= 1 ? Math.floor(capRaw) : PROGRESSION_DEFAULTS.levelCap
+  if (capRaw === undefined) defaults.push(`level cap = ${PROGRESSION_DEFAULTS.levelCap}`)
+  const xpToNext: number[] = []
+  const formula = str(d.xpFormula)
+  if (formula) {
+    try {
+      const ast = parseFormula(formula)
+      const other = formulaVars(ast).filter((v) => v !== 'level')
+      if (other.length) issues.push({ level: 'error', code: 'gameplay.xpFormulaVars', where: at('xpFormula'), message: `XP needed for the next level may only use the variable level, not ${other.join(', ')}.` })
+      else
+        for (let level = 1; level < levelCap; level++) {
+          const v = evalFormula(ast, { level })
+          if (!Number.isFinite(v) || v < 1) {
+            issues.push({ level: 'error', code: 'gameplay.xpFormulaValue', where: at('xpFormula'), message: `XP needed for the next level is ${Number.isFinite(v) ? v : 'not a number'} at level ${level}; it must be at least 1.` })
+            break
+          }
+          xpToNext.push(Math.round(v))
+        }
+    } catch (e) {
+      issues.push({ level: 'error', code: 'gameplay.xpFormula', where: at('xpFormula'), message: `XP needed for the next level: ${(e as Error).message}` })
+    }
+  }
+  const pts = (k: string) => Math.max(0, given(d[k]) ?? 0)
+  return { rules: { levelCap, xpToNext, skillPointsPerLevel: pts('skillPointsPerLevel'), statPointsPerLevel: pts('statPointsPerLevel'), startSkillPoints: pts('startSkillPoints'), defaults }, issues }
+}
+
+/**
+ * Trading (phase 20): a wallet in the base unit (Trade & Economy › Money: starting money, wallet limit) that quests'
+ * Reward money fills; merchants of Trade & Economy placed on maps (spawn role “merchant”). A merchant sells its goods
+ * at the item's Value × its markup (rounded up) and buys its goods and items of the types it buys at Value × its
+ * buyback (rounded down), while it has money for buying. Items without a value are not traded. Stock sizes, rarity,
+ * visits, restocking and currencies other than the base unit are not run.
+ */
+export type TradeOffer = { item: string; price: number }
+export type MerchantRules = { merchant: string; name: string; sells: TradeOffer[]; buys: TradeOffer[]; gold?: number }
+export type TradeRules = { startMoney: number; walletCap?: number; merchants: MerchantRules[] }
+
+export function tradeRules(p: Project): { rules: TradeRules; issues: GameplayIssue[] } {
+  const issues: GameplayIssue[] = []
+  const money = (p.documents['design.trade']?.data.money ?? {}) as Record<string, unknown>
+  const items = list(p, ITEMS, 'items')
+  const valueOf = new Map(items.map((i) => [String(i.id), given(i.value) ?? 0]))
+  const placed = new Set(placements(p).placements.filter((x) => x.role === 'merchant').map((x) => x.merchant!))
+  const merchants: MerchantRules[] = []
+  for (const m of list(p, 'design.trade', 'merchants')) {
+    const id = String(m.id)
+    if (!placed.has(id)) continue
+    const name = str(m.name) || id
+    const at = (field: string) => ({ doc: 'design.trade', section: 'merchants', id, field })
+    const markup = given(m.markup) !== undefined && given(m.markup)! > 0 ? given(m.markup)! : 1
+    const buyback = given(m.buyback) !== undefined && given(m.buyback)! >= 0 ? given(m.buyback)! : 1
+    const goods = (Array.isArray(m.goods) ? m.goods : []).map(String)
+    const types = new Set((Array.isArray(m.buys) ? m.buys : []).map(String))
+    const unknown = goods.filter((x) => !valueOf.has(x))
+    if (unknown.length) issues.push({ level: 'error', code: 'gameplay.unknownItem', where: at('goods'), message: `${name} sells ${unknown.join(', ')}, which ${unknown.length === 1 ? 'is not an item' : 'are not items'}.` })
+    const noValue = goods.filter((x) => valueOf.has(x) && !(valueOf.get(x)! > 0))
+    if (noValue.length) issues.push({ level: 'info', code: 'gameplay.noValue', where: at('goods'), message: `${name}: ${noValue.map((x) => str(items.find((i) => String(i.id) === x)?.name) || x).join(', ')} ${noValue.length === 1 ? 'has' : 'have'} no Value, so ${noValue.length === 1 ? 'it is' : 'they are'} not traded.` })
+    const sells = goods.filter((x) => valueOf.get(x)! > 0).map((item) => ({ item, price: Math.ceil(valueOf.get(item)! * markup) }))
+    const buyIds = [...new Set([...goods, ...items.filter((i) => types.has(str(i.type))).map((i) => String(i.id))])].filter((x) => valueOf.get(x)! > 0)
+    const buys = buyIds.map((item) => ({ item, price: Math.floor(valueOf.get(item)! * buyback) })).filter((o) => o.price >= 1)
+    if (!sells.length && !buys.length) issues.push({ level: 'error', code: 'gameplay.merchantEmpty', where: at('goods'), message: `${name} is placed on a map but neither sells nor buys an item with a value.` })
+    const gold = given(m.gold)
+    merchants.push({ merchant: id, name, sells, buys, ...(gold !== undefined && gold >= 0 ? { gold } : {}) })
+  }
+  const cap = given(money.walletCap)
+  return { rules: { startMoney: Math.max(0, given(money.startingMoney) ?? 0), ...(cap !== undefined && cap > 0 ? { walletCap: cap } : {}), merchants }, issues }
+}
+
+/**
+ * Day and night (phase 20): an in-game clock at Time, Weather & Events › Day length (real minutes per day), starting at
+ * 08:00 (a visible default), and the day phases (start hour, duration): the current phase sets the light (Visibility %)
+ * and, with combat, multiplies the enemies' damage (Monster strength ×, empty 1). Phases that overlap or leave hours
+ * uncovered are reported; an uncovered hour has full light and strength 1. Seasons, weather and events are not run.
+ */
+export type DayPhase = { phase: string; name: string; start: number; duration: number; visibility: number; strength: number }
+export type TimeRules = { dayMinutes: number; startHour: number; phases: DayPhase[]; defaults: string[] }
+export const TIME_DEFAULTS = { startHour: 8 } as const
+
+export function timeRules(p: Project): { rules: TimeRules; issues: GameplayIssue[] } {
+  const issues: GameplayIssue[] = []
+  const doc = 'design.timeWeather'
+  const time = (p.documents[doc]?.data.time ?? {}) as Record<string, unknown>
+  const dayMinutes = Math.max(0, given(time.dayLength) ?? 0)
+  const phases: DayPhase[] = []
+  for (const ph of list(p, doc, 'dayPhases')) {
+    const id = String(ph.id)
+    const start = given(ph.start)
+    const duration = given(ph.duration)
+    if (start === undefined || duration === undefined || duration <= 0) {
+      issues.push({ level: 'error', code: 'gameplay.phaseHours', where: { doc, section: 'dayPhases', id, field: start === undefined ? 'start' : 'duration' }, message: `Day phase “${str(ph.name) || id}” needs a start hour and a duration.` })
+      continue
+    }
+    phases.push({ phase: id, name: str(ph.name) || id, start: ((start % 24) + 24) % 24, duration: Math.min(24, duration), visibility: Math.min(100, Math.max(0, given(ph.visibility) ?? 100)), strength: Math.max(0, given(ph.strength ?? ph.monsterStrength) ?? 1) })
+  }
+  // Every half hour of the day: covered by how many phases.
+  const cover = new Array(48).fill(0)
+  for (const ph of phases) for (let h = 0; h < ph.duration * 2; h++) cover[(Math.round(ph.start * 2) + h) % 48]++
+  if (phases.length && cover.some((c) => c > 1)) issues.push({ level: 'warning', code: 'gameplay.phaseOverlap', where: { doc, section: 'dayPhases' }, message: 'Day phases overlap; where they do, the first one in the list is used.' })
+  if (phases.length && cover.some((c) => c === 0)) issues.push({ level: 'warning', code: 'gameplay.phaseGap', where: { doc, section: 'dayPhases' }, message: 'Some hours of the day are in no day phase; they get full light and monster strength 1.' })
+  const notRun = [...(list(p, doc, 'seasons').length ? ['seasons'] : []), ...(list(p, doc, 'weather').length ? ['weather'] : []), ...(list(p, doc, 'events').length ? ['special events'] : [])]
+  if (notRun.length) issues.push({ level: 'info', code: 'gameplay.timeUnchecked', where: { doc, section: 'time' }, message: `The prototype's day and night does not run ${notRun.join(', ')}.` })
+  return { rules: { dayMinutes, startHour: TIME_DEFAULTS.startHour, phases, defaults: [`start hour = ${TIME_DEFAULTS.startHour}:00`] }, issues }
 }
 
 /**
@@ -339,7 +630,12 @@ export function recipeRules(p: Project): { rules: RecipeRule[]; issues: Gameplay
  * Not run, and said so: ranged, caster and support enemies, crits, status effects, difficulty and night scaling,
  * weighted loot rolls, bosses and variants.
  */
-export type CombatEnemy = { enemy: string; name: string; hp: number; damage: number; attackRate: number; armor: number; resistances: Record<string, number>; damageType?: string; speed: number; passive: boolean; xp: number; loot: ItemAmount[] }
+/**
+ * An enemy's behaviour template (phase 19): `aggression` (Passive never attacks; Territorial chases until it is more than
+ * `giveUp` metres from its post or patrol route; a Hunter chases until it loses sight of the player), `sight` in metres
+ * (walls block it). It goes back to its post (or patrol route) after losing sight for COMBAT_DEFAULTS.forgetAfter seconds.
+ */
+export type CombatEnemy = { enemy: string; name: string; hp: number; damage: number; attackRate: number; armor: number; resistances: Record<string, number>; damageType?: string; speed: number; passive: boolean; aggression: 'Passive' | 'Territorial' | 'Hunter'; sight: number; giveUp?: number; xp: number; loot: ItemAmount[] }
 export type CombatRules = {
   player: { hp: number; weapon?: { item: string; damage: number; damageType?: string; attackRate: number } }
   formula: string
@@ -347,7 +643,7 @@ export type CombatRules = {
   /** Visible defaults the rules filled in. */
   defaults: string[]
 }
-export const COMBAT_DEFAULTS = { playerHp: 100, enemySpeed: 2, weaponRate: 1, aggroRadius: 8, enemyReach: 1.5 } as const
+export const COMBAT_DEFAULTS = { playerHp: 100, enemySpeed: 2, weaponRate: 1, aggroRadius: 8, enemyReach: 1.5, territorialGiveUp: 12, forgetAfter: 3 } as const
 const FORMULA_VARS = ['attack', 'armor', 'resist', 'crit']
 const UNSUPPORTED_ROLES = ['Ranged', 'Caster', 'Support']
 
@@ -415,6 +711,13 @@ export function combatRules(p: Project): { rules: CombatRules; issues: GameplayI
     if (ehp === undefined || edmg === undefined || erate === undefined) continue
     const speed = n(e.speed) && n(e.speed)! > 0 ? n(e.speed)! : COMBAT_DEFAULTS.enemySpeed
     if (!(n(e.speed)! > 0)) defaults.push(`${name} speed = ${COMBAT_DEFAULTS.enemySpeed} m/s`)
+    const planned = str(e.aggression)
+    const aggression = planned === 'Passive' || planned === 'Hunter' || planned === 'Territorial' ? planned : 'Territorial'
+    if (aggression !== planned) defaults.push(`${name} aggression = Territorial`)
+    const sight = n(e.sight) !== undefined && n(e.sight)! > 0 ? n(e.sight)! : COMBAT_DEFAULTS.aggroRadius
+    if (!(n(e.sight)! > 0) && aggression !== 'Passive') defaults.push(`${name} sight range = ${COMBAT_DEFAULTS.aggroRadius} m`)
+    const giveUp = n(e.giveUp) !== undefined && n(e.giveUp)! > 0 ? n(e.giveUp)! : aggression === 'Territorial' ? COMBAT_DEFAULTS.territorialGiveUp : undefined
+    if (!(n(e.giveUp)! > 0) && aggression === 'Territorial') defaults.push(`${name} gives up beyond ${COMBAT_DEFAULTS.territorialGiveUp} m`)
     const resistances = Object.fromEntries(Object.entries((e.resistances && typeof e.resistances === 'object' ? e.resistances : {}) as Record<string, unknown>).filter(([, v]) => typeof v === 'number').map(([k, v]) => [k, v as number]))
     const loot: ItemAmount[] = []
     for (const t of lootTables) {
@@ -432,9 +735,10 @@ export function combatRules(p: Project): { rules: CombatRules; issues: GameplayI
       ...(str(e.pattern) ? ['attack pattern'] : []),
       ...(Array.isArray(e.weaknesses) && e.weaknesses.length ? ['weaknesses (use Resistances)'] : []),
       ...(e.nightVariant ? ['night variant'] : []),
+      ...(str(e.behavior) ? ['behavior notes'] : []),
     ]
     if (unchecked.length) issues.push({ level: 'info', code: 'gameplay.enemyUnchecked', where: at('pattern'), message: `${name}: the prototype does not run ${unchecked.join(', ')}.` })
-    enemies.push({ enemy: id, name, hp: ehp, damage: edmg, attackRate: erate, armor: n(e.armor) ?? 0, resistances, ...(str(e.damageType) ? { damageType: str(e.damageType) } : {}), speed, passive: str(e.aggression) === 'Passive', xp: n(e.xp) ?? 0, loot })
+    enemies.push({ enemy: id, name, hp: ehp, damage: edmg, attackRate: erate, armor: n(e.armor) ?? 0, resistances, ...(str(e.damageType) ? { damageType: str(e.damageType) } : {}), speed, passive: aggression === 'Passive', aggression, sight, ...(giveUp !== undefined ? { giveUp } : {}), xp: n(e.xp) ?? 0, loot })
   }
   const dm = form('design.combat', 'damageModel')
   const notRun = [
@@ -445,4 +749,58 @@ export function combatRules(p: Project): { rules: CombatRules; issues: GameplayI
   ]
   if (notRun.length) issues.push({ level: 'info', code: 'gameplay.combatUnchecked', where: { doc: 'design.combat', section: 'damageModel' }, message: `The prototype's combat does not run ${notRun.join(', ')}.` })
   return { rules: { player: { hp, ...(weapon ? { weapon } : {}) }, formula, enemies, defaults }, issues }
+}
+
+/**
+ * Typed dialogue (phase 16), from Story & Quests › Dialogue lines: every line is said by a character (Speaker). A line
+ * with no “Answers” starts that character's conversation; the lines that answer a line are the player's options there,
+ * each shown with its “Player says” text. Picking an option shows its line and runs its consequences once: the story
+ * choice it makes (only while the quest graph allows it — one option per decision) and the items it gives. A line
+ * without options ends the conversation. The Dialogue and narrative style text is a description and never runs.
+ */
+export type DialogueLine = { line: string; speaker: string; text: string; after?: string; option?: string; choice?: string; give: ItemAmount[] }
+
+export function dialogueRules(p: Project): { lines: DialogueLine[]; issues: GameplayIssue[] } {
+  const issues: GameplayIssue[] = []
+  const items = new Set(list(p, ITEMS, 'items').map((i) => String(i.id)))
+  const characters = new Map(list(p, STORY, 'characters').map((c) => [String(c.id), str(c.name) || String(c.id)]))
+  const choices = new Set(list(p, STORY, 'choices').map((c) => String(c.id)))
+  const raw = list(p, STORY, 'dialogueLines')
+  const ids = new Set(raw.map((l) => String(l.id)))
+  const lines: DialogueLine[] = []
+  for (const l of raw) {
+    const id = String(l.id)
+    const at = (field: string): GameplayIssue['where'] => ({ doc: STORY, section: 'dialogueLines', id, field })
+    const label = str(l.name) || str(l.text).slice(0, 30) || id
+    const before = issues.length
+    const speaker = str(l.speaker)
+    if (!speaker || !characters.has(speaker)) issues.push({ level: 'error', code: 'gameplay.lineSpeaker', where: at('speaker'), message: `Dialogue line “${label}”: ${speaker ? `the speaker “${speaker}” is not a character` : 'no speaker'}.` })
+    if (!str(l.text)) issues.push({ level: 'error', code: 'gameplay.lineText', where: at('text'), message: `Dialogue line “${label}” has no text.` })
+    const after = str(l.after)
+    if (after && !ids.has(after)) issues.push({ level: 'error', code: 'gameplay.lineAfter', where: at('after'), message: `Dialogue line “${label}” answers a line that does not exist.` })
+    if (after && !str(l.option)) issues.push({ level: 'error', code: 'gameplay.lineOption', where: at('option'), message: `Dialogue line “${label}” answers another line but has no “Player says” text, so the player could not pick it.` })
+    const choice = str(l.choice)
+    if (choice && !choices.has(choice)) issues.push({ level: 'error', code: 'gameplay.lineChoice', where: at('choice'), message: `Dialogue line “${label}” makes a choice that is not in Story & Quests › Choices.` })
+    if (choice && !after) issues.push({ level: 'error', code: 'gameplay.lineChoice', where: at('choice'), message: `Dialogue line “${label}” starts a conversation, so no option leads to it and its choice could never be made; move the choice to an answer.` })
+    const give = amounts(l.giveItems, items, at('giveItems'), `Dialogue line “${label}” › Gives items`, issues)
+    if (issues.length > before) continue
+    lines.push({ line: id, speaker, text: str(l.text), ...(after ? { after } : {}), ...(str(l.option) ? { option: str(l.option) } : {}), ...(choice ? { choice } : {}), give })
+  }
+  // Loops (a line that answers itself through others) and characters with more than one start.
+  const byId = new Map(lines.map((l) => [l.line, l]))
+  for (const l of lines) {
+    const seen = new Set<string>()
+    for (let at: DialogueLine | undefined = l; at?.after; at = byId.get(at.after)) {
+      if (seen.has(at.line)) {
+        issues.push({ level: 'error', code: 'gameplay.lineLoop', where: { doc: STORY, section: 'dialogueLines', id: l.line, field: 'after' }, message: 'Dialogue lines answer each other in a loop; a conversation must start somewhere.' })
+        break
+      }
+      seen.add(at.line)
+    }
+  }
+  for (const [speaker, name] of characters) {
+    const starts = lines.filter((l) => l.speaker === speaker && !l.after)
+    if (starts.length > 1) issues.push({ level: 'warning', code: 'gameplay.manyStarts', where: { doc: STORY, section: 'dialogueLines', id: starts[1].line, field: 'after' }, message: `${name} has ${starts.length} lines that start a conversation; the first is used.` })
+  }
+  return { lines: issues.some((i) => i.code === 'gameplay.lineLoop') ? [] : lines, issues }
 }

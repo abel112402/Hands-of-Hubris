@@ -24,7 +24,7 @@ describe('combat rules from the plan', () => {
     expect(rules).toEqual({
       player: { hp: 30, weapon: { item: IDS.itemStick, damage: 6, attackRate: 2 } },
       formula: 'attack * 100 / (100 + armor) * (1 - resist / 100) * crit',
-      enemies: [{ enemy: IDS.enemy, name: 'Yard Rat', hp: 20, damage: 3, attackRate: 1, armor: 10, resistances: {}, speed: 2, passive: false, xp: 5, loot: [{ item: IDS.itemCoin, count: 1 }] }],
+      enemies: [{ enemy: IDS.enemy, name: 'Yard Rat', hp: 20, damage: 3, attackRate: 1, armor: 10, resistances: {}, speed: 2, passive: false, aggression: 'Territorial', sight: 6, giveUp: 10, xp: 5, loot: [{ item: IDS.itemCoin, count: 1 }] }],
       defaults: ['damage formula = attack * 100 / (100 + armor) * (1 - resist / 100) * crit'],
     })
   })
@@ -96,7 +96,7 @@ describe('combat in the capability matrix', () => {
     proto(p).interaction = false
     expect(report(p)).toContainEqual(expect.objectContaining({ code: 'proto.requires', field: 'combat', where: expect.objectContaining({ field: 'interaction' }) }))
     const q = buildReferenceSlice()
-    ;(q.documents['technical.save'].data.parts as Entity[]).pop()
+    q.documents['technical.save'].data.parts = (q.documents['technical.save'].data.parts as Entity[]).filter((x) => x.state !== 'Combat')
     expect(report(q).some((i) => i.code === 'proto.dataMissing' && i.message.includes('Runtime state is Combat'))).toBe(true)
   })
 })
@@ -116,7 +116,7 @@ describe('Unity export of combat', () => {
     expect(formula).toMatch(/public float Damage\(float attack, float armor, float resist, float crit\) => attack \* 100f? \/ \(100f? \+ armor\) \* \(1f? - resist \/ 100f?\) \* crit;/)
     const config = unityFile(p, 'Unity/Scripts/Generated/Gameplay/PlannerGameplay.cs')!
     // 6 × 100 / 110 = 5.454545 per player hit, 3 per rat hit.
-    expect(config).toContain(`("${IDS.enemySpawn}", "${IDS.enemy}", "Yard Rat", 20f, 5.454545f, 3f, 5, false, new (string, int)[] { ("${IDS.itemCoin}", 1) })`)
+    expect(config).toContain(`("${IDS.enemySpawn}", "${IDS.enemy}", "Yard Rat", 20f, 5.454545f, 3f, 5, false, new (string, int)[] { ("${IDS.itemCoin}", 1) }, 6f, 10f, 3)`)
     expect(config).toContain('public const string AttackKey = "f";')
     expect(config).toContain('public const float PlayerHp = 30.0f;')
   })

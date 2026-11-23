@@ -37,10 +37,10 @@ describe('baseline export of the reference slice', () => {
 
   it('exports the item records, controls, quest, save parts, scene and map', () => {
     expect(ir.records.map((r) => [r.plannerId, r.key])).toEqual([[IDS.itemKey, 'item.brass_key'], [IDS.itemCoin, 'item.coin'], [IDS.itemStick, 'item.stick'], [IDS.itemPolished, 'item.polished_key'], [IDS.recipe, 'rcp.polished_key']])
-    expect(ir.input.actions.map((a) => a.name)).toEqual(['Move forward', 'Move back', 'Move left', 'Move right', 'Interact', 'Inventory', 'Crafting', 'Attack', 'Pause'])
+    expect(ir.input.actions.map((a) => a.name)).toEqual(['Move forward', 'Move back', 'Move left', 'Move right', 'Interact', 'Inventory', 'Crafting', 'Attack', 'Quick save', 'Quick load', 'Pause'])
     expect(ir.story.quests.map((q) => [q.id, q.objectives])).toEqual([[IDS.quest, ['Pick up the Brass Key']]])
     expect(ir.save).toMatchObject({ version: 1, manualSlots: 1, autoSlots: 0 })
-    expect(ir.save.parts.map((p) => p.key)).toEqual(['player', 'inventory', 'quest_log', 'combat'])
+    expect(ir.save.parts.map((p) => p.key)).toEqual(['player', 'inventory', 'quest_log', 'combat', 'dialogue', 'progression', 'trade', 'time'])
     expect(ir.scenes.scenes.map((s) => s.name)).toEqual(['Keeper’s Yard'])
     expect(ir.ui.screens.map((s) => [s.name, s.entry])).toEqual([['HUD', true]])
     expect(paths).toContain(`Maps/${IDS.location}.json`)
@@ -50,7 +50,7 @@ describe('baseline export of the reference slice', () => {
   it('has no data problems, nothing blocks and no system is only a frame: the export says Playable', () => {
     expect(issues.filter((i) => i.level !== 'info')).toEqual([])
     const proto = bundle.issues.filter((i) => i.code.startsWith('proto.'))
-    expect(bundle.issues.filter((i) => !i.code.startsWith('proto.')).map((i) => i.code).sort()).toEqual(['gameplay.combatModel', 'gameplay.default', 'gameplay.default', 'record.assetUnset', 'unity.renamed', 'unity.renamed'])
+    expect(bundle.issues.filter((i) => !i.code.startsWith('proto.')).map((i) => i.code).sort()).toEqual(['gameplay.combatModel', 'gameplay.default', 'gameplay.default', 'gameplay.default', 'record.assetUnset', 'unity.renamed', 'unity.renamed'])
     expect(proto.filter((i) => i.level === 'error').map((i) => [i.code, i.field])).toEqual([])
     expect(proto.filter((i) => i.level === 'warning').map((i) => i.field)).toEqual([])
     expect(bundle.files.find((f) => f.path === 'README.md')!.content).toContain('**Playable.** Profile: 3D, Third-person, URP, Windows.')
@@ -74,10 +74,10 @@ describe('baseline export of the reference slice', () => {
     // Phase 7: the four Move controls become one Move stick (a 2D-vector composite) in the Prototype map.
     const asset = JSON.parse(bundle.files.find((f) => f.path === 'Unity/Input/ReferenceSlice3D.inputactions')!.content)
     const map = asset.maps.find((m: { name: string }) => m.name === 'Prototype')
-    expect(map.actions.map((a: { name: string; expectedControlType: string }) => [a.name, a.expectedControlType])).toEqual([['Move', 'Vector2'], ['Interact', 'Button'], ['Crafting', 'Button'], ['Attack', 'Button']])
-    expect(map.bindings.map((b: { name: string; path: string }) => [b.name, b.path])).toEqual([['Keys', '2DVector'], ['up', '<Keyboard>/w'], ['down', '<Keyboard>/s'], ['left', '<Keyboard>/a'], ['right', '<Keyboard>/d'], ['', '<Keyboard>/e'], ['', '<Keyboard>/f'], ['', '<Keyboard>/c']])
+    expect(map.actions.map((a: { name: string; expectedControlType: string }) => [a.name, a.expectedControlType])).toEqual([['Move', 'Vector2'], ['Interact', 'Button'], ['Crafting', 'Button'], ['Attack', 'Button'], ['QuickSave', 'Button'], ['QuickLoad', 'Button']])
+    expect(map.bindings.map((b: { name: string; path: string }) => [b.name, b.path])).toEqual([['Keys', '2DVector'], ['up', '<Keyboard>/w'], ['down', '<Keyboard>/s'], ['left', '<Keyboard>/a'], ['right', '<Keyboard>/d'], ['', '<Keyboard>/e'], ['', '<Keyboard>/f'], ['', '<Keyboard>/c'], ['', '<Keyboard>/f5'], ['', '<Keyboard>/f9']])
     // The placements already reach the map export as hoh-location spawns.
     const spawns = JSON.parse(bundle.files.find((f) => f.path === `Maps/${IDS.location}.json`)!.content).spawns
-    expect(spawns.map((s: { role: string; refId?: string }) => [s.role, s.refId])).toEqual([['player', undefined], ['item', IDS.itemKey], ['enemy', IDS.enemy]])
+    expect(spawns.map((s: { role: string; refId?: string }) => [s.role, s.refId])).toEqual([['player', undefined], ['item', IDS.itemKey], ['enemy', IDS.enemy], ['npc', IDS.keeper], ['merchant', IDS.merchant]])
   })
 })

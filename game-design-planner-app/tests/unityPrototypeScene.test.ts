@@ -71,7 +71,7 @@ describe('Unity export of the prototype scene', () => {
     const config = file(p, 'Unity/Scripts/Generated/Gameplay/PlannerGameplay.cs')!
     expect(config).toContain('public const string Scene = "Keeper’s Yard";')
     expect(config).toContain('public const string SceneLabel = "PlannerPrototype";')
-    expect(config).toContain('public const int PlacedItems = 1;')
+    expect(config).toContain('public const int PlacedItems = 2;')
     const test = file(p, 'Unity/Tests/PlayMode/PlannerPrototypeSceneTests.cs')!
     expect(test).toContain('public class PlannerPrototypeSceneTests')
     expect(test).toContain('LoadSceneAsyncInPlayMode')
@@ -79,8 +79,8 @@ describe('Unity export of the prototype scene', () => {
     expect(test).toContain('PlannerRuntimeState.Running')
   })
 
-  it('asks for runtime 0.10.0 (placements, interaction, inventory, quests, saving, self-test, crafting, combat)', () => {
+  it('asks for runtime 0.15.0 (placements, interaction, inventory, quests, saving, self-test, crafting, combat, dialogue, quick save, passages, enemy behaviour, progression, trade, time)', () => {
     const b = buildBundle(buildReferenceSlice(), 'unity', AT)
-    expect(b.manifest.requires?.runtime).toEqual({ package: 'com.handsofhubris.planner-runtime', version: '0.10.0' })
+    expect(b.manifest.requires?.runtime).toEqual({ package: 'com.handsofhubris.planner-runtime', version: '0.15.0' })
   })
 })

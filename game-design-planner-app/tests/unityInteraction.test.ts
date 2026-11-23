@@ -55,7 +55,7 @@ describe('interaction support', () => {
 describe('Unity export of picking up', () => {
   it('lists the scene pickups with planner IDs, record keys and counts', () => {
     const config = file(buildReferenceSlice(), 'Unity/Scripts/Generated/Gameplay/PlannerGameplay.cs')!
-    expect(config).toContain(`Pickups = { ("${IDS.itemKey}", "item.brass_key", 1) };`)
+    expect(config).toContain(`Pickups = { ("${IDS.itemKey}", "item.brass_key", 1), ("${IDS.itemCoin}", "item.coin", 3) };`)
   })
 
   it('generates the pick-up PlayMode tests only when the plan chose interaction', () => {

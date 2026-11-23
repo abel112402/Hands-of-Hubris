@@ -1,6 +1,9 @@
 import {
   BREAKS,
+  EVIDENCE,
   GATE_USAGE,
+  SYSTEM_IDS,
+  coverageOf,
   exitCodeOf,
   exportPlan,
   gateManifest,
@@ -12,6 +15,7 @@ import {
   unityOutcome,
   withBothInputs,
   withChangedValue,
+  withoutSystems,
   type EditorRun,
   type GateReport,
   type Step,
@@ -58,6 +62,8 @@ async function main(): Promise<number> {
   const planFile = opt('--plan') ?? `${app}/tests/fixtures/reference-slice-3d.hohplan.json`
   const breaks = all('--break')
   for (const b of breaks) if (!BREAKS[b]) return bad(`Unknown --break ${b}; one of ${Object.keys(BREAKS).join(', ')}.`)
+  const without = all('--without').flatMap((x) => x.split(',').map((y) => y.trim()).filter(Boolean))
+  for (const w of without) if (!SYSTEM_IDS.includes(w)) return bad(`Unknown --without ${w}; one of ${SYSTEM_IDS.join(', ')}.`)
   const hub = 'C:/Program Files/Unity/Hub/Editor'
   const fromEnv = (v?: string) => (v ? v.split(';').map((x) => x.trim()).filter(Boolean) : [])
   const full = [...all('--editor'), ...fromEnv(process.env.HOH_GATE_EDITOR)]
@@ -68,9 +74,10 @@ async function main(): Promise<number> {
   }
   if (!fs.existsSync(planFile)) return bad(`No plan file ${planFile}.`)
   fs.mkdirSync(work, { recursive: true })
-  const report: GateReport = { startedAt: new Date().toISOString(), plan: slash(planFile), breaks, editors: [], overall: 'blocked' }
+  const report: GateReport = { startedAt: new Date().toISOString(), plan: slash(planFile), breaks, ...(without.length ? { without } : {}), editors: [], overall: 'blocked' }
   const planText = read(planFile)
-  const change = breaks.length ? (p: Parameters<(typeof BREAKS)[string]['apply']>[0]) => breaks.forEach((b) => BREAKS[b].apply(p)) : null
+  const change = breaks.length || without.length ? (p: Parameters<(typeof BREAKS)[string]['apply']>[0]) => { withoutSystems(without)(p); breaks.forEach((b) => BREAKS[b].apply(p)) } : null
+  if (without.length) say(`Without: ${without.join(', ')} — the other chosen systems must still pass.`)
   for (const b of breaks) say(`Broken on purpose: ${b} — ${BREAKS[b].what} Expected to fail: ${BREAKS[b].fails}.`)
 
   // The export, shared by every editor.
@@ -85,6 +92,8 @@ async function main(): Promise<number> {
     seconds: (Date.now() - t0) / 1000,
   }
   say(`[gate] ${exportStep.status}: ${exportStep.title} — ${exportStep.detail}`)
+  report.systems = exported.systems
+  report.handWork = exported.handWork
 
   for (const exe of [...full, ...compile]) {
     const mode = full.includes(exe) ? 'full' : 'compile'
@@ -92,7 +101,9 @@ async function main(): Promise<number> {
     const e: EditorRun = { editor: slash(exe), version, mode, project: `${work}/project-${version}`, packages: {}, steps: [{ ...exportStep }] }
     report.editors.push(e)
     if (!fs.existsSync(exe)) say(`[gate] No Unity editor at ${exe}: its steps are blocked.`)
-    await gateEditor(e, { exe, app, work, zip, planText, change })
+    await gateEditor(e, { exe, app, work, zip, planText, change, systems: exported.systems })
+    const cov = e.steps.find((s) => s.id === 'coverage')
+    if (cov?.status === 'passed' || cov?.status === 'failed') report.coverage = coverageFromLogs(`${work}/logs-${version}`, exported.systems)
     e.packages = packagesOf(read(`${e.project}/Packages/packages-lock.json`), (path) => { try { return (JSON.parse(read(`${path}/package.json`)) as { version?: string }).version } catch { return undefined } })
   }
   report.overall = overallOf(report.editors)
@@ -111,7 +122,13 @@ function bad(message: string): number {
   return 2
 }
 
-type Ctx = { exe: string; app: string; work: string; zip: string; planText: string; change: ((p: never) => void) | null }
+type Ctx = { exe: string; app: string; work: string; zip: string; planText: string; change: ((p: never) => void) | null; systems: string[] }
+
+/** The evidence per chosen system from a full editor's PlayMode results and the player's self-test report. */
+function coverageFromLogs(logs: string, systems: string[]) {
+  const self = read(`${logs}/selftest.json`)
+  return coverageOf(systems, parseNUnit(read(`${logs}/PlayMode.xml`)), self ? (JSON.parse(self) as { checks: { name: string; passed: boolean }[] }).checks : null)
+}
 
 async function gateEditor(e: EditorRun, c: Ctx) {
   const P = e.project
@@ -193,6 +210,8 @@ async function gateEditor(e: EditorRun, c: Ctx) {
     target ? method('player', 'HoHPlanner.Bridge.Editor.PlannerCIProject.BuildPlayer', ['-hohBuildPath', exePath, '-hohBuildTarget', target[0]]) : { status: 'skipped', detail: `no standalone build target for ${platform}` },
   )
   const selfReport = `${logs}/selftest.json`
+  // A report from an earlier run must never count as this run's evidence.
+  if (fs.existsSync(selfReport)) fs.rmSync(selfReport, { force: true })
   await step('selftest', 'Player self-test (play, pick up, quest, save, fresh game, load)', ['player'], async () => {
     if (!(platform === 'Windows' && process.platform === 'win32')) return { status: 'skipped', detail: `a ${platform} player does not run on this machine` }
     if (fs.existsSync(selfReport)) fs.rmSync(selfReport, { force: true })
@@ -204,11 +223,17 @@ async function gateEditor(e: EditorRun, c: Ctx) {
   })
   // 12. Save/load: the generated PlayMode test and the player self-test.
   await step('saveload', 'Save and load into a fresh game', ['playmode'], async () => {
+    if (!c.systems.includes('saveLoad')) return { status: 'skipped', detail: 'Save and load is not chosen' }
     const n = parseNUnit(read(`${logs}/PlayMode.xml`))
-    const inEditor = n?.passedNames.find((x) => x.includes('TheSliceIsTheSameAfterSavingAndLoadingIntoAFreshGame'))
+    const inEditor = n?.passedNames.find((x) => EVIDENCE.saveLoad.tests.some((t) => x.endsWith('.' + t)))
     const self = read(selfReport) ? (JSON.parse(read(selfReport)) as { checks: { name: string; passed: boolean }[] }).checks.find((x) => x.name.startsWith('save and load')) : undefined
     const ok = !!inEditor && (self ? self.passed : true)
     return { status: ok ? 'passed' : 'failed', detail: `PlayMode ${inEditor ? 'passed' : 'not passed'}; player ${self ? (self.passed ? 'passed' : 'failed') : 'not run'}` }
+  })
+  // 12b. The extended gate (phase 17): every chosen system has passing evidence of its own.
+  await step('coverage', 'Extended gate: evidence per chosen system', ['playmode'], async () => {
+    const cov = coverageFromLogs(logs, c.systems)
+    return { status: cov.every((x) => x.ok) ? 'passed' : 'failed', detail: cov.map((x) => `${x.ok ? '✓' : '✗'} ${x.system}${x.ok ? '' : ` (${x.why})`}`).join('; ') || 'no system chosen' }
   })
   // 13. Unchanged re-import: nothing written, the scene up to date.
   await step('reimport', 'Unchanged re-import (no writes, scene up to date)', ['scene'], async () => {
@@ -230,6 +255,11 @@ async function gateEditor(e: EditorRun, c: Ctx) {
     const watch = [`${root}/Prototype/${scene}`, `${root}/Prototype/Player.prefab`]
     const before = watch.map(guid)
     const prefab = read(`${root}/Prototype/Player.prefab`)
+    // A scene of yours (a copy of the generated one, elsewhere): imports and scene builds must leave it as it is.
+    const ownScene = `${P}/Assets/GateOwn/OwnScene.unity`
+    fs.mkdirSync(`${P}/Assets/GateOwn`, { recursive: true })
+    fs.copyFileSync(watch[0], ownScene)
+    const ownSceneText = read(ownScene)
     const zip2 = `${c.work}/export-changed.zip`
     let expect = ''
     const ex = await exportPlan(c.planText, (p) => {
@@ -248,6 +278,7 @@ async function gateEditor(e: EditorRun, c: Ctx) {
       [`code has ${expect}`, code.includes(expect)],
       [`scene has walk speed ${speed}`, new RegExp(`propertyPath: MoveSpeed\\s+value: ${speed.replace('.', '\\.')}`).test(sceneText) || new RegExp(`MoveSpeed: ${speed.replace('.', '\\.')}`).test(sceneText)],
       ['your file kept', read(own) === ownText],
+      ['your scene kept', read(ownScene) === ownSceneText],
       ['Player.prefab (yours) unchanged', read(`${root}/Prototype/Player.prefab`) === prefab],
       ['scene and prefab GUIDs kept', watch.map(guid).join() === before.join()],
     ]
@@ -257,6 +288,8 @@ async function gateEditor(e: EditorRun, c: Ctx) {
     const backScene = await method('change-back-scene', 'HoHPlanner.Bridge.Editor.PlannerPrototypeScene.CI')
     checks.push(['back to the plan', back.status === 'passed' && backVal.status === 'passed' && backScene.status === 'passed' && !read(`${root}/Unity/Scripts/Generated/Gameplay/PlannerGameplay.cs`).includes(expect)])
     fs.rmSync(own, { force: true })
+    fs.rmSync(`${P}/Assets/GateOwn`, { recursive: true, force: true })
+    fs.rmSync(`${P}/Assets/GateOwn.meta`, { force: true })
     fs.rmSync(`${own}.meta`, { force: true })
     return { status: checks.every(([, ok]) => ok) ? 'passed' : 'failed', detail: checks.map(([n, ok]) => `${ok ? '✓' : '✗'} ${n}`).join('; ') }
   })

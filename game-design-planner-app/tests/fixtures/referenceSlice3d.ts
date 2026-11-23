@@ -2,6 +2,8 @@ import { createProject } from '../../src/core/model/project'
 import { MODULES, ensureDocument } from '../../src/core/modules/registry'
 import { mapNav } from '../../src/core/location/analysis'
 import { generateMap } from '../../src/core/location/generate'
+import { linkBack, wayOut } from '../../src/core/location/links'
+import { nearestOpen, reachable } from '../../src/core/location/nav'
 import type { Entity, Project } from '../../src/core/model/types'
 
 /**
@@ -26,6 +28,21 @@ export const IDS = {
   enemy: 'refEnemyRat',
   enemySpawn: 'refObjRat',
   loot: 'refLootRat',
+  keeper: 'refCharKeep',
+  npcSpawn: 'refObjKeep',
+  choiceHelp: 'refChHelp',
+  choiceRefuse: 'refChRefuse',
+  lineGreet: 'refLnGreet',
+  lineHelp: 'refLnHelp',
+  lineRefuse: 'refLnRefuse',
+  cave: 'refLocCave',
+  stairs: 'refObjStairs',
+  caveCoin: 'refObjCaveCoin',
+  ratRun: 'refObjRatRun',
+  merchant: 'refMerchPed',
+  merchantSpot: 'refObjPeddler',
+  dayPhase: 'refPhDay',
+  nightPhase: 'refPhNight',
   recipe: 'refRcpPol',
   schemaRecipe: 'refSchRcp',
   itemType: 'refTypeKey',
@@ -43,7 +60,7 @@ export const IDS = {
 
 /** What the first slice needs but the current planner / IR cannot state as data (phase 0 baseline). */
 export const KNOWN_GAPS = [
-  'The first slice is playable from the plan (phases 7–12) and checked by the Unity gate (phase 13); crafting (phase 14) and a melee encounter (phase 15) are in it; NPCs are not planned in this reference yet.',
+  'The first slice is playable from the plan (phases 7–12) and checked by the Unity gate (phase 13); crafting (phase 14), a melee encounter (phase 15) an NPC conversation with a choice (phase 16) a second location, the cave under the well, with stairs both ways (phase 18), a patrolling rat (phase 19), and levels, a peddler and day and night (phase 20) are in it.',
 ] as const
 
 const set = (p: Project, doc: string, section: string, value: unknown) => {
@@ -78,14 +95,14 @@ export function buildReferenceSlice(): Project {
   set(p, 'design.items', 'items', [
     { id: IDS.itemKey, name: 'Brass Key', type: IDS.itemType, value: 0, stack: 1, weight: 0.1, description: 'Lies by the well in the Keeper’s Yard.' },
     { id: IDS.itemCoin, name: 'Coin', type: IDS.itemTypeCurrency, value: 1, stack: 999, weight: 0 },
-    { id: IDS.itemStick, name: 'Stick', type: IDS.itemTypeWeapon, value: 0, stack: 1, weight: 0.5, damage: 6, attackSpeed: 2, equipSlot: 'Main hand', description: 'A stout stick from the yard.' },
+    { id: IDS.itemStick, name: 'Stick', type: IDS.itemTypeWeapon, value: 4, stack: 1, weight: 0.5, damage: 6, attackSpeed: 2, equipSlot: 'Main hand', description: 'A stout stick from the yard.' },
     { id: IDS.itemPolished, name: 'Polished Key', type: IDS.itemType, value: 5, stack: 1, weight: 0.1, description: 'The brass key, polished with two coins’ worth of care.' },
   ])
   // Phase 14: one recipe made of items, unlocked by the quest.
   // Phase 15: the rat always drops a coin.
   set(p, 'design.items', 'loot', [{ id: IDS.loot, name: 'Rat drop', sources: [IDS.enemy], guaranteed: [IDS.itemCoin] }])
   // Design › Combat: one melee enemy, the default damage formula.
-  set(p, 'design.combat', 'enemies', [{ id: IDS.enemy, name: 'Yard Rat', role: 'Swarm', tier: 1, hp: 20, damage: 3, attackRate: 1, speed: 2, armor: 10, aggression: 'Hunter', xp: 5 }])
+  set(p, 'design.combat', 'enemies', [{ id: IDS.enemy, name: 'Yard Rat', role: 'Swarm', tier: 1, hp: 20, damage: 3, attackRate: 1, speed: 2, armor: 10, aggression: 'Territorial', sight: 6, giveUp: 10, xp: 5 }])
   set(p, 'design.items', 'recipes', [{ id: IDS.recipe, name: 'Polished Key', result: IDS.itemPolished, outputQty: 1, ingredients: { [IDS.itemKey]: 1, [IDS.itemCoin]: 2 }, unlockedBy: [IDS.quest] }])
   set(p, 'design.items', 'inventory', { slots: 8, weightLimit: 0, hotbar: 0, encumbrance: '', notes: 'No weight limit in the slice.' })
 
@@ -116,8 +133,76 @@ export function buildReferenceSlice(): Project {
       if (open && dist(at, gate) >= 15 && dist(at, gate) <= 25 && dist(at, well) >= 15) rat = at
     }
   if (!rat) throw new Error('No walkable place for the rat')
-  layer.objects.push({ id: IDS.enemySpawn, kind: 'marker', x: rat.x, y: rat.y, w: 18, h: 18, label: 'Yard Rat', props: { type: 'enemy' }, pinned: true, spawn: { role: 'enemy', refId: IDS.enemy } })
+  // Phase 19: the rat patrols a short run from its spawn: two more open cells about 3 m away, 3 m apart from each other.
+  const openAt = (c: number, r: number) => c > 0 && r > 0 && c < nav.cols - 1 && r < nav.rows - 1 && [-1, 0, 1].every((dr) => [-1, 0, 1].every((dc) => nav.cost[(r + dr) * nav.cols + (c + dc)] > 0))
+  const runPoints: { x: number; y: number }[] = [rat]
+  for (let r = 1; r < nav.rows - 1 && runPoints.length < 3; r++)
+    for (let c = 1; c < nav.cols - 1 && runPoints.length < 3; c++) {
+      const at = { x: (c + 0.5) * nav.cell, y: (r + 0.5) * nav.cell }
+      if (openAt(c, r) && dist(at, rat) >= 2.5 && dist(at, rat) <= 3.5 && runPoints.every((q) => dist(at, q) >= 2.5)) runPoints.push(at)
+    }
+  if (runPoints.length < 3) throw new Error('No open run for the rat')
+  layer.objects.push({ id: IDS.ratRun, kind: 'road', x: rat.x, y: rat.y, rank: 'alley', label: 'Rat run', pinned: true, points: runPoints.map((q) => [q.x, q.y] as [number, number]) })
+  layer.objects.push({ id: IDS.enemySpawn, kind: 'marker', x: rat.x, y: rat.y, w: 18, h: 18, label: 'Yard Rat', props: { type: 'enemy' }, pinned: true, spawn: { role: 'enemy', refId: IDS.enemy, route: IDS.ratRun } })
+  // Phase 16: the keeper stands 4–6 m from the start, out of interaction reach of the start and the key, far from the rat.
+  const keyAt = { x: well.x + 24, y: well.y }
+  let keeper: { x: number; y: number } | undefined
+  for (let r = 1; r < nav.rows - 1 && !keeper; r++)
+    for (let c = 1; c < nav.cols - 1 && !keeper; c++) {
+      const at = { x: (c + 0.5) * nav.cell, y: (r + 0.5) * nav.cell }
+      const open = [-1, 0, 1].every((dr) => [-1, 0, 1].every((dc) => nav.cost[(r + dr) * nav.cols + (c + dc)] > 0))
+      if (open && dist(at, gate) >= 4 && dist(at, gate) <= 6 && dist(at, keyAt) >= 4 && dist(at, rat) >= 12) keeper = at
+    }
+  if (!keeper) throw new Error('No walkable place for the keeper')
+  layer.objects.push({ id: IDS.npcSpawn, kind: 'marker', x: keeper.x, y: keeper.y, w: 18, h: 18, label: 'Keeper', props: { type: 'npc' }, pinned: true, spawn: { role: 'npc', refId: IDS.keeper } })
+  // Phase 20: the peddler's stall: open ground 6–9 m from the start, at least 4 m from the key, the keeper and the
+  // stairs' spot by the well, and 14 m from the rat and its run.
+  const stairsNear = { x: well.x, y: well.y }
+  let stall: { x: number; y: number } | undefined
+  for (let r = 1; r < nav.rows - 1 && !stall; r++)
+    for (let c = 1; c < nav.cols - 1 && !stall; c++) {
+      const at = { x: (c + 0.5) * nav.cell, y: (r + 0.5) * nav.cell }
+      if (openAt(c, r) && dist(at, gate) >= 6 && dist(at, gate) <= 9 && dist(at, keyAt) >= 4 && dist(at, keeper) >= 4 && dist(at, stairsNear) >= 7 && runPoints.every((q) => dist(at, q) >= 14)) stall = at
+    }
+  if (!stall) throw new Error('No place for the peddler')
+  layer.objects.push({ id: IDS.merchantSpot, kind: 'marker', x: stall.x, y: stall.y, w: 18, h: 18, label: 'Peddler', props: { type: 'merchant' }, pinned: true, spawn: { role: 'merchant', refId: IDS.merchant } })
   yard.map = map
+
+  // Phase 18: a second location. Stairs by the well lead down into the Old Well Cave; its way out leads back up. The
+  // stairs stand on walkable ground 3–6 m from the well, out of interaction reach of the key, the keeper and the start,
+  // far from the rat. A Coin pile lies deep in the cave, on ground reachable from the way in.
+  let stairs: { x: number; y: number } | undefined
+  for (let r = 1; r < nav.rows - 1 && !stairs; r++)
+    for (let c = 1; c < nav.cols - 1 && !stairs; c++) {
+      const at = { x: (c + 0.5) * nav.cell, y: (r + 0.5) * nav.cell }
+      const open = [-1, 0, 1].every((dr) => [-1, 0, 1].every((dc) => nav.cost[(r + dr) * nav.cols + (c + dc)] > 0))
+      if (open && dist(at, well) >= 3 && dist(at, well) <= 6 && dist(at, keyAt) >= 4 && dist(at, keeper) >= 4 && dist(at, gate) >= 4 && dist(at, rat) >= 12) stairs = at
+    }
+  if (!stairs) throw new Error('No walkable place for the stairs')
+  layer.objects.push({ id: IDS.stairs, kind: 'stairs', x: stairs.x, y: stairs.y, w: 16, h: 16, label: 'Stairs down', pinned: true, link: { locationId: IDS.cave } })
+  const cave: Entity = { id: IDS.cave, name: 'Old Well Cave', type: 'Cave', size: 'Small', parent: IDS.location, chambers: 2, caveLocks: 0, caveWater: 'None', description: 'A dry cave under the well; stairs lead back up to the yard.' }
+  ;(p.documents['design.world'].data.locations as Entity[]).push(cave)
+  const caveMap0 = generateMap(p, cave, 20261122)
+  if (!caveMap0) throw new Error('The Cave generator made no map')
+  const caveMap = linkBack(p, cave, caveMap0)
+  const way = wayOut(caveMap)
+  if (way?.link?.locationId !== IDS.location) throw new Error('The cave has no way back to the yard')
+  const caveNav = mapNav(caveMap)
+  const inside = reachable(caveNav, [way.x, way.y])
+  const wayCell = nearestOpen(caveNav, [way.x, way.y])
+  const wayAt = { x: ((wayCell % caveNav.cols) + 0.5) * caveNav.cell, y: (Math.floor(wayCell / caveNav.cols) + 0.5) * caveNav.cell }
+  let pile: { x: number; y: number } | undefined
+  for (let i = 0; i < inside.length; i++) {
+    if (!inside[i]) continue
+    const at = { x: ((i % caveNav.cols) + 0.5) * caveNav.cell, y: (Math.floor(i / caveNav.cols) + 0.5) * caveNav.cell }
+    if (Math.hypot(at.x - wayAt.x, at.y - wayAt.y) / caveNav.cell >= 10 && (!pile || Math.hypot(at.x - wayAt.x, at.y - wayAt.y) < Math.hypot(pile.x - wayAt.x, pile.y - wayAt.y))) pile = at
+  }
+  if (!pile) throw new Error('No place for the cave coins')
+  Object.values(caveMap.layers).at(-1)!.objects.push({ id: IDS.caveCoin, kind: 'marker', x: pile.x, y: pile.y, w: 18, h: 18, label: 'Coins', props: { type: 'merchant' }, pinned: true, spawn: { role: 'item', refId: IDS.itemCoin, count: 3 } })
+  cave.map = caveMap
+  // Generating the cave read the yard map through mapOf, which caches by object; a fresh object keeps tests that edit
+  // the yard map in place seeing their edits.
+  yard.map = { ...map }
 
   // Design › Player Character: third-person, stated in the only fields that exist today.
   set(p, 'design.player', 'hero', { fantasy: 'A caretaker', background: '', personality: '', start: 'At the gate of the Keeper’s Yard.', startItems: [] })
@@ -136,6 +221,8 @@ export function buildReferenceSlice(): Project {
     ctl('refCtlInv', 'Inventory', 'Menus', 'I'),
     ctl('refCtlCraft', 'Crafting', 'Menus', 'C', 'Open crafting'),
     ctl('refCtlAtk', 'Attack', 'Combat', 'F', 'Attack'),
+    ctl('refCtlQSave', 'Quick save', 'System', 'F5', 'Quick save'),
+    ctl('refCtlQLoad', 'Quick load', 'System', 'F9', 'Quick load'),
     ctl('refCtlPaus', 'Pause', 'Menus', 'Escape'),
   ])
   set(p, 'design.ui', 'input', { notes: '', devices: ['Keyboard & mouse'], rebinding: false, holdToggle: false })
@@ -168,12 +255,12 @@ export function buildReferenceSlice(): Project {
       objectives: [{ id: IDS.objective, text: 'Pick up the Brass Key', done: false }],
       collectItems: { [IDS.itemKey]: 1 },
       rewardItems: { [IDS.itemCoin]: 5 },
-      rewardXp: 0,
-      rewardMoney: 0,
+      rewardXp: 10,
+      rewardMoney: 5,
       minLevel: 1,
       locations: [IDS.location],
       conditions: 'Active from the start.',
-      rewards: '5 Coins, once.',
+      rewards: '5 Coins, 10 XP and 5 money, once.',
       consequences: '',
     },
   ])
@@ -182,6 +269,26 @@ export function buildReferenceSlice(): Project {
   // Technical › Architecture and Save System: one gameplay module, one scene, three saved parts.
   set(p, 'technical.architecture', 'modules', [
     { id: IDS.module, name: 'Gameplay', layer: '', assembly: 'ReferenceSlice.Gameplay', responsibility: 'Player, interaction, inventory, quests.', dependsOn: [] },
+  ])
+  // Phase 16: the keeper, a decision with two options, and the conversation (typed Dialogue lines).
+  set(p, 'design.story', 'characters', [{ id: IDS.keeper, name: 'Keeper', role: 'Quest giver', importance: 'Supporting', voice: 'Dry, kind, short sentences.' }])
+  set(p, 'design.story', 'choices', [
+    { id: IDS.choiceHelp, name: 'Help the keeper', decision: 'Keeper’s request', leadsTo: [], blocks: [] },
+    { id: IDS.choiceRefuse, name: 'Refuse the keeper', decision: 'Keeper’s request', leadsTo: [], blocks: [] },
+  ])
+  set(p, 'design.story', 'dialogueLines', [
+    { id: IDS.lineGreet, name: 'Greeting', speaker: IDS.keeper, text: 'Lost something? The old key went down by the well.' },
+    { id: IDS.lineHelp, name: 'Help', speaker: IDS.keeper, after: IDS.lineGreet, option: 'I will find it.', text: 'Good. Here, for your trouble.', choice: IDS.choiceHelp, giveItems: { [IDS.itemCoin]: 2 } },
+    { id: IDS.lineRefuse, name: 'Refuse', speaker: IDS.keeper, after: IDS.lineGreet, option: 'Not my problem.', text: 'Suit yourself.', choice: IDS.choiceRefuse },
+  ])
+  // Phase 20: levels by XP, a wallet and a peddler, day and night.
+  set(p, 'design.player', 'leveling', { levelCap: 5, xpFormula: '10 * level', skillPointsPerLevel: 1, startSkillPoints: 0, statPointsPerLevel: 2 })
+  set(p, 'design.trade', 'money', { startingMoney: 10, walletCap: 999 })
+  set(p, 'design.trade', 'merchants', [{ id: IDS.merchant, name: 'Peddler', type: 'Wandering', goods: [IDS.itemStick], buys: [IDS.itemType], markup: 1.5, buyback: 0.5, gold: 20 }])
+  set(p, 'design.timeWeather', 'time', { dayLength: 4 })
+  set(p, 'design.timeWeather', 'dayPhases', [
+    { id: IDS.dayPhase, name: 'Day', start: 6, duration: 12, visibility: 100, monsterStrength: 1 },
+    { id: IDS.nightPhase, name: 'Night', start: 18, duration: 12, visibility: 35, monsterStrength: 1.5 },
   ])
   set(p, 'technical.architecture', 'scenes', [{ id: IDS.scene, name: 'Keeper’s Yard', kind: 'Gameplay', loadOrder: 0, loads: [], next: [] }])
   // Technical Architecture › Playable prototype: the explicit profile and the systems of the first slice.
@@ -197,7 +304,12 @@ export function buildReferenceSlice(): Project {
     saveLoad: true,
     crafting: true,
     combat: true,
+    dialogue: true,
+    progression: true,
+    trade: true,
+    time: true,
     weapon: IDS.itemStick,
+    locations: [IDS.location, IDS.cave],
     scene: IDS.scene,
   })
   set(p, 'technical.save', 'save', { requirements: 'One manual slot.', format: 'Compressed JSON', versioning: 'Save version with migrations.', autosave: '', performance: '', version: 1, manualSlots: 1, autoSlots: 0 })
@@ -206,6 +318,10 @@ export function buildReferenceSlice(): Project {
     { id: 'refSpInv', name: 'Inventory', module: IDS.module, since: 1, notes: 'Item IDs and amounts.', state: 'Inventory' },
     { id: 'refSpQuest', name: 'Quest log', module: IDS.module, since: 1, notes: 'Quest state and rewards given.', state: 'Quests' },
     { id: 'refSpCombat', name: 'Combat', module: IDS.module, since: 1, notes: 'Health, defeated and looted enemies.', state: 'Combat' },
+    { id: 'refSpDialog', name: 'Dialogue', module: IDS.module, since: 1, notes: 'Dialogue options already picked.', state: 'Dialogue' },
+    { id: 'refSpLevel', name: 'Progression', module: IDS.module, since: 1, notes: 'XP, level, points.', state: 'Progression' },
+    { id: 'refSpTrade', name: 'Trade', module: IDS.module, since: 1, notes: 'Money and the peddler’s purse.', state: 'Trade' },
+    { id: 'refSpTime', name: 'Time', module: IDS.module, since: 1, notes: 'Hour and day.', state: 'Time' },
   ])
   return p
 }

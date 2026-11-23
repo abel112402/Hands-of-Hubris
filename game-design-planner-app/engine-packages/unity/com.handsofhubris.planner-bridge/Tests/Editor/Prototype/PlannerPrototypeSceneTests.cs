@@ -304,6 +304,7 @@ namespace HoHPlanner.Bridge.Tests
             var ir = Ir();
             ir["gameplay"]["systems"] = new JArray("movement", "inventory", "saveLoad");
             ir["gameplay"]["inventory"] = new JObject { ["slots"] = 4, ["items"] = new JArray(new JObject { ["item"] = "itKey", ["name"] = "Old Key", ["stack"] = 1 }) };
+            ir["gameplay"]["input"] = new JObject { ["quickSave"] = new JObject { ["control"] = "c5", ["name"] = "Quick save", ["key"] = "F5" }, ["quickLoad"] = new JObject { ["control"] = "c9", ["name"] = "Quick load", ["key"] = "F9" } };
             ir["gameplay"]["save"] = new JObject
             {
                 ["parts"] = new JArray(
@@ -324,6 +325,10 @@ namespace HoHPlanner.Bridge.Tests
             var slice = state.GetComponent(sliceType);
             Assert.IsNotNull(slice);
             Assert.AreSame(state, sliceType.GetField("State").GetValue(slice));
+            var quick = All<PlannerQuickSave>().Single();
+            Assert.AreSame(slice, quick.SaveSystem);
+            Assert.AreSame(All<PlannerPlayer>().Single().transform, quick.Player);
+            Assert.AreEqual(("manual-1", "F5", "F9"), (quick.Slot, quick.SaveKeyLabel, quick.LoadKeyLabel));
 
             ((JArray)ir["gameplay"]["save"]["parts"]).Add(new JObject { ["part"] = "p3", ["key"] = "quest_log", ["state"] = "Quests" });
             Write($"{Root}/ir/engine-ir.json", ir.ToString());
@@ -337,12 +342,12 @@ namespace HoHPlanner.Bridge.Tests
             var ir = Ir();
             ir["gameplay"]["systems"] = new JArray("movement", "interaction", "inventory", "combat");
             ir["gameplay"]["inventory"] = new JObject { ["slots"] = 4, ["items"] = new JArray(new JObject { ["item"] = "itKey", ["name"] = "Old Key", ["stack"] = 1 }) };
-            ((JArray)ir["gameplay"]["placements"]).Add(new JObject { ["location"] = "loc1", ["object"] = "o4", ["role"] = "enemy", ["enemy"] = "en1", ["count"] = 1, ["x"] = 55, ["y"] = 35 });
+            ((JArray)ir["gameplay"]["placements"]).Add(new JObject { ["location"] = "loc1", ["object"] = "o4", ["role"] = "enemy", ["enemy"] = "en1", ["count"] = 1, ["x"] = 55, ["y"] = 35, ["route"] = new JArray(new JObject { ["x"] = 55, ["y"] = 35 }, new JObject { ["x"] = 15, ["y"] = 35 }) });
             ir["gameplay"]["combat"] = new JObject
             {
                 ["player"] = new JObject { ["hp"] = 30, ["attackRange"] = 1.25, ["weapon"] = new JObject { ["item"] = "itStick", ["damage"] = 6, ["damageType"] = "blunt", ["attackRate"] = 2 } },
                 ["formula"] = "attack * 100 / (100 + armor) * (1 - resist / 100) * crit",
-                ["enemies"] = new JArray(new JObject { ["enemy"] = "en1", ["name"] = "Rat", ["hp"] = 20, ["damage"] = 3, ["attackRate"] = 1, ["armor"] = 10, ["resistances"] = new JObject { ["blunt"] = 25 }, ["speed"] = 2, ["passive"] = false, ["xp"] = 5, ["loot"] = new JArray(new JObject { ["item"] = "itKey", ["count"] = 1 }) }),
+                ["enemies"] = new JArray(new JObject { ["enemy"] = "en1", ["name"] = "Rat", ["hp"] = 20, ["damage"] = 3, ["attackRate"] = 1, ["armor"] = 10, ["resistances"] = new JObject { ["blunt"] = 25 }, ["speed"] = 2, ["passive"] = false, ["aggression"] = "Territorial", ["sight"] = 6, ["giveUp"] = 10, ["xp"] = 5, ["loot"] = new JArray(new JObject { ["item"] = "itKey", ["count"] = 1 }) }),
                 ["aggroRadius"] = 8,
                 ["enemyReach"] = 1.5,
             };
@@ -368,6 +373,147 @@ namespace HoHPlanner.Bridge.Tests
             Assert.AreEqual(("itKey", 1), (loot.Items.Single().ItemId, loot.Items.Single().Count));
             Assert.IsTrue(File.Exists($"{Root}/Prototype/Prefabs/en1.prefab"), "The enemy's body prefab, made once");
             Assert.AreEqual(1, All<PlannerPlacement>().Count(x => x.Role == "enemy"), "No extra marker for the enemy");
+            // Phase 19: its behaviour template and the navigation it walks.
+            Assert.AreEqual((6f, 10f), (enemy.SightRange, enemy.GiveUp));
+            CollectionAssert.AreEqual(new[] { new Vector3(5.5f, 0f, -3.5f), new Vector3(1.5f, 0f, -3.5f) }, enemy.Route);
+            Assert.AreSame(All<PlannerNavigation>().Single(), enemy.Navigation);
+            Assert.AreSame(enemy.Navigation, combat.Navigation);
+            CollectionAssert.Contains(All<PlannerRuntimeHost>().Single().Required, "navigation");
+        }
+
+        [Test]
+        public void AddsNpcsWithTheirDialogue()
+        {
+            var ir = Ir();
+            ir["gameplay"]["systems"] = new JArray("movement", "interaction", "inventory", "dialogue");
+            ir["gameplay"]["inventory"] = new JObject { ["slots"] = 4, ["items"] = new JArray(new JObject { ["item"] = "itKey", ["name"] = "Old Key", ["stack"] = 1 }) };
+            ((JArray)ir["gameplay"]["placements"]).Add(new JObject { ["location"] = "loc1", ["object"] = "o5", ["role"] = "npc", ["character"] = "ch1", ["count"] = 1, ["x"] = 55, ["y"] = 35 });
+            ir["gameplay"]["dialogue"] = new JObject
+            {
+                ["characters"] = new JArray(new JObject { ["character"] = "ch1", ["name"] = "Keeper" }),
+                ["lines"] = new JArray(
+                    new JObject { ["line"] = "l1", ["speaker"] = "ch1", ["text"] = "Hello.", ["give"] = new JArray() },
+                    new JObject { ["line"] = "l2", ["speaker"] = "ch1", ["text"] = "Take it.", ["after"] = "l1", ["option"] = "Help?", ["give"] = new JArray(new JObject { ["item"] = "itKey", ["count"] = 1 }) }),
+            };
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            var r = PlannerPrototypeScene.Build(Root);
+            Assert.IsTrue(r.Built, r.ToString());
+
+            EditorSceneManager.OpenScene(Scene);
+            foreach (var go in All<GameObject>()) Assert.IsFalse(go.GetComponents<Component>().Any(c => c == null), $"{go.name} has a missing script");
+            CollectionAssert.Contains(All<PlannerRuntimeHost>().Single().Required, "dialogue");
+            var dialogue = All<PlannerDialogue>().Single();
+            Assert.AreSame(All<PlannerInventory>().Single(), dialogue.Inventory);
+            Assert.IsNull(dialogue.Quests, "No quest graph without Quests");
+            CollectionAssert.AreEqual(new[] { "l1", "l2" }, dialogue.Lines.Select(l => l.LineId).ToArray());
+            var help = dialogue.Lines[1];
+            Assert.AreEqual(("l1", "Help?", "itKey", 1), (help.After, help.Option, help.Give.Single().ItemId, help.Give.Single().Count));
+            Assert.AreEqual("Keeper", All<PlannerDialoguePanel>().Single().NameOf("ch1"));
+            var npc = All<PlannerNpc>().Single();
+            Assert.AreEqual(("ch1", "Keeper"), (npc.CharacterId, npc.Name));
+            Assert.AreSame(dialogue, npc.Dialogue);
+            Assert.AreEqual(new Vector3(5.5f, 0f, -3.5f), npc.transform.position);
+            Assert.AreEqual("o5", npc.GetComponent<PlannerPlacement>().ObjectId);
+            Assert.IsTrue(File.Exists($"{Root}/Prototype/Prefabs/NpcKeeper.prefab"), "The NPC's body prefab, made once");
+            Assert.AreEqual(1, All<PlannerPlacement>().Count(x => x.Role == "npc"), "No extra marker for the NPC");
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // A dialogue option that makes a story choice needs the quest graph.
+            ((JArray)ir["gameplay"]["dialogue"]["lines"])[1]["choice"] = "cHelp";
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            StringAssert.Contains("NPC dialogue needs Quests and rewards", string.Join(" ", PlannerPrototypeScene.Build(Root).Errors));
+        }
+
+        [Test]
+        public void BuildsEveryLocationOfTheWorldWithItsPassages()
+        {
+            var ir = Ir();
+            ir["gameplay"]["systems"] = new JArray("movement", "interaction");
+            ((JArray)ir["gameplay"]["placements"]).Add(new JObject { ["location"] = "loc2", ["object"] = "o9", ["role"] = "item", ["item"] = "itCoin", ["key"] = "item.coin", ["count"] = 3, ["x"] = 15, ["y"] = 15 });
+            ir["gameplay"]["world"] = new JObject
+            {
+                ["loading"] = "one-scene",
+                ["locations"] = new JArray(
+                    new JObject { ["location"] = "loc1", ["name"] = "Yard", ["map"] = "Maps/loc1.json", ["metresPerUnit"] = 0.1, ["offset"] = new JObject { ["x"] = 0, ["z"] = 0 }, ["size"] = new JObject { ["w"] = 6, ["d"] = 4 } },
+                    new JObject { ["location"] = "loc2", ["name"] = "Cellar", ["map"] = "Maps/loc2.json", ["metresPerUnit"] = 0.1, ["offset"] = new JObject { ["x"] = 26, ["z"] = 0 }, ["size"] = new JObject { ["w"] = 4, ["d"] = 3 } }),
+                ["passages"] = new JArray(
+                    new JObject { ["object"] = "door1", ["location"] = "loc1", ["to"] = "loc2", ["toName"] = "Cellar", ["x"] = 55, ["y"] = 15, ["arrival"] = new JObject { ["object"] = "door2", ["x"] = 5, ["y"] = 5 } },
+                    new JObject { ["object"] = "door2", ["location"] = "loc2", ["to"] = "loc1", ["toName"] = "Yard", ["x"] = 5, ["y"] = 5, ["arrival"] = new JObject { ["object"] = "door1", ["x"] = 55, ["y"] = 15 } }),
+            };
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            Write($"{Root}/Maps/loc2.json", new JObject
+            {
+                ["format"] = "hoh-location",
+                ["name"] = "Cellar",
+                ["spawns"] = new JArray(new JObject { ["id"] = "o8", ["role"] = "merchant", ["x"] = 25, ["y"] = 25, ["label"] = "Trader" }),
+                ["nav"] = new JObject { ["cell"] = 10, ["cols"] = 4, ["rows"] = 3, ["cost"] = "12B", ["tags"] = "12A" },
+            }.ToString());
+            AssetDatabase.Refresh();
+            var r = PlannerPrototypeScene.Build(Root);
+            Assert.IsTrue(r.Built, r.ToString());
+
+            EditorSceneManager.OpenScene(Scene);
+            foreach (var go in All<GameObject>()) Assert.IsFalse(go.GetComponents<Component>().Any(c => c == null), $"{go.name} has a missing script");
+            var locations = All<PlannerLocation>().OrderBy(l => l.LocationId).ToArray();
+            Assert.AreEqual(new[] { "loc1", "loc2" }, locations.Select(l => l.LocationId).ToArray());
+            Assert.AreEqual("Level", locations[0].name);
+            Assert.AreEqual("Level: Cellar", locations[1].name);
+            Assert.AreEqual(new Vector3(26f, 0f, 0f), locations[1].transform.position);
+            Assert.AreEqual(new Vector2(4f, 3f), locations[1].Size);
+            Assert.IsTrue(File.Exists($"{Root}/Prototype/Meshes/Test_Yard_loc2_Floor.asset"), "The cellar's own floor mesh");
+            var coin = All<PlannerPlacement>().Single(x => x.ObjectId == "o9");
+            Assert.AreEqual(new Vector3(27.5f, 0f, -1.5f), coin.transform.position, "In the cellar, at its offset");
+            Assert.AreEqual("loc2", coin.LocationId);
+            Assert.IsTrue(locations[1].Contains(All<PlannerPlacement>().Single(x => x.ObjectId == "o8").transform.position), "The cellar's own spawns are placed there");
+            var passages = All<PlannerPassage>().OrderBy(x => x.PassageId).ToArray();
+            Assert.AreEqual(("door1", "loc1", "loc2", "Cellar"), (passages[0].PassageId, passages[0].FromLocation, passages[0].ToLocation, passages[0].ToName));
+            Assert.AreEqual(new Vector3(26.5f, 0f, -0.5f), passages[0].Arrival.position, "Arrives in the cellar at the way back");
+            Assert.AreEqual(new Vector3(5.5f, 0f, -1.5f), passages[1].Arrival.position, "and back in the yard");
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            ir["gameplay"]["systems"] = new JArray("movement");
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            StringAssert.Contains("passages are used by interacting", string.Join(" ", PlannerPrototypeScene.Build(Root).Errors));
+        }
+
+        [Test]
+        public void AddsProgressionTradeAndTheClock()
+        {
+            var ir = Ir();
+            ir["gameplay"]["systems"] = new JArray("movement", "interaction", "inventory", "progression", "trade", "time");
+            ir["gameplay"]["inventory"] = new JObject { ["slots"] = 4, ["items"] = new JArray(new JObject { ["item"] = "itKey", ["name"] = "Old Key", ["stack"] = 1 }) };
+            ((JArray)ir["gameplay"]["placements"]).Add(new JObject { ["location"] = "loc1", ["object"] = "o6", ["role"] = "merchant", ["merchant"] = "m1", ["count"] = 1, ["x"] = 55, ["y"] = 15 });
+            ir["gameplay"]["progression"] = new JObject { ["levelCap"] = 3, ["xpToNext"] = new JArray(10, 20), ["skillPointsPerLevel"] = 1, ["statPointsPerLevel"] = 2, ["startSkillPoints"] = 0 };
+            ir["gameplay"]["trade"] = new JObject { ["startMoney"] = 10, ["walletCap"] = 99, ["merchants"] = new JArray(new JObject { ["merchant"] = "m1", ["name"] = "Peddler", ["sells"] = new JArray(new JObject { ["item"] = "itKey", ["price"] = 6 }), ["buys"] = new JArray(new JObject { ["item"] = "itKey", ["price"] = 2 }), ["gold"] = 20 }) };
+            ir["gameplay"]["time"] = new JObject { ["dayMinutes"] = 4, ["startHour"] = 8, ["phases"] = new JArray(new JObject { ["phase"] = "d", ["name"] = "Day", ["start"] = 6, ["duration"] = 12, ["visibility"] = 100, ["strength"] = 1 }, new JObject { ["phase"] = "n", ["name"] = "Night", ["start"] = 18, ["duration"] = 12, ["visibility"] = 35, ["strength"] = 1.5 }) };
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            var r = PlannerPrototypeScene.Build(Root);
+            Assert.IsTrue(r.Built, r.ToString());
+
+            EditorSceneManager.OpenScene(Scene);
+            foreach (var go in All<GameObject>()) Assert.IsFalse(go.GetComponents<Component>().Any(c => c == null), $"{go.name} has a missing script");
+            CollectionAssert.IsSupersetOf(All<PlannerRuntimeHost>().Single().Required, new[] { "progression", "trade", "time" });
+            var progression = All<PlannerProgression>().Single();
+            Assert.AreEqual((3, 1f, 2f), (progression.LevelCap, progression.SkillPointsPerLevel, progression.StatPointsPerLevel));
+            CollectionAssert.AreEqual(new[] { 10, 20 }, progression.XpToNext);
+            var trade = All<PlannerTrade>().Single();
+            Assert.AreEqual((10, 99), (trade.StartMoney, trade.WalletCap));
+            Assert.AreSame(All<PlannerInventory>().Single(), trade.Inventory);
+            var m = All<PlannerMerchant>().Single();
+            Assert.AreEqual(("m1", "Peddler", 20), (m.MerchantId, m.Name, m.StartGold));
+            Assert.AreEqual(("itKey", 6), (m.Sells.Single().ItemId, m.Sells.Single().Price));
+            Assert.AreEqual(new Vector3(5.5f, 0f, -1.5f), m.transform.position);
+            Assert.AreEqual(1, All<PlannerPlacement>().Count(x => x.Role == "merchant"), "No extra marker for the merchant");
+            Assert.IsTrue(File.Exists($"{Root}/Prototype/Prefabs/MerchantPeddler.prefab"));
+            var clock = All<PlannerClock>().Single();
+            Assert.AreEqual((4f, 8f, 2), (clock.DayMinutes, clock.StartHour, clock.Phases.Count));
+            Assert.AreEqual(("Night", 35f, 1.5f), (clock.Phases[1].Name, clock.Phases[1].Visibility, clock.Phases[1].MonsterStrength));
+            Assert.IsNotNull(clock.Sun, "It dims the sun");
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            ir["gameplay"]["systems"] = new JArray("movement", "progression", "trade");
+            Write($"{Root}/ir/engine-ir.json", ir.ToString());
+            StringAssert.Contains("Trading needs Interaction and the Inventory", string.Join(" ", PlannerPrototypeScene.Build(Root).Errors));
         }
 
         [Test]

@@ -407,7 +407,7 @@ export const unity: EngineAdapter = {
   id: 'unity',
   label: 'Unity',
   language: 'C#',
-  version: 16,
+  version: 21,
   root: 'Unity',
   ownDir: 'Scripts/Classes/',
   generatedDirs: ['Scripts/Generated/', 'ProjectFiles/', 'Tests/', 'Input/', 'UI/'],

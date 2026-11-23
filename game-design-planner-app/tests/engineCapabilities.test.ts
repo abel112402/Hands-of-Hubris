@@ -16,12 +16,12 @@ describe('Playable prototype section', () => {
     const p = buildReferenceSlice()
     const sec = getSections(getModule(PROTOTYPE_DOC)!, p.registry).find((s) => s.id === PROTOTYPE_SECTION)!
     if (sec.kind !== 'form') throw new Error('Playable prototype must be a form')
-    expect(sec.fields.map((f) => f.key)).toEqual(['dimension', 'perspective', 'renderPipeline', 'platform', ...CAPABILITIES.map((c) => c.id), 'weapon', 'scene', 'mapScale'])
+    expect(sec.fields.map((f) => f.key)).toEqual(['dimension', 'perspective', 'renderPipeline', 'platform', ...CAPABILITIES.map((c) => c.id), 'weapon', 'scene', 'locations', 'mapScale'])
   })
 
   it('reads the profile and ignores unknown values', () => {
     const p = buildReferenceSlice()
-    expect(prototypeProfile(p)).toEqual({ dimension: '3D', perspective: 'Third-person', renderPipeline: 'URP', platform: 'Windows', systems: ['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat'] })
+    expect(prototypeProfile(p)).toEqual({ dimension: '3D', perspective: 'Third-person', renderPipeline: 'URP', platform: 'Windows', systems: ['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat', 'dialogue', 'progression', 'trade', 'time'] })
     proto(p).perspective = 'Over the shoulder (from a newer file)'
     expect(prototypeProfile(p).perspective).toBeUndefined()
   })
@@ -75,7 +75,7 @@ describe('diagnostics', () => {
   it('treats engines without prototype support as unsupported for every choice', () => {
     const p = buildReferenceSlice()
     const e = errors(p, 'godot')
-    expect(e.filter((i) => i.code === 'proto.unsupported').map((i) => i.field)).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat'])
+    expect(e.filter((i) => i.code === 'proto.unsupported').map((i) => i.field)).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat', 'dialogue', 'progression', 'trade', 'time'])
     expect(e.filter((i) => i.code === 'proto.profileUnsupported')).toHaveLength(4)
   })
 })
@@ -84,9 +84,9 @@ describe('playable verdict', () => {
   const saved = CAPABILITIES.map((c) => ({ ...c.support }))
   afterEach(() => CAPABILITIES.forEach((c, i) => (c.support = { ...saved[i] })))
 
-  it('is claimed for the reference since phase 12: every system it chose is a template (crafting since 14, combat since 15), the others not yet', () => {
-    const working = ['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat']
-    expect(CAPABILITIES.filter((c) => working.includes(c.id)).map((c) => c.support.unity?.level)).toEqual(['template', 'template', 'template', 'template', 'template', 'template', 'template'])
+  it('is claimed for the reference since phase 12: every system it chose is a template (crafting since 14, combat since 15, dialogue since 16, progression, trade and time since 20; settlement not yet), the others not yet', () => {
+    const working = ['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat', 'dialogue', 'progression', 'trade', 'time']
+    expect(CAPABILITIES.filter((c) => working.includes(c.id)).map((c) => c.support.unity?.level)).toEqual(['template', 'template', 'template', 'template', 'template', 'template', 'template', 'template', 'template', 'template', 'template'])
     expect(CAPABILITIES.filter((c) => !working.includes(c.id)).every((c) => c.support.unity?.level === 'frame' || c.support.unity?.level === 'unsupported')).toBe(true)
     const r = prototypeReport(buildReferenceSlice(), 'unity')
     expect(r.playable).toBe(true)

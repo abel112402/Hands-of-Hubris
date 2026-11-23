@@ -49,7 +49,8 @@ export type MapObject = {
   /** Left out of the player version of an export. */
   secret?: true
   light?: { radius: number; color?: string; intensity?: number }
-  spawn?: { role: SpawnRole; refId?: string; count?: number }
+  /** `route`: for an enemy, the id of a line on the same map (a path, a road) it patrols. */
+  spawn?: { role: SpawnRole; refId?: string; count?: number; route?: string }
 }
 export type NewMapObject = Omit<MapObject, 'id'>
 

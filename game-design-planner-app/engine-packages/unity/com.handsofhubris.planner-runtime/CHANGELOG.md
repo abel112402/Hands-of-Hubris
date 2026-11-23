@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.15.0
+
+- Player progression (`PlannerProgression`, id “progression”): XP from completed quests (`PlannerQuestCompleted.Xp`) and defeated enemies (`PlannerEnemyDefeated.Xp`), levels by the plan's XP table up to the cap, skill and stat points per level (counted); `PlannerLevelUp`; an on-screen level label. Saved as `PlannerStateKind.Progression`.
+- Trading (`PlannerTrade`, id “trade”, after “interaction” and “inventory”): a wallet (starting money, limit) that quests' Reward money fills; `PlannerMerchant` (interactable, “Trade with …”) sells and buys at the planned prices while it has money for buying (`CanBuy`/`Buy`/`CanSell`/`Sell` with the reason why not); an IMGUI trade panel and money label; `PlannerTraded`. Saved as `PlannerStateKind.Trade` (money and each merchant's purse).
+- Day and night (`PlannerClock`, id “time”): an in-game clock at the planned day length from the start hour; the current day phase dims the sun to its visibility and gives `MonsterStrength`, which `PlannerCombat` multiplies enemy damage by (`PlannerCombat.Clock`); `PlannerDayPhaseChanged`; an on-screen clock. Saved as `PlannerStateKind.Time`.
+- The player self-test checks the level for the XP gathered, a purchase and sale at the planned prices, and the clock's rate and light by phase.
+- PlayMode tests: XP from quests and enemies, levels and the cap, a saved progression; buying, selling, the merchant's purse, the wallet limit, a saved trade; the clock's rate, phases and light, night monster strength, a saved time.
+
+## 0.14.0
+
+- Navigation (`PlannerNavigation`, id “navigation”): a navigation mesh baked when the game starts from the levels' solid colliders (every `PlannerLocation`, or the given roots; triggers left out), and paths over it (`Path`, `OnMesh`). It needs Unity's AI module (`com.unity.modules.ai`, define `HOH_UNITY_AI`): without it the module still starts, says so once, and movers walk straight.
+- The enemy behaviour template (`PlannerEnemy`): `PlannerEnemyState` Guard / Patrol / Chase / Return. It guards its post or walks its patrol route (`Route`, round and round); unless passive, it sees the player within `SightRange` when no wall is between them (`Sees`), chases over the navigation mesh and hits within reach; it goes back after losing sight for `ForgetAfter` seconds or (with `GiveUp`) once that far from its post or route, and only comes again for a player within that range. Event `PlannerEnemyStateChanged`. A loaded game sends every enemy back.
+- The player self-test checks the navigation mesh and, before the fights, that every enemy patrols its route, chases a player it sees and goes back.
+- Movers (the player's `PlannerMovement` and enemies) set their CharacterController's `minMoveDistance` to 0: at a high frame rate every step was below the default and dropped, so they stood still.
+- PlayMode tests: a path round a wall, walking round it to its post, patrol, sight blocked by a wall and by range, chase and going back, giving up past its range, a passive enemy.
+
+## 0.13.0
+
+- Several locations in one scene (the planner's loading profile “one scene”): `PlannerLocation` on each location's level root (planner ID, name, the ground it covers); `PlannerLocation.At(point)` says which location a point is in.
+- `PlannerPassage` (an `IPlannerInteractable`, prompt “Go to …”): a map object of the plan that opens another location of the prototype; interacting moves the player to its arrival, at the way back on the other map, keeping the facing. Event `PlannerTravelled` (passage, from, to).
+- The player self-test goes through every passage, checks where the player arrives, and saves in the last location reached, so a load brings the player back there.
+- PlayMode tests: which location a point is in, a passage there and the way back, a passage without an arrival.
+
+## 0.12.0
+
+- Quick save and quick load while playing (`PlannerQuickSave`): the plan's Quick save and Quick load controls (`IPlannerSaveSource`, the input source's QuickSave and QuickLoad actions) save the game into the first manual slot and load it back through the game's save system; a short message says what happened (`PlannerQuickSaveResult`: saved, loaded, nothing to load, failed). A save that cannot be loaded is reported and changes nothing.
+- PlayMode tests: the actions save and load the slot, a damaged save is reported without changes, no save system.
+
+## 0.11.0
+
+- NPC dialogue (`PlannerDialogue`, id “dialogue”, after “interaction” and, when used, “quests” and “inventory”): the plan's typed Dialogue lines. `Start(speaker)` shows the line that starts a character's conversation; the lines that answer the current line are its `Options` (allowed or the reason why not); `Pick` shows the picked line and, the first time only, makes its story choice through the quest graph (offered only while the graph allows it — one option per decision) and gives its items (offered only when they fit). Events `PlannerDialogueLineShown` (the extension point for animation and voice), `PlannerDialoguePicked`, `PlannerItemAcquired`. Starting fails, with every reason, on unknown lines, choices or items.
+- `PlannerNpc` (an `IPlannerInteractable`, prompt “Talk to …”) and `PlannerDialoguePanel` (IMGUI: the line, one button per option, disabled with the reason; Leave).
+- `IPlannerQuestGraph`: `KnowsChoice`, `CanChoose`, `HasChosen`, `IsDecided`, `Choose` (the export's generated PlannerQuestGraph implements them over PlannerQuestLog). A graph written for 0.10.0 must add them.
+- Saving: `PlannerStateKind.Dialogue` (the options already picked; the choices are saved with the quests). The player self-test talks to each NPC, picks its first allowed option and checks that the consequences run once and the decision's other options close.
+- PlayMode tests: talking by interacting, a choice and items once, the decision's other option closed, no room, an option without consequences, unknown references, a save.
+
 ## 0.10.0
 
 - Combat, the first supported model only (`PlannerCombat`, id “combat”, after “movement”): melee. On the Attack action (`IPlannerCombatSource`, the input source's Attack action) the player hits the nearest living enemy in reach, at most the weapon's attacks per second, for the plan's damage formula (`IPlannerDamageFormula`, the export's generated PlannerDamageFormula) with attack, armor, resist and crit = 1; enemies hit the player the same way. A defeated player is put back at the player start with full health.

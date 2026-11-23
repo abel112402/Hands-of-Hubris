@@ -96,6 +96,14 @@ describe('breaks and changes of the reference', () => {
     expect(config).toMatch(/new \(string, int\)\[\] \{ \("refItemKey", 2\) \}/)
   })
 
+  it('choice-locked exports cleanly, so only the Unity tests can catch it', () => {
+    expect(errors(BREAKS['choice-locked'].apply)).toEqual([])
+    const p = buildReferenceSlice()
+    BREAKS['choice-locked'].apply(p)
+    const story = buildBundle(p, 'unity', '2026-01-01T00:00:00.000Z').files.find((f) => f.path.endsWith('PlannerStory.cs'))!.content
+    expect(story).toContain(`new ChoiceInfo("refChHelp", "Help the keeper", "Keeper’s request", PlannerQuest.`)
+  })
+
   it('the value change raises the walk speed by 1 m/s and says what the code must contain', () => {
     const { project, expect: text } = withChangedValue(buildReferenceSlice())
     expect(text).toBe('MoveSpeed = 5.5f;')

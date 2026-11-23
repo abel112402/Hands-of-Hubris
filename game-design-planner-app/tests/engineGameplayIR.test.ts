@@ -25,21 +25,24 @@ describe('IR v9 gameplay', () => {
     ])
     const g = ir.gameplay!
     expect(g.profile).toEqual({ dimension: '3D', perspective: 'Third-person', renderPipeline: 'URP', platform: 'Windows' })
-    expect(g.systems).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat'])
+    expect(g.systems).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat', 'dialogue', 'progression', 'trade', 'time'])
     expect(g.quests).toEqual([
       {
         quest: IDS.quest,
         name: 'Find the brass key',
         completeWhen: { kind: 'holdItems', items: [{ item: IDS.itemKey, key: 'item.brass_key', count: 1 }] },
         onComplete: [{ kind: 'giveItems', items: [{ item: IDS.itemCoin, key: 'item.coin', count: 5 }] }],
-        money: 0,
-        xp: 0,
+        money: 5,
+        xp: 10,
       },
     ])
     expect(g.placements.map((x) => [x.role, x.object, x.item, x.key, x.count])).toEqual([
       ['player', IDS.start, undefined, undefined, 1],
       ['item', IDS.pickup, IDS.itemKey, 'item.brass_key', 1],
       ['enemy', IDS.enemySpawn, undefined, undefined, 1],
+      ['npc', IDS.npcSpawn, undefined, undefined, 1],
+      ['merchant', IDS.merchantSpot, undefined, undefined, 1],
+      ['item', IDS.caveCoin, IDS.itemCoin, 'item.coin', 3],
     ])
     expect(g.scene).toEqual({ scene: { id: IDS.scene, name: 'Keeper’s Yard' }, location: IDS.location, locationName: 'Keeper’s Yard', map: `Maps/${IDS.location}.json`, cell: 10 })
   })
@@ -79,7 +82,7 @@ describe('compatibility', () => {
   it('says plainly that Godot and Unreal do not make the chosen systems playable', () => {
     for (const engine of ['godot', 'unreal'] as const) {
       const b = buildBundle(buildReferenceSlice(), engine, '2026-01-01T00:00:00.000Z')
-      expect(b.issues.filter((i) => i.code === 'proto.unsupported').map((i) => i.field)).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat'])
+      expect(b.issues.filter((i) => i.code === 'proto.unsupported').map((i) => i.field)).toEqual(['movement', 'interaction', 'inventory', 'quests', 'saveLoad', 'crafting', 'combat', 'dialogue', 'progression', 'trade', 'time'])
       expect(b.files.find((f) => f.path === 'README.md')!.content).toContain('**Not playable yet.**')
     }
   })
